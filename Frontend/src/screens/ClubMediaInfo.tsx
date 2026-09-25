@@ -1,0 +1,726 @@
+import { useOutletContext, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getClubMediaLogsFn, getClubMediaStatsFn } from '../api/clubApi';
+import { OutletClubMediaContextType } from '../types';
+import { useState } from 'react';
+import {
+  Users,
+  Files,
+  Timer,
+  Star,
+  TrendingUp,
+  Calendar,
+  ChartNoAxesColumn,
+  ChartLine,
+} from 'lucide-react';
+import BarChart from '../components/BarChart';
+import LineChart from '../components/LineChart';
+import { useTranslation } from 'react-i18next';
+import { useThemeColors } from '../hooks/useThemeColors';
+
+export default function ClubMediaInfo() {
+  const { t } = useTranslation('clubs');
+  // Chart series follow the active daisyUI theme instead of hard-coded rgba.
+  const seriesLine = useThemeColors(1);
+  const seriesFill = useThemeColors(0.5);
+  const { club, clubMedia } = useOutletContext<OutletClubMediaContextType>();
+  const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
+  const [period, setPeriod] = useState<'consumption' | 'alltime'>(
+    'consumption'
+  );
+  const [chartView, setChartView] = useState<'progress' | 'bar'>('progress');
+
+  const { data: mediaStats, isLoading } = useQuery({
+    queryKey: ['clubMediaStats', clubId, mediaId, period],
+    queryFn: () => getClubMediaStatsFn(clubId!, mediaId!, period),
+    enabled: !!clubId && !!mediaId && !!clubMedia,
+  });
+
+  const { data: clubLogsData, isLoading: isLogsLoading } = useQuery({
+    queryKey: ['clubMediaLogs', clubId, mediaId],
+    queryFn: () => {
+      if (!clubId || !mediaId) {
+        throw new Error('Missing club media parameters');
+      }
+
+      return getClubMediaLogsFn(clubId, mediaId, { limit: 1000 });
+    },
+    enabled: !!clubId && !!mediaId && !!clubMedia,
+    staleTime: 60 * 1000,
+  });
+
+  if (!club || !clubMedia) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <div className="text-center py-12 text-base-content/60">
+          <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <div className="text-center py-12">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-4 text-base-content/60">
+            {t('mediaInfo.loadingStats')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const getMediaTypeSpecificStats = () => {
+    if (!mediaStats) return null;
+
+    const mediaType = mediaStats.mediaInfo.mediaType;
+    const stats = mediaStats.total;
+
+    switch (mediaType) {
+      case 'anime':
+        return {
+          primary: {
+            label: 'Episodes',
+            value: stats.episodes,
+            icon: Files,
+          },
+          secondary: { label: 'Hours', value: stats.hours, icon: Timer },
+        };
+      case 'manga':
+        return {
+          primary: {
+            label: 'Chapters',
+            value: stats.pages,
+            icon: Files,
+          },
+          secondary: {
+            label: 'Pages',
+            value: stats.pages,
+            icon: Files,
+          },
+        };
+      case 'light-novel':
+      case 'vn':
+      case 'game':
+        return {
+          primary: {
+            label: 'Characters',
+            value: stats.characters.toLocaleString(),
+            icon: Files,
+          },
+          secondary: { label: 'Hours', value: stats.hours, icon: Timer },
+        };
+      case 'video':
+      case 'movie':
+        return {
+          primary: { label: 'Hours', value: stats.hours, icon: Timer },
+          secondary: {
+            label: 'Minutes',
+            value: stats.minutes.toLocaleString(),
+            icon: Timer,
+          },
+        };
+      default:
+        return {
+          primary: { label: 'Hours', value: stats.hours, icon: Timer },
+          secondary: {
+            label: 'XP',
+            value: stats.xp.toLocaleString(),
+            icon: Star,
+          },
+        };
+    }
+  };
+
+  const typeSpecificStats = getMediaTypeSpecificStats();
+  const mediaType = mediaStats?.mediaInfo.mediaType;
+
+  const clubMemberNames = new Map(
+    (club?.members ?? [])
+      .filter((member) => member.status === 'active')
+      .map((member) => [member.user._id, member.user.username] as const)
+  );
+
+  const memberChartData = (() => {
+    const logs = clubLogsData?.logs ?? [];
+
+    if (!logs.length) {
+      return null;
+    }
+
+    const dayKeys = Array.from(
+      new Set(logs.map((log) => new Date(log.date).toISOString().slice(0, 10)))
+    ).sort();
+
+    const logsByMember = new Map<string, Map<string, number>>();
+
+    for (const log of logs) {
+      const userId = log.user._id;
+      if (!clubMemberNames.has(userId)) {
+        continue;
+      }
+
+      const dayKey = new Date(log.date).toISOString().slice(0, 10);
+      if (!logsByMember.has(userId)) {
+        logsByMember.set(userId, new Map<string, number>());
+      }
+
+      const memberDays = logsByMember.get(userId)!;
+      memberDays.set(dayKey, (memberDays.get(dayKey) || 0) + (log.xp || 0));
+    }
+
+    const colors = [
+      '#3b82f6',
+      '#10b981',
+      '#f59e0b',
+      '#ef4444',
+      '#8b5cf6',
+      '#06b6d4',
+      '#ec4899',
+      '#22c55e',
+    ];
+
+    const datasets = Array.from(logsByMember.entries()).map(
+      ([userId, dayMap], index) => ({
+        label: clubMemberNames.get(userId) || 'Member',
+        data: dayKeys.map((dayKey) => dayMap.get(dayKey) || 0),
+        fill: false,
+        tension: 0.35,
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length],
+      })
+    );
+
+    return {
+      labels: dayKeys.map((dayKey) => new Date(dayKey).toLocaleDateString()),
+      datasets,
+    };
+  })();
+
+  // Helper function to determine if consumption period is greater than 30 days
+  const isConsumptionPeriodLongerThanMonth = () => {
+    if (!mediaStats) return false;
+    const startDate = new Date(mediaStats.mediaInfo.startDate);
+    const endDate = new Date(mediaStats.mediaInfo.endDate);
+    const diffInMs = endDate.getTime() - startDate.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    return diffInDays > 30;
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="space-y-6">
+        {/* Period Toggle */}
+        <div className="card surface">
+          <div className="card-body p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+              <div>
+                <h3 className="card-title text-lg">{t('mediaInfo.title')}</h3>
+                <p className="text-sm text-base-content/60">
+                  Statistics for{' '}
+                  {mediaStats?.mediaInfo.title || clubMedia.title} from club
+                  members
+                </p>
+              </div>
+              <div className="join">
+                <button
+                  className={`join-item btn btn-sm ${
+                    period === 'consumption' ? 'btn-primary' : 'btn-outline'
+                  }`}
+                  onClick={() => setPeriod('consumption')}
+                >
+                  <Calendar className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">
+                    {t('media.consumptionPeriod')}
+                  </span>
+                  <span className="sm:hidden">{t('media.period')}</span>
+                </button>
+                <button
+                  className={`join-item btn btn-sm ${
+                    period === 'alltime' ? 'btn-primary' : 'btn-outline'
+                  }`}
+                  onClick={() => setPeriod('alltime')}
+                >
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">{t('media.allTime')}</span>
+                  <span className="sm:hidden">{t('mediaInfo.all')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Statistics */}
+        {mediaStats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Logs */}
+            <div className="stat surface">
+              <div className="stat-figure text-primary">
+                <Files className="w-8 h-8" />
+              </div>
+              <div className="stat-title">{t('mediaInfo.totalLogs')}</div>
+              <div className="stat-value text-primary">
+                {mediaStats.total.logs.toLocaleString()}
+              </div>
+              <div className="stat-desc">
+                From {mediaStats.total.members} members
+              </div>
+            </div>
+
+            {/* Active Members */}
+            <div className="stat surface">
+              <div className="stat-figure text-secondary">
+                <Users className="w-8 h-8" />
+              </div>
+              <div className="stat-title">{t('mediaInfo.activeMembers')}</div>
+              <div className="stat-value text-secondary">
+                {mediaStats.total.members}
+              </div>
+              <div className="stat-desc">
+                {period === 'consumption'
+                  ? 'Since consumption started'
+                  : 'All time participants'}
+              </div>
+            </div>
+
+            {/* Type-specific primary stat */}
+            {typeSpecificStats && (
+              <div className="stat surface">
+                <div className="stat-figure text-accent">
+                  <typeSpecificStats.primary.icon className="w-8 h-8" />
+                </div>
+                <div className="stat-title">
+                  {typeSpecificStats.primary.label}
+                </div>
+                <div className="stat-value text-accent">
+                  {typeSpecificStats.primary.value.toLocaleString()}
+                </div>
+                <div className="stat-desc">{t('mediaInfo.clubTotal')}</div>
+              </div>
+            )}
+
+            {/* Total XP */}
+            <div className="stat surface">
+              <div className="stat-figure text-warning">
+                <Star className="w-8 h-8" />
+              </div>
+              <div className="stat-title">{t('common.totalXp')}</div>
+              <div className="stat-value text-warning">
+                {mediaStats.total.xp.toLocaleString()}
+              </div>
+              <div className="stat-desc">{t('mediaInfo.xpEarned')}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Activity Overview */}
+        {mediaStats && (
+          <div className="card surface">
+            <div className="card-body">
+              <h3 className="card-title mb-4">{t('mediaInfo.yourActivity')}</h3>
+
+              {/* This Week Stats - Horizontal Layout */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+                  {t('mediaInfo.thisWeekTitle')}
+                </h4>
+                <div className="stats stats-horizontal shadow-sm w-full">
+                  <div className="stat">
+                    <div className="stat-figure text-primary">
+                      <Files className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">{t('mediaInfo.logs')}</div>
+                    <div className="stat-value text-primary">
+                      {mediaStats.thisWeek.logs}
+                    </div>
+                    <div className="stat-desc">{t('mediaInfo.newEntries')}</div>
+                  </div>
+
+                  <div className="stat">
+                    <div className="stat-figure text-secondary">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">
+                      {t('mediaInfo.activeMembers')}
+                    </div>
+                    <div className="stat-value text-secondary">
+                      {mediaStats.thisWeek.activeMembers}
+                    </div>
+                    <div className="stat-desc">
+                      {t('mediaInfo.contributing')}
+                    </div>
+                  </div>
+
+                  <div className="stat">
+                    <div className="stat-figure text-accent">
+                      <Star className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">
+                      {t('mediaInfo.xpEarnedTitle')}
+                    </div>
+                    <div className="stat-value text-accent">
+                      {mediaStats.thisWeek.xp.toLocaleString()}
+                    </div>
+                    <div className="stat-desc">
+                      {t('mediaInfo.experiencePoints')}
+                    </div>
+                  </div>
+
+                  {typeSpecificStats && (
+                    <div className="stat">
+                      <div className="stat-figure text-warning">
+                        <typeSpecificStats.primary.icon className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">
+                        {typeSpecificStats.primary.label}
+                      </div>
+                      <div className="stat-value text-warning">
+                        {(mediaType === 'anime'
+                          ? mediaStats.thisWeek.episodes
+                          : mediaType === 'manga'
+                            ? mediaStats.thisWeek.pages
+                            : mediaType === 'light-novel' ||
+                                mediaType === 'vn' ||
+                                mediaType === 'game'
+                              ? mediaStats.thisWeek.characters
+                              : Math.round(
+                                  (mediaStats.thisWeek.minutes / 60) * 100
+                                ) / 100
+                        ).toLocaleString()}
+                      </div>
+                      <div className="stat-desc">{t('mediaInfo.thisWeek')}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* This Month Stats - Only show if consumption period > 30 days */}
+              {isConsumptionPeriodLongerThanMonth() && (
+                <div>
+                  <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+                    {t('mediaInfo.thisMonthTitle')}
+                  </h4>
+                  <div className="stats stats-horizontal shadow-sm w-full">
+                    <div className="stat">
+                      <div className="stat-figure text-primary">
+                        <Files className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">{t('mediaInfo.logs')}</div>
+                      <div className="stat-value text-primary">
+                        {mediaStats.thisMonth.logs}
+                      </div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.newEntries')}
+                      </div>
+                    </div>
+
+                    <div className="stat">
+                      <div className="stat-figure text-secondary">
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">
+                        {t('mediaInfo.activeMembers')}
+                      </div>
+                      <div className="stat-value text-secondary">
+                        {mediaStats.thisMonth.activeMembers}
+                      </div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.contributing')}
+                      </div>
+                    </div>
+
+                    <div className="stat">
+                      <div className="stat-figure text-accent">
+                        <Star className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">
+                        {t('mediaInfo.xpEarnedTitle')}
+                      </div>
+                      <div className="stat-value text-accent">
+                        {mediaStats.thisMonth.xp.toLocaleString()}
+                      </div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.experiencePoints')}
+                      </div>
+                    </div>
+
+                    {typeSpecificStats && (
+                      <div className="stat">
+                        <div className="stat-figure text-warning">
+                          <typeSpecificStats.primary.icon className="w-6 h-6" />
+                        </div>
+                        <div className="stat-title">
+                          {typeSpecificStats.primary.label}
+                        </div>
+                        <div className="stat-value text-warning">
+                          {(mediaType === 'anime'
+                            ? mediaStats.thisMonth.episodes
+                            : mediaType === 'manga'
+                              ? mediaStats.thisMonth.pages
+                              : mediaType === 'light-novel' ||
+                                  mediaType === 'vn' ||
+                                  mediaType === 'game'
+                                ? mediaStats.thisMonth.characters
+                                : Math.round(
+                                    (mediaStats.thisMonth.minutes / 60) * 100
+                                  ) / 100
+                          ).toLocaleString()}
+                        </div>
+                        <div className="stat-desc">
+                          {t('mediaInfo.thisMonth')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Data Visualization */}
+        {mediaStats && (
+          <div className="card surface">
+            <div className="card-body">
+              <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-4">
+                <h3 className="card-title">{t('mediaInfo.visualization')}</h3>
+                <div className="join">
+                  <button
+                    className={`join-item btn btn-sm ${
+                      chartView === 'progress' ? 'btn-primary' : 'btn-outline'
+                    }`}
+                    onClick={() => setChartView('progress')}
+                  >
+                    <ChartLine className="w-4 h-4 mr-1" />
+                    {t('mediaInfo.progress')}
+                  </button>
+                  <button
+                    className={`join-item btn btn-sm ${
+                      chartView === 'bar' ? 'btn-primary' : 'btn-outline'
+                    }`}
+                    onClick={() => setChartView('bar')}
+                  >
+                    <ChartNoAxesColumn className="w-4 h-4 mr-1" />
+                    {t('mediaInfo.barChart')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full" style={{ height: '450px' }}>
+                {chartView === 'progress' ? (
+                  isLogsLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <span className="loading loading-spinner loading-lg text-primary"></span>
+                    </div>
+                  ) : memberChartData ? (
+                    <LineChart data={memberChartData} />
+                  ) : (
+                    <div className="alert alert-info mx-4">
+                      <span>{t('mediaInfo.noLogs')}</span>
+                    </div>
+                  )
+                ) : (
+                  <BarChart
+                    data={(() => {
+                      const mediaType = mediaStats.mediaInfo.mediaType;
+                      const showThisMonth =
+                        isConsumptionPeriodLongerThanMonth();
+
+                      // Prepare labels and data based on period length
+                      const labels = showThisMonth
+                        ? ['This Week', 'This Month', 'Total']
+                        : ['This Week', 'Total'];
+
+                      const baseDatasets = [
+                        {
+                          label: 'Logs',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.logs,
+                                mediaStats.thisMonth.logs,
+                                mediaStats.total.logs,
+                              ]
+                            : [mediaStats.thisWeek.logs, mediaStats.total.logs],
+                          backgroundColor: seriesFill.primary,
+                          borderColor: seriesLine.primary,
+                          borderWidth: 1,
+                        },
+                        {
+                          label: 'XP Earned',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.xp,
+                                mediaStats.thisMonth.xp,
+                                mediaStats.total.xp,
+                              ]
+                            : [mediaStats.thisWeek.xp, mediaStats.total.xp],
+                          backgroundColor: seriesFill.success,
+                          borderColor: seriesLine.success,
+                          borderWidth: 1,
+                        },
+                        {
+                          label: 'Active Members',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.activeMembers,
+                                mediaStats.thisMonth.activeMembers,
+                                mediaStats.total.members,
+                              ]
+                            : [
+                                mediaStats.thisWeek.activeMembers,
+                                mediaStats.total.members,
+                              ],
+                          backgroundColor: seriesFill.warning,
+                          borderColor: seriesLine.warning,
+                          borderWidth: 1,
+                        },
+                      ];
+
+                      // Add media-type specific dataset
+                      if (mediaType === 'anime') {
+                        baseDatasets.push({
+                          label: 'Episodes Watched',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.episodes,
+                                mediaStats.thisMonth.episodes,
+                                mediaStats.total.episodes,
+                              ]
+                            : [
+                                mediaStats.thisWeek.episodes,
+                                mediaStats.total.episodes,
+                              ],
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
+                          borderWidth: 1,
+                        });
+                      } else if (
+                        mediaType === 'manga' ||
+                        mediaType === 'light-novel'
+                      ) {
+                        baseDatasets.push({
+                          label:
+                            mediaType === 'manga'
+                              ? 'Chapters Read'
+                              : 'Pages Read',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.pages,
+                                mediaStats.thisMonth.pages,
+                                mediaStats.total.pages,
+                              ]
+                            : [
+                                mediaStats.thisWeek.pages,
+                                mediaStats.total.pages,
+                              ],
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
+                          borderWidth: 1,
+                        });
+                      } else if (
+                        mediaType === 'light-novel' ||
+                        mediaType === 'vn' ||
+                        mediaType === 'game'
+                      ) {
+                        baseDatasets.push({
+                          label: 'Characters Read',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.characters,
+                                mediaStats.thisMonth.characters,
+                                mediaStats.total.characters,
+                              ]
+                            : [
+                                mediaStats.thisWeek.characters,
+                                mediaStats.total.characters,
+                              ],
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
+                          borderWidth: 1,
+                        });
+                      }
+
+                      return {
+                        labels,
+                        datasets: baseDatasets,
+                      };
+                    })()}
+                    options={{
+                      scales: {
+                        y: {
+                          title: {
+                            display: true,
+                            text: 'Count',
+                          },
+                        },
+                        x: {
+                          title: {
+                            display: true,
+                            text: 'Time Period',
+                          },
+                        },
+                      },
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: `Club Activity for ${mediaStats.mediaInfo.title}`,
+                        },
+                      },
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Activity Period Info */}
+        {mediaStats && (
+          <div className="card surface">
+            <div className="card-body">
+              <h3 className="card-title">{t('mediaInfo.activityPeriod')}</h3>
+              <div className="text-base-content/70">
+                {period === 'consumption' ? (
+                  <>
+                    <p className="mb-2">
+                      <strong>{t('mediaInfo.consumptionPeriodLabel')}</strong>{' '}
+                      {new Date(
+                        mediaStats.mediaInfo.startDate
+                      ).toLocaleDateString()}{' '}
+                      -{' '}
+                      {new Date(
+                        mediaStats.mediaInfo.endDate
+                      ).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm">{t('mediaInfo.sincePeriodNote')}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-2">
+                      <strong>{t('mediaInfo.allTimeLabel')}</strong>{' '}
+                      {mediaStats.total.firstLogDate
+                        ? `${new Date(mediaStats.total.firstLogDate).toLocaleDateString()} - ${
+                            mediaStats.total.lastLogDate
+                              ? new Date(
+                                  mediaStats.total.lastLogDate
+                                ).toLocaleDateString()
+                              : 'Present'
+                          }`
+                        : 'No activity yet'}
+                    </p>
+                    <p className="text-sm">{t('mediaInfo.allTimeNote')}</p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

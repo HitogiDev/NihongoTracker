@@ -1,0 +1,179 @@
+import { Schema, model } from 'mongoose';
+import { ILog, IEditedFields, IXpBreakdown } from '../types.js';
+
+const hasPositiveValue = (value?: number | null) =>
+  typeof value === 'number' && value > 0;
+
+const editedFieldsSchema = new Schema<IEditedFields>(
+  {
+    episodes: { type: Number },
+    volume: { type: Number },
+    pages: { type: Number },
+    chars: { type: Number },
+    time: { type: Number },
+    xp: { type: Number },
+  },
+  { _id: false }
+);
+
+const xpBreakdownSchema = new Schema<IXpBreakdown>(
+  {
+    baseXp: { type: Number, required: true },
+    timeCreditedMin: { type: Number, required: true },
+    difficulty: { type: Number, default: null },
+    categoryLevelAt: { type: Number, required: true },
+    comfortAt: { type: Number, default: null },
+    targetDifficulty: { type: Number, default: null },
+    multiplier: { type: Number, required: true },
+    version: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const LogSchema = new Schema<ILog>(
+  {
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    mediaTitle: { type: String, required: false, trim: true },
+    type: {
+      type: String,
+      required: true,
+      enum: [
+        'light-novel',
+        'reading',
+        'anime',
+        'vn',
+        'video',
+        'manga',
+        'audio',
+        'movie',
+        'tv show',
+        'other',
+        'game',
+        'book',
+      ],
+    },
+    mediaId: {
+      type: String,
+      default: null,
+    },
+    matchDismissed: { type: Boolean, default: false },
+    manabeId: { type: String },
+    // Dedupe key for the AniList integration: one log per list activity, so a
+    // re-sync (or an overlapping backfill) can never double-count an episode.
+    anilistActivityId: { type: Number },
+    // Episode range (inclusive) of the source AniList activity. Lets a later
+    // merged activity be matched against the log it supersedes so combining
+    // episodes on AniList updates the existing log instead of duplicating it.
+    anilistProgressStart: { type: Number },
+    anilistProgressEnd: { type: Number },
+    xp: { type: Number, required: true },
+    private: { type: Boolean, default: false },
+    isAdult: { type: Boolean, default: false },
+    description: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    playlistBatchId: { type: String },
+    playlistBatchTitle: { type: String, trim: true },
+    editedFields: { type: editedFieldsSchema, default: null },
+    xpBreakdown: { type: xpBreakdownSchema, default: null },
+    episodes: {
+      type: Number,
+      required (this: ILog) {
+        return this.type === 'anime';
+      },
+      default (this: ILog) {
+        return this.type === 'anime' ? 1 : undefined;
+      },
+    },
+    volume: {
+      type: Number,
+      min: 1,
+    },
+    pages: {
+      type: Number,
+      required (this: ILog) {
+        const hasChars = hasPositiveValue(this.chars);
+        const hasTime = hasPositiveValue(this.time);
+        return (
+          (!hasChars && !hasTime && this.type === 'manga') ||
+          (!hasChars && !hasTime && this.type === 'reading') ||
+          (!hasChars && !hasTime && this.type === 'light-novel') ||
+          (!hasChars && !hasTime && this.type === 'book')
+        );
+      },
+    },
+    time: {
+      type: Number,
+      required (this: ILog) {
+        const hasChars = hasPositiveValue(this.chars);
+        const hasPages = hasPositiveValue(this.pages);
+        return (
+          (!hasChars &&
+            (((this.type === 'reading' || this.type === 'light-novel') &&
+              !hasPages) ||
+              this.type === 'vn')) ||
+          this.type === 'video' ||
+          this.type === 'movie' ||
+          this.type === 'audio' ||
+          this.type === 'other' ||
+          (this.type === 'game' && !hasChars)
+        );
+      },
+    },
+    chars: {
+      type: Number,
+      required (this: ILog) {
+        const hasTime = hasPositiveValue(this.time);
+        const hasPages = hasPositiveValue(this.pages);
+        return (
+          (!hasTime && this.type === 'vn') ||
+          (!hasTime && !hasPages && this.type === 'reading') ||
+          (!hasTime && !hasPages && this.type === 'light-novel') ||
+          (!hasTime && !hasPages && this.type === 'manga') ||
+          (!hasTime && !hasPages && this.type === 'book')
+        );
+      },
+    },
+    unknownDate: { type: Boolean, default: false },
+    date: { type: Date, default: () => new Date(), required: true },
+    tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
+  },
+  { timestamps: true }
+);
+
+LogSchema.virtual('media', {
+  ref: 'Media',
+  localField: 'mediaId',
+  foreignField: 'contentId',
+  justOne: true,
+});
+
+// NOTE: In production, indexes should be created via migration scripts
+// rather than Mongoose schema definitions for better control and performance.
+// See: npm run migrate:indexes:prod
+//
+// Development indexes (only active in development mode):
+if (process.env.NODE_ENV === 'development') {
+  LogSchema.index({ user: 1, date: -1 }); // For user logs sorted by date
+  LogSchema.index({ user: 1, mediaId: 1, type: 1 }); // For specific media logs by user
+  LogSchema.index({ user: 1, type: 1, date: -1 }); // For user logs by type sorted by date
+  LogSchema.index({ mediaId: 1, type: 1, date: -1 }); // For media logs sorted by date
+  LogSchema.index({ user: 1, private: 1, date: -1 }); // For filtering private logs
+  LogSchema.index({ date: -1 }); // For recent logs across all users
+  LogSchema.index({ user: 1, mediaId: 1, type: 1, date: -1 }); // Critical compound index
+  LogSchema.index({ manabeId: 1 }, { sparse: true }); // For checking duplicate Manabe logs
+  // One log per synced AniList activity. Partial (not sparse): a compound
+  // sparse index still covers docs that only have `user`, so every unsynced
+  // log would collide on a null activity id.
+  LogSchema.index(
+    { user: 1, anilistActivityId: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { anilistActivityId: { $type: 'number' } },
+    }
+  );
+}
+
+export default model<ILog>('Log', LogSchema);

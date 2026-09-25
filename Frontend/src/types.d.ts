@@ -1,0 +1,2006 @@
+export type StatsCardId =
+  | 'totalXp'
+  | 'timeSpent'
+  | 'logCount'
+  | 'dailyAverage'
+  | 'currentStreak'
+  | 'longestStreak'
+  | 'readingHours'
+  | 'listeningHours'
+  | 'readingListeningBalance'
+  | 'episodeTotals'
+  | 'avgReadingSpeed'
+  | 'dailyAvgChars'
+  | 'charsRead'
+  | 'pagesRead'
+  | 'logCountChart'
+  | 'timeDistributionChart'
+  | 'xpDistributionChart'
+  | 'readingSpeedChart'
+  | 'readingSpeedByDifficultyChart'
+  | 'progressTimelineChart';
+
+export type StatsGroupId =
+  | 'totals'
+  | 'streaks'
+  | 'timeBreakdown'
+  | 'readingMetrics'
+  | 'chartDistribution'
+  | 'chartProgress'
+  | 'chartReading';
+
+export interface StatsLayoutItem {
+  id: StatsCardId;
+  visible: boolean;
+}
+
+export interface StatsGroupLayout {
+  id: StatsGroupId;
+  visible: boolean;
+  cards: StatsLayoutItem[];
+}
+
+export type ProfileWidgetId =
+  | 'profileStats'
+  | 'about'
+  | 'favorites'
+  | 'progressStats'
+  | 'immersionActivity'
+  | 'immersionGoals'
+  | 'achievements';
+
+export interface ProfileWidgetLayout {
+  id: ProfileWidgetId;
+  visible: boolean;
+}
+
+/** A media title the user asked AniList sync to skip. */
+export interface IAnilistMediaExclusion {
+  /** AniList id of the excluded media. */
+  anilistId: number;
+  /** Denormalized for display in the settings UI. */
+  title?: string;
+  image?: string | null;
+}
+
+/**
+ * State of the AniList link. `linked: false` is the whole payload when no
+ * account is connected, so every other field can be read safely once linked.
+ */
+export interface IAnilistStatus {
+  linked: boolean;
+  anilistId?: number;
+  anilistUsername?: string;
+  anilistAvatar?: string;
+  autoSync?: boolean;
+  excludedMedia?: IAnilistMediaExclusion[];
+  linkedAt?: string | Date;
+  lastSyncedAt?: string | Date | null;
+  lastSyncStatus?: 'ok' | 'error' | null;
+  lastSyncError?: string | null;
+  syncedLogCount?: number;
+  /** Whether this account has completed at least one full-history import. */
+  hasCompletedFullSync?: boolean;
+  /** Choice retained for later full-history re-runs. */
+  fullSyncIncludeExistingMedia?: boolean;
+  /** Incremental-sync cursor used by the browser-side AniList query. */
+  lastActivityId?: number;
+  /** Oldest timestamp included by the first incremental sync. */
+  syncFrom?: string | Date | null;
+  tokenExpiry?: string | Date;
+  /** AniList tokens last a year and can't be refreshed — re-link when true. */
+  tokenExpired?: boolean;
+}
+
+export interface IAnilistSyncResult {
+  scanned: number;
+  created: number;
+  updated?: number;
+  skipped: number;
+  skippedExistingMedia?: number;
+  mediaCreated: number;
+  lastActivityId: number;
+  status?: IAnilistStatus;
+}
+
+export interface IUser {
+  _id: string;
+  avatar?: string;
+  banner?: string;
+  about?: string;
+  username: string;
+  email?: string;
+  verified?: boolean;
+  clubs?: string[];
+  clubGoals?: IClubGoal[];
+  discordId?: string;
+  patreon?: {
+    patreonId?: string;
+    patreonEmail?: string;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    hideBadge?: boolean;
+    isActive: boolean;
+    memberSince?: Date | string | null;
+    lastChecked?: Date;
+  };
+  anilist?: IAnilistStatus;
+  moderation?: {
+    rankingBanned: boolean;
+    banned: boolean;
+    banReason?: string;
+    updatedAt?: string | Date | null;
+    updatedBy?: string | null;
+    updatedByUsername?: string;
+    history?: {
+      field: 'rankingBanned' | 'banned' | 'banReason';
+      previousValue: boolean | string;
+      newValue: boolean | string;
+      reasonSnapshot?: string;
+      updatedAt: string | Date;
+      updatedBy?: string | null;
+      updatedByUsername?: string;
+    }[];
+  };
+  stats: IStats;
+  titles: string[];
+  roles: userRoles;
+  createdAt?: Date;
+  updatedAt?: Date;
+  settings?: {
+    blurAdultContent: boolean;
+    hideUnmatchedLogsAlert?: boolean;
+    hideRankingFeatures?: boolean;
+    timezone?: string;
+    language?: 'en' | 'es';
+    statsLayout?: StatsGroupLayout[];
+    profileLayout?: ProfileWidgetLayout[];
+    notificationsLastViewedAt?: string | Date | null;
+    dismissedNotificationClubIds?: string[];
+    dismissedNotificationClubAt?: Record<string, string | Date>;
+    socialPrivacy?: ISocialPrivacySettings;
+  };
+  statsLayout?: StatsGroupLayout[];
+  profileLayout?: ProfileWidgetLayout[];
+  favorites?: IFavoriteEntry[];
+  customization?: IUserCustomization;
+  /** Resolved server-side from `customization.signatureStat` (profile reads). */
+  signature?: { stat: SignatureStat; value: number } | null;
+  social?: ISocialSummary;
+  socialAccess?: {
+    profile: boolean;
+    statistics: boolean;
+    immersionActivity: boolean;
+  };
+  matchPassword: (enteredPassword: string) => Promise<boolean>;
+}
+
+export interface ISocialRelationship {
+  isFollowing: boolean;
+  isFollowedBy: boolean;
+  mutualFollow: boolean;
+}
+
+export interface ISocialSummary extends ISocialRelationship {
+  followerCount: number;
+  followingCount: number;
+}
+
+export interface IConnectionUser {
+  _id: string;
+  username: string;
+  avatar?: string;
+  followedAt: string;
+}
+
+export interface IConnectionsResponse {
+  users: IConnectionUser[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type SocialVisibility =
+  | 'public'
+  | 'followers'
+  | 'following'
+  | 'private';
+
+export type CommentPermission =
+  | 'everyone'
+  | 'followers'
+  | 'following'
+  | 'nobody';
+
+export interface ISocialPrivacySettings {
+  profile: SocialVisibility;
+  immersionActivity: SocialVisibility;
+  statistics: SocialVisibility;
+  commenting?: CommentPermission;
+}
+
+export type ActivityType =
+  | 'immersion_log'
+  | 'notable_immersion_session'
+  | 'media_started'
+  | 'media_completed'
+  | 'media_review'
+  | 'journal_entry'
+  | 'level_milestone'
+  | 'streak_milestone'
+  | 'achievement_unlocked'
+  | 'personal_record'
+  | 'goal_completed'
+  | 'challenge_joined'
+  | 'challenge_completed'
+  | 'club_joined'
+  | 'club_milestone'
+  | 'club_challenge_started'
+  | 'cooperative_goal_progress'
+  | 'cooperative_goal_completed';
+
+export type ActivityReactionType = 'like';
+
+export interface ISocialActivity {
+  _id: string;
+  actor: { _id: string; username: string; avatar?: string };
+  type: ActivityType;
+  targetType: string;
+  targetId: string;
+  club?: string | null;
+  metadata?: Record<string, unknown>;
+  visibility: SocialVisibility;
+  importance: 'normal' | 'important';
+  reactionCounts: Partial<Record<ActivityReactionType, number>>;
+  currentReaction: ActivityReactionType | null;
+  commentCount: number;
+  canComment?: boolean;
+  occurredAt: string;
+}
+
+export interface IMediaCommunityFriend {
+  user: { _id: string; username: string; avatar?: string };
+  status?: string | null;
+  completedAt?: string | null;
+  updatedAt: string;
+}
+
+export interface IMediaCommunityPerson extends IMediaCommunityFriend {
+  relation: 'followers' | 'friends' | 'following';
+  progress: {
+    chars: number;
+    episodes: number;
+    pages: number;
+    time: number;
+    volume: number | null;
+  };
+}
+
+export interface IMediaCommunityResponse {
+  stats: {
+    trackingUsers: number;
+    completedUsers: number;
+    inProgressUsers: number;
+    completionRate: number | null;
+    completionDaysAverage: number | null;
+    completionDaysMedian: number | null;
+    completionTimeSampleSize: number;
+    reviewCount: number;
+    averageRating: number | null;
+  };
+  friends: {
+    consuming: IMediaCommunityFriend[];
+    completed: IMediaCommunityFriend[];
+  };
+  people: IMediaCommunityPerson[];
+  activities: ISocialActivity[];
+}
+
+export interface IActivityComment {
+  _id: string;
+  activity: string;
+  user: { _id: string; username: string; avatar?: string };
+  parentComment?: string | null;
+  parentCommentPreview?: {
+    _id: string;
+    user: { _id: string; username: string; avatar?: string };
+    content: string;
+  } | null;
+  content: string;
+  likeCount: number;
+  currentUserLiked: boolean;
+  editedAt?: string;
+  createdAt: string;
+}
+
+/** Mirrors Backend/src/types.ts — keep both lists in sync. */
+export type NameEffect = 'none' | 'gradient' | 'glow' | 'shimmer';
+export type AvatarFrame =
+  | 'none'
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'sakura'
+  | 'neon'
+  | 'rainbow'
+  /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
+  | 'aura';
+export type ProfileAccent =
+  | 'default'
+  | 'sakura'
+  | 'ocean'
+  | 'forest'
+  | 'retro'
+  | 'mono'
+  | 'custom';
+export type SignatureStat =
+  | 'none'
+  | 'hours'
+  | 'chars'
+  | 'streak'
+  | 'level'
+  | 'xp'
+  | 'logs';
+export type BannerEffect = 'none' | 'sakura' | 'snow' | 'stars' | 'fireflies';
+
+export interface IUserCustomization {
+  nameEffect?: NameEffect;
+  nameColor1?: string;
+  nameColor2?: string;
+  avatarFrame?: AvatarFrame;
+  profileAccent?: ProfileAccent;
+  /** Hex color backing `profileAccent: 'custom'`. */
+  accentColor?: string;
+  signatureStat?: SignatureStat;
+  equippedTitle?: string;
+  bannerEffect?: BannerEffect;
+}
+
+export type CustomizationLockReason =
+  | 'none'
+  | 'patreon'
+  | 'patreonPlus'
+  /** Consumer tier specifically, not just "one of the higher tiers". */
+  | 'patreonConsumer'
+  | 'level'
+  | 'achievement';
+
+export interface ICustomizationOption<T extends string> {
+  value: T;
+  unlocked: boolean;
+  lockReason: CustomizationLockReason;
+  requirement?: number;
+}
+
+export interface ICustomizationOptionsResponse {
+  customization: IUserCustomization;
+  /** Real values per stat, so the settings preview matches the live profile. */
+  signatureValues: Record<Exclude<SignatureStat, 'none'>, number>;
+  options: {
+    nameEffects: ICustomizationOption<NameEffect>[];
+    avatarFrames: ICustomizationOption<AvatarFrame>[];
+    profileAccents: ICustomizationOption<ProfileAccent>[];
+    signatureStats: ICustomizationOption<SignatureStat>[];
+    bannerEffects: ICustomizationOption<BannerEffect>[];
+    customNameColors: {
+      unlocked: boolean;
+      lockReason: CustomizationLockReason;
+    };
+    titles: { key: string; rarity: string; unlockedAt: string }[];
+  };
+}
+
+enum userRoles {
+  admin = 'admin',
+  user = 'user',
+  mod = 'mod',
+}
+
+export type OutletProfileContextType = {
+  user: IUser | undefined;
+  username: string;
+};
+
+export type OutletMediaContextType = {
+  mediaDocument?: IMediaDocument & { jiten?: IJitenResponse };
+  mediaType?: string;
+  username?: string;
+};
+
+export type OutletClubMediaContextType = {
+  club?: IClubResponse;
+  clubMedia?: IClubMedia;
+  clubMediaData?: { media: IClubMedia[]; total?: number };
+  clubMediaError?: Error | null;
+  user?: ILoginResponse | null;
+};
+
+export interface IStats {
+  userLevel: number;
+  userXp: number;
+  userXpToNextLevel: number;
+  userXpToCurrentLevel: number;
+  readingXp: number;
+  readingLevel: number;
+  readingXpToNextLevel: number;
+  readingXpToCurrentLevel: number;
+  listeningXp: number;
+  listeningLevel: number;
+  listeningXpToNextLevel: number;
+  listeningXpToCurrentLevel: number;
+  // Add hours fields
+  userHours?: number;
+  readingHours?: number;
+  listeningHours?: number;
+  // Add chars field for global characters ranking
+  userChars?: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastStreakDate: Date | null;
+}
+
+export type ILoginResponse = Pick<
+  IUser,
+  | '_id'
+  | 'username'
+  | 'email'
+  | 'verified'
+  | 'about'
+  | 'stats'
+  | 'avatar'
+  | 'banner'
+  | 'titles'
+  | 'roles'
+  | 'discordId'
+  | 'patreon'
+  | 'settings'
+  | 'customization'
+>;
+
+export interface IRegisterInput {
+  username: string;
+  email?: string;
+  password: string;
+  passwordConfirmation: string;
+  timezone?: string;
+}
+
+export interface ILoginInput {
+  login: string;
+  password: string;
+}
+
+export interface IForgotPasswordInput {
+  email: string;
+}
+
+export interface IResetPasswordInput {
+  password: string;
+  passwordConfirmation: string;
+}
+
+// Add validation interfaces
+export interface IValidationError {
+  field: string;
+  message: string;
+}
+
+export interface IFormValidation {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+export interface IPasswordValidation {
+  minLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecialChar: boolean;
+}
+
+export interface IUsernameValidation {
+  minLength: boolean;
+  maxLength: boolean;
+  validCharacters: boolean;
+  notEmpty: boolean;
+}
+
+export interface ILogValidation {
+  type: boolean;
+  mediaName: boolean;
+  episodes: boolean;
+  timeSpent: boolean;
+  activity: boolean;
+  reasonableValues: boolean;
+}
+
+export type logoutResponseType = {
+  message: string;
+};
+
+export type sortTypes = 'asc' | 'desc';
+
+export type filterTypes =
+  | 'userLevel'
+  | 'userXp'
+  | 'currentStreak'
+  | 'userChars'
+  | 'readingXp'
+  | 'readingLevel'
+  | 'listeningXp'
+  | 'listeningLevel'
+  | 'charCountVn'
+  | 'charCountLn'
+  | 'readingTimeVn'
+  | 'charCountReading'
+  | 'pageCountLn'
+  | 'readingTimeLn'
+  | 'pageCountManga'
+  | 'charCountManga'
+  | 'readingTimeManga'
+  | 'mangaPages'
+  | 'listeningTime'
+  | 'readingTime'
+  | 'animeEpisodes'
+  | 'animeWatchingTime'
+  | 'videoWatchingTime'
+  | 'userHours'
+  | 'readingHours'
+  | 'listeningHours';
+
+export interface IRankingParams {
+  page?: number;
+  limit?: number;
+  sort?: sortTypes;
+  filter?: filterTypes;
+  audience?: RankingAudience;
+  timeFilter?: string; // Add time filter parameter
+  timezone?: string; // Add timezone parameter
+  start?: string; // YYYY-MM-DD
+  end?: string; // YYYY-MM-DD
+}
+
+export type RankingAudience = 'all' | 'following' | 'mutual';
+
+export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
+  mediaId?: string;
+  search?: string;
+  mediaTitle?: string;
+  start?: string;
+  end?: string;
+  type?: ILog['type'] | ILog['type'][];
+  sortBy?:
+    | 'date'
+    | 'xp'
+    | 'episodes'
+    | 'chars'
+    | 'pages'
+    | 'time'
+    | 'readingSpeed';
+  sortDirection?: 'asc' | 'desc';
+  tags?: string[] | string;
+  tagsMode?: 'any' | 'all';
+  volume?: number;
+  volumeMin?: number;
+  volumeMax?: number;
+  episodes?: number;
+  episodesMin?: number;
+  episodesMax?: number;
+  pages?: number;
+  pagesMin?: number;
+  pagesMax?: number;
+  chars?: number;
+  charsMin?: number;
+  charsMax?: number;
+  time?: number;
+  timeMin?: number;
+  timeMax?: number;
+}
+
+// Add interface for MatchMedia logs (minimal required fields)
+export interface IMatchMediaLog {
+  _id: string;
+  type:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'audio'
+    | 'other'
+    | 'book';
+  description: string;
+  mediaId?: string;
+  date: Date;
+  episodes?: number;
+  volume?: number;
+  pages?: number;
+  chars?: number;
+  time?: number;
+  xp: number;
+}
+
+export interface updateUserRequest {
+  username?: string;
+  email?: string;
+  password?: string;
+  discordId?: string;
+  avatar?: string;
+  newPassword?: string;
+  newPasswordConfirm?: string;
+  blurAdultContent?: boolean;
+  language?: 'en' | 'es';
+  about?: string;
+}
+
+export interface IEditedFields {
+  episodes?: number;
+  volume?: number;
+  pages?: number;
+  chars?: number;
+  time?: number;
+  xp?: number;
+}
+
+export interface IUpdateLogRequest {
+  description?: string;
+  time?: number;
+  date?: Date;
+  type?: ILog['type'];
+  contentId?: number;
+  episodes?: number;
+  volume?: number;
+  pages?: number;
+  chars?: number;
+  mediaId?: string;
+  tags?: string[];
+}
+
+export interface IContentMedia {
+  contentId: string;
+  type:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'game'
+    | 'book';
+  contentImage: string | null;
+  coverImage: string | null;
+  contentTitleNative: string;
+  contentTitleRomaji?: string;
+  contentTitleEnglish: string;
+  description?: string;
+  episodes?: number;
+  episodeDuration?: number;
+  chapters?: number;
+  volumes?: number;
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
+  synonyms?: string[] | null;
+  isAdult: boolean;
+  isAdultImage?: boolean;
+  date?: Date | null;
+  // YouTube specific fields
+  channelId?: string;
+  channelTitle?: string;
+  channelImage?: string;
+  channelDescription?: string;
+}
+
+export interface ICreateLog
+  extends Omit<ILog, '_id' | 'user' | 'createdAt' | 'updatedAt' | 'xp'> {
+  mediaData?: IContentMedia & {
+    // YouTube specific fields
+    channelId?: string;
+    channelTitle?: string;
+    channelImage?: string;
+    channelDescription?: string;
+  };
+}
+
+export interface ITag {
+  _id: string;
+  user: string;
+  name: string;
+  color: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface IXpBreakdown {
+  baseXp: number;
+  timeCreditedMin: number;
+  difficulty: number | null;
+  categoryLevelAt: number;
+  comfortAt?: number | null;
+  targetDifficulty?: number | null;
+  multiplier: number;
+  version: number;
+}
+
+export type XpCalculatorMode = 'direct' | 'inverse';
+export type XpCalculatorContextMode = 'personal' | 'simulation';
+export type XpCalculatorUnit = 'time' | 'chars' | 'pages' | 'episodes';
+
+export interface IXpCalculatorRequest {
+  mode: XpCalculatorMode;
+  contextMode: XpCalculatorContextMode;
+  type: ILog['type'];
+  mediaId?: string;
+  difficultyJiten?: number | null;
+  input?: Pick<ILog, 'time' | 'chars' | 'pages' | 'episodes'>;
+  targetXp?: number;
+  unit?: XpCalculatorUnit;
+  simulation?: {
+    categoryLevel?: number;
+    consumedDifficultyJiten?: number | null;
+    personalSpeedCph?: number | null;
+  };
+}
+
+export interface IXpCalculatorResponse {
+  xp: number;
+  breakdown: IXpBreakdown;
+  context: {
+    mode: XpCalculatorContextMode;
+    category: 'reading' | 'listening' | null;
+    categoryLevel: number;
+    consumedDifficultyJiten: number | null;
+    personalSpeedCph: number;
+    difficultyJiten: number | null;
+    comfortJiten: number;
+    targetDifficultyJiten: number;
+    bonusPercent: number;
+  };
+  inverse: {
+    targetXp: number;
+    unit: XpCalculatorUnit;
+    quantity: number;
+  } | null;
+}
+
+export interface ILog {
+  _id: string;
+  user: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
+  userId?: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
+  type:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'audio'
+    | 'other'
+    | 'book';
+  description: string;
+  playlistBatchId?: string;
+  playlistBatchTitle?: string;
+  episodes?: number;
+  volume?: number;
+  pages?: number;
+  chars?: number;
+  time?: number;
+  unknownDate?: boolean;
+  date: Date | string;
+  xp: number;
+  xpBreakdown?: IXpBreakdown | null;
+  mediaId?: string;
+  matchDismissed?: boolean;
+  manabeId?: string;
+  media?: Pick<
+    IContentMedia,
+    | 'contentId'
+    | 'contentImage'
+    | 'coverImage'
+    | 'type'
+    | 'isAdult'
+    | 'isAdultImage'
+  > & {
+    title: {
+      contentTitleNative: string;
+      contentTitleRomaji?: string;
+      contentTitleEnglish: string;
+    };
+  };
+  tags?: ITag[] | string[];
+  private: boolean;
+  isAdult: boolean;
+}
+
+export interface IRankingResponse {
+  username: string;
+  avatar: string;
+  stats: Pick<IStats, filterTypes>;
+  patreon?: {
+    isActive: boolean;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    hideBadge?: boolean;
+  };
+  /** Only the cosmetics a ranking row renders. */
+  customization?: Pick<
+    IUserCustomization,
+    'nameEffect' | 'nameColor1' | 'nameColor2' | 'avatarFrame'
+  >;
+}
+
+export interface IRankingSummaryDetails {
+  position: number;
+  totalUsers: number;
+  userXp: number;
+  nextUser: {
+    username: string;
+    xp: number;
+    gap: number;
+  } | null;
+}
+
+export interface IRankingSummary extends IRankingSummaryDetails {
+  monthly: IRankingSummaryDetails;
+}
+
+export interface IRankingHistoryPoint {
+  date: string;
+  position: number;
+}
+
+export interface IRankingHistory {
+  global: IRankingHistoryPoint[];
+  monthly: IRankingHistoryPoint[];
+}
+
+export interface AnilistSearchResult {
+  Page: {
+    pageInfo: {
+      total: number;
+      currentPage: number;
+      lastPage: number;
+      hasNextPage: boolean;
+      perPage: number;
+    };
+    media: {
+      id: number;
+      title: {
+        romaji: string;
+        english: string;
+        native: string;
+      };
+      format: 'NOVEL' | 'MANGA' | 'ONE_SHOT';
+      type: 'ANIME' | 'MANGA';
+      coverImage: {
+        extraLarge: string;
+        medium: string;
+        large: string;
+        color: string;
+      };
+      synonyms: string[];
+      episodes?: number;
+      duration?: number;
+      chapters?: number;
+      volumes?: number;
+      isAdult: boolean;
+      bannerImage: string;
+      siteUrl: string;
+      description: string;
+    }[];
+  };
+}
+
+export interface IAnimeDocument {
+  _id: string;
+  sources?: string[];
+  title: string;
+  type: 'TV' | 'MOVIE' | 'OVA' | 'ONA' | 'SPECIAL' | 'UNKNOWN';
+  episodes?: number;
+  status: 'FINISHED' | 'ONGOING' | 'UPCOMING' | 'UNKNOWN';
+  animeSeason: {
+    season?: 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER' | 'UNDEFINED';
+    year: number | null;
+  };
+  picture?: string;
+  thumbnail?: string;
+  duration?: {
+    value?: number;
+    unit?: 'SECONDS';
+  } | null;
+  synonyms?: string[];
+  relatedAnime?: string[];
+  tags?: string[];
+}
+
+export interface IMediaTitle {
+  contentTitleNative: string;
+  contentTitleRomaji?: string;
+  contentTitleEnglish?: string;
+}
+
+export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export type MediaRequestType =
+  | 'anime'
+  | 'manga'
+  | 'light-novel'
+  | 'vn'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'game'
+  | 'book';
+
+export interface IMediaRequest {
+  _id: string;
+  user: { _id: string; username: string; avatar?: string } | string;
+  title: IMediaTitle;
+  type: MediaRequestType;
+  description?: IMediaDescription[];
+  referenceUrl?: string;
+  coverImage?: string;
+  isAdult: boolean;
+  note?: string;
+  status: MediaRequestStatus;
+  reviewedBy?: { _id: string; username: string } | string | null;
+  reviewNote?: string;
+  reviewedAt?: string | null;
+  createdMediaContentId?: string | null;
+  createdMediaType?: MediaRequestType | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICreateMediaRequest {
+  title: IMediaTitle;
+  type: MediaRequestType;
+  description?: IMediaDescription[];
+  referenceUrl?: string;
+  coverImage?: string;
+  isAdult?: boolean;
+  note?: string;
+}
+
+export interface IMediaRequestListResponse {
+  requests: IMediaRequest[];
+  page: number;
+  totalPages: number;
+  total: number;
+  pendingCount: number;
+}
+
+export interface IImmersionList {
+  anime: IMediaDocument[];
+  manga: IMediaDocument[];
+  'light-novel': IMediaDocument[];
+  vn: IMediaDocument[];
+  game: IMediaDocument[];
+  video: IMediaDocument[];
+  movie: IMediaDocument[];
+  'tv show': IMediaDocument[];
+  book: IMediaDocument[];
+}
+
+interface IMediaDescription {
+  description: string;
+  language: 'eng' | 'jpn' | 'spa';
+}
+
+interface IMediaDescription {
+  description: string;
+  language: 'eng' | 'jpn' | 'spa';
+}
+
+export interface IMediaDocument {
+  _id?: string;
+  contentId: string;
+  title: IMediaTitle;
+  contentImage?: string;
+  coverImage?: string;
+  description?: Array<IMediaDescription>;
+  type:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book';
+  episodes?: number;
+  episodeDuration?: number;
+  /** Anime airing window supplied by AniList. */
+  airingStartDate?: string | Date | null;
+  airingEndDate?: string | Date | null;
+  runtime?: number;
+  seasons?: number;
+  chapters?: number;
+  volumes?: number;
+  characters?: number;
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
+  genres?: string[];
+  platforms?: string[];
+  synonyms?: string[] | null;
+  isAdult: boolean;
+  isAdultImage?: boolean;
+  jitenDifficulty?: number | null;
+  lastLogDate?: string;
+  /** Number of the requesting user's logs for this media (immersion list only). */
+  logCount?: number;
+  /** Total XP earned from those logs (immersion list only). */
+  totalXp?: number;
+  isCompleted?: boolean;
+  completedAt?: string | Date | null;
+  autoCompleteSuppressed?: boolean;
+  mediaStatus?:
+    | 'completed'
+    | 'dropped'
+    | 'paused'
+    | 'planning'
+    | 'in_progress'
+    | null;
+}
+
+/** Entry in the dashboard's manage-hidden-media modal. */
+export interface IHiddenRecentMediaItem {
+  contentId: string;
+  type: IMediaDocument['type'];
+  title: IMediaTitle | null;
+  contentImage: string | null;
+  coverImage: string | null;
+  isAdult: boolean;
+  isAdultImage: boolean;
+}
+
+export interface IAverageColor {
+  rgb: string;
+  rgba: string;
+  hex: string;
+  hexa: string;
+  value: [number, number, number, number];
+  isDark: boolean;
+  isLight: boolean;
+  error?: Error;
+}
+
+export interface ILogData {
+  type: string | null;
+  titleNative: string;
+  titleRomaji: string | null;
+  titleEnglish: string | null;
+  description: string | null;
+  mediaDescription: string;
+  mediaName: string;
+  mediaId: string;
+  episodes: number;
+  time: number;
+  chars: number;
+  pages: number;
+  hours: number;
+  minutes: number;
+  showTime: boolean;
+  showChars: boolean;
+  img: string;
+  cover: string;
+  date: Date | null;
+}
+
+interface IUserStats {
+  totals: {
+    totalLogs: number;
+    totalXp: number;
+    totalTimeHours: number;
+    readingHours: number;
+    listeningHours: number;
+    untrackedCount: number;
+    totalChars: number;
+    dailyAverageHours: number;
+    dailyAverageChars: number;
+    dayCount: number;
+  };
+  streaks: {
+    currentStreak: number;
+    longestStreak: number;
+  };
+  statsByType: Array<{
+    type: string;
+    count: number;
+    totalXp: number;
+    totalTimeMinutes: number;
+    totalTimeHours: number;
+    totalChars: number;
+    totalPages: number;
+    totalEpisodes: number;
+    untrackedCount: number;
+    dates: Array<{
+      date: Date;
+      unknownDate?: boolean;
+      xp: number;
+      time?: number;
+      episodes?: number;
+      localDate?: {
+        iso: string;
+        year: number;
+        month: number;
+        day: number;
+        hour: number;
+        minute: number;
+        second: number;
+        dayKey: string;
+        monthKey: string;
+        utcMillis: number;
+      };
+    }>;
+  }>;
+  readingSpeedData?: Array<{
+    date: Date;
+    type: string;
+    time: number;
+    chars?: number;
+    pages?: number;
+    charsPerHour?: number | null;
+    localDate?: {
+      iso: string;
+      year: number;
+      month: number;
+      day: number;
+      hour: number;
+      minute: number;
+      second: number;
+      dayKey: string;
+      monthKey: string;
+      utcMillis: number;
+    };
+  }>;
+  readingSpeedByDifficultyData?: Array<{
+    date: Date;
+    type: string;
+    mediaId: string;
+    mediaTitle: string;
+    difficulty: number;
+    charsPerHour: number;
+  }>;
+  timeRange: 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
+  selectedType: string;
+  timezone: string;
+}
+
+export interface youtubeChannelInfo {
+  channelId: string;
+  channelTitle: string;
+  channelImage?: string;
+  channelDescription: string;
+}
+
+export interface IDailyGoal {
+  _id?: string;
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  cadence?: 'daily' | 'weekly';
+  target: number;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IDailyGoalProgress {
+  date: string;
+  time: number;
+  chars: number;
+  episodes: number;
+  pages: number;
+  completed: {
+    time: boolean;
+    chars: boolean;
+    episodes: boolean;
+    pages: boolean;
+  };
+}
+
+export interface IDailyGoalsResponse {
+  goals: IDailyGoal[];
+  todayProgress: IDailyGoalProgress;
+  weeklyProgress: IDailyGoalProgress;
+}
+
+export interface ILongTermGoal {
+  _id?: string;
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  totalTarget: number; // Total amount to achieve by target date
+  targetDate: Date | string; // Deadline for achieving the goal
+  displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
+  startDate: Date | string; // When the goal period started
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  progress?: ILongTermGoalProgress; // Calculated progress data
+}
+
+export interface ILongTermGoalProgress {
+  goalId: string;
+  totalProgress: number; // Current total progress
+  requiredPerTimeframe: number; // Required progress per display timeframe to meet goal
+  remainingDays: number;
+  remainingTarget: number;
+  isOnTrack: boolean; // Whether current pace will meet the goal
+  timeframeName: string; // "today", "this week", "this month"
+  progressToday?: number; // Progress made today (for context)
+  progressThisWeek?: number; // Progress made this week
+  progressThisMonth?: number; // Progress made this month
+}
+
+export interface ILongTermGoalsResponse {
+  goals: ILongTermGoal[];
+}
+
+export type ImmersionForecastMetric =
+  | 'chars'
+  | 'pages'
+  | 'episodes'
+  | 'minutes';
+
+export type ImmersionForecastStatus =
+  | 'on_track'
+  | 'behind'
+  | 'completed'
+  | 'overdue';
+
+export interface IImmersionForecastProgress {
+  currentProgress: number;
+  remaining: number;
+  percentage: number;
+  remainingDays: number;
+  requiredPerDay: number;
+  behindBy: number;
+  status: ImmersionForecastStatus;
+  estimatedMinutes: number | null;
+  paceStatus: 'available' | 'insufficient_data';
+}
+
+export interface IImmersionForecast {
+  _id: string;
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  metric: ImmersionForecastMetric;
+  targetTotal: number;
+  targetSource: 'media' | 'jiten' | 'google_books';
+  startingProgress: number;
+  targetDate: string;
+  timezone: string;
+  mediaTitle: string;
+  mediaImage?: string;
+  episodeDuration?: number;
+  createdAt: string;
+  updatedAt: string;
+  progress: IImmersionForecastProgress;
+}
+
+export interface IImmersionForecastsResponse {
+  forecasts: IImmersionForecast[];
+  canManage: boolean;
+}
+
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
+interface IJitenDeck {
+  deckId: number;
+  creationDate: string;
+  releaseDate: string | null;
+  coverName: string;
+  mediaType: number;
+  originalTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
+  characterCount: number;
+  wordCount: number;
+  uniqueWordCount: number;
+  uniqueWordUsedOnceCount: number;
+  uniqueKanjiCount: number;
+  uniqueKanjiUsedOnceCount: number;
+  difficulty: number;
+  difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
+  sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
+  averageSentenceLength: number;
+  parentDeckId: number | null;
+  links: IJitenDeckLink[];
+  aliases: string[];
+  childrenDeckCount: number;
+  selectedWordOccurrences: number;
+  dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
+}
+
+export interface IJitenResponse {
+  parentDeck: IJitenDeck | null;
+  mainDeck: IJitenDeck;
+  subDecks: IJitenDeck[];
+}
+
+// Club-related interfaces
+export type ClubRole =
+  | 'owner'
+  | 'leader'
+  | 'moderator'
+  | 'event_manager'
+  | 'member';
+
+export interface IClubMember {
+  user: IUser;
+  role: ClubRole;
+  joinedAt: Date;
+  status: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubMedia {
+  _id?: string;
+  mediaId: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book';
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+  addedBy: IUser;
+  // Reference to the actual media document for images and metadata
+  mediaDocument?: IMediaDocument | null;
+  votes: Array<{
+    user: string;
+    vote: number;
+  }>;
+  createdAt?: Date;
+  updatedAt?: Date;
+  community?: {
+    participantCount: number;
+    participants: Array<{ _id: string; username: string; avatar?: string }>;
+    aggregateProgress: {
+      logs: number;
+      time: number;
+      chars: number;
+      pages: number;
+      episodes: number;
+    };
+  };
+}
+
+export interface IMediaReview {
+  _id: string;
+  user: IUser;
+  mediaContentId: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book';
+  summary: string;
+  content: string;
+  rating?: number;
+  hasSpoilers: boolean;
+  likes: string[];
+  editedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubMediaCandidate {
+  mediaId: string;
+  title: string;
+  description?: string;
+  image?: string;
+  addedBy: IUser;
+  addedAt?: Date;
+  votes: string[];
+  isAdult?: boolean;
+  isAdultImage?: boolean;
+}
+
+export interface IClubMediaVoting {
+  _id?: string;
+  title: string;
+  description?: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'book'
+    | 'custom';
+  customMediaType?: string;
+
+  // Voting configuration
+  candidateSubmissionType: 'manual' | 'member_suggestions';
+
+  // Date periods
+  suggestionStartDate?: Date;
+  suggestionEndDate?: Date;
+  votingStartDate: Date;
+  votingEndDate: Date;
+  consumptionStartDate: Date;
+  consumptionEndDate: Date;
+
+  // Status and management
+  status:
+    | 'setup'
+    | 'suggestions_open'
+    | 'suggestions_closed'
+    | 'voting_open'
+    | 'voting_closed'
+    | 'completed';
+  isActive: boolean;
+  createdBy: IUser;
+
+  candidates: IClubMediaCandidate[];
+  winnerCandidate?: {
+    mediaId: string;
+    title: string;
+    description?: string;
+    image?: string;
+    isAdult?: boolean;
+    isAdultImage?: boolean;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubGoal {
+  _id?: string;
+  title?: string;
+  description?: string;
+  createdBy?: string;
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  target: number;
+  period: 'weekly' | 'monthly' | 'custom' | 'indefinite';
+  currentProgress: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  completedAt?: string;
+  currentTotal?: number;
+  percentage?: number;
+  remaining?: number;
+  completed?: boolean;
+  contributors?: Array<{
+    user: { _id: string; username: string; avatar?: string };
+    value: number;
+  }>;
+}
+
+export type ClubChallengeMetric =
+  | 'time'
+  | 'chars'
+  | 'pages'
+  | 'episodes'
+  | 'active_days';
+
+export type ClubObjectiveMode = 'collective' | 'individual';
+export type ClubObjectivePeriod =
+  | 'weekly'
+  | 'monthly'
+  | 'custom'
+  | 'indefinite';
+
+export interface IClubChallenge {
+  _id: string;
+  title: string;
+  description?: string;
+  creator: { _id: string; username: string; avatar?: string } | string;
+  club?: string | null;
+  mode: ClubObjectiveMode;
+  period?: ClubObjectivePeriod;
+  legacyGoalId?: string;
+  isPinned: boolean;
+  scope: 'global' | 'official' | 'club';
+  startDate: string;
+  endDate: string;
+  metric: ClubChallengeMetric;
+  goal: number;
+  participants: string[];
+  completedParticipants: string[];
+  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
+  visibility: 'public' | 'members';
+  createdAt: string;
+}
+
+export interface IClubObjective extends IClubChallenge {
+  progress: number;
+  percentage: number;
+  remaining: number;
+  completed: boolean;
+  contributors?: Array<{
+    user: { _id: string; username: string; avatar?: string };
+    value: number;
+  }>;
+  participantProgress?: IClubChallengeProgress[];
+}
+
+export interface IClubChallengeProgress {
+  user: { _id: string; username: string; avatar?: string };
+  progress: number;
+  percentage: number;
+  completed: boolean;
+}
+
+export interface IClub {
+  _id: string;
+  name: string;
+  description?: string;
+  avatar?: string;
+  banner?: string;
+  isPublic: boolean;
+  level: number;
+  totalXp: number;
+  members: IClubMember[];
+  currentMedia: IClubMedia[];
+  clubGoals: IClubGoal[];
+  tags: string[];
+  memberLimit: number;
+  rules?: string;
+  isActive: boolean;
+  mediaVotings: IClubMediaVoting[];
+  pinnedActivities?: string[];
+  pinnedObjective?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubResponse extends IClub {
+  memberCount: number;
+  isUserMember: boolean;
+  userRole?: ClubRole;
+  userStatus?: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubListResponse {
+  clubs: IClubResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+/**
+ * Mirrors NOTIFICATION_TYPES in Backend/src/types.ts. Keep both in sync when
+ * adding a new notification kind.
+ */
+export type NotificationType =
+  | 'review_like'
+  | 'review_comment'
+  | 'comment_reply'
+  | 'comment_like'
+  | 'mention'
+  | 'follow'
+  | 'activity_reaction'
+  | 'activity_comment'
+  | 'media_recommendation'
+  | 'club_join_request'
+  | 'club_join_approved'
+  | 'club_join_rejected'
+  | 'club_member_removed'
+  | 'club_media_added'
+  | 'club_voting_started'
+  | 'club_voting_finished'
+  | 'club_leadership_transferred'
+  | 'media_request_approved'
+  | 'media_request_rejected'
+  | 'achievement_unlocked'
+  | 'level_up'
+  | 'goal_completed'
+  | 'streak_lost'
+  | 'changelog'
+  | 'system';
+
+export type NotificationSectionType =
+  | 'club_join_requests'
+  | 'changelog'
+  | 'activity';
+
+export interface INotificationSummaryItem {
+  id: string;
+  label: string;
+  labelKey?: string;
+  count: number;
+  type?: NotificationType | 'club_join_requests';
+  meta?: Record<string, string>;
+}
+
+export interface INotificationSummarySection {
+  type: NotificationSectionType;
+  title: string;
+  items: INotificationSummaryItem[];
+}
+
+export interface INotificationSummaryResponse {
+  totalCount: number;
+  sections: INotificationSummarySection[];
+}
+
+export interface INotificationListItem {
+  id: string;
+  /** English text; shown whenever no translation key matches. */
+  label: string;
+  /** Translation key for `label`; interpolation values live in `meta`. */
+  labelKey?: string;
+  body?: string;
+  bodyKey?: string;
+  type?: NotificationType | 'club_join_requests';
+  count: number;
+  isRead: boolean;
+  createdAt: string;
+  /** Route to open. Present on stored notifications; derived ones fall back. */
+  link?: string;
+  /** Image override (media cover, club icon…). Falls back to actor avatar. */
+  image?: string;
+  meta?: Record<string, string>;
+}
+
+export interface INotificationListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  items: INotificationListItem[];
+}
+
+export interface ICreateClubRequest {
+  name: string;
+  description?: string;
+  isPublic?: boolean;
+  tags?: string[];
+  rules?: string;
+  memberLimit?: number;
+  clubGoals?: IClubGoal[];
+}
+
+type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> &
+  Pick<T, TRequired>;
+
+export type SearchResultType = OptionalExceptFor<
+  IMediaDocument,
+  '_id' | 'contentId' | 'title' | 'contentImage' | 'isAdult' | 'type'
+>;
+
+export interface ITextLine {
+  id: string;
+  text: string;
+  charsCount: number;
+  createdAt: string;
+  elapsedSeconds?: number;
+}
+
+export type TextSessionAttentionMode = 'automatic' | 'manual' | 'off';
+
+export interface ITextSessionIntelligenceSettings {
+  mode: TextSessionAttentionMode;
+  manualThresholdSeconds?: number;
+  afkThresholdSeconds: number;
+}
+
+export interface ITextSessionAttentionPeriod {
+  startSecond: number;
+  endSecond: number;
+  type: 'distracted' | 'afk';
+}
+
+export interface ITextSessionIntelligence {
+  algorithmVersion: number;
+  detectionMode: TextSessionAttentionMode;
+  baselineIntervalSeconds: number | null;
+  distractionThresholdSeconds: number | null;
+  afkThresholdSeconds: number;
+  focusedSeconds: number;
+  distractedSeconds: number;
+  afkSeconds: number;
+  distractionCount: number;
+  longestDistractionSeconds: number;
+  focusPercentage: number;
+  firstThirtyMinutesSpeed: number;
+  lastThirtyMinutesSpeed: number;
+  peakReadingSpeed: number;
+  charactersPerMinute: number[];
+  periods: ITextSessionAttentionPeriod[];
+}
+
+export interface ITextSessionHistoryEntry {
+  loggedAt: string;
+  isShared: boolean;
+  connectedUsersCount: number;
+  linesLogged?: number;
+  charactersLogged: number;
+  readingSpeed: number;
+  sessionSeconds: number;
+  intelligence?: ITextSessionIntelligence;
+}
+
+export interface ITextSession {
+  _id: string;
+  roomId?: string;
+  userId?: string;
+  mediaId?: string | IMediaDocument;
+  blankId?: string;
+  name?: string;
+  timerSeconds?: number;
+  lines: ITextLine[];
+  sessionHistory?: ITextSessionHistoryEntry[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IGanttMediaItem {
+  mediaId: string;
+  type: string;
+  title: string; // contentTitleNative
+  titleEnglish?: string; // contentTitleEnglish (optional)
+  contentImage?: string; // cover thumbnail URL
+  firstLogDate: string; // ISO 8601 datetime string
+  lastLogDate: string; // ISO 8601 datetime string
+  isCompleted: boolean;
+  completedAt?: string; // ISO 8601 datetime string, set when completed
+  logCount: number;
+  totalTime: number; // total minutes across all logs
+  totalXp: number;
+  activeDates: string[]; // sorted YYYY-MM-DD strings (one per active day)
+}
+
+// ─── Achievement System ──────────────────────────────────────────────────────
+
+export type AchievementRarity =
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'secret';
+
+export type AchievementCategory =
+  | 'streaks'
+  | 'immersion'
+  | 'social'
+  | 'milestone'
+  | 'secret';
+
+export interface IAchievement {
+  _id: string;
+  key: string;
+  name?: string; // undefined for hidden secrets
+  description?: string; // undefined for hidden secrets
+  hint?: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  iconSlug?: string;
+  isSecret: boolean;
+  isHidden: boolean;
+  condition?: IAchievementCondition;
+  points: number;
+  order?: number;
+  rarityPercent?: number;
+  isEarned?: boolean;
+  isActive?: boolean;
+  unlockedAt?: string | null;
+  progress?: number;
+  /**
+   * True on a secret the viewer unlocked themselves. Sent only to that user —
+   * never on someone else's view of their profile — and the signal for showing
+   * `fullDescription` instead of the vague public line.
+   */
+  isOwnUnlock?: boolean;
+}
+
+/** Mirror of Backend/src/types.ts IAchievementCondition. */
+export interface IAchievementCondition {
+  type: string;
+  threshold?: number;
+  mediaType?: string;
+  stat?: string;
+  /** logTimeRange — hour range [startHour, endHour) in the user's timezone */
+  startHour?: number;
+  endHour?: number;
+  /** logOnDate — MM-DD pattern */
+  datePattern?: string;
+  /** mediaReleasedBefore — exclusive upper bound on the release year */
+  year?: number;
+  /** mediaTypesInWeek — rolling window size in days */
+  days?: number;
+  /** consecutiveDaysWithHours — hours required on each day */
+  hours?: number;
+  /** rapidSuccession — max gap between two logs, in seconds */
+  seconds?: number;
+}
+
+export interface IUserAchievement {
+  _id: string;
+  user: string;
+  achievement: IAchievement;
+  unlockedAt: string;
+  progress: number;
+  notified: boolean;
+}
+
+declare global {
+  interface Window {
+    /**
+     * Replays the achievement reveal modal with demo data.
+     * Optional rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'secret'.
+     */
+    previewAchievementReveal?: (rarity?: string) => void;
+    /** Replays the post-log celebration overlay with demo data. */
+    previewLogCelebration?: (overrides?: Partial<ILogCelebration>) => void;
+  }
+}
+
+/**
+ * Mirror of Backend/src/types.ts ILogCelebration — post-log feedback payload
+ * returned inline by POST /logs.
+ */
+export interface ILogCelebration {
+  xpGained: number;
+  streak: number;
+  levelUp?: { from: number; to: number };
+  xp: {
+    current: number;
+    toCurrentLevel: number;
+    toNextLevel: number;
+    level: number;
+  };
+  rank?: {
+    timeframe: 'month';
+    rank: number;
+    previousRank: number;
+    overtaken: { username: string; avatar?: string; xp: number }[];
+  };
+}
+
+export interface IPendingAchievement {
+  userAchievementId: string;
+  unlockedAt: string;
+  achievement: IAchievement;
+  rarityPercent: number;
+  user?: { username: string; avatar?: string };
+}
+
+// ─── Unified Feed ─────────────────────────────────────────────────────────────
+
+export type UnifiedFeedItem =
+  | { kind: 'log'; sortDate: Date; data: ILog }
+  | { kind: 'achievement'; sortDate: Date; data: IPendingAchievement };
+
+export type UnifiedFeedFilter = 'all' | 'logs' | 'achievements';
+
+// ─── Media Lists ──────────────────────────────────────────────────────────────
+
+export type MediaListMediaType = IMediaDocument['type'];
+
+export type MediaRecommendationStatus =
+  | 'pending'
+  | 'viewed'
+  | 'dismissed'
+  | 'accepted';
+
+export interface IMediaRecommendation {
+  _id: string;
+  sender: { _id: string; username: string; avatar?: string };
+  recipient: { _id: string; username: string; avatar?: string };
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  media: IMediaDocument | null;
+  message?: string;
+  status: MediaRecommendationStatus;
+  viewedAt?: string | null;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IMediaListEntry {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+  addedAt?: string;
+  media: IMediaDocument | null;
+}
+
+export interface IFavoriteEntry {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+  addedAt?: string;
+  media: IMediaDocument | null;
+}
+
+export interface IMediaList {
+  _id: string;
+  user: IUser;
+  title: string;
+  description?: string;
+  isRanked: boolean;
+  isPublic: boolean;
+  entryCount: number;
+  /** Entry count per media type, e.g. { vn: 30 }. */
+  entryTypeCounts?: Partial<Record<MediaListMediaType, number>>;
+  likeCount: number;
+  isLiked: boolean;
+  commentCount: number;
+  clonedFrom?: { _id: string; title: string; user: string } | string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Only present on list detail responses. */
+  entries?: IMediaListEntry[];
+  /** Only present on browse/profile card responses. */
+  preview?: IMediaDocument[];
+  /** Only present on the "my lists" response when a media query is given. */
+  containsMedia?: boolean;
+}
+
+export interface IMediaListComment {
+  _id: string;
+  list: string;
+  user: IUser;
+  content: string;
+  editedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

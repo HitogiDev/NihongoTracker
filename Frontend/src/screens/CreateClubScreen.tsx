@@ -1,0 +1,864 @@
+import React, { useState, useRef, useCallback } from 'react';
+import Field from '../components/ui/Field';
+import { useMutation } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
+import { PercentCrop } from 'react-image-crop';
+import { canvasPreview } from '../utils/canvasPreview';
+import ImageCropDialog, {
+  ImageCropResult,
+} from '../components/ImageCropDialog';
+import {
+  Plus,
+  ArrowLeft,
+  Users,
+  Info,
+  Lock,
+  Earth,
+  Minus,
+  Image,
+  TriangleAlert,
+  Upload,
+  Trash,
+  Tag,
+} from 'lucide-react';
+import { createClubFn } from '../api/clubApi';
+import { ICreateClubRequest } from '../types';
+import { useUserDataStore } from '../store/userData';
+import { useTranslation } from 'react-i18next';
+import {
+  getMaxClubMemberLimitForUser,
+  getClubMemberLimitValidationMessage,
+} from '../utils/patreonClubLimits';
+
+function CreateClubScreen() {
+  const { t } = useTranslation(['clubs', 'common']);
+  const navigate = useNavigate();
+  const { user } = useUserDataStore();
+  const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
+
+  // Form state
+  const [formData, setFormData] = useState<ICreateClubRequest>({
+    name: '',
+    description: '',
+    isPublic: true,
+    tags: [],
+    rules: '',
+    memberLimit: 100,
+  });
+
+  // Media state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [bannerPreview, setBannerPreview] = useState<string>('');
+
+  // Cropping state
+  const [avatarSrc, setAvatarSrc] = useState<string>('');
+  const [bannerSrc, setBannerSrc] = useState<string>('');
+  const [showAvatarCrop, setShowAvatarCrop] = useState(false);
+  const [showBannerCrop, setShowBannerCrop] = useState(false);
+
+  // Refs for cropping
+  const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  const [currentTag, setCurrentTag] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Available predefined tags
+  const predefinedTags = [
+    'beginner',
+    'intermediate',
+    'advanced',
+    'anime',
+    'manga',
+    'reading',
+    'light-novel',
+    'visual-novel',
+    'competitive',
+    'casual',
+    'daily-challenge',
+  ];
+
+  // Create club mutation
+  const createClubMutation = useMutation({
+    mutationFn: createClubFn,
+    onSuccess: (data) => {
+      toast.success(t('toast.created'));
+      navigate(`/clubs/${data._id}`);
+    },
+    onError: (error: AxiosError<{ message: string }>) => {
+      toast.error(error.response?.data?.message || 'Failed to create club');
+    },
+  });
+
+  // Form validation
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Club name is required';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'Club name must be 100 characters or less';
+    }
+
+    if (formData.description && formData.description.length > 500) {
+      newErrors.description = 'Description must be 500 characters or less';
+    }
+
+    if (formData.rules && formData.rules.length > 1000) {
+      newErrors.rules = 'Rules must be 1000 characters or less';
+    }
+
+    if (formData.memberLimit && formData.memberLimit < 2) {
+      newErrors.memberLimit = 'Member limit must be at least 2';
+    } else if (
+      formData.memberLimit &&
+      formData.memberLimit > maxAllowedMemberLimit
+    ) {
+      newErrors.memberLimit = getClubMemberLimitValidationMessage(
+        maxAllowedMemberLimit
+      );
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submission
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const submissionData = {
+      ...formData,
+      avatarFile: avatarFile || undefined,
+      bannerFile: bannerFile || undefined,
+    };
+
+    createClubMutation.mutate(submissionData);
+  }
+
+  // Handle input changes
+  const handleInputChange = (
+    field: keyof ICreateClubRequest,
+    value: string | number | boolean | string[]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Add tag
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim().toLowerCase();
+    const currentTags = formData.tags || [];
+    if (
+      trimmedTag &&
+      !currentTags.includes(trimmedTag) &&
+      currentTags.length < 10
+    ) {
+      handleInputChange('tags', [...currentTags, trimmedTag]);
+      setCurrentTag('');
+    }
+  };
+
+  // Remove tag
+  const removeTag = (tagToRemove: string) => {
+    const currentTags = formData.tags || [];
+    handleInputChange(
+      'tags',
+      currentTags.filter((tag) => tag !== tagToRemove)
+    );
+  };
+
+  // Handle file changes for avatar and banner (now with cropping)
+  const handleFileChange = (
+    type: 'avatar' | 'banner',
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // Basic validation - only accept images under 3MB
+      if (!file.type.startsWith('image/')) {
+        toast.error(
+          `${type === 'avatar' ? 'Club icon' : 'Banner'} must be an image file`
+        );
+        return;
+      }
+
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error(
+          `${type === 'avatar' ? 'Club icon' : 'Banner'} must be under 3MB`
+        );
+        return;
+      }
+
+      // Read file and show cropping interface
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        if (type === 'avatar') {
+          setAvatarSrc(reader.result?.toString() || '');
+          setShowAvatarCrop(true);
+        } else {
+          setBannerSrc(reader.result?.toString() || '');
+          setShowBannerCrop(true);
+        }
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const getDefaultAvatarCrop = useCallback(
+    (image: HTMLImageElement): PercentCrop => {
+      const sizePx = Math.min(image.naturalWidth, image.naturalHeight) * 0.9;
+      const widthPercent = (sizePx / image.naturalWidth) * 100;
+      const heightPercent = (sizePx / image.naturalHeight) * 100;
+
+      return {
+        unit: '%',
+        width: widthPercent,
+        height: heightPercent,
+        x: (100 - widthPercent) / 2,
+        y: (100 - heightPercent) / 2,
+      };
+    },
+    []
+  );
+
+  const getInitialBannerCrop = useCallback(
+    (image: HTMLImageElement): PercentCrop => {
+      const { naturalWidth, naturalHeight } = image;
+      const targetAspectRatio = 21 / 9;
+      const imageAspectRatio = naturalWidth / naturalHeight;
+
+      let cropWidthPercent: number;
+      let cropHeightPercent: number;
+
+      if (imageAspectRatio > targetAspectRatio) {
+        cropHeightPercent = 85;
+        cropWidthPercent =
+          (cropHeightPercent * targetAspectRatio * naturalHeight) /
+          naturalWidth;
+
+        if (cropWidthPercent > 95) {
+          cropWidthPercent = 85;
+          cropHeightPercent =
+            (cropWidthPercent * naturalWidth) /
+            (targetAspectRatio * naturalHeight);
+        }
+      } else {
+        cropWidthPercent = 85;
+        cropHeightPercent =
+          (cropWidthPercent * naturalWidth) /
+          (targetAspectRatio * naturalHeight);
+
+        if (cropHeightPercent > 95) {
+          cropHeightPercent = 85;
+          cropWidthPercent =
+            (cropHeightPercent * targetAspectRatio * naturalHeight) /
+            naturalWidth;
+        }
+      }
+
+      const cropX = (100 - cropWidthPercent) / 2;
+      const cropY = (100 - cropHeightPercent) / 2;
+
+      return {
+        unit: '%',
+        width: cropWidthPercent,
+        height: cropHeightPercent,
+        x: cropX,
+        y: cropY,
+      };
+    },
+    []
+  );
+
+  const handleAvatarCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!avatarPreviewCanvasRef.current) {
+        return;
+      }
+
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+
+      await canvasPreview(image, avatarPreviewCanvasRef.current, crop);
+
+      avatarPreviewCanvasRef.current.toBlob(
+        (blob) => {
+          if (blob) {
+            const croppedFile = new File([blob], 'avatar.jpg', {
+              type: 'image/jpeg',
+            });
+            setAvatarFile(croppedFile);
+            setAvatarPreview(URL.createObjectURL(croppedFile));
+          }
+        },
+        'image/jpeg',
+        0.9
+      );
+    },
+    [avatarPreview]
+  );
+
+  const handleBannerCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!bannerPreviewCanvasRef.current) {
+        return;
+      }
+
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+
+      await canvasPreview(image, bannerPreviewCanvasRef.current, crop);
+
+      bannerPreviewCanvasRef.current.toBlob(
+        (blob) => {
+          if (blob) {
+            const croppedFile = new File([blob], 'banner.jpg', {
+              type: 'image/jpeg',
+            });
+            setBannerFile(croppedFile);
+            setBannerPreview(URL.createObjectURL(croppedFile));
+          }
+        },
+        'image/jpeg',
+        0.9
+      );
+    },
+    [bannerPreview]
+  );
+
+  // Cancel cropping
+  const cancelCropping = (type: 'avatar' | 'banner') => {
+    if (type === 'avatar') {
+      setShowAvatarCrop(false);
+      setAvatarSrc('');
+    } else {
+      setShowBannerCrop(false);
+      setBannerSrc('');
+    }
+  };
+
+  // Clear file selection
+  const clearFile = (type: 'avatar' | 'banner') => {
+    if (type === 'avatar') {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      setAvatarFile(null);
+      setAvatarPreview('');
+    } else {
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+      setBannerFile(null);
+      setBannerPreview('');
+    }
+  };
+
+  // Cleanup preview URLs on unmount
+  React.useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [avatarPreview, bannerPreview]);
+
+  return (
+    <div className="min-h-screen bg-base-200">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 pt-28 pb-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              className="btn btn-ghost btn-square"
+              onClick={() => navigate('/clubs')}
+            >
+              <ArrowLeft className="text-xl" />
+            </button>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-base-content">
+                {t('create.title')}
+              </h1>
+              <p className="text-base-content/70 mt-2">
+                {t('create.subtitle')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Basic Information Card */}
+            <div className="card surface">
+              <div className="card-body">
+                <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+                  <Info className="text-primary" />
+                  {t('create.basicInfo')}
+                </h2>
+
+                {/* Club Name */}
+                <div>
+                  <fieldset className="fieldset">
+                    <legend className="fieldset-legend font-medium">
+                      {t('create.name')}
+                      <span className="text-error">*</span>
+                    </legend>
+                    <input
+                      type="text"
+                      className={`input ${errors.name ? 'input-error' : ''}`}
+                      placeholder={t('create.namePlaceholder')}
+                      value={formData.name}
+                      onChange={(e) =>
+                        handleInputChange('name', e.target.value)
+                      }
+                      maxLength={100}
+                    />
+                    <span className="label text-base-content/60">
+                      {formData.name.length}/100 characters
+                    </span>
+                  </fieldset>
+                  {errors.name && (
+                    <label className="label">
+                      <span className="text-error">{errors.name}</span>
+                    </label>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <fieldset className="fieldset w-full">
+                    <legend className="fieldset-legend font-medium">
+                      {t('common.description')}
+                    </legend>
+                    <textarea
+                      className={`textarea w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
+                      placeholder={t('create.descriptionPlaceholder')}
+                      value={formData.description}
+                      onChange={(e) =>
+                        handleInputChange('description', e.target.value)
+                      }
+                      maxLength={500}
+                    />
+                    <span className="label text-base-content/60">
+                      {formData.description?.length || 0}/500 characters
+                    </span>
+                  </fieldset>
+                  {errors.description && (
+                    <label className="label">
+                      <span className="text-error">{errors.description}</span>
+                    </label>
+                  )}
+                </div>
+
+                {/* Privacy Settings */}
+                <Field label={t('create.privacy')}>
+                  <div className="flex gap-4">
+                    <label className="label cursor-pointer flex-1 surface-muted p-4">
+                      <div className="flex items-center gap-3">
+                        <Earth className="text-xl text-success" />
+                        <div>
+                          <span className="font-medium">
+                            {t('create.public')}
+                          </span>
+                          <div className="text-xs text-base-content/60">
+                            {t('create.publicHint')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="privacy"
+                        className="radio radio-success"
+                        checked={formData.isPublic === true}
+                        onChange={() => handleInputChange('isPublic', true)}
+                      />
+                    </label>
+
+                    <label className="label cursor-pointer flex-1 surface-muted p-4">
+                      <div className="flex items-center gap-3">
+                        <Lock className="text-xl text-warning" />
+                        <div>
+                          <span className="font-medium">
+                            {t('create.private')}
+                          </span>
+                          <div className="text-xs text-base-content/60">
+                            {t('create.privateHint')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="privacy"
+                        className="radio radio-warning"
+                        checked={formData.isPublic === false}
+                        onChange={() => handleInputChange('isPublic', false)}
+                      />
+                    </label>
+                  </div>
+                </Field>
+
+                {/* Member Limit */}
+                <Field label={t('create.memberLimit')}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="number"
+                      className={`input flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
+                      placeholder="100"
+                      min={2}
+                      max={maxAllowedMemberLimit}
+                      value={formData.memberLimit}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'memberLimit',
+                          parseInt(e.target.value) || 100
+                        )
+                      }
+                    />
+                    <span className="text-sm text-base-content/60">
+                      {t('clubs:create.membersMax')}
+                    </span>
+                  </div>
+                  {errors.memberLimit && (
+                    <label className="label">
+                      <span className="text-error">{errors.memberLimit}</span>
+                    </label>
+                  )}
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-base-content/60">
+                      Current tier max: {maxAllowedMemberLimit} members
+                    </p>
+                    <p className="text-xs text-base-content/70">
+                      {t('create.needMoreMembers')}{' '}
+                      <Link to="/support" className="link link-primary">
+                        {t('create.donate')}
+                      </Link>{' '}
+                      to unlock higher club limits and more perks.
+                    </p>
+                  </div>
+                </Field>
+              </div>
+            </div>
+
+            {/* Tags Card */}
+            <div className="card surface">
+              <div className="card-body">
+                <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+                  <Tag className="text-primary w-6 h-6" />
+                  {t('common.tags')}
+                </h2>
+                <p className="text-sm text-base-content/60 mb-4">
+                  {t('create.tagsHint')}
+                </p>
+
+                {/* Add Tag Input */}
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    className="input flex-1"
+                    placeholder={t('create.tagPlaceholder')}
+                    value={currentTag}
+                    onChange={(e) => setCurrentTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag(currentTag);
+                      }
+                    }}
+                    maxLength={30}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => addTag(currentTag)}
+                    disabled={
+                      !currentTag.trim() || (formData.tags?.length || 0) >= 10
+                    }
+                  >
+                    <Plus className="text-lg" />
+                  </button>
+                </div>
+
+                {/* Current Tags */}
+                {(formData.tags?.length || 0) > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium mb-2">
+                      {t('create.yourTags')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.tags?.map((tag) => (
+                        <div key={tag} className="badge badge-primary gap-2">
+                          {tag}
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs btn-circle"
+                            onClick={() => removeTag(tag)}
+                          >
+                            <Minus className="text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Predefined Tags */}
+                <div>
+                  <p className="text-sm font-medium mb-2">
+                    {t('create.suggestedTags')}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {predefinedTags
+                      .filter((tag) => !(formData.tags?.includes(tag) || false))
+                      .map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          className="badge badge-outline cursor-pointer hover:bg-primary hover:text-primary-content"
+                          onClick={() => addTag(tag)}
+                          disabled={(formData.tags?.length || 0) >= 10}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Club Media Card */}
+            <div className="card surface">
+              <div className="card-body">
+                <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+                  <Image className="text-primary w-6 h-6" />
+                  {t('activity.clubMedia')}
+                </h2>
+                <p className="text-sm text-base-content/60 mb-4">
+                  {t('create.imagesHint')}
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Club Profile Picture */}
+                  <div className="flex-1">
+                    <label className="label font-medium">
+                      <span>{t('create.icon')}</span>
+                    </label>
+                    <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
+                      <div className="avatar">
+                        <div className="w-24 h-24 rounded-full bg-base-300 flex items-center justify-center overflow-hidden">
+                          {avatarPreview ? (
+                            <img
+                              src={avatarPreview}
+                              alt={t('create.iconPreviewAlt')}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full">
+                              <Users className="text-4xl text-base-content/40" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="btn btn-primary btn-sm">
+                          <Upload className="w-4 h-4" />
+                          {t('create.upload')}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange('avatar', e)}
+                          />
+                        </label>
+                        {avatarPreview && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => clearFile('avatar')}
+                          >
+                            <Trash className="w-4 h-4" />
+                            {t('common.remove')}
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-xs text-base-content/60">
+                        {t('create.maxSize')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Club Banner */}
+                  <div className="flex-1">
+                    <label className="label font-medium">
+                      <span>{t('create.banner')}</span>
+                    </label>
+                    <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
+                      <div className="w-full h-32 bg-base-300 rounded-lg flex items-center justify-center overflow-hidden">
+                        {bannerPreview ? (
+                          <img
+                            src={bannerPreview}
+                            alt={t('create.bannerPreviewAlt')}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Image className="text-4xl text-base-content/40" />
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="btn btn-primary btn-sm">
+                          <Upload className="w-4 h-4" />
+                          {t('create.upload')}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileChange('banner', e)}
+                          />
+                        </label>
+                        {bannerPreview && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => clearFile('banner')}
+                          >
+                            <Trash className="w-4 h-4" />
+                            {t('common.remove')}
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-xs text-base-content/60">
+                        {t('create.bannerHint')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rules Card */}
+            <div className="card surface">
+              <div className="card-body">
+                <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+                  <Info className="text-primary w-6 h-6" />
+                  {t('create.rules')}
+                </h2>
+                <p className="text-sm text-base-content/60 mb-4">
+                  {t('create.rulesHint')}
+                </p>
+
+                <div className="alert alert-warning mb-4 text-sm">
+                  <TriangleAlert className="text-lg" />
+                  <span>
+                    <strong>{t('create.important')}</strong>{' '}
+                    {t('create.contentPolicy')}
+                  </span>
+                </div>
+
+                <div>
+                  <fieldset className="fieldset w-full">
+                    <textarea
+                      className={`textarea w-full h-32 ${errors.rules ? 'textarea-error' : ''}`}
+                      placeholder={`1. Be respectful to all members
+2. Share your progress regularly
+3. Help others when possible
+4. Keep content appropriate
+5. No offensive, discriminatory, or explicit content allowed`}
+                      value={formData.rules}
+                      onChange={(e) =>
+                        handleInputChange('rules', e.target.value)
+                      }
+                      maxLength={1000}
+                      style={{ whiteSpace: 'pre-line' }}
+                    />
+                    <span className="label text-base-content/60">
+                      {formData.rules?.length || 0}/1000 characters
+                    </span>
+                  </fieldset>
+                  {errors.rules && (
+                    <label className="label">
+                      <span className="text-error">{errors.rules}</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => navigate('/clubs')}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary gap-2"
+                disabled={createClubMutation.isPending}
+              >
+                {createClubMutation.isPending ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <Users className="w-4 h-4" />
+                )}
+                {t('create.submit')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <ImageCropDialog
+        title={t('create.cropIcon')}
+        imageSrc={avatarSrc}
+        isOpen={showAvatarCrop}
+        aspect={1}
+        circular
+        onClose={() => cancelCropping('avatar')}
+        onApply={handleAvatarCropApply}
+        getInitialCrop={getDefaultAvatarCrop}
+      />
+
+      <ImageCropDialog
+        title={t('create.cropBanner')}
+        imageSrc={bannerSrc}
+        isOpen={showBannerCrop}
+        aspect={21 / 9}
+        minWidth={200}
+        minHeight={86}
+        keepSelection
+        ruleOfThirds
+        onClose={() => cancelCropping('banner')}
+        onApply={handleBannerCropApply}
+        getInitialCrop={getInitialBannerCrop}
+      />
+
+      {/* Hidden canvases for preview */}
+      <canvas ref={avatarPreviewCanvasRef} className="hidden" />
+      <canvas ref={bannerPreviewCanvasRef} className="hidden" />
+    </div>
+  );
+}
+
+export default CreateClubScreen;

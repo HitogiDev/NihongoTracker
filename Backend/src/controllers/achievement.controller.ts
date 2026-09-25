@@ -1,0 +1,824 @@
+import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
+import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
+import { apiError } from '../i18n/errorCodes.js';
+import Achievement from '../models/achievement.model.js';
+import UserAchievement from '../models/userAchievement.model.js';
+import User from '../models/user.model.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import {
+  dismissAchievementNotifications,
+  grantAchievement,
+} from '../services/achievements/achievementEngine.js';
+import { isRankingAchievementKey } from '../services/achievements/rankingVisibility.js';
+import { IAchievement } from '../types.js';
+
+/**
+ * Strip the machine-readable unlock condition from a secret achievement.
+ *
+ * Earned secrets are visible on public profiles, so shipping `condition` would
+ * hand every visitor the exact recipe (type + threshold) for a secret they
+ * haven't found — the descriptions are deliberately vague for the same reason.
+ * Non-secret achievements keep it; the UI needs `condition.threshold` to draw
+ * progress bars.
+ */
+function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T): T {
+  if (!achievement.isSecret) return achievement;
+  // progress goes too: a bare "6" next to a secret still hints at its target
+  const {
+    condition: _condition,
+    progress: _progress,
+    ...rest
+  } = achievement as T & { condition?: unknown; progress?: unknown };
+  return rest as T;
+}
+
+/**
+ * Mark a secret the viewer earned themselves.
+ *
+ * Secrets carry two descriptions in the client's i18n catalogue: a vague one
+ * everyone sees, and a `fullDescription` that spells the requirement out. This
+ * flag is what tells the UI it may show the second one — a visitor's view of
+ * someone else's profile never gets it, so the spoiler stays with the earner.
+ */
+function ownSecretUnlock<T extends { isSecret?: boolean }>(
+  achievement: T,
+  isEarned: boolean,
+  isOwner: boolean
+) {
+  if (!achievement.isSecret || !isEarned || !isOwner) return {};
+  return { isOwnUnlock: true };
+}
+
+// ─── Public / User endpoints ──────────────────────────────────────────────────
+
+/**
+ * GET /api/achievements
+ * Returns all active achievement definitions (public).
+ * Secret/hidden achievements only return minimal stub info (count, rarity).
+ * Optionally includes the requesting user's earned status if authenticated.
+ */
+export async function getAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const achievements = await Achievement.find({ isActive: true })
+      .sort({ order: 1 })
+      .lean();
+
+    // Total user count for rarity % computation
+    const totalUsers = await User.countDocuments();
+
+    // Earned counts per achievement for rarity %
+    const earnedCounts = await UserAchievement.aggregate([
+      { $group: { _id: '$achievement', count: { $sum: 1 } } },
+    ]);
+    const earnedCountMap = new Map(
+      earnedCounts.map((e) => [e._id.toString(), e.count])
+    );
+
+    const mapped = achievements.map((a) => {
+      const earnedCount = earnedCountMap.get(a._id.toString()) ?? 0;
+      const rarityPercent =
+        totalUsers > 0
+          ? Math.round((earnedCount / totalUsers) * 1000) / 10 // 1 decimal place
+          : 0;
+
+      // For isHidden secret achievements — return only stub data
+      if (a.isHidden) {
+        return {
+          _id: a._id,
+          key: a.key,
+          rarity: a.rarity,
+          category: a.category,
+          isHidden: true,
+          isSecret: a.isSecret,
+          points: a.points,
+          rarityPercent,
+        };
+      }
+
+      // For non-hidden secret achievements — show hint but not name/description
+      if (a.isSecret) {
+        return {
+          _id: a._id,
+          key: a.key,
+          rarity: a.rarity,
+          category: a.category,
+          isHidden: false,
+          isSecret: true,
+          hint: a.hint || '',
+          iconSlug: a.iconSlug, // show icon slug (icon is still revealed as ?)
+          points: a.points,
+          rarityPercent,
+        };
+      }
+
+      return stripSecretCondition({
+        ...a,
+        rarityPercent,
+      });
+    });
+
+    return res.status(200).json(mapped);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/me  (auth required)
+ * Returns achievements merged with the user's earned status and progress.
+ */
+export async function getMyAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = res.locals.user._id as Types.ObjectId;
+    return await getUserAchievementsById(userId, true, res, next);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/user/:username  (public)
+ * Returns achievements for a specific user's public profile.
+ * Secret unearned achievements are completely hidden.
+ */
+export async function getUserAchievementsByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select('_id')
+      .lean();
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    return await getUserAchievementsById(
+      user._id as Types.ObjectId,
+      false,
+      res,
+      next
+    );
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+async function getUserAchievementsById(
+  userId: Types.ObjectId,
+  isOwner: boolean,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const [achievements, userAchievements, totalUsers] = await Promise.all([
+      Achievement.find({ isActive: true }).sort({ order: 1 }).lean(),
+      UserAchievement.find({ user: userId }).populate('achievement').lean(),
+      User.countDocuments(),
+    ]);
+
+    const earnedCounts = await UserAchievement.aggregate([
+      { $group: { _id: '$achievement', count: { $sum: 1 } } },
+    ]);
+    const earnedCountMap = new Map(
+      earnedCounts.map((e) => [e._id.toString(), e.count])
+    );
+
+    const earnedMap = new Map(
+      userAchievements
+        .filter((ua) => ua.achievement)
+        .map((ua) => [
+          (ua.achievement as unknown as IAchievement)._id?.toString() ?? ua.achievement.toString(),
+          ua,
+        ])
+    );
+
+    const result = achievements.map((a) => {
+      const earned = earnedMap.get(a._id.toString());
+      const isEarned = Boolean(earned);
+      const earnedCount = earnedCountMap.get(a._id.toString()) ?? 0;
+      const rarityPercent =
+        totalUsers > 0 ? Math.round((earnedCount / totalUsers) * 1000) / 10 : 0;
+
+      // Unearned secret — hide completely from non-owners
+      if (a.isSecret && !isEarned && !isOwner) {
+        return null;
+      }
+
+      // isHidden unearned — stub only
+      if (a.isHidden && !isEarned) {
+        return {
+          _id: a._id,
+          key: a.key,
+          rarity: a.rarity,
+          category: a.category,
+          isHidden: true,
+          isSecret: a.isSecret,
+          isEarned: false,
+          points: a.points,
+          rarityPercent,
+        };
+      }
+
+      // Secret unearned (non-hidden) — show hint + icon slug only
+      if (a.isSecret && !isEarned) {
+        return {
+          _id: a._id,
+          key: a.key,
+          rarity: a.rarity,
+          category: a.category,
+          isHidden: false,
+          isSecret: true,
+          hint: a.hint || '',
+          iconSlug: a.iconSlug,
+          isEarned: false,
+          points: a.points,
+          rarityPercent,
+        };
+      }
+
+      return {
+        ...stripSecretCondition({
+          ...a,
+          isEarned,
+          unlockedAt: earned?.unlockedAt ?? null,
+          progress: earned?.progress ?? 0,
+          rarityPercent,
+        }),
+        ...ownSecretUnlock(a, isEarned, isOwner),
+      };
+    });
+
+    // Filter out nulls (hidden secret unearned for non-owners)
+    return res.status(200).json(result.filter(Boolean));
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/me/pending  (auth required)
+ * Returns newly earned achievements that haven't been shown to the user yet,
+ * then marks them as notified.
+ */
+export async function getPendingAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = res.locals.user._id as Types.ObjectId;
+    const user = await User.findById(userId)
+      .select('settings.hideRankingFeatures')
+      .lean();
+    const hideRankingFeatures = user?.settings?.hideRankingFeatures === true;
+
+    const pending = await UserAchievement.find({
+      user: userId,
+      notified: false,
+    })
+      .populate('achievement')
+      .sort({ unlockedAt: 1 })
+      .lean();
+
+    if (pending.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Mark as notified — only the ones actually fetched, so unlocks that
+    // land between the find and this update are not silently swallowed
+    await UserAchievement.updateMany(
+      { _id: { $in: pending.map((ua) => ua._id) } },
+      { $set: { notified: true } }
+    );
+
+    // The reveal animation these rows are about to feed *is* the notification,
+    // so drop the bell entry the unlock wrote rather than telling the user
+    // twice about the same achievement.
+    await dismissAchievementNotifications(
+      userId,
+      pending
+        .map((ua) => ua.achievement as { _id?: Types.ObjectId } | null)
+        .filter((a): a is { _id: Types.ObjectId } => Boolean(a?._id))
+        .map((a) => a._id)
+    );
+
+    const result = pending
+      .filter((ua) => {
+        if (!ua.achievement) return false;
+        if (!hideRankingFeatures) return true;
+        return !isRankingAchievementKey(
+          (ua.achievement as { key?: string }).key
+        );
+      })
+      .map((ua) => {
+        const a = ua.achievement as unknown as IAchievement;
+        const rarityPercent = 0; // will be computed on the client from the main list
+        return {
+          userAchievementId: ua._id,
+          unlockedAt: ua.unlockedAt,
+          // Owner-only endpoint, so a just-earned secret may explain itself
+          achievement: {
+            ...stripSecretCondition(a),
+            ...ownSecretUnlock(a, true, true),
+          },
+          rarityPercent,
+        };
+      });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/me/showcase  (auth required)
+ * Returns the user's pinned showcase achievements (up to 5).
+ */
+export async function getShowcase(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = res.locals.user._id as Types.ObjectId;
+    const user = await User.findById(userId).select('settings').lean();
+
+    const showcaseIds: string[] = (
+      user?.settings?.achievementShowcase ?? []
+    ).filter(
+      (id: unknown) => typeof id === 'string' && Types.ObjectId.isValid(id)
+    );
+
+    if (showcaseIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const earned = await UserAchievement.find({
+      user: userId,
+      achievement: { $in: showcaseIds.map((id) => new Types.ObjectId(id)) },
+    })
+      .populate('achievement')
+      .lean();
+
+    // Preserve showcase order
+    const earnedMap = new Map(
+      earned
+        .filter((ua) => ua.achievement)
+        .map((ua) => [
+          (ua.achievement as unknown as IAchievement)._id?.toString() ?? ua.achievement.toString(),
+          ua,
+        ])
+    );
+    const ordered = showcaseIds
+      .map((id) => earnedMap.get(id))
+      .filter(Boolean)
+      .map((ua) => {
+        const a = ua?.achievement as unknown as IAchievement;
+        if (!a || typeof a !== 'object') return ua;
+        return {
+          ...ua,
+          achievement: {
+            ...stripSecretCondition(a),
+            ...ownSecretUnlock(a, true, true),
+          },
+        };
+      });
+
+    return res.status(200).json(ordered);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * PUT /api/achievements/me/showcase  (auth required)
+ * Updates the user's showcase pin list (max 5).
+ */
+export async function updateShowcase(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = res.locals.user._id as Types.ObjectId;
+    const { showcaseIds } = req.body as { showcaseIds: string[] };
+
+    if (!Array.isArray(showcaseIds)) {
+      throw apiError(
+        'achievement.showcaseNotArray',
+        400,
+        'showcaseIds must be an array'
+      );
+    }
+    if (showcaseIds.length > 5) {
+      throw apiError(
+        'achievement.showcaseMax',
+        400,
+        'Maximum 5 achievements in showcase'
+      );
+    }
+    if (
+      showcaseIds.some(
+        (id) => typeof id !== 'string' || !Types.ObjectId.isValid(id)
+      )
+    ) {
+      throw apiError(
+        'achievement.showcaseInvalidIds',
+        400,
+        'showcaseIds must be valid achievement ids'
+      );
+    }
+    if (new Set(showcaseIds).size !== showcaseIds.length) {
+      throw apiError(
+        'achievement.showcaseDuplicates',
+        400,
+        'showcaseIds must not contain duplicates'
+      );
+    }
+
+    // Validate that all provided IDs are achievements the user has earned
+    if (showcaseIds.length > 0) {
+      const earned = await UserAchievement.find({
+        user: userId,
+        achievement: {
+          $in: showcaseIds.map((id) => new Types.ObjectId(id)),
+        },
+      })
+        .select('achievement')
+        .lean();
+
+      if (earned.length !== showcaseIds.length) {
+        throw apiError(
+          'achievement.notEarned',
+          400,
+          'One or more achievements are not earned by this user'
+        );
+      }
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      $set: { 'settings.achievementShowcase': showcaseIds },
+    });
+
+    return res.status(200).json({ message: 'Showcase updated', showcaseIds });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// ─── Admin endpoints ──────────────────────────────────────────────────────────
+
+export async function adminGetAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const achievements = await Achievement.find({}).sort({ order: 1 }).lean();
+
+    const earnedCounts = await UserAchievement.aggregate([
+      { $group: { _id: '$achievement', count: { $sum: 1 } } },
+    ]);
+    const earnedCountMap = new Map(
+      earnedCounts.map((e) => [e._id.toString(), e.count])
+    );
+
+    const totalUsers = await User.countDocuments();
+
+    const result = achievements.map((a) => ({
+      ...a,
+      earnedCount: earnedCountMap.get(a._id.toString()) ?? 0,
+      rarityPercent:
+        totalUsers > 0
+          ? Math.round(
+              ((earnedCountMap.get(a._id.toString()) ?? 0) / totalUsers) * 1000
+            ) / 10
+          : 0,
+    }));
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminCreateAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const data = req.body;
+    if (!data.key || !data.name || !data.condition) {
+      throw apiError(
+        'achievement.fieldsRequired',
+        400,
+        'key, name, and condition are required'
+      );
+    }
+
+    const existing = await Achievement.findOne({ key: data.key });
+    if (existing)
+      throw apiError(
+        'achievement.keyExists',
+        409,
+        'Achievement key already exists'
+      );
+
+    const achievement = await Achievement.create(data);
+    return res.status(201).json(achievement);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminUpdateAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!Types.ObjectId.isValid(req.params.id)) {
+      throw apiError('achievement.invalidId', 400, 'Invalid achievement id');
+    }
+    const update = { ...req.body };
+    delete update._id;
+
+    const achievement = await Achievement.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true, runValidators: true }
+    );
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
+    return res.status(200).json(achievement);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminDeleteAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!Types.ObjectId.isValid(req.params.id)) {
+      throw apiError('achievement.invalidId', 400, 'Invalid achievement id');
+    }
+    // Soft delete
+    const achievement = await Achievement.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isActive: false } },
+      { new: true }
+    );
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
+    return res
+      .status(200)
+      .json({ message: 'Achievement deactivated', achievement });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminGrantAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username, achievementKey } = req.body as {
+      username: string;
+      achievementKey: string;
+    };
+
+    if (!username || !achievementKey) {
+      throw apiError(
+        'achievement.unlockFieldsRequired',
+        400,
+        'username and achievementKey are required'
+      );
+    }
+
+    const user = await User.findOne({ username }).select('_id').lean();
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const achievement = await Achievement.findOne({
+      key: achievementKey,
+    }).lean();
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
+
+    const granted = await grantAchievement(
+      user._id as Types.ObjectId,
+      achievement._id as Types.ObjectId,
+      { recordActivity: false }
+    );
+
+    if (!granted) {
+      return res.status(200).json({
+        message: 'User already has this achievement',
+        alreadyOwned: true,
+      });
+    }
+
+    return res.status(201).json({
+      message: `Achievement "${achievement.name}" granted to ${username}`,
+      alreadyOwned: false,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminRevokeAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username, achievementKey } = req.body as {
+      username: string;
+      achievementKey: string;
+    };
+
+    if (!username || !achievementKey) {
+      throw apiError(
+        'achievement.unlockFieldsRequired',
+        400,
+        'username and achievementKey are required'
+      );
+    }
+
+    const user = await User.findOne({ username }).select('_id').lean();
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const achievement = await Achievement.findOne({
+      key: achievementKey,
+    }).lean();
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
+
+    const result = await UserAchievement.findOneAndDelete({
+      user: user._id,
+      achievement: achievement._id,
+    });
+
+    if (!result) {
+      return res
+        .status(200)
+        .json({ message: 'User did not have this achievement' });
+    }
+
+    return res.status(200).json({
+      message: `Achievement "${achievement.name}" revoked from ${username}`,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * POST /api/achievements/admin/backfill-all  (admin)
+ * Checks all achievement conditions for every user, grants any that are now
+ * satisfied but weren't previously awarded, and revokes any the user no longer
+ * qualifies for. Identical to `npm run backfill:achievements` — both call
+ * backfillAchievementsForAllUsers.
+ *
+ * Pass { revoke: false } in the body to only grant.
+ * This is a potentially long-running operation — it processes users sequentially.
+ */
+export async function adminBackfillAchievementsForAllUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const revoke = req.body?.revoke !== false;
+
+    const {
+      totalGranted,
+      totalRevoked,
+      usersProcessed,
+      usersWithNewAchievements,
+    } = await backfillAchievementsForAllUsers({ revoke });
+
+    return res.status(200).json({
+      message:
+        `Backfill complete: ${totalGranted} achievement(s) granted across ` +
+        `${usersWithNewAchievements} user(s) out of ${usersProcessed} processed${
+        revoke ? `, ${totalRevoked} revoked.` : '.'}`,
+      totalGranted,
+      totalRevoked,
+      usersProcessed,
+      usersWithNewAchievements,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/feed  (public)
+ * Global feed of recent rare/legendary/secret achievement unlocks.
+ */
+export async function getAchievementFeed(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string, 10) || 20, 1),
+      50
+    );
+
+    const feed = await UserAchievement.find({})
+      .populate({
+        path: 'achievement',
+        match: {
+          isActive: true,
+          isHidden: false,
+        },
+        // Never leak a secret's unlock condition into a public feed
+        select: '-condition',
+      })
+      .populate('user', 'username avatar')
+      .sort({ unlockedAt: -1 })
+      .limit(limit * 3) // overfetch since populate match may filter some
+      .lean();
+
+    // Filter out items where achievement didn't match (populate match returned null)
+    const filtered = feed
+      .filter((ua) => ua.achievement !== null)
+      .slice(0, limit)
+      .map((ua) => ({
+        userAchievementId: ua._id,
+        achievement: ua.achievement,
+        unlockedAt: ua.unlockedAt,
+        user: ua.user,
+      }));
+
+    return res.status(200).json(filtered);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/user/:username/recent  (public)
+ * Returns the most recent achievement unlocks for a user's profile activity feed.
+ */
+export async function getUserAchievementActivity(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string, 10) || 10, 1),
+      50
+    );
+
+    const user = await User.findOne({ username: req.params.username })
+      .select('_id username avatar')
+      .lean();
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const recentUnlocks = await UserAchievement.find({ user: user._id })
+      .populate({
+        path: 'achievement',
+        match: { isActive: true, isHidden: false },
+        // Never leak a secret's unlock condition on a public profile
+        select: '-condition',
+      })
+      .sort({ unlockedAt: -1 })
+      .limit(limit * 2)
+      .lean();
+
+    const filtered = recentUnlocks
+      .filter((ua) => ua.achievement !== null)
+      .slice(0, limit)
+      .map((ua) => ({
+        userAchievementId: ua._id,
+        achievement: ua.achievement,
+        unlockedAt: ua.unlockedAt,
+        user,
+      }));
+
+    return res.status(200).json(filtered);
+  } catch (error) {
+    return next(error as customError);
+  }
+}

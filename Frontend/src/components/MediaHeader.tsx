@@ -1,0 +1,812 @@
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  getAverageColorFn,
+  getMediaFn,
+  getUserMediaStatsFn,
+  updateMediaCompletionStatusFn,
+  removeMediaFromImmersionListFn,
+  IMediaStats,
+} from '../api/trackerApi';
+import { AxiosError } from 'axios';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import {
+  Play,
+  Book,
+  Clapperboard,
+  CircleCheck,
+  Circle,
+  Gamepad2,
+  ChevronDown,
+  Clock,
+  Ban,
+  Star,
+  Trash2,
+  TriangleAlert,
+  CalendarClock,
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import { IMediaDocument, OutletMediaContextType } from '../types';
+import { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { convertBBCodeToHtml } from '../utils/utils';
+import QuickLog from '../components/QuickLog';
+import AddToListModal from '../components/AddToListModal';
+import { useUserDataStore } from '../store/userData';
+import MediaNavbar from './MediaNavbar';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { useTranslation } from 'react-i18next';
+import ForecastModal from './ForecastModal';
+
+const getMediaTypeIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'anime':
+      return <Play className="text-lg" />;
+    case 'manga':
+    case 'light-novel':
+      return <Book className="text-lg" />;
+    case 'movie':
+    case 'video':
+      return <Clapperboard className="text-lg" />;
+    case 'vn':
+      return <Gamepad2 className="text-lg" />;
+    case 'game':
+      return <Gamepad2 className="text-lg" />;
+    default:
+      return <Play className="text-lg" />;
+  }
+};
+
+type MediaStatusValue =
+  | 'completed'
+  | 'dropped'
+  | 'paused'
+  | 'planning'
+  | 'in_progress';
+
+const STATUS_CONFIG: Record<
+  MediaStatusValue,
+  { label: string; badgeClass: string; icon: React.FC<{ className?: string }> }
+> = {
+  completed: {
+    label: 'Completed',
+    badgeClass: 'btn-success',
+    icon: CircleCheck,
+  },
+  dropped: { label: 'Dropped', badgeClass: 'btn-error', icon: Ban },
+  paused: { label: 'Paused', badgeClass: 'btn-warning', icon: Clock },
+  planning: { label: 'Planning', badgeClass: 'btn-info', icon: Star },
+  in_progress: {
+    label: 'In progress',
+    badgeClass: 'btn-primary',
+    icon: Play,
+  },
+};
+
+export default function MediaHeader() {
+  const { t } = useTranslation(['media', 'common', 'goals']);
+  const { mediaType, mediaId, username } = useParams<{
+    mediaType: IMediaDocument['type'] | undefined;
+    mediaId: string;
+    username?: string;
+  }>();
+
+  const { user } = useUserDataStore();
+  const { formatDateOnly } = useDateFormatting();
+  const queryClient = useQueryClient();
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+  const isClubContext =
+    searchParams.has('clubId') && searchParams.has('clubMediaId');
+  const targetUsername = isClubContext ? undefined : username || user?.username;
+  const isOwnProfile =
+    !!user?.username && !!targetUsername && user.username === targetUsername;
+
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [averageColor, setAverageColor] = useState<string>('#ffffff');
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [addToListOpen, setAddToListOpen] = useState(false);
+  const [forecastModalOpen, setForecastModalOpen] = useState(false);
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [removeWithLogs, setRemoveWithLogs] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState({
+    isCompleted: false,
+    completedAt: null as string | null,
+    status: null as MediaStatusValue | null,
+  });
+
+  // Reset scroll when navigating to a new media
+  useEffect(() => {
+    if (mediaId && mediaType) {
+      // Add class to ensure auto scroll behavior
+      document.documentElement.classList.add('scroll-reset');
+
+      // Use multiple methods to ensure scroll reset works across browsers
+      const resetScroll = () => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      };
+
+      // Reset immediately
+      resetScroll();
+
+      // Also reset after a small delay in case of layout shifts
+      const timeoutId = setTimeout(() => {
+        resetScroll();
+        // Remove the class after scroll is complete
+        document.documentElement.classList.remove('scroll-reset');
+      }, 10);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.documentElement.classList.remove('scroll-reset');
+      };
+    }
+  }, [mediaId, mediaType]);
+
+  const {
+    data: media,
+    error: mediaError,
+    isLoading: isLoadingMedia,
+  } = useQuery({
+    queryKey: ['media', mediaId, mediaType, targetUsername],
+    queryFn: () => {
+      if (!mediaId || !mediaType) {
+        throw new Error('Media ID and type are required');
+      }
+      return getMediaFn(mediaId, mediaType, targetUsername);
+    },
+    enabled: !!mediaId && !!mediaType,
+    refetchOnMount: 'always',
+  });
+
+  useEffect(() => {
+    const completedAtValue = media?.completedAt ?? null;
+    const completedAtString = completedAtValue
+      ? completedAtValue instanceof Date
+        ? completedAtValue.toISOString()
+        : completedAtValue
+      : null;
+    setCompletionStatus({
+      isCompleted: media?.isCompleted ?? false,
+      completedAt: completedAtString,
+      status:
+        (media?.mediaStatus as MediaStatusValue | null | undefined) ??
+        (media?.isCompleted ? 'completed' : null),
+    });
+  }, [media?.isCompleted, media?.completedAt, media?.mediaStatus]);
+
+  useEffect(() => {
+    if (!media) return;
+
+    const mediaTitle =
+      media.title.contentTitleEnglish ||
+      media.title.contentTitleRomaji ||
+      media.title.contentTitleNative;
+
+    const section = pathname.endsWith('/reviews')
+      ? 'Reviews'
+      : pathname.endsWith('/social')
+        ? 'Social'
+        : 'Overview';
+
+    document.title = `${mediaTitle} • ${section} • NihongoTracker`;
+  }, [
+    media,
+    pathname,
+    media?.title.contentTitleEnglish,
+    media?.title.contentTitleRomaji,
+    media?.title.contentTitleNative,
+  ]);
+
+  const { mutate: setMediaStatus, isPending: isUpdatingCompletion } =
+    useMutation({
+      mutationFn: (status: MediaStatusValue) => {
+        if (!media?.contentId || !media?.type) {
+          throw new Error('Missing media information');
+        }
+        return updateMediaCompletionStatusFn({
+          mediaId: media.contentId,
+          type: media.type,
+          status,
+          source: 'manual',
+        });
+      },
+      onSuccess: (data) => {
+        setCompletionStatus({
+          isCompleted: data.isCompleted,
+          completedAt: data.completedAt,
+          status: data.status,
+        });
+
+        queryClient.setQueryData<IMediaDocument | undefined>(
+          ['media', mediaId, mediaType, targetUsername],
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  isCompleted: data.isCompleted,
+                  completedAt: data.completedAt,
+                  autoCompleteSuppressed: data.autoCompleteSuppressed,
+                  mediaStatus: data.status,
+                }
+              : prev
+        );
+        queryClient.invalidateQueries({ queryKey: ['ImmersionList'] });
+        if (targetUsername) {
+          queryClient.invalidateQueries({
+            queryKey: ['ImmersionList', targetUsername],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['recentLogs', targetUsername],
+          });
+        }
+        toast.success(
+          data.status
+            ? `Marked as ${STATUS_CONFIG[data.status].label.toLowerCase()}.`
+            : 'Status cleared.'
+        );
+      },
+      onError: (error) => {
+        const message =
+          (error as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          (error as Error)?.message ||
+          `The status couldn't be updated.`;
+        toast.error(message);
+      },
+    });
+
+  // Only fetched once the removal modal is opened — it tells the user how many
+  // logs (and how much XP) removing this media would delete.
+  const { data: removalStats, isLoading: isLoadingRemovalStats } =
+    useQuery<IMediaStats>({
+      queryKey: ['mediaStats', mediaId, mediaType],
+      queryFn: () => getUserMediaStatsFn(mediaId!, mediaType!),
+      enabled: removeModalOpen && !!mediaId && !!mediaType && isOwnProfile,
+      staleTime: 5 * 60 * 1000,
+    });
+
+  const { mutate: removeFromList, isPending: isRemovingFromList } = useMutation(
+    {
+      mutationFn: () => {
+        if (!media?.contentId || !media?.type) {
+          throw new Error('Missing media information');
+        }
+        return removeMediaFromImmersionListFn({
+          mediaId: media.contentId,
+          type: media.type,
+          deleteLogs: removeWithLogs,
+        });
+      },
+      onSuccess: (data) => {
+        setCompletionStatus({
+          isCompleted: false,
+          completedAt: null,
+          status: null,
+        });
+
+        queryClient.setQueryData<IMediaDocument | undefined>(
+          ['media', mediaId, mediaType, targetUsername],
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  isCompleted: false,
+                  completedAt: null,
+                  autoCompleteSuppressed: false,
+                  mediaStatus: null,
+                }
+              : prev
+        );
+
+        // Logs were deleted, so XP/streaks/stats change too — refresh broadly
+        void queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey.some(
+              (key) =>
+                key === 'logs' ||
+                key === 'user' ||
+                key === 'ImmersionList' ||
+                key === 'mediaStats'
+            ),
+        });
+        if (targetUsername) {
+          void queryClient.invalidateQueries({
+            queryKey: ['recentLogs', targetUsername],
+          });
+        }
+        void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+
+        toast.success(
+          data.deletedLogs > 0
+            ? `Removed from your list (${data.deletedLogs} log${
+                data.deletedLogs === 1 ? '' : 's'
+              } deleted).`
+            : 'Removed from your list. Your logs were kept.'
+        );
+        setRemoveModalOpen(false);
+        setRemoveWithLogs(false);
+      },
+      onError: (error) => {
+        const message =
+          (error as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          (error as Error)?.message ||
+          `The media couldn't be removed from your list.`;
+        toast.error(message);
+      },
+    }
+  );
+
+  if (mediaError) {
+    if (mediaError instanceof AxiosError) {
+      if (mediaError.status === 404) navigate('/404', { replace: true });
+      toast.error(mediaError.response?.data.message);
+    } else {
+      toast.error(
+        mediaError.message ? mediaError.message : 'An error occurred'
+      );
+    }
+  }
+
+  const renderDescription = (description: string) => {
+    const normalizedSource = description
+      .replace(/\r\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, ' ')
+      .replace(/\u00a0/gi, ' ');
+
+    const sourceWithoutQuoteMarkers = normalizedSource.replace(
+      /(^|\n)\s*>+\s?/g,
+      '$1'
+    );
+
+    if (!sourceWithoutQuoteMarkers.trim()) {
+      return null;
+    }
+
+    if (
+      /\[(b|i|u|s|url|img|spoiler|quote|code|list|\*)\b/i.test(
+        sourceWithoutQuoteMarkers
+      )
+    ) {
+      const htmlFromBBCode = convertBBCodeToHtml(
+        sourceWithoutQuoteMarkers
+      ).replace(/\\n/g, '\n');
+
+      const sanitizedDescription = DOMPurify.sanitize(
+        htmlFromBBCode.replace(/<br\s*\/?/gi, '<br />')
+      );
+
+      const cleanedDescription = sanitizedDescription.replace(
+        /(^|<br\s*\/?\s*>)(?:\s*(?:&gt;|>)+\s*)/gi,
+        '$1'
+      );
+
+      return <div dangerouslySetInnerHTML={{ __html: cleanedDescription }} />;
+    }
+
+    if (!/<[a-z][\s\S]*>/i.test(sourceWithoutQuoteMarkers)) {
+      return sourceWithoutQuoteMarkers.split('\n').map((line, index) => {
+        const cleanedLine = line.replace(/^\s*(?:&gt;|>)+\s*/, '');
+        return (
+          <p key={`description-line-${index}`}>
+            {cleanedLine.length > 0 ? cleanedLine : '\u00A0'}
+          </p>
+        );
+      });
+    }
+
+    const sanitizedDescription = DOMPurify.sanitize(
+      sourceWithoutQuoteMarkers.replace(/<br\s*\/?/gi, '<br />')
+    );
+
+    const cleanedDescription = sanitizedDescription.replace(
+      /(^|<br\s*\/?\s*>)(?:\s*(?:&gt;|>)+\s*)/gi,
+      '$1'
+    );
+
+    return <div dangerouslySetInnerHTML={{ __html: cleanedDescription }} />;
+  };
+
+  useEffect(() => {
+    if (
+      mediaType !== 'anime' &&
+      mediaType !== 'manga' &&
+      mediaType !== 'vn' &&
+      mediaType !== 'game' &&
+      mediaType !== 'video' &&
+      mediaType !== 'light-novel' &&
+      mediaType !== 'movie' &&
+      mediaType !== 'tv show' &&
+      mediaType !== 'book'
+    ) {
+      navigate('/404');
+    }
+  }, [mediaType, navigate, media]);
+
+  useEffect(() => {
+    async function getAvgColor() {
+      if (media?.contentImage) {
+        const color = await getAverageColorFn(media?.contentImage);
+        if (color) {
+          return setAverageColor(color.hex);
+        }
+        setAverageColor('#ffffff');
+      }
+    }
+
+    void getAvgColor();
+  }, [media]);
+
+  const shouldBlur = media
+    ? (media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) &&
+      user?.settings?.blurAdultContent
+    : false;
+
+  return (
+    <div className="flex flex-col justify-center bg-base-200 text-base-content">
+      <QuickLog
+        open={logModalOpen}
+        onClose={() => setLogModalOpen(false)}
+        media={media}
+      />
+      {media && (
+        <ForecastModal
+          open={forecastModalOpen}
+          onClose={() => setForecastModalOpen(false)}
+          initialMedia={media}
+        />
+      )}
+      {media?.contentId && media?.type && (
+        <AddToListModal
+          open={addToListOpen}
+          mediaId={media.contentId}
+          mediaType={media.type}
+          onClose={() => setAddToListOpen(false)}
+        />
+      )}
+      {removeModalOpen && media && (
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box border border-error/20">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-error/10 text-error shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-lg">{t('header.removeTitle')}</h3>
+                <p className="text-sm text-base-content/70 mt-1 break-words">
+                  {media.title.contentTitleNative}
+                </p>
+              </div>
+            </div>
+
+            <div className="py-4 space-y-3">
+              {isLoadingRemovalStats ? (
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <span className="loading loading-spinner loading-xs" />
+                  {t('header.checkingLogs')}
+                </div>
+              ) : removalStats && removalStats.total.logs > 0 ? (
+                <>
+                  <label className="label cursor-pointer justify-start gap-3 py-0">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-error checkbox-sm"
+                      checked={removeWithLogs}
+                      onChange={(e) => setRemoveWithLogs(e.target.checked)}
+                      disabled={isRemovingFromList}
+                    />
+                    <span className="text-sm">
+                      Also delete my {removalStats.total.logs} log
+                      {removalStats.total.logs === 1 ? '' : 's'} for this media
+                    </span>
+                  </label>
+
+                  {removeWithLogs ? (
+                    <div role="alert" className="alert alert-warning">
+                      <TriangleAlert className="h-5 w-5 shrink-0" />
+                      <span className="text-sm">
+                        This deletes{' '}
+                        <span className="font-semibold">
+                          {removalStats.total.logs} log
+                          {removalStats.total.logs === 1 ? '' : 's'}
+                        </span>
+                        {removalStats.total.xp
+                          ? ` and ${Math.round(
+                              removalStats.total.xp
+                            ).toLocaleString()} XP`
+                          : ''}
+                        . Your level and streaks will be recalculated, and it
+                        cannot be undone.
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-base-content/70">
+                      Your logs and XP are kept; the media just stops showing
+                      in your list. Logging it again brings it back.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-base-content/70">
+                  {t('header.noLogsNote')}
+                </p>
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setRemoveModalOpen(false);
+                  setRemoveWithLogs(false);
+                }}
+                disabled={isRemovingFromList}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-error gap-2"
+                onClick={() => removeFromList()}
+                disabled={isRemovingFromList}
+              >
+                {isRemovingFromList ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                {t('header.remove')}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => {
+              if (isRemovingFromList) return;
+              setRemoveModalOpen(false);
+              setRemoveWithLogs(false);
+            }}
+          ></div>
+        </dialog>
+      )}
+      <div
+        className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
+          isLoadingMedia ? 'skeleton' : ''
+        } ${shouldBlur ? 'blur-sm' : ''}`}
+        style={{
+          backgroundImage: `url(${!isLoadingMedia ? media?.coverImage : ''})`,
+          backgroundColor: averageColor,
+        }}
+      >
+        {media?.coverImage ? (
+          <div className="flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover" />
+        ) : (
+          <></>
+        )}
+      </div>
+
+      <div className="min-h-12 bg-base-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] lg:grid-cols-[215px_1fr] gap-6">
+            <div className="flex flex-col items-center md:items-start">
+              <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
+                {isLoadingMedia ? (
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 skeleton"></div>
+                ) : media?.contentImage ? (
+                  <img
+                    src={media.contentImage}
+                    alt={media.title.contentTitleNative}
+                    className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
+                      shouldBlur ? 'blur-sm' : ''
+                    }`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 bg-base-200 flex items-center justify-center">
+                    <div className="text-4xl text-base-content/30">
+                      {getMediaTypeIcon(media?.type || '')}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {isLoadingMedia ? (
+                <div className="skeleton h-12 w-full max-w-[200px] mt-4 rounded-lg"></div>
+              ) : (
+                <div className="w-full max-w-[200px] mt-4 flex flex-col gap-2">
+                  <button
+                    className="btn btn-primary w-full"
+                    onClick={() => setLogModalOpen(true)}
+                  >
+                    {t('header.log')}
+                  </button>
+                  {user && isOwnProfile && !isClubContext && media && (
+                    <button
+                      className="btn btn-outline w-full"
+                      onClick={() => setForecastModalOpen(true)}
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                      {t('goals:forecast.createTitle')}
+                    </button>
+                  )}
+                  {user && media?.contentId && media?.type && (
+                    <button
+                      className="btn btn-outline w-full"
+                      onClick={() => setAddToListOpen(true)}
+                    >
+                      {t('header.addToList')}
+                    </button>
+                  )}
+                  {isOwnProfile &&
+                    (media?.type === 'light-novel' || media?.type === 'vn') && (
+                      <button
+                        className="btn btn-secondary w-full"
+                        onClick={() =>
+                          navigate(`/texthooker/${media.contentId}`)
+                        }
+                      >
+                        TextHooker
+                      </button>
+                    )}
+                  {isOwnProfile && media?.contentId && media?.type && (
+                    <div className="flex flex-col gap-1">
+                      <div
+                        className={
+                          completionStatus.completedAt
+                            ? 'tooltip tooltip-bottom sm:tooltip-right w-full before:max-w-[calc(100vw-2rem)] before:whitespace-normal before:break-words'
+                            : 'w-full'
+                        }
+                        data-tip={
+                          completionStatus.completedAt
+                            ? `Completed at ${formatDateOnly(
+                                new Date(completionStatus.completedAt)
+                              )}`
+                            : undefined
+                        }
+                      >
+                        <div className="dropdown dropdown-bottom w-full">
+                          <button
+                            type="button"
+                            tabIndex={0}
+                            className={`btn gap-2 w-full justify-between ${
+                              completionStatus.status
+                                ? STATUS_CONFIG[completionStatus.status]
+                                    .badgeClass
+                                : 'btn-outline'
+                            } ${
+                              completionStatus.completedAt ? 'cursor-help' : ''
+                            }`}
+                            disabled={isUpdatingCompletion}
+                          >
+                            <span className="flex items-center gap-2">
+                              {isUpdatingCompletion ? (
+                                <span className="loading loading-spinner loading-sm" />
+                              ) : completionStatus.status ? (
+                                (() => {
+                                  const StatusIcon =
+                                    STATUS_CONFIG[completionStatus.status].icon;
+                                  return <StatusIcon className="w-4 h-4" />;
+                                })()
+                              ) : (
+                                <Circle className="w-4 h-4" />
+                              )}
+                              <span>
+                                {completionStatus.status
+                                  ? STATUS_CONFIG[completionStatus.status].label
+                                  : 'Set status'}
+                              </span>
+                            </span>
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <ul
+                            tabIndex={0}
+                            className="dropdown-content z-20 menu p-1 surface-raised w-full text-sm"
+                          >
+                            {(
+                              Object.entries(STATUS_CONFIG) as [
+                                MediaStatusValue,
+                                (typeof STATUS_CONFIG)[MediaStatusValue],
+                              ][]
+                            ).map(([key, cfg]) => (
+                              <li key={key}>
+                                <button
+                                  type="button"
+                                  className={`gap-2 ${
+                                    completionStatus.status === key
+                                      ? 'active'
+                                      : ''
+                                  }`}
+                                  onClick={() => setMediaStatus(key)}
+                                >
+                                  <cfg.icon className="w-4 h-4" />
+                                  {cfg.label}
+                                </button>
+                              </li>
+                            ))}
+                            <li>
+                              <div className="divider my-1"></div>
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                className="gap-2 text-error"
+                                onClick={() => {
+                                  setRemoveWithLogs(false);
+                                  setRemoveModalOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                {t('header.removeFromList')}
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="py-4 px-0 md:py-5 md:px-4">
+              {isLoadingMedia ? (
+                <div className="space-y-4">
+                  <div className="skeleton h-8 w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-2/3"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-xl sm:text-2xl font-bold text-base-content">
+                    {media?.title?.contentTitleNative}
+                  </h1>
+                  <div className="text-base-content text-opacity-75 mt-4 text-sm sm:text-base">
+                    {(() => {
+                      const engDescription = media?.description?.filter(
+                        (desc) => desc.language === 'eng'
+                      )[0];
+                      if (engDescription?.description) {
+                        return renderDescription(engDescription.description);
+                      }
+                      const jpnDescription = media?.description?.filter(
+                        (desc) => desc.language === 'jpn'
+                      )[0];
+                      if (jpnDescription?.description) {
+                        return renderDescription(jpnDescription.description);
+                      }
+                    })()}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      <MediaNavbar
+        mediaType={mediaType}
+        mediaId={mediaId as string}
+        username={isClubContext ? undefined : username || user?.username}
+      />
+      <Outlet
+        context={
+          {
+            mediaDocument: media,
+            mediaType,
+            username: username || user?.username,
+          } satisfies OutletMediaContextType
+        }
+      />
+    </div>
+  );
+}

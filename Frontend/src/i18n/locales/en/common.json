@@ -1,0 +1,85 @@
+{
+  "allMediaTypes": "All Media Types",
+  "allTypes": "All types",
+  "avatarAlt": "{{username}}'s Avatar",
+  "cancel": "Cancel",
+  "close": "Close",
+  "errors": {
+    "generic": "An error occurred"
+  },
+  "language": {
+    "saveError": "Could not save your language preference"
+  },
+  "mediaTypeGroups": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Book",
+    "game": "Video Game",
+    "manga": "Manga",
+    "movie": "Movie",
+    "other": "Other",
+    "light-novel": "Light Novel",
+    "reading": "Reading",
+    "tvShow": "TV Show",
+    "video": "Video",
+    "vn": "Visual Novel"
+  },
+  "mediaTypes": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Book",
+    "game": "Video Game",
+    "manga": "Manga",
+    "movie": "Movie",
+    "other": "Other",
+    "light-novel": "Light Novel",
+    "reading": "Reading",
+    "tvShow": "TV Show",
+    "video": "Video",
+    "vn": "Visual Novel"
+  },
+  "mediaTypesPlural": {
+    "anime": "anime",
+    "book": "books",
+    "game": "video games",
+    "manga": "manga",
+    "movie": "movies",
+    "light-novel": "light novels",
+    "reading": "reading",
+    "tvShow": "TV shows",
+    "video": "video",
+    "vn": "visual novels"
+  },
+  "notFound": {
+    "description": "Oops! The page you are looking for does not exist.",
+    "hint": "While we are here go immerse a bit!",
+    "title": "404 - Page Not Found"
+  },
+  "patreonTiers": {
+    "consumer": "Consumer",
+    "donator": "Donator",
+    "enthusiast": "Enthusiast"
+  },
+  "save": "Save",
+  "time": {
+    "justNow": "Just now"
+  },
+  "unknown": "Unknown",
+  "viewProfile": "View {{username}}'s profile",
+  "imageCrop": {
+    "apply": "Apply Crop"
+  },
+  "levelUp": {
+    "title": "Congratulations! Level Up!"
+  },
+  "charts": {
+    "noData": "No data available for the selected timeframe."
+  },
+  "routeError": {
+    "updatingTitle": "Updating app...",
+    "updatingBody": "A new version was deployed. Reloading to sync assets.",
+    "reload": "Reload now",
+    "title": "Unexpected Application Error",
+    "generic": "Something went wrong while loading this page."
+  }
+}

@@ -1,0 +1,662 @@
+import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import { Types } from 'mongoose';
+import axios from 'axios';
+import TextSession from '../models/textSession.model.js';
+import { MediaBase as Media } from '../models/media.model.js';
+import { apiError } from '../i18n/errorCodes.js';
+import { computeTextSessionIntelligence } from '../services/textSessionIntelligence.js';
+import { hasSessionIntelligenceAccess } from '../services/textSessionAccess.js';
+import { ITextSessionIntelligenceSettings, IUser } from '../types.js';
+
+// Blank (media-less, user-named) sessions are keyed by a generated id in
+// this format instead of a media contentId, so the existing :contentId
+// routes can serve both kinds of sessions without a separate route tree.
+const BLANK_SESSION_ID_PREFIX = 'session-';
+
+function isBlankSessionId(contentId: string) {
+  return contentId.startsWith(BLANK_SESSION_ID_PREFIX);
+}
+
+function sessionResponseForUser(session: { toObject: () => any }, user: IUser) {
+  const response = session.toObject();
+  if (!hasSessionIntelligenceAccess(user)) {
+    response.sessionHistory = (response.sessionHistory ?? []).map(
+      (entry: Record<string, unknown>) => {
+        const { intelligence: _intelligence, ...summary } = entry;
+        return summary;
+      }
+    );
+  }
+  return response;
+}
+
+/**
+ * Resolves the :contentId route param to either a media-backed session
+ * filter or a blank-session filter, depending on its shape.
+ */
+async function resolveSessionContext(
+  userId: Types.ObjectId,
+  contentId: string
+) {
+  if (isBlankSessionId(contentId)) {
+    return {
+      filter: { userId, blankId: contentId },
+      isBlank: true as const,
+      media: null,
+    };
+  }
+
+  const media = await Media.findOne({ contentId });
+  if (!media) {
+    throw apiError('media.notFound', 404, 'Media not found');
+  }
+
+  return {
+    filter: { userId, mediaId: media._id },
+    isBlank: false as const,
+    media,
+  };
+}
+
+export const checkRoomExists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { roomId } = req.params;
+    const session = await TextSession.findOne({ roomId });
+    res.status(200).json({ exists: !!session });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const LinkTypeObject = {
+  vn: 1,
+  manga: 2,
+  reading: 3,
+} as const;
+
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
+interface IJitenDeck {
+  deckId: number;
+  creationDate: string;
+  releaseDate: string | null;
+  coverName: string;
+  mediaType: number;
+  originalTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
+  characterCount: number;
+  wordCount: number;
+  uniqueWordCount: number;
+  uniqueWordUsedOnceCount: number;
+  uniqueKanjiCount: number;
+  uniqueKanjiUsedOnceCount: number;
+  difficulty: number;
+  difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
+  sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
+  averageSentenceLength: number;
+  parentDeckId: number | null;
+  links: IJitenDeckLink[];
+  aliases: string[];
+  childrenDeckCount: number;
+  selectedWordOccurrences: number;
+  dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
+}
+
+interface IJitenResponse {
+  data: {
+    parentDeck: IJitenDeck | null;
+    mainDeck: IJitenDeck;
+    subDecks: IJitenDeck[];
+  };
+  totalItems: number;
+  pageSize: number;
+  currentOffset: number;
+}
+
+interface IAddSessionHistoryBody {
+  loggedAt?: string;
+  isShared: boolean;
+  connectedUsersCount: number;
+  charactersLogged: number;
+  readingSpeed: number;
+  sessionSeconds: number;
+  linesLogged?: number;
+  lineIds?: string[];
+  intelligenceSettings?: Partial<ITextSessionIntelligenceSettings>;
+}
+
+export const getRecentSessions = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const sessions = await TextSession.find({ userId })
+      .sort({ updatedAt: -1 })
+      .limit(20)
+      .select('-sessionHistory.intelligence')
+      .populate('mediaId', 'title coverImage contentImage contentId');
+
+    // Calculate overall stats
+    const allSessions = await TextSession.find({ userId }).select(
+      'sessionHistory.linesLogged sessionHistory.charactersLogged sessionHistory.sessionSeconds'
+    );
+    const allHistoryEntries = allSessions.flatMap(
+      (session) => session.sessionHistory || []
+    );
+
+    const totalSessions = allHistoryEntries.length;
+    const totalLines = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.linesLogged || 0),
+      0
+    );
+    const totalChars = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.charactersLogged || 0),
+      0
+    );
+    const totalTimerSeconds = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.sessionSeconds || 0),
+      0
+    );
+
+    res.status(200).json({
+      sessions: sessions.map((session) =>
+        sessionResponseForUser(session, res.locals.user)
+      ),
+      stats: {
+        totalSessions,
+        totalLines,
+        totalChars,
+        totalTimerSeconds,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createBlankSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { name } = req.body as { name?: string };
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+
+    if (!trimmedName) {
+      throw apiError(
+        'textSession.nameRequired',
+        400,
+        'Session name is required'
+      );
+    }
+    if (trimmedName.length > 100) {
+      throw apiError(
+        'textSession.nameTooLong',
+        400,
+        'Session name must be 100 characters or fewer'
+      );
+    }
+
+    const session = await TextSession.create({
+      userId,
+      blankId: `${BLANK_SESSION_ID_PREFIX}${randomUUID()}`,
+      name: trimmedName,
+      lines: [],
+    });
+
+    res.status(201).json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSessionByContentId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+
+    const { filter, isBlank, media } = await resolveSessionContext(
+      userId,
+      contentId
+    );
+
+    if (isBlank) {
+      const session = await TextSession.findOne(filter);
+      if (!session) {
+        throw apiError('textSession.notFound', 404, 'Session not found');
+      }
+      res.status(200).json(sessionResponseForUser(session, res.locals.user));
+      return;
+    }
+
+    const mediaDoc = media!;
+
+    let session = await TextSession.findOne(filter).populate(
+      'mediaId',
+      'title coverImage contentImage contentId type'
+    );
+
+    if (!session) {
+      session = await TextSession.create({
+        userId,
+        mediaId: mediaDoc._id,
+        lines: [],
+      });
+      await session.populate(
+        'mediaId',
+        'title coverImage contentImage contentId type'
+      );
+    }
+
+    // Get Jiten data if available
+    const jitenURL = process.env.JITEN_API_URL;
+    let jitenData = null;
+
+    if (jitenURL && ['vn', 'manga', 'light-novel'].includes(mediaDoc.type)) {
+      try {
+        const LinkType: number | null = mediaDoc.type
+          ? (LinkTypeObject[mediaDoc.type as keyof typeof LinkTypeObject] ??
+            null)
+          : null;
+
+        if (LinkType) {
+          const jitenDeck = await axios.get(
+            `${jitenURL}/media-deck/by-link-id/${LinkType}/${contentId}`,
+            {
+              validateStatus: (status) => status === 200 || status === 404,
+            }
+          );
+
+          if (
+            jitenDeck.status === 200 &&
+            jitenDeck.data &&
+            jitenDeck.data.length > 0
+          ) {
+            const jitenDetailResponse = await axios.get(
+              `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
+              {
+                validateStatus: (status) => status === 200 || status === 404,
+              }
+            );
+
+            if (jitenDetailResponse.status === 200) {
+              jitenData = (jitenDetailResponse.data as IJitenResponse).data;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Error fetching Jiten data:', error);
+      }
+    }
+
+    const response = sessionResponseForUser(session, res.locals.user);
+    if (typeof response.mediaId === 'object' && response.mediaId !== null) {
+      (response.mediaId as Record<string, unknown>).jiten = jitenData;
+    }
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateSessionTimer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const { timerSeconds } = req.body;
+
+    if (typeof timerSeconds !== 'number' || timerSeconds < 0) {
+      throw apiError(
+        'textSession.invalidTimerSeconds',
+        400,
+        'Invalid timerSeconds value'
+      );
+    }
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const session = await TextSession.findOneAndUpdate(
+      filter,
+      {
+        $set: { timerSeconds, updatedAt: new Date() },
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({ timerSeconds: session.timerSeconds });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addLinesToSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const { lines } = req.body;
+
+    if (!lines || !Array.isArray(lines)) {
+      throw apiError('textSession.invalidLines', 400, 'Invalid lines data');
+    }
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const session = await TextSession.findOneAndUpdate(
+      filter,
+      {
+        $setOnInsert: {
+          ...filter,
+          lines: [],
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    const existingLineIds = new Set(
+      session.lines.map((line) => line.id).filter(Boolean)
+    );
+    const incomingLineIds = new Set<string>();
+
+    const linesToInsert = lines
+      .filter(
+        (
+          line
+        ): line is {
+          id: string;
+          text?: string;
+          charsCount?: number;
+          createdAt?: string | Date;
+          elapsedSeconds?: number;
+        } => typeof line?.id === 'string' && line.id.trim().length > 0
+      )
+      .filter((line) => {
+        if (existingLineIds.has(line.id) || incomingLineIds.has(line.id)) {
+          return false;
+        }
+
+        incomingLineIds.add(line.id);
+        return true;
+      })
+      .map((line) => ({
+        id: line.id,
+        text: typeof line.text === 'string' ? line.text : '',
+        charsCount: typeof line.charsCount === 'number' ? line.charsCount : 0,
+        createdAt: line.createdAt ? new Date(line.createdAt) : new Date(),
+        elapsedSeconds:
+          typeof line.elapsedSeconds === 'number' &&
+          Number.isFinite(line.elapsedSeconds) &&
+          line.elapsedSeconds >= 0
+            ? Math.floor(line.elapsedSeconds)
+            : undefined,
+      }));
+
+    let updatedSession = session;
+
+    if (linesToInsert.length > 0) {
+      const persistedSession = await TextSession.findOneAndUpdate(
+        { _id: session._id },
+        {
+          $push: { lines: { $each: linesToInsert } },
+          $set: { updatedAt: new Date() },
+        },
+        { new: true }
+      );
+
+      if (persistedSession) {
+        updatedSession = persistedSession;
+      }
+    }
+
+    res
+      .status(200)
+      .json(sessionResponseForUser(updatedSession, res.locals.user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeLinesFromSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const { lineIds } = req.body;
+
+    if (!lineIds || !Array.isArray(lineIds) || lineIds.length === 0) {
+      throw apiError('textSession.invalidLineIds', 400, 'Invalid lineIds data');
+    }
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const session = await TextSession.findOneAndUpdate(
+      filter,
+      {
+        $pull: { lines: { id: { $in: lineIds } } },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!session) {
+      throw apiError('textSession.notFound', 404, 'Session not found');
+    }
+
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const clearSessionLines = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const session = await TextSession.findOneAndUpdate(
+      filter,
+      {
+        $set: { lines: [], updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!session) {
+      throw apiError('textSession.notFound', 404, 'Session not found');
+    }
+
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addSessionHistoryEntry = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const {
+      loggedAt,
+      isShared,
+      connectedUsersCount,
+      charactersLogged,
+      readingSpeed,
+      sessionSeconds,
+      linesLogged,
+      lineIds,
+      intelligenceSettings,
+    } = req.body as IAddSessionHistoryBody;
+
+    if (typeof isShared !== 'boolean') {
+      throw apiError(
+        'textSession.invalidIsShared',
+        400,
+        'Invalid isShared value'
+      );
+    }
+
+    const numericFields = [
+      connectedUsersCount,
+      charactersLogged,
+      readingSpeed,
+      sessionSeconds,
+    ];
+    if (
+      numericFields.some(
+        (value) =>
+          typeof value !== 'number' || !Number.isFinite(value) || value < 0
+      )
+    ) {
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session history metrics'
+      );
+    }
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const loggedAtDate = loggedAt ? new Date(loggedAt) : new Date();
+    if (Number.isNaN(loggedAtDate.getTime())) {
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session history date'
+      );
+    }
+
+    if (
+      lineIds !== undefined &&
+      (!Array.isArray(lineIds) ||
+        lineIds.some((lineId) => typeof lineId !== 'string'))
+    ) {
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session line identifiers'
+      );
+    }
+
+    const existingSession = await TextSession.findOne(filter);
+    const selectedLineIds = lineIds ? new Set(lineIds) : null;
+    const intelligenceLines = (existingSession?.lines ?? []).filter(
+      (line) => !selectedLineIds || selectedLineIds.has(line.id)
+    );
+
+    const historyEntry = {
+      loggedAt: loggedAtDate,
+      isShared,
+      connectedUsersCount: Math.floor(connectedUsersCount),
+      linesLogged:
+        typeof linesLogged === 'number' && linesLogged >= 0
+          ? Math.floor(linesLogged)
+          : 0,
+      charactersLogged: Math.floor(charactersLogged),
+      readingSpeed: Math.round(readingSpeed),
+      sessionSeconds: Math.floor(sessionSeconds),
+      intelligence: computeTextSessionIntelligence({
+        lines: intelligenceLines,
+        sessionSeconds,
+        loggedAt: loggedAtDate,
+        settings: intelligenceSettings,
+      }),
+    };
+
+    const session = await TextSession.findOneAndUpdate(
+      filter,
+      {
+        $push: { sessionHistory: historyEntry },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true, upsert: true }
+    ).populate('mediaId', 'title coverImage contentImage contentId type');
+
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+
+    const { filter } = await resolveSessionContext(userId, contentId);
+
+    const session = await TextSession.findOneAndDelete(filter);
+
+    if (!session) {
+      throw apiError('textSession.notFound', 404, 'Session not found');
+    }
+
+    res.status(200).json({ message: 'Session deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

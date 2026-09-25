@@ -1,0 +1,201 @@
+{
+  "about": {
+    "title": "About",
+    "edit": "Edit profile",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "emptyOwn": "Add a short introduction from Settings → Profile Information.",
+    "emptyOther": "This user has not added an about section yet."
+  },
+  "achievements": {
+    "title": "Achievements",
+    "viewAll": "View all",
+    "none": "No achievements yet",
+    "noMatches": "No achievements match your filters"
+  },
+  "activity": {
+    "title": "Immersion Activity"
+  },
+  "socialActivity": {
+    "title": "{{username}}'s Activity",
+    "empty": "No activity yet.",
+    "loadError": "Could not load this activity feed.",
+    "retry": "Retry",
+    "loadMore": "Load more"
+  },
+  "social": {
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "friends": "Friends",
+    "followingLabel": "Following",
+    "recommendations": "Recommendations",
+    "followers": "followers",
+    "following": "following",
+    "mutual": "Mutual",
+    "followersTitle": "{{username}}'s followers",
+    "followingTitle": "People {{username}} follows",
+    "peopleCount_one": "{{count}} person",
+    "peopleCount_other": "{{count}} people",
+    "noFollowers": "No followers yet.",
+    "noFollowing": "Not following anyone yet.",
+    "loadError": "Could not load this list.",
+    "retry": "Retry",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {{page}} of {{totalPages}}"
+  },
+  "categories": {
+    "all": "All Categories",
+    "streaks": "Streaks",
+    "immersion": "Immersion",
+    "social": "Social",
+    "milestone": "Milestone",
+    "secret": "Secret"
+  },
+  "favorites": {
+    "title": "Favorites"
+  },
+  "favoritesWidget": {
+    "empty": "No favorites yet.",
+    "emptyOwn": "Add your favorite media to feature them here.",
+    "hint": "{{current}}/{{max}} · drag to reorder, tap the note icon to add a note.",
+    "viewInfo": "View info",
+    "viewNote": "View note and info",
+    "drag": "Drag to reorder",
+    "editNote": "Edit note",
+    "remove": "Remove favorite",
+    "notePlaceholder": "Why a favorite?",
+    "unknown": "Unknown",
+    "updated": "Favorites updated",
+    "updateFailed": "Could not update favorites",
+    "types": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "light-novel": "Light Novel",
+      "vn": "Visual Novel",
+      "game": "Video Game",
+      "video": "Video",
+      "movie": "Movie",
+      "book": "Book",
+      "tvShow": "TV Show"
+    },
+    "noteTitle": "Note",
+    "cancel": "Cancel",
+    "saveNote": "Save note",
+    "save": "Save",
+    "edit": "Edit",
+    "add": "Add"
+  },
+  "feed": {
+    "all": "All activity",
+    "logs": "Logs",
+    "achievements": "Achievements",
+    "noLogs": "No logs available",
+    "noLogsMatch": "No logs match your search criteria",
+    "noActivity": "No activity yet",
+    "noActivityMatch": "No activity matches your search criteria"
+  },
+  "filters": {
+    "active": "Active filters:",
+    "clearAll": "Clear all",
+    "allTypes": "All Types",
+    "clearType": "Clear type filter",
+    "clearCategory": "Clear category filter",
+    "clearDate": "Clear date filter",
+    "clearSort": "Clear sort filter",
+    "includeUnknownDates": "Include unknown dates",
+    "hideUnknownDates": "Hide unknown dates",
+    "categoryBadge": "Category:",
+    "sortBadge": "Sort:"
+  },
+  "header": {
+    "shareStats": "Share stats",
+    "shareStatsTitle": "Share stats as an image",
+    "avatarAlt": "{{username}} avatar"
+  },
+  "privateProfile": {
+    "title": "This profile is private",
+    "description": "{{username}} has chosen to keep their profile private.",
+    "hint": "You cannot view this profile's activity or details.",
+    "backHome": "Back to home"
+  },
+  "loadMore": "Load More",
+  "loadMoreLogs": "Load More Logs",
+  "nothingMore": "Nothing more to load",
+  "progress": {
+    "title": "Progress Stats",
+    "overall": "Overall Progress",
+    "listening": "Listening Progress",
+    "reading": "Reading Progress",
+    "level": "Level {{level}}",
+    "xp": "{{current}}/{{total}} XP"
+  },
+  "search": {
+    "placeholder": "Search logs...",
+    "clear": "Clear search"
+  },
+  "sort": {
+    "date": "Date",
+    "rarity": "Rarity",
+    "points": "Points",
+    "xp": "XP",
+    "episodes": "Episodes",
+    "chars": "Characters",
+    "pages": "Pages",
+    "time": "Time",
+    "readingSpeed": "Reading Speed",
+    "newestFirst": "Newest First",
+    "oldestFirst": "Oldest First",
+    "highestToLowest": "Highest to Lowest",
+    "lowestToHighest": "Lowest to Highest",
+    "field": "Sort Field",
+    "direction": "Sort Direction"
+  },
+  "signature": {
+    "chars": "{{value}} characters read",
+    "hours": "{{value}} hours immersed",
+    "level": "Level {{value}}",
+    "logs": "{{value}} logs",
+    "streak": "{{value}}-day streak",
+    "xp": "{{value}} XP"
+  },
+  "stats": {
+    "title": "Profile Stats",
+    "share": "Share",
+    "shareTitle": "Share stats as an image",
+    "globalRanking": "Global Ranking",
+    "monthlyRanking": "Monthly Ranking",
+    "rankingOverTime": "Ranking over time",
+    "monthly": "Monthly",
+    "global": "Global",
+    "achievements": "Achievements",
+    "totalXp": "Total XP",
+    "totalTime": "Total Immersion Time",
+    "totalTimeHours": "{{hours}} hours of immersion",
+    "hoverPosition": "{{date}}: #{{position}}",
+    "noRankingHistory": "Not enough ranking history yet."
+  },
+  "tabs": {
+    "overview": "Overview",
+    "activity": "Activity",
+    "stats": "Stats",
+    "immersionList": "Immersion List",
+    "lists": "Lists",
+    "goals": "Goals",
+    "achievements": "Achievements",
+    "moderation": "Moderation"
+  },
+  "time": {
+    "all": "All Time",
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "year": "This Year",
+    "custom": "Custom Range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "start": "Start",
+    "end": "End",
+    "range": "{{start}} to {{end}}"
+  }
+}

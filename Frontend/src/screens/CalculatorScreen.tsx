@@ -1,0 +1,73 @@
+import { Calculator } from 'lucide-react';
+import ImmersionCalculator from '../components/ImmersionCalculator';
+import { useTranslation } from 'react-i18next';
+
+function CalculatorScreen() {
+  const { t } = useTranslation('home');
+  return (
+    <div className="min-h-screen pt-20 bg-base-200">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <Calculator className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+              <h1 className="text-4xl font-bold text-base-content">
+                {t('calculator.title')}
+              </h1>
+            </div>
+            <p className="text-base-content/70">{t('calculator.subtitle')}</p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <ImmersionCalculator />
+            </div>
+
+            <div className="space-y-6">
+              <div className="card surface">
+                <div className="card-body">
+                  <h3 className="card-title text-lg flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-info"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {t('calculator.tips')}
+                  </h3>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{t('calculator.tip1')}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{t('calculator.tip2')}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{t('calculator.tip3')}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-success rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{t('calculator.tip4')}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CalculatorScreen;

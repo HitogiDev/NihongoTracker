@@ -1,0 +1,138 @@
+import { Router } from 'express';
+import multer from 'multer';
+import {
+  getClubs,
+  getClub,
+  createClub,
+  joinClub,
+  leaveClub,
+  transferLeadership,
+  updateClub,
+  getUserClubs,
+  manageJoinRequests,
+  kickClubMember,
+  getPendingJoinRequests,
+  addClubMedia,
+  editClubMedia,
+  getClubMedia,
+  getClubMediaLogs,
+  getClubMediaRankings,
+  getClubMediaStats,
+  createMediaVoting,
+  editMediaVoting,
+  deleteMediaVoting,
+  addVotingCandidate,
+  voteForCandidate,
+  getMediaVotings,
+  finalizeVoting,
+  completeVoting,
+  getClubRecentActivity,
+} from '../controllers/club.controller.js';
+import {
+  completeClubChallenge,
+  createChallenge,
+  createCooperativeGoal,
+  getChallenge,
+  getChallenges,
+  getClubFeed,
+  getClubObjectives,
+  getCooperativeGoals,
+  getEnhancedClubLeaderboard,
+  joinClubChallenge,
+  leaveClubChallenge,
+  moderateClubComment,
+  setPinnedClubActivity,
+  setPinnedClubObjective,
+  updateClubMemberRole,
+} from '../controllers/clubSocial.controller.js';
+import { optionalProtect, protect } from '../middlewares/authMiddleware.js';
+
+const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 3 * 1024 * 1024, // 3MB limit
+  },
+});
+
+// Public club read routes (optional auth for member context)
+router.get('/', optionalProtect, getClubs); // Get all clubs with filtering
+router.get('/challenges', optionalProtect, getChallenges);
+router.get('/challenges/:challengeId', optionalProtect, getChallenge);
+router.get('/:clubId/objectives', protect, getClubObjectives);
+router.get('/:clubId', optionalProtect, getClub); // Get specific club
+router.get('/:clubId/recent-activity', optionalProtect, getClubRecentActivity); // Get recent club activity
+router.get('/:clubId/media', optionalProtect, getClubMedia); // Get club media
+router.get('/:clubId/media/:mediaId/logs', optionalProtect, getClubMediaLogs); // Get club member logs for specific media
+router.get(
+  '/:clubId/media/:mediaId/rankings',
+  optionalProtect,
+  getClubMediaRankings
+); // Get club member rankings for specific media
+router.get('/:clubId/media/:mediaId/stats', optionalProtect, getClubMediaStats); // Get club media statistics
+router.get('/:clubId/rankings', optionalProtect, getEnhancedClubLeaderboard);
+router.get('/:clubId/votings', optionalProtect, getMediaVotings); // Get media votings
+
+// All other routes require authentication
+router.use(protect);
+
+router.post(
+  '/',
+  upload.fields([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'banner', maxCount: 1 },
+  ]),
+  createClub
+); // Create new club
+router.get('/user/my-clubs', getUserClubs); // Get user's clubs
+router.post('/:clubId/join', joinClub); // Join a club
+router.post('/:clubId/leave', leaveClub); // Leave a club
+router.put(
+  '/:clubId',
+  upload.fields([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'banner', maxCount: 1 },
+  ]),
+  updateClub
+); // Update club (leaders only)
+router.post('/:clubId/members/:memberId', manageJoinRequests); // Approve/reject join requests (leaders only)
+router.post('/:clubId/members/:memberId/kick', kickClubMember); // Kick an active member (leader/moderator)
+router.get('/:clubId/members/pending', getPendingJoinRequests); // Get pending join requests
+router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer club leadership (leaders only)
+router.patch('/:clubId/members/:memberId/role', updateClubMemberRole);
+
+router.get('/:clubId/feed', getClubFeed);
+router.put('/:clubId/feed/:activityId/pin', setPinnedClubActivity);
+router.delete(
+  '/:clubId/feed/:activityId/comments/:commentId',
+  moderateClubComment
+);
+
+router.post('/challenges', createChallenge);
+router.post('/objectives', createChallenge);
+router.put('/:clubId/objectives/:objectiveId/pin', setPinnedClubObjective);
+router.post('/challenges/:challengeId/join', joinClubChallenge);
+router.delete('/challenges/:challengeId/join', leaveClubChallenge);
+router.post('/challenges/:challengeId/complete', completeClubChallenge);
+
+router.get('/:clubId/cooperative-goals', getCooperativeGoals);
+router.post('/:clubId/cooperative-goals', createCooperativeGoal);
+
+// Club Media routes
+router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)
+router.put('/:clubId/media/:mediaId', editClubMedia); // Edit club media (leaders/moderators only)
+
+// Club Media Voting routes
+router.post('/:clubId/votings', createMediaVoting); // Create new media voting
+router.put('/:clubId/votings/:votingId', editMediaVoting); // Edit media voting
+router.delete('/:clubId/votings/:votingId', deleteMediaVoting); // Delete media voting
+router.post('/:clubId/votings/:votingId/candidates', addVotingCandidate); // Add candidate to voting
+router.post('/:clubId/votings/:votingId/finalize', finalizeVoting); // Finalize voting setup
+router.post(
+  '/:clubId/votings/:votingId/vote/:candidateIndex',
+  voteForCandidate
+); // Vote for candidate
+router.post('/:clubId/votings/:votingId/complete', completeVoting); // Complete voting and select winner
+
+export default router;

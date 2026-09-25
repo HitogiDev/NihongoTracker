@@ -1,0 +1,817 @@
+import DropdownSelect from '../ui/DropdownSelect';
+import { useState, useEffect } from 'react';
+import Field from '../ui/Field';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
+import { X, Calendar, Save } from 'lucide-react';
+import { DayPicker } from 'react-day-picker';
+import { editMediaVotingFn } from '../../api/clubApi';
+import { IClub, IClubMediaVoting } from '../../types.d';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
+import { getLogTypeLabelKey } from '../../utils/logTypes';
+
+interface EditVotingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  club: IClub;
+  voting: IClubMediaVoting | null;
+}
+
+interface EditVotingData {
+  title: string;
+  description: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'book'
+    | 'custom';
+  customMediaType: string;
+  candidateSubmissionType: 'manual' | 'member_suggestions';
+  suggestionStartDate: Date | undefined;
+  suggestionEndDate: Date | undefined;
+  votingStartDate: Date | undefined;
+  votingEndDate: Date | undefined;
+  consumptionStartDate: Date | undefined;
+  consumptionEndDate: Date | undefined;
+  testingMode?: boolean;
+}
+
+const MEDIA_TYPES = [
+  'anime',
+  'manga',
+  'light-novel',
+  'vn',
+  'game',
+  'video',
+  'movie',
+] as const;
+
+export default function EditVotingModal({
+  isOpen,
+  onClose,
+  club,
+  voting,
+}: EditVotingModalProps) {
+  const { t } = useTranslation('clubs');
+  const { t: tCommon } = useTranslation('common');
+  const queryClient = useQueryClient();
+  const invalidateVotingQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'active'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'inactive'],
+    });
+  };
+
+  // Helper function to format date for display
+  const formatDateForDisplay = (date: Date | undefined) => {
+    if (!date) return 'Select date';
+    return date.toLocaleDateString(getLocale(), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const [votingData, setVotingData] = useState<EditVotingData>({
+    title: '',
+    description: '',
+    mediaType: 'anime',
+    customMediaType: '',
+    candidateSubmissionType: 'manual',
+    suggestionStartDate: undefined,
+    suggestionEndDate: undefined,
+    votingStartDate: undefined,
+    votingEndDate: undefined,
+    consumptionStartDate: undefined,
+    consumptionEndDate: undefined,
+    testingMode: false,
+  });
+
+  // Initialize form data when voting prop changes
+  useEffect(() => {
+    if (voting && isOpen) {
+      setVotingData({
+        title: voting.title,
+        description: voting.description || '',
+        mediaType: voting.mediaType,
+        customMediaType: voting.customMediaType || '',
+        candidateSubmissionType: voting.candidateSubmissionType,
+        suggestionStartDate: voting.suggestionStartDate
+          ? new Date(voting.suggestionStartDate)
+          : undefined,
+        suggestionEndDate: voting.suggestionEndDate
+          ? new Date(voting.suggestionEndDate)
+          : undefined,
+        votingStartDate: new Date(voting.votingStartDate),
+        votingEndDate: new Date(voting.votingEndDate),
+        consumptionStartDate: new Date(voting.consumptionStartDate),
+        consumptionEndDate: new Date(voting.consumptionEndDate),
+        testingMode: false,
+      });
+    }
+  }, [voting, isOpen]);
+
+  const editVotingMutation = useMutation({
+    mutationFn: (data: EditVotingData) => {
+      if (!voting?._id) throw new Error('No voting ID');
+      return editMediaVotingFn(club._id, voting._id, data);
+    },
+    onSuccess: () => {
+      toast.success(t('toast.votingUpdated'));
+      invalidateVotingQueries();
+      queryClient.invalidateQueries({ queryKey: ['club', club._id] });
+      onClose();
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update voting';
+      toast.error(message);
+    },
+  });
+
+  const validateForm = () => {
+    const {
+      title,
+      votingStartDate,
+      votingEndDate,
+      consumptionStartDate,
+      consumptionEndDate,
+      candidateSubmissionType,
+      suggestionStartDate,
+      suggestionEndDate,
+    } = votingData;
+
+    if (!title.trim()) {
+      toast.error(t('toast.votingTitleRequired'));
+      return false;
+    }
+
+    if (
+      !votingStartDate ||
+      !votingEndDate ||
+      !consumptionStartDate ||
+      !consumptionEndDate
+    ) {
+      toast.error(t('toast.datesRequiredAll'));
+      return false;
+    }
+
+    if (votingStartDate >= votingEndDate) {
+      toast.error(t('toast.votingEndAfterStart'));
+      return false;
+    }
+
+    if (consumptionStartDate >= consumptionEndDate) {
+      toast.error(t('toast.consumptionEndAfterStart'));
+      return false;
+    }
+
+    // Validate suggestion period if member suggestions are enabled
+    if (candidateSubmissionType === 'member_suggestions') {
+      if (!suggestionStartDate || !suggestionEndDate) {
+        toast.error(t('toast.suggestionDatesRequired'));
+        return false;
+      }
+
+      if (suggestionStartDate >= suggestionEndDate) {
+        toast.error(t('toast.suggestionEndAfterStart'));
+        return false;
+      }
+
+      if (suggestionEndDate >= votingStartDate) {
+        toast.error(t('toast.suggestionsBeforeVoting'));
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleSave = () => {
+    if (!validateForm()) return;
+    editVotingMutation.mutate(votingData);
+  };
+
+  if (!isOpen || !voting) return null;
+
+  // Check if voting can be edited
+  const canEdit =
+    voting.status === 'setup' ||
+    voting.status === 'suggestions_closed' ||
+    voting.status === 'voting_closed' ||
+    voting.status === 'completed';
+
+  // Check if only consumption period can be edited (for later stages)
+  const onlyConsumptionEditable =
+    voting.status === 'voting_closed' || voting.status === 'completed';
+
+  if (!canEdit) {
+    return (
+      <div className="modal modal-bottom sm:modal-middle modal-open">
+        <div className="modal-box">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-xl">{t('editVoting.cannotEdit')}</h3>
+            <button
+              className="btn btn-ghost btn-sm btn-circle"
+              onClick={onClose}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="alert alert-warning">
+            <div>
+              <h4 className="font-medium">{t('editVoting.notEditable')}</h4>
+              <p className="text-sm mt-1">
+                Votings can only be edited when they are in "Setup" or
+                "Suggestions Closed" status. This voting is currently in "
+                {voting.status}" status.
+              </p>
+            </div>
+          </div>
+          <div className="modal-action">
+            <button onClick={onClose} className="btn">
+              {t('common.close')}
+            </button>
+          </div>
+        </div>
+        <div className="modal-backdrop" onClick={onClose}></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="modal modal-bottom sm:modal-middle modal-open">
+      <div className="modal-box max-w-4xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-xl">{t('editVoting.title')}</h3>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {onlyConsumptionEditable && (
+            <div className="alert alert-info">
+              <div>
+                <h4 className="font-medium">{t('editVoting.limitedMode')}</h4>
+                <p className="text-sm mt-1">
+                  {t('editVoting.limitedModeBody')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field
+              label={t('editVoting.votingTitle')}
+              className="md:col-span-2"
+            >
+              <input
+                type="text"
+                placeholder={t('editVoting.titlePlaceholder')}
+                value={votingData.title}
+                onChange={(e) =>
+                  setVotingData((prev) => ({
+                    ...prev,
+                    title: e.target.value,
+                  }))
+                }
+                className="input w-full"
+                required
+                disabled={onlyConsumptionEditable}
+              />
+            </Field>
+
+            <div className="md:col-span-2">
+              <label className="label cursor-pointer justify-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={votingData.testingMode || false}
+                  onChange={(e) =>
+                    setVotingData((prev) => ({
+                      ...prev,
+                      testingMode: e.target.checked,
+                    }))
+                  }
+                  className="checkbox checkbox-primary"
+                  disabled={onlyConsumptionEditable}
+                />
+                <span>{t('editVoting.testingMode')}</span>
+              </label>
+              <div className="text-xs text-base-content/60 ml-6">
+                {t('editVoting.testingModeHint')}
+              </div>
+            </div>
+
+            <Field label={t('common.description')} className="md:col-span-2">
+              <textarea
+                placeholder={t('editVoting.descriptionPlaceholder')}
+                value={votingData.description}
+                onChange={(e) =>
+                  setVotingData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="textarea w-full"
+                rows={3}
+                disabled={onlyConsumptionEditable}
+              />
+            </Field>
+
+            <Field label={t('editVoting.mediaTypeRequired')}>
+              <DropdownSelect
+                value={votingData.mediaType}
+                onChange={(e) =>
+                  setVotingData((prev) => ({
+                    ...prev,
+                    mediaType: e.target.value as EditVotingData['mediaType'],
+                  }))
+                }
+                className="select w-full"
+                disabled={onlyConsumptionEditable}
+              >
+                {MEDIA_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {tCommon(getLogTypeLabelKey(type)!)}
+                  </option>
+                ))}
+                <option value="custom">{t('wizard.mediaTypes.custom')}</option>
+              </DropdownSelect>
+            </Field>
+
+            {votingData.mediaType === 'custom' && (
+              <Field label={t('editVoting.customMediaType')}>
+                <input
+                  type="text"
+                  placeholder={t('editVoting.customTypePlaceholder')}
+                  value={votingData.customMediaType}
+                  onChange={(e) =>
+                    setVotingData((prev) => ({
+                      ...prev,
+                      customMediaType: e.target.value,
+                    }))
+                  }
+                  className="input w-full"
+                  disabled={onlyConsumptionEditable}
+                />
+              </Field>
+            )}
+
+            <Field
+              label={t('editVoting.howCandidates')}
+              className="md:col-span-2"
+            >
+              <div className="space-y-2">
+                <label className="cursor-pointer label justify-start gap-3">
+                  <input
+                    type="radio"
+                    value="manual"
+                    checked={votingData.candidateSubmissionType === 'manual'}
+                    onChange={(e) =>
+                      setVotingData((prev) => ({
+                        ...prev,
+                        candidateSubmissionType: e.target
+                          .value as EditVotingData['candidateSubmissionType'],
+                      }))
+                    }
+                    className="radio radio-primary"
+                    disabled={onlyConsumptionEditable}
+                  />
+                  <span>{t('editVoting.manualCandidates')}</span>
+                </label>
+                <label className="cursor-pointer label justify-start gap-3">
+                  <input
+                    type="radio"
+                    value="member_suggestions"
+                    checked={
+                      votingData.candidateSubmissionType ===
+                      'member_suggestions'
+                    }
+                    onChange={(e) =>
+                      setVotingData((prev) => ({
+                        ...prev,
+                        candidateSubmissionType: e.target
+                          .value as EditVotingData['candidateSubmissionType'],
+                      }))
+                    }
+                    className="radio radio-primary"
+                    disabled={onlyConsumptionEditable}
+                  />
+                  <span>{t('editVoting.memberSuggestions')}</span>
+                </label>
+              </div>
+            </Field>
+
+            {/* Suggestion Period (only if member_suggestions is selected) */}
+            {votingData.candidateSubmissionType === 'member_suggestions' &&
+              !onlyConsumptionEditable && (
+                <>
+                  <Field label={t('editVoting.suggestionStart')}>
+                    <div className="dropdown dropdown-top dropdown-end w-full">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="input w-full flex items-center justify-between cursor-pointer"
+                      >
+                        <span
+                          className={
+                            votingData.suggestionStartDate
+                              ? 'text-base-content'
+                              : 'text-base-content/50'
+                          }
+                        >
+                          {formatDateForDisplay(votingData.suggestionStartDate)}
+                        </span>
+                        <Calendar className="text-lg" />
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={votingData.suggestionStartDate}
+                          onSelect={(date) => {
+                            setVotingData((prev) => ({
+                              ...prev,
+                              suggestionStartDate: date,
+                            }));
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                            // Reset end date if it's before the new start date
+                            if (
+                              votingData.suggestionEndDate &&
+                              date &&
+                              votingData.suggestionEndDate < date
+                            ) {
+                              setVotingData((prev) => ({
+                                ...prev,
+                                suggestionEndDate: undefined,
+                              }));
+                            }
+                          }}
+                          disabled={
+                            votingData.testingMode
+                              ? () => false
+                              : (date) => date < new Date()
+                          }
+                        />
+                      </div>
+                    </div>
+                  </Field>
+
+                  <Field label={t('editVoting.suggestionEnd')}>
+                    <div className="dropdown dropdown-top dropdown-end w-full">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="input w-full flex items-center justify-between cursor-pointer"
+                      >
+                        <span
+                          className={
+                            votingData.suggestionEndDate
+                              ? 'text-base-content'
+                              : 'text-base-content/50'
+                          }
+                        >
+                          {formatDateForDisplay(votingData.suggestionEndDate)}
+                        </span>
+                        <Calendar className="text-lg" />
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={votingData.suggestionEndDate}
+                          onSelect={(date) => {
+                            setVotingData((prev) => ({
+                              ...prev,
+                              suggestionEndDate: date,
+                            }));
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                          }}
+                          disabled={
+                            votingData.testingMode
+                              ? (date) => {
+                                  // In testing mode, only disable dates before suggestion start
+                                  if (!votingData.suggestionStartDate)
+                                    return false;
+                                  return date < votingData.suggestionStartDate;
+                                }
+                              : (date) => {
+                                  if (!votingData.suggestionStartDate)
+                                    return date < new Date();
+                                  return date < votingData.suggestionStartDate;
+                                }
+                          }
+                        />
+                      </div>
+                    </div>
+                  </Field>
+                </>
+              )}
+
+            {/* Voting Period */}
+            {!onlyConsumptionEditable && (
+              <>
+                <Field label={t('editVoting.votingStart')}>
+                  <div className="dropdown dropdown-top dropdown-end w-full">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="input w-full flex items-center justify-between cursor-pointer"
+                    >
+                      <span
+                        className={
+                          votingData.votingStartDate
+                            ? 'text-base-content'
+                            : 'text-base-content/50'
+                        }
+                      >
+                        {formatDateForDisplay(votingData.votingStartDate)}
+                      </span>
+                      <Calendar className="text-lg" />
+                    </div>
+                    <div
+                      tabIndex={0}
+                      className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                    >
+                      <DayPicker
+                        className="react-day-picker mx-auto"
+                        mode="single"
+                        selected={votingData.votingStartDate}
+                        onSelect={(date) => {
+                          setVotingData((prev) => ({
+                            ...prev,
+                            votingStartDate: date,
+                          }));
+                          // Close dropdown by removing focus
+                          (document.activeElement as HTMLElement)?.blur?.();
+                          // Reset end date if it's before the new start date
+                          if (
+                            votingData.votingEndDate &&
+                            date &&
+                            votingData.votingEndDate < date
+                          ) {
+                            setVotingData((prev) => ({
+                              ...prev,
+                              votingEndDate: undefined,
+                            }));
+                          }
+                        }}
+                        disabled={
+                          votingData.testingMode
+                            ? (date) => {
+                                // In testing mode, only disable dates before suggestion end
+                                if (
+                                  votingData.candidateSubmissionType ===
+                                  'member_suggestions'
+                                ) {
+                                  if (!votingData.suggestionEndDate)
+                                    return false;
+                                  return date < votingData.suggestionEndDate;
+                                }
+                                return false;
+                              }
+                            : (date) => {
+                                if (
+                                  votingData.candidateSubmissionType ===
+                                  'member_suggestions'
+                                ) {
+                                  const minDate =
+                                    votingData.suggestionEndDate || new Date();
+                                  return date < minDate;
+                                }
+                                return date < new Date();
+                              }
+                        }
+                      />
+                    </div>
+                  </div>
+                </Field>
+
+                <Field label={t('editVoting.votingEnd')}>
+                  <div className="dropdown dropdown-top dropdown-end w-full">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="input w-full flex items-center justify-between cursor-pointer"
+                    >
+                      <span
+                        className={
+                          votingData.votingEndDate
+                            ? 'text-base-content'
+                            : 'text-base-content/50'
+                        }
+                      >
+                        {formatDateForDisplay(votingData.votingEndDate)}
+                      </span>
+                      <Calendar className="text-lg" />
+                    </div>
+                    <div
+                      tabIndex={0}
+                      className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                    >
+                      <DayPicker
+                        className="react-day-picker mx-auto"
+                        mode="single"
+                        selected={votingData.votingEndDate}
+                        onSelect={(date) => {
+                          setVotingData((prev) => ({
+                            ...prev,
+                            votingEndDate: date,
+                          }));
+                          // Close dropdown by removing focus
+                          (document.activeElement as HTMLElement)?.blur?.();
+                        }}
+                        disabled={
+                          votingData.testingMode
+                            ? (date) => {
+                                // In testing mode, only disable dates before voting start
+                                if (!votingData.votingStartDate) return false;
+                                return date < votingData.votingStartDate;
+                              }
+                            : (date) => {
+                                if (!votingData.votingStartDate) {
+                                  const minDate =
+                                    votingData.candidateSubmissionType ===
+                                    'member_suggestions'
+                                      ? votingData.suggestionEndDate ||
+                                        new Date()
+                                      : new Date();
+                                  return date < minDate;
+                                }
+                                return date < votingData.votingStartDate;
+                              }
+                        }
+                      />
+                    </div>
+                  </div>
+                </Field>
+              </>
+            )}
+
+            {/* Consumption Period */}
+            <Field label={t('editVoting.consumptionStart')}>
+              <div className="dropdown dropdown-top dropdown-end w-full">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="input w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span
+                    className={
+                      votingData.consumptionStartDate
+                        ? 'text-base-content'
+                        : 'text-base-content/50'
+                    }
+                  >
+                    {formatDateForDisplay(votingData.consumptionStartDate)}
+                  </span>
+                  <Calendar className="text-lg" />
+                </div>
+                <div
+                  tabIndex={0}
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                >
+                  <DayPicker
+                    className="react-day-picker mx-auto"
+                    mode="single"
+                    selected={votingData.consumptionStartDate}
+                    onSelect={(date) => {
+                      setVotingData((prev) => ({
+                        ...prev,
+                        consumptionStartDate: date,
+                      }));
+                      // Close dropdown by removing focus
+                      (document.activeElement as HTMLElement)?.blur?.();
+                      // Reset end date if it's before the new start date
+                      if (
+                        votingData.consumptionEndDate &&
+                        date &&
+                        votingData.consumptionEndDate < date
+                      ) {
+                        setVotingData((prev) => ({
+                          ...prev,
+                          consumptionEndDate: undefined,
+                        }));
+                      }
+                    }}
+                    disabled={
+                      votingData.testingMode
+                        ? (date) => {
+                            // In testing mode, only disable dates before voting end
+                            if (!votingData.votingEndDate) return false;
+                            return date < votingData.votingEndDate;
+                          }
+                        : (date) => {
+                            const minDate =
+                              votingData.votingEndDate || new Date();
+                            return date < minDate;
+                          }
+                    }
+                  />
+                </div>
+              </div>
+            </Field>
+
+            <Field label={t('editVoting.consumptionEnd')}>
+              <div className="dropdown dropdown-top dropdown-end w-full">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="input w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span
+                    className={
+                      votingData.consumptionEndDate
+                        ? 'text-base-content'
+                        : 'text-base-content/50'
+                    }
+                  >
+                    {formatDateForDisplay(votingData.consumptionEndDate)}
+                  </span>
+                  <Calendar className="text-lg" />
+                </div>
+                <div
+                  tabIndex={0}
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                >
+                  <DayPicker
+                    className="react-day-picker mx-auto"
+                    mode="single"
+                    selected={votingData.consumptionEndDate}
+                    onSelect={(date) => {
+                      setVotingData((prev) => ({
+                        ...prev,
+                        consumptionEndDate: date,
+                      }));
+                      // Close dropdown by removing focus
+                      (document.activeElement as HTMLElement)?.blur?.();
+                    }}
+                    disabled={
+                      votingData.testingMode
+                        ? (date) => {
+                            // In testing mode, only disable dates before consumption start
+                            if (!votingData.consumptionStartDate) return false;
+                            return date < votingData.consumptionStartDate;
+                          }
+                        : (date) => {
+                            if (!votingData.consumptionStartDate) {
+                              const minDate =
+                                votingData.votingEndDate || new Date();
+                              return date < minDate;
+                            }
+                            return date < votingData.consumptionStartDate;
+                          }
+                    }
+                  />
+                </div>
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="modal-action">
+          <button
+            onClick={onClose}
+            className="btn btn-outline"
+            disabled={editVotingMutation.isPending}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={editVotingMutation.isPending}
+            className="btn btn-primary"
+          >
+            {editVotingMutation.isPending ? (
+              'Saving...'
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {t('common.saveChanges')}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      <div className="modal-backdrop" onClick={onClose}></div>
+    </div>
+  );
+}

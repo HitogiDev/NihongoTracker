@@ -1,0 +1,91 @@
+import { ParamsDictionary } from 'express-serve-static-core';
+import { Router } from 'express';
+import multer from 'multer';
+import { ICreateLog } from '../types.js';
+import {
+  getLog,
+  createLog,
+  deleteLog,
+  deleteLogsBulk,
+  updateLog,
+  importLogs,
+  assignMedia,
+  dismissMatchLogs,
+  getUntrackedLogs,
+  getLogScreenStats,
+  getUserMediaStats,
+  getGlobalMediaStats,
+  getRecentMediaLogs,
+  getGlobalFeed,
+  syncManabeIds,
+  previewLogXp,
+  calculateXpScenarioPreview,
+} from '../controllers/logs.controller.js';
+import { calculateXp } from '../middlewares/calculateXp.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
+import { csvToArray } from '../middlewares/csvToArray.js';
+import {
+  getLogsFromAPI,
+  getLogsFromCSV,
+  importManabeLog,
+} from '../middlewares/getLogs.js';
+
+const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
+
+router.post('/import', protect, getLogsFromAPI, calculateXp, importLogs);
+
+router.post(
+  '/logfileimport',
+  protect,
+  upload.single('logFileImport'),
+  csvToArray,
+  getLogsFromCSV,
+  calculateXp,
+  importLogs
+);
+
+router.put('/assign-media', protect, assignMedia);
+
+router.put('/dismiss-match', protect, dismissMatchLogs);
+
+router.post<ParamsDictionary, any, ICreateLog>(
+  '/',
+  protect,
+  calculateXp,
+  createLog
+);
+
+// XP preview for the log form — computes without persisting
+router.post('/preview-xp', protect, calculateXp, previewLogXp);
+router.post('/calculate-xp', optionalProtect, calculateXpScenarioPreview);
+
+router.get('/untrackedlogs', protect, getUntrackedLogs);
+
+router.get('/stats/logscreen', protect, getLogScreenStats);
+
+router.get('/stats/media', protect, getUserMediaStats);
+
+router.get('/stats/media/global', optionalProtect, getGlobalMediaStats);
+
+router.get('/media/recent', optionalProtect, getRecentMediaLogs);
+
+router.get('/feed', protect, getGlobalFeed);
+
+router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
+
+router.post('/sync-manabe-ids', protect, syncManabeIds);
+
+// Bulk delete — must be registered BEFORE /:id to avoid route conflict
+router.delete('/bulk', protect, deleteLogsBulk);
+
+router.get('/:id', optionalProtect, getLog);
+
+router.delete('/:id', protect, deleteLog);
+
+router.patch('/:id', protect, calculateXp, updateLog);
+
+export default router;

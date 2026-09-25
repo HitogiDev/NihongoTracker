@@ -1,0 +1,3964 @@
+import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
+import axios from 'axios';
+import crypto from 'crypto';
+import User from '../models/user.model.js';
+import Log from '../models/log.model.js';
+import RankSnapshot from '../models/rankSnapshot.model.js';
+import {
+  getMonthBoundaries,
+  getMonthlyRankHistory,
+} from '../services/rankSnapshot.service.js';
+import Tag from '../models/tag.model.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
+import UserAchievement from '../models/userAchievement.model.js';
+import { MediaBase } from '../models/media.model.js';
+import {
+  IMediaDocument,
+  IMediaTitle,
+  IUpdateRequest,
+  IUser,
+  IFavoriteEntry,
+  IUserCustomization,
+  MediaListMediaType,
+  StatsCardId,
+  StatsGroupId,
+  StatsGroupLayout,
+  ProfileWidgetId,
+  ProfileWidgetLayout,
+  userRoles,
+  SUPPORTED_LANGUAGES,
+  SupportedLanguage,
+  SOCIAL_VISIBILITIES,
+  COMMENT_PERMISSIONS,
+  ISocialPrivacySettings,
+  SocialVisibility,
+} from '../types.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
+import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
+import {
+  cropAnimatedGifBuffer,
+  isGifFile,
+  parseGifCropMetadata,
+} from '../services/gifCrop.js';
+import { sendVerificationEmail } from '../mailtrap/emails.js';
+import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
+import { indexUser } from '../services/meilisearch/userIndex.js';
+import { calculateXp } from '../services/calculateLevel.js';
+import {
+  getLiveCurrentStreak,
+  recalculateStreaksForUser,
+} from '../services/streaks.js';
+import { recalculateUserXpFromLogs } from '../services/updateStats.js';
+import {
+  computeSignatureValue,
+  computeSignatureValues,
+  getDisplayCapabilities,
+  listCustomizationOptions,
+  resolveCustomizationUpdate,
+  sanitizeCustomizationForDisplay,
+} from '../services/customization.js';
+import { getSocialSummary } from '../services/follow.service.js';
+import {
+  canViewUserSocialCategory,
+  getRankingAudienceUserIds,
+  getVisibleSocialOwnerIds,
+  type RankingAudience,
+} from '../services/socialVisibility.service.js';
+import {
+  deleteSocialDataForUser,
+  syncImmersionActivityVisibility,
+} from '../services/activity.service.js';
+import { suppressPendingRankingAchievementFeedback } from '../services/achievements/rankingVisibility.js';
+import {
+  checkAchievements,
+  dismissAchievementNotifications,
+} from '../services/achievements/achievementEngine.js';
+
+type ImmersionMediaType =
+  | 'anime'
+  | 'manga'
+  | 'light-novel'
+  | 'vn'
+  | 'game'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'book';
+
+const IMMERSION_MEDIA_TYPES: ImmersionMediaType[] = [
+  'anime',
+  'manga',
+  'light-novel',
+  'vn',
+  'game',
+  'video',
+  'movie',
+  'tv show',
+  'book',
+];
+
+const BYTES_IN_MEGABYTE = 1024 * 1024;
+const DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES = 3 * BYTES_IN_MEGABYTE;
+const DEFAULT_BANNER_MAX_FILE_SIZE_BYTES = 6 * BYTES_IN_MEGABYTE;
+const PATREON_MEDIA_MAX_FILE_SIZE_BYTES = 8 * BYTES_IN_MEGABYTE;
+const PUBLIC_STATISTICS_MATCH = {
+  $or: [
+    { 'settings.socialPrivacy.statistics': { $exists: false } },
+    { 'settings.socialPrivacy.statistics': 'public' },
+  ],
+};
+
+function hasAdminRole(user?: Partial<IUser> | null): boolean {
+  const roles = user?.roles;
+
+  if (!Array.isArray(roles)) {
+    return false;
+  }
+
+  return roles.includes(userRoles.admin);
+}
+
+function isOwner(user: Partial<IUser> | null | undefined, ownerId: unknown) {
+  if (!user?._id || !ownerId) {
+    return false;
+  }
+
+  return user._id.toString() === ownerId.toString();
+}
+
+/**
+ * Cosmetics carried by ranking rows — only what a row renders (name effect and
+ * avatar frame), not the whole customization document.
+ */
+const RANKING_COSMETICS_PROJECTION = {
+  nameEffect: '$customization.nameEffect',
+  nameColor1: '$customization.nameColor1',
+  nameColor2: '$customization.nameColor2',
+  avatarFrame: '$customization.avatarFrame',
+};
+
+/**
+ * Aggregations bypass the model, so paid cosmetics have to be re-checked here
+ * the same way `getUser` does it — otherwise an expired supporter would keep a
+ * glowing name in the rankings.
+ */
+function sanitizeRankingCosmetics<
+  T extends { patreon?: IUser['patreon']; customization?: IUserCustomization },
+>(rows: T[]): T[] {
+  return rows.map((row) => ({
+    ...row,
+    customization: sanitizeCustomizationForDisplay(
+      row.customization,
+      getDisplayCapabilities(row.patreon)
+    ),
+  }));
+}
+
+function getPublicPatreonProfile(patreon: IUser['patreon']) {
+  return {
+    isActive: patreon?.isActive ?? false,
+    tier: patreon?.tier ?? null,
+    customBadgeText: patreon?.customBadgeText,
+    badgeColor: patreon?.badgeColor,
+    badgeTextColor: patreon?.badgeTextColor,
+    hideBadge: patreon?.hideBadge ?? false,
+  };
+}
+
+export async function updateUser(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const {
+    username,
+    email,
+    newPassword,
+    newPasswordConfirm,
+    password,
+    discordId,
+    blurAdultContent,
+    hideUnmatchedLogsAlert,
+    hideRankingFeatures,
+    timezone,
+    language,
+    about,
+    avatarCrop,
+    bannerCrop,
+    removeAvatar,
+    removeBanner,
+  } = req.body as IUpdateRequest;
+
+  try {
+    const user = await User.findById(res.locals.user._id).select('+password');
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+    const wasHidingRankingFeatures = user.settings?.hideRankingFeatures === true;
+
+    const hasPatreonMediaAccess =
+      user.patreon?.isActive &&
+      (user.patreon?.tier === 'enthusiast' ||
+        user.patreon?.tier === 'consumer');
+    const parsedAvatarCrop = parseGifCropMetadata(avatarCrop, 'avatarCrop');
+    const parsedBannerCrop = parseGifCropMetadata(bannerCrop, 'bannerCrop');
+    const shouldRemoveAvatar = removeAvatar === 'true';
+    const shouldRemoveBanner = removeBanner === 'true';
+
+    if (newPassword || newPasswordConfirm) {
+      if (!password) {
+        throw apiError(
+          'user.oldPasswordRequired',
+          400,
+          'Old password is required'
+        );
+      }
+      if (!newPassword) {
+        throw apiError(
+          'user.newPasswordRequired',
+          400,
+          'New password is required'
+        );
+      }
+      if (!newPasswordConfirm) {
+        throw apiError(
+          'user.passwordConfirmRequired',
+          400,
+          'You need to confirm the new password'
+        );
+      }
+      if (newPassword !== newPasswordConfirm) {
+        throw apiError('user.passwordMismatch', 403, 'Passwords do not match');
+      }
+      if (!(await user.matchPassword(password))) {
+        throw apiError('user.incorrectPassword', 403, 'Incorrect password');
+      }
+
+      user.password = newPassword;
+    }
+
+    if (username) {
+      if (!username.match(/^[a-zA-Z0-9_]*$/)) {
+        throw apiError(
+          'user.usernameInvalid',
+          400,
+          'Username can only contain letters, numbers and underscores'
+        );
+      }
+      if (username.length < 1 || username.length > 20) {
+        throw apiError(
+          'user.usernameLength',
+          400,
+          'Username must be between 1 and 20 characters'
+        );
+      }
+      if (await User.findOne({ username })) {
+        throw apiError('user.usernameTaken', 400, 'Username already taken');
+      }
+      if (!password) {
+        throw apiError('user.passwordRequired', 400, 'Password is required');
+      }
+      if (!(await user.matchPassword(password))) {
+        throw apiError('user.incorrectPassword', 403, 'Incorrect password');
+      }
+
+      if (user.username !== username) user.username = username;
+    }
+
+    if (email !== undefined) {
+      if (email === '') {
+        user.email = undefined;
+        user.verified = false;
+      } else {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw apiError('user.emailInvalid', 400, 'Invalid email format');
+        }
+
+        // Check if email is already in use by another user
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
+          throw apiError('user.emailTaken', 400, 'Email already in use');
+        }
+
+        if (!password) {
+          throw apiError('user.passwordRequired', 400, 'Password is required');
+        }
+        if (!(await user.matchPassword(password))) {
+          throw apiError('user.incorrectPassword', 403, 'Incorrect password');
+        }
+
+        // If email is being changed, mark as unverified
+        if (user.email !== email.toLowerCase()) {
+          user.email = email.toLowerCase();
+          user.verified = false;
+
+          // Generate verification token
+          const verificationToken = crypto.randomBytes(32).toString('hex');
+          user.verificationToken = verificationToken;
+          user.verificationTokenExpiry = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+          ); // 24 hours
+          user.lastVerificationEmailSent = new Date();
+        }
+      }
+    }
+
+    if (
+      (parsedAvatarCrop || parsedBannerCrop) &&
+      (!req.files || Object.keys(req.files).length === 0)
+    ) {
+      throw apiError(
+        'upload.cropWithoutFile',
+        400,
+        'Crop metadata requires an uploaded avatar or banner file'
+      );
+    }
+
+    if (req.files && Object.keys(req.files).length > 0) {
+      const files = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
+      const avatarMaxFileSizeBytes = hasPatreonMediaAccess
+        ? PATREON_MEDIA_MAX_FILE_SIZE_BYTES
+        : DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES;
+      const bannerMaxFileSizeBytes = hasPatreonMediaAccess
+        ? PATREON_MEDIA_MAX_FILE_SIZE_BYTES
+        : DEFAULT_BANNER_MAX_FILE_SIZE_BYTES;
+
+      if (parsedAvatarCrop && !files.avatar?.[0]) {
+        throw apiError(
+          'upload.avatarCropWithoutFile',
+          400,
+          'avatarCrop was provided without an avatar file upload'
+        );
+      }
+
+      if (parsedBannerCrop && !files.banner?.[0]) {
+        throw apiError(
+          'upload.bannerCropWithoutFile',
+          400,
+          'bannerCrop was provided without a banner file upload'
+        );
+      }
+
+      if (shouldRemoveAvatar && files.avatar?.[0]) {
+        throw apiError(
+          'upload.avatarRemoveWithUpload',
+          400,
+          'Cannot remove and upload an avatar in the same request'
+        );
+      }
+
+      if (shouldRemoveBanner && files.banner?.[0]) {
+        throw apiError(
+          'upload.bannerRemoveWithUpload',
+          400,
+          'Cannot remove and upload a banner in the same request'
+        );
+      }
+
+      if (files.avatar?.[0]) {
+        let avatarFile = files.avatar[0];
+        const isAvatarGif = isGifFile(avatarFile);
+
+        if (isAvatarGif && !hasPatreonMediaAccess) {
+          throw apiError(
+            'upload.gifAvatarTierRequired',
+            400,
+            'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.'
+          );
+        }
+
+        if (parsedAvatarCrop && !isAvatarGif) {
+          throw apiError(
+            'upload.avatarCropGifOnly',
+            400,
+            'avatarCrop is only supported for GIF avatar uploads'
+          );
+        }
+
+        if (isAvatarGif && parsedAvatarCrop) {
+          const croppedAvatarBuffer = await cropAnimatedGifBuffer(
+            avatarFile.buffer,
+            parsedAvatarCrop
+          );
+          avatarFile = {
+            ...avatarFile,
+            buffer: croppedAvatarBuffer,
+            size: croppedAvatarBuffer.length,
+            mimetype: 'image/gif',
+          };
+        }
+
+        const file = await uploadFileWithCleanup(avatarFile, user.avatar, {
+          maxFileSizeBytes: avatarMaxFileSizeBytes,
+        });
+        user.avatar = file.downloadURL;
+      }
+
+      if (files.banner?.[0]) {
+        let bannerFile = files.banner[0];
+        const isBannerGif = isGifFile(bannerFile);
+
+        if (isBannerGif && !hasPatreonMediaAccess) {
+          throw apiError(
+            'upload.gifBannerTierRequired',
+            400,
+            'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.'
+          );
+        }
+
+        if (parsedBannerCrop && !isBannerGif) {
+          throw apiError(
+            'upload.bannerCropGifOnly',
+            400,
+            'bannerCrop is only supported for GIF banner uploads'
+          );
+        }
+
+        if (isBannerGif && parsedBannerCrop) {
+          const croppedBannerBuffer = await cropAnimatedGifBuffer(
+            bannerFile.buffer,
+            parsedBannerCrop
+          );
+          bannerFile = {
+            ...bannerFile,
+            buffer: croppedBannerBuffer,
+            size: croppedBannerBuffer.length,
+            mimetype: 'image/gif',
+          };
+        }
+
+        const file = await uploadFileWithCleanup(bannerFile, user.banner, {
+          maxFileSizeBytes: bannerMaxFileSizeBytes,
+        });
+        user.banner = file.downloadURL;
+      }
+
+      if (!files.avatar && !files.banner) {
+        throw apiError(
+          'upload.invalidFieldName',
+          400,
+          'Invalid field name. Only avatar and banner uploads are allowed.'
+        );
+      }
+    }
+
+    if (shouldRemoveAvatar) {
+      if (user.avatar) {
+        await deleteFile(user.avatar);
+      }
+      user.avatar = '';
+    }
+
+    if (shouldRemoveBanner) {
+      if (user.banner) {
+        await deleteFile(user.banner);
+      }
+      user.banner = '';
+    }
+
+    if (discordId !== undefined) {
+      const normalizedDiscordId =
+        typeof discordId === 'string' ? discordId.trim() : '';
+
+      if (!normalizedDiscordId) {
+        user.discordId = undefined;
+      } else {
+        if (!normalizedDiscordId.match(/^\d{17,19}$/)) {
+          throw apiError(
+            'user.invalidDiscordId',
+            400,
+            'Invalid Discord ID format'
+          );
+        }
+        const existingUser = await User.findOne({
+          discordId: normalizedDiscordId,
+        });
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
+          throw apiError(
+            'user.discordIdLinked',
+            400,
+            'Discord ID already linked to another user'
+          );
+        }
+        user.discordId = normalizedDiscordId;
+      }
+    }
+
+    if (
+      blurAdultContent !== undefined ||
+      hideUnmatchedLogsAlert !== undefined ||
+      hideRankingFeatures !== undefined ||
+      timezone !== undefined ||
+      language !== undefined
+    ) {
+      const updatedSettings: any = { ...user.settings };
+
+      if (blurAdultContent !== undefined) {
+        updatedSettings.blurAdultContent = blurAdultContent === 'true';
+      }
+
+      if (hideUnmatchedLogsAlert !== undefined) {
+        updatedSettings.hideUnmatchedLogsAlert =
+          hideUnmatchedLogsAlert === 'true';
+      }
+
+      if (hideRankingFeatures !== undefined) {
+        updatedSettings.hideRankingFeatures = hideRankingFeatures === 'true';
+      }
+
+      if (timezone !== undefined) {
+        // Validate timezone
+        try {
+          Intl.DateTimeFormat(undefined, { timeZone: timezone });
+          updatedSettings.timezone = timezone;
+        } catch (error) {
+          throw apiError('user.invalidTimezone', 400, 'Invalid timezone');
+        }
+      }
+
+      if (language !== undefined) {
+        if (!SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
+          throw apiError('user.invalidLanguage', 400, 'Invalid language');
+        }
+        updatedSettings.language = language;
+      }
+      user.settings = updatedSettings;
+    }
+
+    if (about !== undefined) {
+      const aboutText = typeof about === 'string' ? about : '';
+      if (aboutText.length > 2000) {
+        throw apiError(
+          'user.aboutTooLong',
+          400,
+          'About me must be 2000 characters or less'
+        );
+      }
+      user.about = aboutText;
+    }
+
+    const updatedUser = await user.save();
+
+    if (
+      !wasHidingRankingFeatures &&
+      updatedUser.settings?.hideRankingFeatures === true
+    ) {
+      try {
+        await suppressPendingRankingAchievementFeedback(updatedUser._id);
+      } catch (feedbackError) {
+        console.error(
+          'Failed to clear pending ranking achievement feedback:',
+          feedbackError
+        );
+      }
+    }
+
+    // Sync updated user to Meilisearch
+    indexUser(updatedUser);
+
+    // Send verification email if email was changed
+    if (
+      email !== undefined &&
+      email !== '' &&
+      updatedUser.email &&
+      !updatedUser.verified &&
+      updatedUser.verificationToken
+    ) {
+      try {
+        await sendVerificationEmail(
+          updatedUser.email,
+          updatedUser.verificationToken,
+          updatedUser.settings?.language
+        );
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't throw error - user update should still succeed
+      }
+    }
+
+    return res.status(200).json({
+      _id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      verified: updatedUser.verified,
+      discordId: updatedUser.discordId ?? '',
+      stats: updatedUser.stats,
+      avatar: updatedUser.avatar,
+      banner: updatedUser.banner,
+      titles: updatedUser.titles,
+      roles: updatedUser.roles,
+      settings: updatedUser.settings,
+      about: updatedUser.about,
+      customization: updatedUser.customization ?? {},
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateHiddenRecentMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { action, mediaId } = req.body as {
+    action: 'add' | 'remove';
+    mediaId: string;
+  };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    if (!mediaId || typeof mediaId !== 'string') {
+      throw apiError(
+        'immersionList.mediaIdRequired',
+        400,
+        'Valid mediaId is required'
+      );
+    }
+
+    if (!['add', 'remove'].includes(action)) {
+      throw apiError(
+        'favorites.invalidAction',
+        400,
+        'Action must be "add" or "remove"'
+      );
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+      };
+    }
+
+    const hiddenMedia = user.settings.hiddenRecentMedia || [];
+
+    if (action === 'add') {
+      if (!hiddenMedia.includes(mediaId)) {
+        user.settings.hiddenRecentMedia = [...hiddenMedia, mediaId];
+      }
+    } else if (action === 'remove') {
+      user.settings.hiddenRecentMedia = hiddenMedia.filter(
+        (id) => id !== mediaId
+      );
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: `Media ${action === 'add' ? 'hidden' : 'restored'} successfully`,
+      hiddenRecentMedia: user.settings.hiddenRecentMedia,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+interface HiddenRecentMediaItem {
+  contentId: string;
+  type: IMediaDocument['type'];
+  title: IMediaTitle | null;
+  contentImage: string | null;
+  coverImage: string | null;
+  isAdult: boolean;
+  isAdultImage: boolean;
+}
+
+/**
+ * Lists the user's hidden recent media with enough detail to render in the
+ * dashboard's manage modal (title, cover, type). Resolved from the latest log
+ * per contentId so entries survive even if the media doc was deleted.
+ */
+export async function getHiddenRecentMedia(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userDoc = await User.findById(res.locals.user._id);
+    if (!userDoc) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    const hiddenIds = (userDoc.settings?.hiddenRecentMedia || []).filter(
+      (id): id is string => typeof id === 'string' && id.trim().length > 0
+    );
+
+    if (hiddenIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const logs = await Log.find({
+      user: userDoc._id,
+      mediaId: { $in: hiddenIds },
+    })
+      .sort({ date: -1 })
+      .populate<{ media: IMediaDocument | null }>('media')
+      .lean();
+
+    const seen = new Set<string>();
+    const items: HiddenRecentMediaItem[] = [];
+    for (const log of logs) {
+      if (!log.mediaId || seen.has(log.mediaId)) continue;
+      seen.add(log.mediaId);
+      const media = log.media ?? null;
+      items.push({
+        contentId: log.mediaId,
+        type: (media?.type ?? log.type) as HiddenRecentMediaItem['type'],
+        title: media?.title ?? null,
+        contentImage: media?.contentImage ?? log.mediaTitle ?? null,
+        coverImage: media?.coverImage ?? null,
+        isAdult: media?.isAdult ?? log.isAdult ?? false,
+        isAdultImage: media?.isAdultImage ?? false,
+      });
+    }
+
+    // Preserve the order the user hid them in.
+    const byContentId = new Map(items.map((item) => [item.contentId, item]));
+    const ordered = hiddenIds
+      .map((id) => byContentId.get(id))
+      .filter((item): item is HiddenRecentMediaItem => Boolean(item));
+
+    return res.status(200).json(ordered);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const VALID_STATS_CARD_IDS = new Set<StatsCardId>([
+  'totalXp',
+  'timeSpent',
+  'logCount',
+  'dailyAverage',
+  'currentStreak',
+  'longestStreak',
+  'readingHours',
+  'listeningHours',
+  'readingListeningBalance',
+  'episodeTotals',
+  'avgReadingSpeed',
+  'dailyAvgChars',
+  'charsRead',
+  'pagesRead',
+  'logCountChart',
+  'timeDistributionChart',
+  'xpDistributionChart',
+  'readingSpeedChart',
+  'progressTimelineChart',
+]);
+
+const VALID_GROUP_IDS = new Set<StatsGroupId>([
+  'totals',
+  'streaks',
+  'timeBreakdown',
+  'readingMetrics',
+  'chartDistribution',
+  'chartProgress',
+  'chartReading',
+]);
+
+export async function updateStatsLayout(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { layout } = req.body as { layout: StatsGroupLayout[] };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    if (!Array.isArray(layout))
+      throw apiError(
+        'layout.mustBeArrayOfGroups',
+        400,
+        'Layout must be an array of groups'
+      );
+
+    for (const group of layout) {
+      if (!group || typeof group !== 'object')
+        throw apiError(
+          'layout.groupMustBeObject',
+          400,
+          'Each group must be an object'
+        );
+      if (!VALID_GROUP_IDS.has(group.id as StatsGroupId))
+        throw apiError(
+          'layout.invalidGroupId',
+          400,
+          `Invalid group id: ${group.id}`,
+          {
+            id: String(group.id),
+          }
+        );
+      if (typeof group.visible !== 'boolean')
+        throw apiError(
+          'layout.groupNeedsVisible',
+          400,
+          'Each group must have a boolean visible field'
+        );
+      if (!Array.isArray(group.cards))
+        throw apiError(
+          'layout.groupNeedsCards',
+          400,
+          'Each group must have a cards array'
+        );
+      for (const card of group.cards) {
+        if (!card || typeof card !== 'object')
+          throw apiError(
+            'layout.cardMustBeObject',
+            400,
+            'Each card must be an object'
+          );
+        if (!VALID_STATS_CARD_IDS.has(card.id as StatsCardId))
+          throw apiError(
+            'layout.invalidCardId',
+            400,
+            `Invalid card id: ${card.id}`,
+            {
+              id: String(card.id),
+            }
+          );
+        if (typeof card.visible !== 'boolean')
+          throw apiError(
+            'layout.cardNeedsVisible',
+            400,
+            'Each card must have a boolean visible field'
+          );
+      }
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+        statsLayout: [],
+      };
+    }
+
+    user.settings.statsLayout = layout;
+    user.markModified('settings');
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stats layout updated successfully',
+      statsLayout: user.settings.statsLayout,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const VALID_PROFILE_WIDGET_IDS = new Set<ProfileWidgetId>([
+  'profileStats',
+  'about',
+  'favorites',
+  'progressStats',
+  'immersionActivity',
+  'immersionGoals',
+  'achievements',
+]);
+
+export async function updateProfileLayout(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { layout } = req.body as { layout: ProfileWidgetLayout[] };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    if (!Array.isArray(layout))
+      throw apiError(
+        'layout.mustBeArrayOfWidgets',
+        400,
+        'Layout must be an array of widgets'
+      );
+
+    const seen = new Set<string>();
+    for (const widget of layout) {
+      if (!widget || typeof widget !== 'object')
+        throw apiError(
+          'layout.widgetMustBeObject',
+          400,
+          'Each widget must be an object'
+        );
+      if (!VALID_PROFILE_WIDGET_IDS.has(widget.id as ProfileWidgetId))
+        throw apiError(
+          'layout.invalidWidgetId',
+          400,
+          `Invalid widget id: ${widget.id}`,
+          {
+            id: String(widget.id),
+          }
+        );
+      if (seen.has(widget.id))
+        throw apiError(
+          'layout.duplicateWidgetId',
+          400,
+          `Duplicate widget id: ${widget.id}`,
+          {
+            id: String(widget.id),
+          }
+        );
+      seen.add(widget.id);
+      if (typeof widget.visible !== 'boolean')
+        throw apiError(
+          'layout.widgetNeedsVisible',
+          400,
+          'Each widget must have a boolean visible field'
+        );
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+        statsLayout: [],
+        profileLayout: [],
+      };
+    }
+
+    user.settings.profileLayout = layout;
+    user.markModified('settings');
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Profile layout updated successfully',
+      profileLayout: user.settings.profileLayout,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const SOCIAL_PRIVACY_DEFAULTS: ISocialPrivacySettings = {
+  profile: 'public',
+  immersionActivity: 'public',
+  statistics: 'public',
+  commenting: 'everyone',
+};
+
+const RANKING_AUDIENCES: RankingAudience[] = [
+  'all',
+  'following',
+  'mutual',
+];
+const RANKING_MODERATION_MATCH = {
+  $or: [
+    { 'moderation.rankingBanned': { $exists: false } },
+    { 'moderation.rankingBanned': false },
+  ],
+};
+
+async function getRankingUserMatch(req: Request, res: Response) {
+  const requestedAudience = (req.query.audience as string) || 'all';
+  if (!RANKING_AUDIENCES.includes(requestedAudience as RankingAudience)) {
+    throw apiError(
+      'ranking.invalidAudience',
+      400,
+      'Invalid ranking audience'
+    );
+  }
+
+  const audience = requestedAudience as RankingAudience;
+  if (audience === 'all') {
+    return { $and: [RANKING_MODERATION_MATCH, PUBLIC_STATISTICS_MATCH] };
+  }
+
+  const viewer = res.locals.user as IUser | undefined;
+  if (!viewer) {
+    throw apiError(
+      'auth.notAuthenticated',
+      401,
+      'Sign in to filter rankings by your connections'
+    );
+  }
+
+  const audienceUserIds = await getRankingAudienceUserIds(
+    viewer._id,
+    audience
+  );
+  return {
+    $and: [
+      RANKING_MODERATION_MATCH,
+      { _id: { $in: audienceUserIds } },
+    ],
+  };
+}
+
+export async function updateSocialPrivacy(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { socialPrivacy } = req.body as {
+    socialPrivacy?: Partial<Record<keyof typeof SOCIAL_PRIVACY_DEFAULTS, unknown>>;
+  };
+
+  try {
+    if (!socialPrivacy || typeof socialPrivacy !== 'object') {
+      throw apiError(
+        'privacy.invalidSettings',
+        400,
+        'Social privacy settings are required'
+      );
+    }
+
+    for (const key of Object.keys(SOCIAL_PRIVACY_DEFAULTS) as Array<
+      keyof typeof SOCIAL_PRIVACY_DEFAULTS
+    >) {
+      const value = socialPrivacy[key];
+      const normalizedValue = value ?? SOCIAL_PRIVACY_DEFAULTS[key];
+      if (
+        typeof normalizedValue !== 'string' ||
+        (key === 'commenting'
+          ? !COMMENT_PERMISSIONS.some((permission) => permission === normalizedValue)
+          : !SOCIAL_VISIBILITIES.includes(normalizedValue as SocialVisibility))
+      ) {
+        throw apiError(
+          'privacy.invalidVisibility',
+          400,
+          `Invalid visibility for ${key}`,
+          { field: key }
+        );
+      }
+    }
+
+    const nextPrivacy: ISocialPrivacySettings = {
+      profile: (socialPrivacy.profile ?? 'public') as SocialVisibility,
+      immersionActivity: (socialPrivacy.immersionActivity ??
+        'public') as SocialVisibility,
+      statistics: (socialPrivacy.statistics ?? 'public') as SocialVisibility,
+      commenting: (socialPrivacy.commenting ?? 'everyone') as NonNullable<
+        ISocialPrivacySettings['commenting']
+      >,
+    };
+
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    user.settings = user.settings ?? { blurAdultContent: true };
+    user.settings.socialPrivacy = nextPrivacy;
+    user.markModified('settings.socialPrivacy');
+    await user.save();
+    await syncImmersionActivityVisibility(
+      user._id,
+      nextPrivacy.immersionActivity
+    );
+
+    return res.status(200).json({
+      message: 'Social privacy updated successfully',
+      socialPrivacy: nextPrivacy,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
+  'anime',
+  'manga',
+  'light-novel',
+  'vn',
+  'video',
+  'movie',
+  'tv show',
+  'game',
+  'book',
+];
+const MAX_FAVORITES = 50;
+const FAVORITE_NOTE_MAX_LENGTH = 500;
+
+function isFavoriteMediaType(value: unknown): value is MediaListMediaType {
+  return (
+    typeof value === 'string' &&
+    FAVORITE_MEDIA_TYPES.includes(value as MediaListMediaType)
+  );
+}
+
+/**
+ * Joins favorite entries to their media docs, returned in entry order with the
+ * hydrated `media` doc alongside each entry's note/order.
+ */
+async function hydrateFavorites(favorites: IFavoriteEntry[]) {
+  if (!favorites.length) return [];
+
+  const mediaIds = [...new Set(favorites.map((fav) => fav.mediaId))];
+  const mediaDocs = await MediaBase.find({ contentId: { $in: mediaIds } })
+    .select(
+      'contentId type title contentImage coverImage genres isAdult isAdultImage'
+    )
+    .lean();
+
+  const mediaByKey = new Map(
+    mediaDocs.map((doc) => [`${doc.type}:${doc.contentId}`, doc])
+  );
+
+  return [...favorites]
+    .sort((a, b) => a.order - b.order)
+    .map((fav) => ({
+      mediaId: fav.mediaId,
+      mediaType: fav.mediaType,
+      note: fav.note,
+      order: fav.order,
+      addedAt: fav.addedAt,
+      media: mediaByKey.get(`${fav.mediaType}:${fav.mediaId}`) ?? null,
+    }));
+}
+
+export async function updateFavorites(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { favorites } = req.body as {
+    favorites: Array<{
+      mediaId: unknown;
+      mediaType: unknown;
+      note?: unknown;
+      order?: unknown;
+    }>;
+  };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    if (!Array.isArray(favorites))
+      throw apiError(
+        'favorites.mustBeArray',
+        400,
+        'Favorites must be an array'
+      );
+
+    if (favorites.length > MAX_FAVORITES)
+      throw apiError(
+        'favorites.tooMany',
+        400,
+        `You can save at most ${MAX_FAVORITES} favorites`,
+        { max: MAX_FAVORITES }
+      );
+
+    const normalized: IFavoriteEntry[] = favorites.map((fav, index) => {
+      if (!fav || typeof fav !== 'object')
+        throw apiError(
+          'favorites.itemMustBeObject',
+          400,
+          'Each favorite must be an object'
+        );
+
+      if (typeof fav.mediaId !== 'string' || !fav.mediaId.trim())
+        throw apiError(
+          'favorites.mediaIdRequired',
+          400,
+          'Each favorite needs a valid mediaId'
+        );
+
+      if (!isFavoriteMediaType(fav.mediaType))
+        throw apiError(
+          'favorites.invalidMediaType',
+          400,
+          `Invalid mediaType: ${fav.mediaType}`,
+          {
+            mediaType: String(fav.mediaType),
+          }
+        );
+
+      let note: string | undefined;
+      if (fav.note !== undefined && fav.note !== null) {
+        if (typeof fav.note !== 'string')
+          throw apiError(
+            'immersionList.noteMustBeString',
+            400,
+            'Note must be a string'
+          );
+        const trimmed = fav.note.trim();
+        if (trimmed.length > FAVORITE_NOTE_MAX_LENGTH)
+          throw apiError(
+            'favorites.noteTooLong',
+            400,
+            `Note must be ${FAVORITE_NOTE_MAX_LENGTH} characters or fewer`,
+            { max: FAVORITE_NOTE_MAX_LENGTH }
+          );
+        note = trimmed.length ? trimmed : undefined;
+      }
+
+      return {
+        mediaId: fav.mediaId.trim(),
+        mediaType: fav.mediaType,
+        note,
+        order: index,
+      };
+    });
+
+    user.favorites = normalized;
+    await user.save();
+
+    return res.status(200).json({
+      favorites: await hydrateFavorites(user.favorites),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getCustomizationOptions(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const [options, signatureValues] = await Promise.all([
+      listCustomizationOptions(user),
+      computeSignatureValues(user),
+    ]);
+
+    return res.status(200).json({
+      customization: user.customization ?? {},
+      options,
+      // Real numbers so the settings preview matches the live profile.
+      signatureValues,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateCustomization(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const patch = req.body as Partial<IUserCustomization> | undefined;
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+      throw apiError(
+        'customization.invalidPayload',
+        400,
+        'Customization payload must be an object'
+      );
+    }
+
+    user.customization = await resolveCustomizationUpdate(user, patch);
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      customization: updatedUser.customization ?? {},
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getUser(req: Request, res: Response, next: NextFunction) {
+  const userFound = await User.findOne({
+    username: req.params.username,
+  }).collation({ locale: 'en', strength: 2 });
+  if (!userFound) return next(apiError('user.notFound', 404, 'User not found'));
+
+  const timezone = userFound.settings?.timezone || 'UTC';
+  const liveCurrentStreak = getLiveCurrentStreak(
+    userFound.stats?.currentStreak ?? 0,
+    userFound.stats?.lastStreakDate ?? null,
+    timezone
+  );
+
+  const viewer = res.locals.user as IUser | undefined;
+  const canViewPrivateProfile =
+    hasAdminRole(viewer) || isOwner(viewer, userFound._id);
+  const [canViewProfile, canViewStatistics, canViewImmersionActivity] =
+    await Promise.all([
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'profile',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }),
+    ]);
+  if (!canViewProfile) {
+    return next(
+      apiError('privacy.profileRestricted', 403, 'This profile is private')
+    );
+  }
+
+  const visibleCustomization = sanitizeCustomizationForDisplay(
+    userFound.customization,
+    getDisplayCapabilities(userFound.patreon)
+  );
+  const social = await getSocialSummary(userFound._id, viewer?._id);
+
+  const sharedProfile = {
+    _id: userFound._id,
+    id: userFound._id,
+    username: userFound.username,
+    ...(canViewStatistics
+      ? {
+          stats: {
+            ...userFound.stats,
+            currentStreak: liveCurrentStreak,
+          },
+        }
+      : {}),
+    avatar: userFound.avatar,
+    banner: userFound.banner,
+    titles: userFound.titles,
+    about: userFound.about,
+    createdAt: userFound.createdAt,
+    updatedAt: userFound.updatedAt,
+    // Expose layout publicly so all visitors see the owner's preferred order
+    statsLayout: userFound.settings?.statsLayout ?? [],
+    profileLayout: userFound.settings?.profileLayout ?? [],
+    // Favorites are meant to be showcased — public, no privacy gate
+    favorites: await hydrateFavorites(userFound.favorites ?? []),
+    // Cosmetics are public by definition: they exist to be seen by visitors.
+    // Sanitized on read so an expired supporter stops rendering paid effects
+    // without needing a migration or a background job.
+    customization: visibleCustomization,
+    // Resolved server-side because hours/chars/log counts are not on the user
+    // document. Costs an aggregation only when the owner equipped one of those.
+    ...(canViewStatistics
+      ? {
+          signature: await computeSignatureValue(
+            userFound,
+            visibleCustomization.signatureStat,
+            liveCurrentStreak
+          ),
+        }
+      : {}),
+    social,
+    socialAccess: {
+      profile: canViewProfile,
+      statistics: canViewStatistics,
+      immersionActivity: canViewImmersionActivity,
+    },
+  };
+
+  if (!canViewPrivateProfile) {
+    return res.json({
+      ...sharedProfile,
+      patreon: getPublicPatreonProfile(userFound.patreon),
+    });
+  }
+
+  return res.json({
+    ...sharedProfile,
+    email: userFound.email,
+    verified: userFound.verified,
+    discordId: userFound.discordId ?? '',
+    roles: userFound.roles,
+    patreon: userFound.patreon,
+    settings: userFound.settings,
+  });
+}
+
+export async function getRanking(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+    const filter = (req.query.filter as string) || 'userLevel';
+    const sort = (req.query.sort as string) || 'desc';
+    const timeFilter = (req.query.timeFilter as string) || 'all-time';
+    const timezone = (req.query.timezone as string) || 'UTC'; // Accept timezone as query parameter
+    const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
+    const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+    const rankingUserMatch = await getRankingUserMatch(req, res);
+
+    // Current streaks are user-level values, not log-period aggregates. Read
+    // them directly so the ranking can also apply each user's timezone when a
+    // stored streak has gone stale since their last request.
+    if (filter === 'currentStreak') {
+      const streakUsers = await User.find(rankingUserMatch)
+        .select(
+          'username avatar stats.userLevel stats.currentStreak stats.lastStreakDate settings.timezone patreon customization'
+        )
+        .lean();
+
+      const rankedStreakUsers = streakUsers
+        .map((streakUser) => ({
+          username: streakUser.username,
+          avatar: streakUser.avatar,
+          patreon: streakUser.patreon,
+          customization: streakUser.customization,
+          stats: {
+            userLevel: streakUser.stats?.userLevel ?? 1,
+            currentStreak: getLiveCurrentStreak(
+              streakUser.stats?.currentStreak ?? 0,
+              streakUser.stats?.lastStreakDate ?? null,
+              streakUser.settings?.timezone || 'UTC'
+            ),
+          },
+        }))
+        .filter((streakUser) => streakUser.stats.currentStreak > 0)
+        .sort(
+          (a, b) =>
+            b.stats.currentStreak - a.stats.currentStreak ||
+            a.username.localeCompare(b.username)
+        )
+        .slice(skip, skip + limit);
+
+      return res
+        .status(200)
+        .json(sanitizeRankingCosmetics(rankedStreakUsers));
+    }
+
+    // Create date filter based on timeFilter using the provided timezone
+    let dateFilter: { date?: { $gte?: Date; $lt?: Date } } = {};
+    const now = new Date();
+
+    // Get current date in the specified timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: timezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
+    if (startParam || endParam) {
+      // Custom range overrides timeFilter
+      const makeLocal = (s: string) => new Date(`${s}T00:00:00`);
+      if (startParam) {
+        const startLocal = makeLocal(startParam);
+        const startUTC = new Date(startLocal.getTime() + offsetNow);
+        dateFilter.date = { ...(dateFilter.date || {}), $gte: startUTC };
+      }
+      if (endParam) {
+        const endLocal = makeLocal(endParam);
+        // add 1 day to include the whole end day
+        const endLocalPlus = new Date(endLocal.getTime());
+        endLocalPlus.setDate(endLocalPlus.getDate() + 1);
+        const endUTC = new Date(endLocalPlus.getTime() + offsetNow);
+        dateFilter.date = { ...(dateFilter.date || {}), $lt: endUTC };
+      }
+    } else if (timeFilter === 'today') {
+      const startOfDayLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate()
+      );
+      const startOfDay = new Date(startOfDayLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: startOfDay } };
+    } else if (timeFilter === 'week') {
+      const startOfWeekLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate() - userDate.getDay()
+      );
+      const startOfWeek = new Date(startOfWeekLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: startOfWeek } };
+    } else if (timeFilter === 'month') {
+      const startOfMonthLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        1
+      );
+      const startOfMonth = new Date(startOfMonthLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: startOfMonth } };
+    } else if (timeFilter === 'year') {
+      const startOfYearLocal = new Date(userDate.getFullYear(), 0, 1);
+      const startOfYear = new Date(startOfYearLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: startOfYear } };
+    }
+
+    // Extract date values for use in aggregation
+    const dateGte = dateFilter.date?.$gte;
+    const dateLt = dateFilter.date?.$lt;
+
+    // If filtering by time period or custom range, calculate stats from logs
+    if (timeFilter !== 'all-time' || startParam || endParam) {
+      // Lookup user details with aggregated stats
+      const rankingUsers = await User.aggregate([
+        {
+          $match: rankingUserMatch,
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$private', true] },
+                      { $ne: ['$unknownDate', true] },
+                      ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
+                      ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
+                    ],
+                  },
+                },
+              },
+              {
+                $group: {
+                  _id: '$user',
+                  userXp: { $sum: '$xp' },
+                  totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+                  readingXp: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
+                  listeningXp: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['anime', 'audio', 'video']] },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
+                  // Calculate total minutes from all activities
+                  totalMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        { $ifNull: ['$time', 0] }, // Use actual time or 0 if null
+                      ],
+                    },
+                  },
+                  readingMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
+                        { $ifNull: ['$time', 0] },
+                        0,
+                      ],
+                    },
+                  },
+                  listeningMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: ['$type', ['anime', 'audio', 'video', 'movie']],
+                        },
+                        {
+                          $cond: [
+                            {
+                              $and: [
+                                { $eq: ['$type', 'anime'] },
+                                {
+                                  $or: [
+                                    { $eq: ['$time', 0] },
+                                    { $eq: ['$time', null] },
+                                    { $eq: [{ $type: '$time' }, 'missing'] },
+                                  ],
+                                },
+                                { $gt: ['$episodes', 0] },
+                              ],
+                            },
+                            { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                            { $ifNull: ['$time', 0] }, // Use actual time or 0 if null
+                          ],
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  userHours: {
+                    $round: [{ $divide: ['$totalMinutes', 60] }, 1],
+                  },
+                  readingHours: {
+                    $round: [{ $divide: ['$readingMinutes', 60] }, 1],
+                  },
+                  listeningHours: {
+                    $round: [{ $divide: ['$listeningMinutes', 60] }, 1],
+                  },
+                },
+              },
+            ],
+            as: 'timeStats',
+          },
+        },
+        // Unwind the timeStats array - this will exclude users with no logs in the time period
+        { $unwind: { path: '$timeStats', preserveNullAndEmptyArrays: false } },
+        {
+          $project: {
+            _id: 0,
+            username: 1,
+            avatar: 1,
+            patreon: {
+              isActive: '$patreon.isActive',
+              tier: '$patreon.tier',
+              customBadgeText: '$patreon.customBadgeText',
+              badgeColor: '$patreon.badgeColor',
+              badgeTextColor: '$patreon.badgeTextColor',
+              hideBadge: '$patreon.hideBadge',
+            },
+            customization: RANKING_COSMETICS_PROJECTION,
+            stats: {
+              userXp: '$timeStats.userXp',
+              userChars: '$timeStats.totalChars',
+              readingXp: '$timeStats.readingXp',
+              listeningXp: '$timeStats.listeningXp',
+              userLevel: 1, // Keep the user level from the user document
+              // Use hours calculated directly from time field
+              userHours: '$timeStats.userHours',
+              readingHours: '$timeStats.readingHours',
+              listeningHours: '$timeStats.listeningHours',
+            },
+          },
+        },
+        // Filter out users with 0 value for the selected metric
+        {
+          $match: {
+            [`stats.${filter}`]: { $gt: 0 },
+          },
+        },
+        { $sort: { [`stats.${filter}`]: sort === 'asc' ? 1 : -1 } },
+        { $skip: skip },
+        { $limit: limit },
+      ]);
+      return res.status(200).json(sanitizeRankingCosmetics(rankingUsers));
+    }
+    // Default behavior - get all-time stats with hours calculated from logs
+      const rankingUsers = await User.aggregate([
+        {
+          $match: rankingUserMatch,
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$private', true] },
+                    ],
+                  },
+                },
+              },
+              {
+                $group: {
+                  _id: '$user',
+                  userXp: { $sum: '$xp' },
+                  readingXp: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
+                  listeningXp: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['anime', 'audio', 'video', 'movie', 'tv show'],
+                          ],
+                        },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
+                  totalMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        { $ifNull: ['$time', 0] }, // Use actual time or 0 if null
+                      ],
+                    },
+                  },
+                  totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+                  readingMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
+                        { $ifNull: ['$time', 0] },
+                        0,
+                      ],
+                    },
+                  },
+                  listeningMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: ['$type', ['anime', 'audio', 'video', 'movie']],
+                        },
+                        {
+                          $cond: [
+                            {
+                              $and: [
+                                { $eq: ['$type', 'anime'] },
+                                {
+                                  $or: [
+                                    { $eq: ['$time', 0] },
+                                    { $eq: ['$time', null] },
+                                    { $eq: [{ $type: '$time' }, 'missing'] },
+                                  ],
+                                },
+                                { $gt: ['$episodes', 0] },
+                              ],
+                            },
+                            { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                            { $ifNull: ['$time', 0] }, // Use actual time or 0 if null
+                          ],
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  totalHours: {
+                    $round: [{ $divide: ['$totalMinutes', 60] }, 1],
+                  },
+                  readingHours: {
+                    $round: [{ $divide: ['$readingMinutes', 60] }, 1],
+                  },
+                  listeningHours: {
+                    $round: [{ $divide: ['$listeningMinutes', 60] }, 1],
+                  },
+                  chars: '$totalChars',
+                },
+              },
+            ],
+            as: 'timeData',
+          },
+        },
+        {
+          $addFields: {
+            'stats.userXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.userXp', 0] }, 0],
+            },
+            'stats.readingXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.readingXp', 0] }, 0],
+            },
+            'stats.listeningXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.listeningXp', 0] }, 0],
+            },
+            'stats.userHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.totalHours', 0] }, 0],
+            },
+            'stats.readingHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.readingHours', 0] }, 0],
+            },
+            'stats.listeningHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.listeningHours', 0] }, 0],
+            },
+            'stats.userChars': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.chars', 0] }, 0],
+            },
+            // Keep level-based ranking consistent with all-time aggregated XP.
+            'stats.userLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [{ $arrayElemAt: ['$timeData.userXp', 0] }, 0],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
+            },
+            'stats.readingLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$timeData.readingXp', 0] },
+                          0,
+                        ],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
+            },
+            'stats.listeningLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$timeData.listeningXp', 0] },
+                          0,
+                        ],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
+            },
+          },
+        },
+        // Filter out users with 0 value for the selected metric
+        {
+          $match: {
+            [`stats.${filter}`]: { $gt: 0 },
+          },
+        },
+        { $sort: { [`stats.${filter}`]: sort === 'asc' ? 1 : -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 0,
+            avatar: 1,
+            username: 1,
+            stats: 1,
+            patreon: {
+              isActive: '$patreon.isActive',
+              tier: '$patreon.tier',
+              customBadgeText: '$patreon.customBadgeText',
+              badgeColor: '$patreon.badgeColor',
+              badgeTextColor: '$patreon.badgeTextColor',
+              hideBadge: '$patreon.hideBadge',
+            },
+            customization: RANKING_COSMETICS_PROJECTION,
+          },
+        },
+      ]);
+
+      return res.status(200).json(sanitizeRankingCosmetics(rankingUsers));
+
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getRankingSummary(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username } = req.params;
+    const timezoneParam = (req.query.timezone as string) || undefined;
+
+    const userDoc = await User.findOne({ username })
+      .select('username stats settings.timezone settings.socialPrivacy')
+      .lean();
+
+    if (!userDoc || !userDoc.stats) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: userDoc._id,
+        viewerId: viewer?._id,
+        settings: userDoc.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
+    }
+
+    const timezone = timezoneParam || userDoc.settings?.timezone || 'UTC';
+
+    const [allTimeUserResult] = await Log.aggregate([
+      {
+        $match: {
+          user: userDoc._id,
+          private: { $ne: true },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+    ]);
+
+    const userXp = allTimeUserResult?.xp ?? 0;
+
+    const [higherCountResult] = await Log.aggregate([
+      {
+        $match: {
+          private: { $ne: true },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $match: {
+          xp: { $gt: userXp },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $count: 'count',
+      },
+    ]);
+
+    const higherCount = higherCountResult?.count ?? 0;
+
+    const [nextUser] = await Log.aggregate([
+      {
+        $match: {
+          private: { $ne: true },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $match: {
+          xp: { $gt: userXp },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $sort: { xp: 1 },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $project: {
+          username: '$user.username',
+          xp: 1,
+        },
+      },
+    ]);
+
+    const totalUsers = await User.countDocuments({
+      $and: [
+        {
+          $or: [
+            { 'moderation.rankingBanned': { $exists: false } },
+            { 'moderation.rankingBanned': false },
+          ],
+        },
+        PUBLIC_STATISTICS_MATCH,
+      ],
+    });
+
+    const { monthStart, monthEnd } = getMonthBoundaries(timezone);
+
+    const monthlyUserResult = await Log.aggregate([
+      {
+        $match: {
+          user: userDoc._id,
+          private: { $ne: true },
+          unknownDate: { $ne: true },
+          date: {
+            $gte: monthStart,
+            $lt: monthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+    ]);
+
+    const userMonthlyXp = monthlyUserResult[0]?.xp ?? 0;
+
+    const [monthlyAggregate] = await Log.aggregate([
+      {
+        $match: {
+          private: { $ne: true },
+          unknownDate: { $ne: true },
+          date: {
+            $gte: monthStart,
+            $lt: monthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          ahead: [
+            { $match: { xp: { $gt: userMonthlyXp } } },
+            { $count: 'count' },
+          ],
+          total: [{ $match: { xp: { $gt: 0 } } }, { $count: 'count' }],
+          nextUser: [
+            { $match: { xp: { $gt: userMonthlyXp } } },
+            { $sort: { xp: 1 } },
+            { $limit: 1 },
+            {
+              $project: {
+                username: '$user.username',
+                xp: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const aheadCount = monthlyAggregate?.ahead?.[0]?.count ?? 0;
+    const participantCount = monthlyAggregate?.total?.[0]?.count ?? 0;
+    const nextMonthlyUser = monthlyAggregate?.nextUser?.[0] ?? null;
+
+    let monthlyTotalUsers = participantCount;
+    if (monthlyTotalUsers === 0) {
+      monthlyTotalUsers = 1;
+    } else if (userMonthlyXp === 0) {
+      monthlyTotalUsers += 1;
+    }
+
+    const monthlyNextUser = nextMonthlyUser
+      ? {
+          username: nextMonthlyUser.username,
+          xp: nextMonthlyUser.xp,
+          gap: nextMonthlyUser.xp - userMonthlyXp,
+        }
+      : null;
+
+    return res.status(200).json({
+      position: higherCount + 1,
+      totalUsers,
+      userXp,
+      nextUser: nextUser
+        ? {
+            username: nextUser.username,
+            xp: nextUser.xp ?? 0,
+            gap: (nextUser.xp ?? 0) - userXp,
+          }
+        : null,
+      monthly: {
+        position: aheadCount + 1,
+        totalUsers: monthlyTotalUsers,
+        userXp: userMonthlyXp,
+        nextUser: monthlyNextUser,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Historical global + monthly ranking positions for a user (for the profile graph)
+export async function getRankingHistory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username } = req.params;
+    const userDoc = await User.findOne({ username })
+      .select('_id settings.socialPrivacy')
+      .lean();
+    if (!userDoc) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: userDoc._id,
+        viewerId: viewer?._id,
+        settings: userDoc.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
+    }
+
+    const [snapshots, monthly] = await Promise.all([
+      RankSnapshot.find({ userId: userDoc._id })
+        .sort({ date: 1 })
+        .select('date globalPosition -_id')
+        .lean(),
+      getMonthlyRankHistory(
+        userDoc._id,
+        userDoc.settings?.timezone || 'UTC'
+      ),
+    ]);
+
+    return res.status(200).json({
+      global: snapshots.map((snapshot) => ({
+        date: snapshot.date,
+        position: snapshot.globalPosition,
+      })),
+      monthly,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Medium-based ranking with metric selection
+export async function getMediumRanking(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+    const type = req.query.type as string as
+      | 'anime'
+      | 'manga'
+      | 'light-novel'
+      | 'vn'
+      | 'game'
+      | 'video'
+      | 'movie'
+      | 'tv show'
+      | 'book'
+      | 'audio'
+      | undefined;
+    const metric = (req.query.metric as string) || 'xp'; // xp | time | episodes | chars | pages
+    const timeFilter = (req.query.timeFilter as string) || 'all-time';
+    const timezone = (req.query.timezone as string) || 'UTC';
+    const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
+    const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+    const rankingUserMatch = await getRankingUserMatch(req, res);
+
+    // Date filter (copied from getRanking)
+    let dateGte: Date | undefined;
+    let dateLt: Date | undefined;
+    const now = new Date();
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: timezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+    if (startParam || endParam) {
+      const makeLocal = (s: string) => new Date(`${s}T00:00:00`);
+      if (startParam) {
+        const startLocal = makeLocal(startParam);
+        dateGte = new Date(startLocal.getTime() + offsetNow);
+      }
+      if (endParam) {
+        const endLocal = makeLocal(endParam);
+        endLocal.setDate(endLocal.getDate() + 1);
+        dateLt = new Date(endLocal.getTime() + offsetNow);
+      }
+    } else if (timeFilter === 'today') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate()
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'week') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate() - userDate.getDay()
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'month') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        1
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'year') {
+      const startLocal = new Date(userDate.getFullYear(), 0, 1);
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    }
+
+    const shouldExcludeUnknownDate = Boolean(dateGte || dateLt);
+
+    // Build pipeline
+    const pipeline: any[] = [
+      {
+        $match: rankingUserMatch,
+      },
+      {
+        $lookup: {
+          from: 'logs',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $ne: ['$private', true] },
+                    ...(shouldExcludeUnknownDate
+                      ? [{ $ne: ['$unknownDate', true] }]
+                      : []),
+                    ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
+                    ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
+                    ...(type ? [{ $eq: ['$type', type] }] : []),
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$user',
+                xp: { $sum: '$xp' },
+                // minutes for time metric
+                minutes: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+              },
+            },
+            {
+              $addFields: {
+                hours: { $round: [{ $divide: ['$minutes', 60] }, 1] },
+              },
+            },
+          ],
+          as: 'metrics',
+        },
+      },
+      { $unwind: { path: '$metrics', preserveNullAndEmptyArrays: false } },
+      {
+        $project: {
+          _id: 0,
+          username: 1,
+          avatar: 1,
+          patreon: {
+            isActive: '$patreon.isActive',
+            tier: '$patreon.tier',
+            customBadgeText: '$patreon.customBadgeText',
+            badgeColor: '$patreon.badgeColor',
+            badgeTextColor: '$patreon.badgeTextColor',
+            hideBadge: '$patreon.hideBadge',
+          },
+          customization: RANKING_COSMETICS_PROJECTION,
+          stats: {
+            userLevel: '$stats.userLevel',
+          },
+          xp: '$metrics.xp',
+          hours: '$metrics.hours',
+          episodes: '$metrics.episodes',
+          chars: '$metrics.chars',
+          pages: '$metrics.pages',
+        },
+      },
+      // exclude zero values for selected metric
+      {
+        $match: {
+          [metric === 'time' ? 'hours' : metric]: { $gt: 0 },
+        },
+      },
+      {
+        $sort: {
+          [metric === 'time' ? 'hours' : metric]: -1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+    ];
+
+    const ranking = await User.aggregate(pipeline);
+    return res.status(200).json(sanitizeRankingCosmetics(ranking));
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function searchUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const query = (req.query.q as string)?.trim();
+    if (!query || query.length < 2) {
+      return res.json([]);
+    }
+
+    const results = await searchDocuments('users', query, { limit: 10 });
+
+    // Transform Meilisearch results to match the existing API shape
+    const users = results.hits.map((hit) => ({
+      _id: hit.id as string,
+      username: hit.username as string,
+      avatar: hit.avatar as string | null,
+      banner: hit.banner as string | null,
+      stats: { xp: hit.xp as number },
+    }));
+
+    return res.json(users);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function clearUserData(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username } = req.body;
+
+    const user = await User.findById(res.locals.user._id);
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    // Verify username matches for extra confirmation
+    if (username !== user.username) {
+      throw apiError(
+        'user.usernameConfirmMismatch',
+        400,
+        'Username does not match. Please type your username to confirm.'
+      );
+    }
+
+    // Delete user's files from Firebase before clearing data
+    if (user.avatar) {
+      await deleteFile(user.avatar);
+    }
+    if (user.banner) {
+      await deleteFile(user.banner);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          clubs: [],
+          titles: [],
+          roles: ['user'],
+          firstImport: true,
+          about: '',
+          avatar: '',
+          banner: '',
+          stats: {
+            userLevel: 1,
+            userXp: 0,
+            userXpToNextLevel: calculateXp(2),
+            userXpToCurrentLevel: calculateXp(1),
+            readingXp: 0,
+            readingLevel: 1,
+            readingXpToNextLevel: calculateXp(2),
+            readingXpToCurrentLevel: calculateXp(1),
+            listeningXp: 0,
+            listeningLevel: 1,
+            listeningXpToNextLevel: calculateXp(2),
+            listeningXpToCurrentLevel: calculateXp(1),
+            currentStreak: 0,
+            longestStreak: 0,
+            lastStreakDate: null,
+          },
+          settings: {
+            blurAdultContent: true,
+            hideUnmatchedLogsAlert: false,
+            timezone: 'UTC',
+            hiddenRecentMedia: [],
+          },
+          patreon: {
+            tier: null,
+            isActive: false,
+            customBadgeText: '',
+            badgeColor: '',
+            badgeTextColor: '',
+            hideBadge: false,
+            manualTierExpiry: null,
+          },
+        },
+        $unset: {
+          discordId: 1,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedUser) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    await deleteSocialDataForUser(user._id);
+
+    // Delete all logs
+    await Log.deleteMany({ user: user._id });
+
+    // Delete all goals
+    const DailyGoal = (await import('../models/dailyGoal.model.js')).default;
+    const LongTermGoal = (await import('../models/longTermGoal.model.js'))
+      .default;
+    await DailyGoal.deleteMany({ user: user._id });
+    await LongTermGoal.deleteMany({ user: user._id });
+    await Tag.deleteMany({ user: user._id });
+    await UserMediaStatus.deleteMany({ user: user._id });
+
+    return res.status(200).json({
+      message: 'User data cleared',
+      user: {
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        discordId: updatedUser.discordId ?? '',
+        stats: updatedUser.stats,
+        avatar: updatedUser.avatar,
+        banner: updatedUser.banner,
+        about: updatedUser.about,
+        titles: updatedUser.titles,
+        roles: updatedUser.roles,
+        settings: updatedUser.settings,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getImmersionList(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
+
+    type StatusFilter =
+      | 'all'
+      | 'completed'
+      | 'incomplete'
+      | 'in_progress'
+      | 'dropped'
+      | 'paused'
+      | 'planning';
+
+    const completionQuery = (
+      req.query.completed as string | undefined
+    )?.toLowerCase();
+    const statusQuery = (
+      req.query.status as string | undefined
+    )?.toLowerCase() as StatusFilter | undefined;
+
+    // statusQuery takes precedence over the legacy completionQuery
+    let statusFilter: StatusFilter = 'all';
+    if (
+      statusQuery &&
+      [
+        'completed',
+        'incomplete',
+        'in_progress',
+        'dropped',
+        'paused',
+        'planning',
+        'all',
+      ].includes(statusQuery)
+    ) {
+      statusFilter = statusQuery;
+    } else if (completionQuery === 'true' || completionQuery === 'completed') {
+      statusFilter = 'completed';
+    } else if (
+      completionQuery === 'false' ||
+      completionQuery === 'incomplete'
+    ) {
+      statusFilter = 'incomplete';
+    }
+
+    // Update your interface definition
+    interface ImmersionGroup {
+      _id: ImmersionMediaType;
+      media: Array<IMediaDocument>;
+    }
+
+    const [immersionList, mediaStatuses] = await Promise.all([
+      Log.aggregate<ImmersionGroup>([
+        { $match: { user: user._id, private: { $ne: true } } },
+        {
+          $group: {
+            _id: { mediaId: '$mediaId', type: '$type' },
+            lastLogDate: { $max: '$date' },
+            logCount: { $sum: 1 },
+            totalXp: { $sum: '$xp' },
+          },
+        },
+        {
+          $lookup: {
+            from: 'media',
+            let: { mediaId: '$_id.mediaId', logType: '$_id.type' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$contentId', '$$mediaId'] },
+                      { $eq: ['$type', '$$logType'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'mediaDetails',
+          },
+        },
+        { $unwind: '$mediaDetails' },
+        {
+          $addFields: {
+            'mediaDetails.lastLogDate': '$lastLogDate',
+            'mediaDetails.logCount': '$logCount',
+            'mediaDetails.totalXp': '$totalXp',
+          },
+        },
+        {
+          $replaceRoot: { newRoot: '$mediaDetails' },
+        },
+        {
+          $group: {
+            _id: '$type',
+            media: { $push: '$$ROOT' },
+          },
+        },
+      ]),
+      UserMediaStatus.find({ user: user._id }),
+    ]);
+
+    const result: Record<ImmersionMediaType, IMediaDocument[]> = {
+      anime: [],
+      manga: [],
+      'light-novel': [],
+      vn: [],
+      game: [],
+      video: [],
+      movie: [],
+      'tv show': [],
+      book: [],
+    };
+
+    const statusMap = new Map<
+      string,
+      {
+        completed: boolean;
+        completedAt?: Date | null;
+        status?:
+          | 'completed'
+          | 'dropped'
+          | 'paused'
+          | 'planning'
+          | 'in_progress'
+          | null;
+        hiddenFromList: boolean;
+      }
+    >();
+    mediaStatuses.forEach((s) => {
+      const key = `${s.type}:${s.mediaId}`;
+      statusMap.set(key, {
+        completed: s.completed,
+        completedAt: s.completedAt ?? null,
+        status: s.status ?? null,
+        hiddenFromList: s.hiddenFromList === true,
+      });
+    });
+
+    const matchesStatusFilter = (
+      mediaStatus: string | null | undefined,
+      isCompleted: boolean
+    ) => {
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'completed') return isCompleted;
+      if (statusFilter === 'incomplete') return !isCompleted && !mediaStatus;
+      return mediaStatus === statusFilter;
+    };
+
+    const mediaKeysFromLogs = new Set<string>();
+
+    immersionList.forEach((group) => {
+      const mediaType = group._id as ImmersionMediaType;
+      const mediaWithStatus = group.media
+        .filter((media) => {
+          const key = `${mediaType}:${media.contentId}`;
+          // Tracked either way, so hidden entries aren't re-added below
+          mediaKeysFromLogs.add(key);
+          // Removed from the list by the user while keeping its logs
+          return !statusMap.get(key)?.hiddenFromList;
+        })
+        .map((media) => {
+          const s = statusMap.get(`${mediaType}:${media.contentId}`);
+          return {
+            ...media,
+            isCompleted: s?.completed ?? false,
+            completedAt: s?.completedAt ?? null,
+            mediaStatus: s?.status ?? null,
+          };
+        })
+        .filter((media) =>
+          matchesStatusFilter(media.mediaStatus, media.isCompleted ?? false)
+        );
+
+      result[mediaType] = mediaWithStatus;
+    });
+
+    // Items with any explicit status (not just completed) but no logs
+
+    const statusesWithoutLogs = mediaStatuses.filter((s) => {
+      const key = `${s.type}:${s.mediaId}`;
+      return (
+        !!s.status && s.hiddenFromList !== true && !mediaKeysFromLogs.has(key)
+      );
+    });
+
+    if (statusesWithoutLogs.length > 0 && statusFilter !== 'incomplete') {
+      const missingMediaMatchers = Array.from(
+        new Map(
+          statusesWithoutLogs.map((s) => [
+            `${s.type}:${s.mediaId}`,
+            { contentId: s.mediaId, type: s.type },
+          ])
+        ).values()
+      );
+
+      if (missingMediaMatchers.length > 0) {
+        const missingMediaDocs = await MediaBase.find({
+          $or: missingMediaMatchers,
+        }).lean();
+
+        const missingMediaMap = new Map<string, IMediaDocument>();
+        missingMediaDocs.forEach((media) => {
+          missingMediaMap.set(
+            `${media.type}:${media.contentId}`,
+            media as IMediaDocument
+          );
+        });
+
+        statusesWithoutLogs.forEach((s) => {
+          const mediaType = s.type as ImmersionMediaType;
+          const key = `${mediaType}:${s.mediaId}`;
+          const media = missingMediaMap.get(key);
+
+          if (
+            !media ||
+            !matchesStatusFilter(s.status ?? null, s.status === 'completed')
+          ) {
+            return;
+          }
+
+          result[mediaType].push({
+            ...media,
+            logCount: 0,
+            totalXp: 0,
+            isCompleted: s.status === 'completed',
+            completedAt: s.completedAt ?? null,
+            mediaStatus: s.status ?? null,
+          });
+        });
+      }
+    }
+
+    // Sort each media type alphabetically
+    (Object.keys(result) as ImmersionMediaType[]).forEach((key) => {
+      result[key].sort(
+        (a, b) =>
+          a.title?.contentTitleNative?.localeCompare(
+            b.title?.contentTitleNative || ''
+          ) || 0
+      );
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateMediaCompletionStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!res.locals.user?._id) {
+      throw apiError('auth.forbidden', 401, 'Not authorized');
+    }
+
+    const { mediaId, type, completed, completedAt, source, status } =
+      req.body as {
+        mediaId?: string | number;
+        type?: string;
+        completed?: boolean;
+        completedAt?: string | Date;
+        source?: string;
+        status?:
+          | 'completed'
+          | 'dropped'
+          | 'paused'
+          | 'planning'
+          | 'in_progress';
+      };
+
+    if (!mediaId || !type) {
+      throw apiError(
+        'immersionList.mediaIdAndTypeRequired',
+        400,
+        'Media ID and type are required'
+      );
+    }
+
+    const normalizedMediaId = String(mediaId);
+    const normalizedType = type.toLowerCase() as ImmersionMediaType;
+
+    if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
+      throw apiError(
+        'immersionList.invalidMediaType',
+        400,
+        'Invalid media type'
+      );
+    }
+
+    const normalizedSource = source?.toLowerCase();
+    if (
+      normalizedSource &&
+      normalizedSource !== 'manual' &&
+      normalizedSource !== 'auto'
+    ) {
+      throw apiError('immersionList.invalidSource', 400, 'Invalid source');
+    }
+
+    const validStatuses = [
+      'completed',
+      'dropped',
+      'paused',
+      'planning',
+      'in_progress',
+    ];
+    if (status && !validStatuses.includes(status)) {
+      throw apiError(
+        'immersionList.invalidStatus',
+        400,
+        'Invalid status value'
+      );
+    }
+
+    const completionSource = (normalizedSource ?? 'manual') as
+      | 'manual'
+      | 'auto';
+
+    const mediaExists = await MediaBase.findOne({
+      contentId: normalizedMediaId,
+      type: normalizedType,
+    }).lean();
+
+    if (!mediaExists) {
+      throw apiError('media.notFound', 404, 'Media not found');
+    }
+
+    // Determine the effective status to write
+    let effectiveStatus:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'in_progress'
+      | null = null;
+    let effectiveCompleted: boolean;
+    let effectiveCompletedAt: Date | null = null;
+    let effectiveAutoCompleteSuppressed: boolean;
+
+    if (completionSource === 'auto') {
+      // Auto-complete from logging always writes completed
+      effectiveStatus = 'completed';
+      effectiveCompleted = true;
+      effectiveCompletedAt = completedAt ? new Date(completedAt) : new Date();
+      effectiveAutoCompleteSuppressed = false;
+    } else if (status) {
+      // Explicit status from user
+      effectiveStatus = status;
+      effectiveCompleted = status === 'completed';
+      effectiveCompletedAt =
+        status === 'completed'
+          ? new Date(completedAt ?? Date.now())
+          : null;
+      effectiveAutoCompleteSuppressed = status !== 'completed';
+    } else {
+      // Legacy path: only `completed` boolean provided
+      const shouldComplete = completed ?? true;
+      effectiveStatus = shouldComplete ? 'completed' : null;
+      effectiveCompleted = shouldComplete;
+      effectiveCompletedAt = shouldComplete
+        ? new Date(completedAt ?? Date.now())
+        : null;
+      effectiveAutoCompleteSuppressed = !shouldComplete;
+    }
+
+    const savedStatus = await UserMediaStatus.findOneAndUpdate(
+      {
+        user: res.locals.user._id,
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+      },
+      {
+        $set: {
+          status: effectiveStatus,
+          completed: effectiveCompleted,
+          completedAt: effectiveCompletedAt,
+          autoCompleteSuppressed: effectiveAutoCompleteSuppressed,
+          // Setting a status brings a hidden entry back to the list
+          hiddenFromList: false,
+        },
+        $setOnInsert: {
+          user: res.locals.user._id,
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    const newAchievements = effectiveCompleted
+      ? await checkAchievements(res.locals.user._id, {
+          trigger: 'mediaComplete',
+        })
+      : [];
+    if (newAchievements.length > 0) {
+      const achievementIds = newAchievements.map(
+        (achievement) => achievement._id as Types.ObjectId
+      );
+      await UserAchievement.updateMany(
+        {
+          user: res.locals.user._id,
+          achievement: { $in: achievementIds },
+        },
+        { $set: { notified: true } }
+      );
+      await dismissAchievementNotifications(res.locals.user._id, achievementIds);
+    }
+
+    return res.status(200).json({
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+      status: savedStatus?.status ?? effectiveStatus,
+      isCompleted: savedStatus?.completed ?? effectiveCompleted,
+      completedAt: savedStatus?.completedAt ?? effectiveCompletedAt,
+      autoCompleteSuppressed:
+        savedStatus?.autoCompleteSuppressed ?? effectiveAutoCompleteSuppressed,
+      newAchievements,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * Remove a media entry from the authenticated user's immersion list.
+ *
+ * The list is derived from logs (see getImmersionList), so there are two ways to
+ * remove an entry, selected with the `deleteLogs` query param:
+ *   - `deleteLogs=false` (default): keep the logs and their XP, and flag the
+ *     entry as `hiddenFromList` so it stops showing up in the list.
+ *   - `deleteLogs=true`: delete every log for that media plus its status row,
+ *     then recalculate XP and streaks.
+ */
+export async function removeMediaFromImmersionList(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!res.locals.user?._id) {
+      throw apiError('auth.forbidden', 401, 'Not authorized');
+    }
+
+    const { mediaId, type } = req.params as {
+      mediaId?: string;
+      type?: string;
+    };
+
+    if (!mediaId || !type) {
+      throw apiError(
+        'immersionList.mediaIdAndTypeRequired',
+        400,
+        'Media ID and type are required'
+      );
+    }
+
+    const normalizedMediaId = String(mediaId);
+    const normalizedType = type.toLowerCase() as ImmersionMediaType;
+
+    if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
+      throw apiError(
+        'immersionList.invalidMediaType',
+        400,
+        'Invalid media type'
+      );
+    }
+
+    const userId = res.locals.user._id;
+    const deleteLogs =
+      String(req.query.deleteLogs ?? '').toLowerCase() === 'true';
+    const statusFilter = {
+      user: userId,
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+    };
+
+    if (!deleteLogs) {
+      // Keep the logs (and their XP); just hide the entry from the list
+      const logCount = await Log.countDocuments(statusFilter);
+      const existingStatus = await UserMediaStatus.findOne(statusFilter).lean();
+
+      if (logCount === 0 && !existingStatus) {
+        throw apiError(
+          'immersionList.mediaNotFound',
+          404,
+          'Media not found in your immersion list'
+        );
+      }
+
+      if (logCount === 0) {
+        // Nothing to keep — a status-only entry is removed outright
+        await UserMediaStatus.deleteOne(statusFilter);
+
+        return res.status(200).json({
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+          deletedLogs: 0,
+          hidden: false,
+          removedStatus: true,
+        });
+      }
+
+      // The status is cleared too, so the media page stops showing the entry as
+      // tracked while its logs stay intact
+      await UserMediaStatus.findOneAndUpdate(
+        statusFilter,
+        {
+          $set: {
+            hiddenFromList: true,
+            status: null,
+            completed: false,
+            completedAt: null,
+          },
+          $setOnInsert: statusFilter,
+        },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+
+      return res.status(200).json({
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+        deletedLogs: 0,
+        hidden: true,
+        removedStatus: false,
+      });
+    }
+
+    const [logResult, statusResult] = await Promise.all([
+      Log.deleteMany(statusFilter),
+      UserMediaStatus.deleteOne(statusFilter),
+    ]);
+
+    if (logResult.deletedCount === 0 && statusResult.deletedCount === 0) {
+      throw apiError(
+        'immersionList.mediaNotFound',
+        404,
+        'Media not found in your immersion list'
+      );
+    }
+
+    if (logResult.deletedCount > 0) {
+      // Recalculate from scratch instead of applying per-log deltas
+      await recalculateUserXpFromLogs(userId);
+      await recalculateStreaksForUser(userId);
+    }
+
+    return res.status(200).json({
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+      deletedLogs: logResult.deletedCount,
+      hidden: false,
+      removedStatus: statusResult.deletedCount > 0,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// LinkType mapping for jiten API
+const LinkTypeObject = {
+  vn: 2, // VNDB
+  anime: 4, // Anilist
+  manga: 4, // Anilist
+  reading: 4, // Anilist
+  movie: 4, // Anilist for movies
+};
+
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
+interface IJitenDeck {
+  deckId: number;
+  creationDate: string;
+  releaseDate: string | null;
+  coverName: string;
+  mediaType: number;
+  originalTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
+  characterCount: number;
+  wordCount: number;
+  uniqueWordCount: number;
+  uniqueWordUsedOnceCount: number;
+  uniqueKanjiCount: number;
+  uniqueKanjiUsedOnceCount: number;
+  difficulty: number;
+  difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
+  sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
+  averageSentenceLength: number;
+  parentDeckId: number | null;
+  links: IJitenDeckLink[];
+  aliases: string[];
+  childrenDeckCount: number;
+  selectedWordOccurrences: number;
+  dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
+}
+
+interface IJitenResponse {
+  data: {
+    parentDeck: IJitenDeck | null;
+    mainDeck: IJitenDeck;
+    subDecks: IJitenDeck[];
+  };
+  totalItems: number;
+  pageSize: number;
+  currentOffset: number;
+}
+
+interface IComparisonStats {
+  totalXp: number;
+  totalTime: number;
+  totalChars: number;
+  totalPages: number;
+  totalEpisodes: number;
+  totalVolumes: number;
+  logCount: number;
+  readingSpeed: number;
+  readingPercentage: number | null; // null when no character count data available
+}
+
+interface IComparisonResult {
+  user1: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  user2: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  mediaInfo: {
+    contentId: string;
+    type: string;
+    totalCharCount?: number;
+  };
+}
+
+export async function compareUserStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IComparisonResult> | void> {
+  try {
+    const { user1, user2, mediaId, type } = req.query;
+
+    if (!user1 || !user2 || !mediaId || !type) {
+      return res.status(400).json({
+        message: 'user1, user2, mediaId, and type are required',
+      });
+    }
+
+    // Verify users exist
+    const [userDoc1, userDoc2] = await Promise.all([
+      User.findOne({ username: user1 }).select(
+        '_id username settings.socialPrivacy'
+      ),
+      User.findOne({ username: user2 }).select(
+        '_id username settings.socialPrivacy'
+      ),
+    ]);
+
+    if (!userDoc1 || !userDoc2) {
+      return res.status(404).json({ message: 'One or both users not found' });
+    }
+    const viewer = res.locals.user as IUser | undefined;
+    const [canViewUser1, canViewUser2] = await Promise.all([
+      canViewUserSocialCategory({
+        ownerId: userDoc1._id,
+        viewerId: viewer?._id,
+        settings: userDoc1.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userDoc2._id,
+        viewerId: viewer?._id,
+        settings: userDoc2.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+    ]);
+    if (!canViewUser1 || !canViewUser2) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'One or both users have restricted their statistics'
+      );
+    }
+
+    // Get stats for both users in parallel
+    const [stats1, stats2] = await Promise.all([
+      calculateUserMediaStats(userDoc1._id, mediaId as string, type as string),
+      calculateUserMediaStats(userDoc2._id, mediaId as string, type as string),
+    ]);
+
+    // Get media info for character count (if applicable)
+    let totalCharCount = 0;
+    if (
+      ['light-novel', 'reading', 'manga', 'vn', 'game'].includes(
+        type as string
+      )
+    ) {
+      try {
+        // Try to get character count from jiten API
+        const jitenURL = process.env.JITEN_API_URL;
+        if (jitenURL) {
+          const LinkType: number | null = type
+            ? (LinkTypeObject[type as keyof typeof LinkTypeObject] ?? null)
+            : null;
+
+          if (LinkType) {
+            const jitenDeck = await axios.get(
+              `${jitenURL}/media-deck/by-link-id/${LinkType}/${mediaId}`,
+              {
+                validateStatus: (status) => status === 200 || status === 404,
+              }
+            );
+
+            if (
+              jitenDeck.status === 200 &&
+              jitenDeck.data &&
+              jitenDeck.data.length > 0
+            ) {
+              const jitenDetailResponse = await axios.get(
+                `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
+                {
+                  validateStatus: (status) => status === 200 || status === 404,
+                }
+              );
+
+              if (jitenDetailResponse.status === 200) {
+                const jitenResponse =
+                  jitenDetailResponse.data as IJitenResponse;
+                totalCharCount = jitenResponse.data.mainDeck.characterCount;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Error fetching jiten data for comparison:', error);
+        // Continue without character count
+      }
+    }
+
+    // Calculate reading percentages if we have character count
+    if (totalCharCount > 0) {
+      stats1.readingPercentage = Math.min(
+        (stats1.totalChars / totalCharCount) * 100,
+        100
+      );
+      stats2.readingPercentage = Math.min(
+        (stats2.totalChars / totalCharCount) * 100,
+        100
+      );
+    } else {
+      // No character count data available - set to null so frontend knows not to display completion
+      stats1.readingPercentage = null;
+      stats2.readingPercentage = null;
+    }
+
+    const result: IComparisonResult = {
+      user1: {
+        username: userDoc1.username,
+        stats: stats1,
+      },
+      user2: {
+        username: userDoc2.username,
+        stats: stats2,
+      },
+      mediaInfo: {
+        contentId: mediaId as string,
+        type: type as string,
+        totalCharCount: totalCharCount > 0 ? totalCharCount : undefined,
+      },
+    };
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+async function calculateUserMediaStats(
+  userId: any,
+  mediaId: string,
+  type: string
+): Promise<IComparisonStats> {
+  const result = await Log.aggregate([
+    {
+      $match: {
+        user: userId,
+        mediaId,
+        type,
+        private: { $ne: true },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalXp: { $sum: '$xp' },
+        totalTime: { $sum: { $ifNull: ['$time', 0] } },
+        totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+        totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+        totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+        totalVolumes: { $max: { $ifNull: ['$volume', 0] } },
+        logCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const stats = result[0] || {
+    totalXp: 0,
+    totalTime: 0,
+    totalChars: 0,
+    totalPages: 0,
+    totalEpisodes: 0,
+    totalVolumes: 0,
+    logCount: 0,
+  };
+
+  // Calculate reading speed (chars per hour)
+  const readingSpeed =
+    stats.totalTime > 0 && stats.totalChars > 0
+      ? (stats.totalChars / stats.totalTime) * 60
+      : 0;
+
+  return {
+    ...stats,
+    readingSpeed,
+    readingPercentage: null, // Will be set to actual percentage or remain null in main function
+  };
+}
+
+export async function getGanttData(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username }).lean();
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
+
+    const typeFilter = req.query.type as string | undefined;
+    const timezone = (req.query.timezone as string) || 'UTC';
+    const startParam = req.query.start as string | undefined; // YYYY-MM-DD
+    const endParam = req.query.end as string | undefined; // YYYY-MM-DD
+
+    // Build base match — always exclude private logs and logs without a mediaId
+    const baseMatch: Record<string, unknown> = {
+      user: user._id,
+      private: { $ne: true },
+      mediaId: { $ne: null, $exists: true },
+    };
+
+    if (typeFilter && typeFilter !== 'all') {
+      baseMatch.type = typeFilter;
+    }
+
+    // Apply date range filter if provided
+    if (startParam || endParam) {
+      const dateFilter: Record<string, Date> = {};
+      if (startParam) {
+        dateFilter.$gte = new Date(`${startParam}T00:00:00.000Z`);
+      }
+      if (endParam) {
+        dateFilter.$lte = new Date(`${endParam}T23:59:59.999Z`);
+      }
+      baseMatch.date = dateFilter;
+    }
+
+    // Aggregate logs grouped by {mediaId, type}
+    const rawGroups = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: { mediaId: '$mediaId', type: '$type' },
+          firstLogDate: { $min: '$date' },
+          lastLogDate: { $max: '$date' },
+          logCount: { $sum: 1 },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalXp: { $sum: '$xp' },
+          // Collect all unique day-strings (YYYY-MM-DD in UTC, timezone shift applied below)
+          allDates: { $push: '$date' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'media',
+          let: { mid: '$_id.mediaId', mtype: '$_id.type' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$contentId', '$$mid'] },
+                    { $eq: ['$type', '$$mtype'] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                contentId: 1,
+                type: 1,
+                contentImage: 1,
+                title: 1,
+              },
+            },
+          ],
+          as: 'mediaDetails',
+        },
+      },
+      // Only keep groups that have matching media documents
+      { $match: { 'mediaDetails.0': { $exists: true } } },
+      { $sort: { firstLogDate: 1 } },
+    ]);
+
+    // Fetch completion statuses for this user
+    const mediaStatuses = await UserMediaStatus.find({ user: user._id }).lean();
+    const statusMap = new Map<
+      string,
+      { completed: boolean; completedAt?: Date | null }
+    >();
+    mediaStatuses.forEach((s) => {
+      statusMap.set(`${s.type}:${s.mediaId}`, {
+        completed: s.completed,
+        completedAt: s.completedAt ?? null,
+      });
+    });
+
+    // Helper: convert a UTC Date to a YYYY-MM-DD day key in the user's timezone
+    const toLocalDayKey = (date: Date): string => {
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).formatToParts(date);
+        const get = (t: string) =>
+          parts.find((p) => p.type === t)?.value ?? '00';
+        return `${get('year')}-${get('month')}-${get('day')}`;
+      } catch {
+        return date.toISOString().slice(0, 10);
+      }
+    };
+
+    const result = rawGroups.map((group) => {
+      const media = group.mediaDetails[0];
+      const key = `${group._id.type}:${group._id.mediaId}`;
+      const status = statusMap.get(key);
+
+      // Deduplicate active dates and convert to local day keys
+      const activeDaysSet = new Set<string>();
+      (group.allDates as Date[]).forEach((d) => {
+        activeDaysSet.add(toLocalDayKey(new Date(d)));
+      });
+      const activeDates = Array.from(activeDaysSet).sort();
+
+      return {
+        mediaId: group._id.mediaId as string,
+        type: group._id.type as string,
+        title:
+          (media?.title?.contentTitleNative as string) ?? group._id.mediaId,
+        titleEnglish:
+          (media?.title?.contentTitleEnglish as string | undefined) ??
+          undefined,
+        contentImage: (media?.contentImage as string | undefined) ?? undefined,
+        firstLogDate: (group.firstLogDate as Date).toISOString(),
+        lastLogDate: (group.lastLogDate as Date).toISOString(),
+        isCompleted: status?.completed ?? false,
+        completedAt: status?.completedAt
+          ? (status.completedAt as Date).toISOString()
+          : undefined,
+        logCount: group.logCount as number,
+        totalTime: group.totalTime as number,
+        totalXp: group.totalXp as number,
+        activeDates,
+      };
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const IMMERSION_RANKING_TYPES = [
+  'anime',
+  'manga',
+  'light-novel',
+  'reading',
+  'audio',
+  'video',
+  'tv show',
+  'movie',
+  'vn',
+  'game',
+  'book',
+  'other',
+] as const;
+
+function getQueryStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === 'string');
+  }
+
+  return typeof value === 'string' ? [value] : [];
+}
+
+function getImmersionRankingDateFilter(
+  startParam: string | undefined,
+  endParam: string | undefined,
+  timezone: string
+): Record<string, Date> | undefined {
+  if (!startParam && !endParam) return undefined;
+
+  const now = new Date();
+  const localNow = new Date(
+    now.toLocaleString('en-US', { timeZone: timezone })
+  );
+  const offset = now.getTime() - localNow.getTime();
+  const dateFilter: Record<string, Date> = {};
+
+  if (startParam) {
+    const localStart = new Date(`${startParam}T00:00:00`);
+    dateFilter.$gte = new Date(localStart.getTime() + offset);
+  }
+
+  if (endParam) {
+    const localEnd = new Date(`${endParam}T00:00:00`);
+    localEnd.setDate(localEnd.getDate() + 1);
+    dateFilter.$lt = new Date(localEnd.getTime() + offset);
+  }
+
+  return dateFilter;
+}
+
+export async function getGlobalImmersionRanking(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit as string, 10) || 10)
+    );
+    const metric = req.query.metric === 'hours' ? 'hours' : 'xp';
+    const timezone = (req.query.timezone as string) || 'UTC';
+    const requestedTypes = getQueryStringArray(req.query.type);
+    const invalidTypes = requestedTypes.filter(
+      (type) =>
+        !IMMERSION_RANKING_TYPES.includes(
+          type as (typeof IMMERSION_RANKING_TYPES)[number]
+        )
+    );
+
+    if (invalidTypes.length > 0) {
+      return res.status(400).json({
+        message: `Invalid types: ${invalidTypes.join(', ')}`,
+      });
+    }
+
+    const startParam = req.query.start as string | undefined;
+    const endParam = req.query.end as string | undefined;
+    const dateFilter = getImmersionRankingDateFilter(
+      startParam,
+      endParam,
+      timezone
+    );
+    const baseMatch: Record<string, unknown> = {
+      mediaId: { $nin: [null, ''] },
+      private: { $ne: true },
+      unknownDate: { $ne: true },
+      ...(requestedTypes.length > 0 ? { type: { $in: requestedTypes } } : {}),
+      ...(dateFilter ? { date: dateFilter } : {}),
+    };
+
+    const ownerIds = await Log.distinct('user', baseMatch);
+    const visibleOwnerIds = await getVisibleSocialOwnerIds({
+      ownerIds,
+      viewerId: res.locals.user?._id,
+      category: 'statistics',
+    });
+
+    if (visibleOwnerIds.length === 0) {
+      return res.status(200).json({
+        items: [],
+        page,
+        limit,
+        hasNextPage: false,
+      });
+    }
+
+    const eligibleOwnerIds = await User.find({
+      _id: { $in: visibleOwnerIds },
+      $or: [
+        { 'moderation.rankingBanned': { $exists: false } },
+        { 'moderation.rankingBanned': false },
+      ],
+    }).distinct('_id');
+
+    const metricField = metric === 'hours' ? 'totalHours' : 'totalXp';
+    const skip = (page - 1) * limit;
+    const ranking = await Log.aggregate([
+      {
+        $match: {
+          ...baseMatch,
+          user: { $in: eligibleOwnerIds },
+        },
+      },
+      {
+        $group: {
+          _id: { mediaId: '$mediaId', type: '$type' },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          totalMinutes: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          logCount: { $sum: 1 },
+          users: { $addToSet: '$user' },
+        },
+      },
+      {
+        $addFields: {
+          totalHours: {
+            $round: [{ $divide: ['$totalMinutes', 60] }, 1],
+          },
+          userCount: { $size: '$users' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'media',
+          let: { mediaId: '$_id.mediaId', mediaType: '$_id.type' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$contentId', '$$mediaId'] },
+                    { $eq: ['$type', '$$mediaType'] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                contentImage: 1,
+                title: 1,
+              },
+            },
+          ],
+          as: 'mediaDetails',
+        },
+      },
+      { $unwind: '$mediaDetails' },
+      {
+        $project: {
+          _id: 0,
+          mediaId: '$_id.mediaId',
+          type: '$_id.type',
+          title: '$mediaDetails.title.contentTitleNative',
+          titleEnglish: '$mediaDetails.title.contentTitleEnglish',
+          contentImage: '$mediaDetails.contentImage',
+          totalHours: 1,
+          totalXp: 1,
+          userCount: 1,
+          logCount: 1,
+        },
+      },
+      {
+        $sort: {
+          [metricField]: -1,
+          ...(metric === 'hours' ? { totalXp: -1 } : { totalHours: -1 }),
+          title: 1,
+          mediaId: 1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limit + 1 },
+    ]);
+
+    const hasNextPage = ranking.length > limit;
+    const items = ranking.slice(0, limit).map((item, index) => ({
+      rank: skip + index + 1,
+      mediaId: item.mediaId as string,
+      type: item.type as string,
+      title: item.title as string,
+      titleEnglish: item.titleEnglish as string | undefined,
+      contentImage: item.contentImage as string | undefined,
+      totalHours: item.totalHours as number,
+      totalXp: item.totalXp as number,
+      userCount: item.userCount as number,
+      logCount: item.logCount as number,
+    }));
+
+    return res.status(200).json({ items, page, limit, hasNextPage });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

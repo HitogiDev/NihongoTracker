@@ -1,0 +1,1074 @@
+import DropdownSelect from './ui/DropdownSelect';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import Field from './ui/Field';
+import { useTranslation } from 'react-i18next';
+import { ICreateLog, ILog, IMediaDocument, youtubeChannelInfo } from '../types';
+import { createLogFn, getMediaFn, getUserLogsFn } from '../api/trackerApi';
+import useSearch from '../hooks/useSearch';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { validateQuickLogData } from '../utils/validation';
+import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
+import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
+import { Link } from 'react-router-dom';
+import { useUserDataStore } from '../store/userData';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import LogPrivacyToggle from './LogPrivacyToggle';
+import TagSelector from './TagSelector';
+
+interface QuickLogProps {
+  open: boolean;
+  onClose: () => void;
+  media?: IMediaDocument; // Add optional media prop
+  onLogged?: () => void | Promise<void>;
+  initialValues?: QuickLogInitialValues;
+  allowedTypes?: ILog['type'][];
+}
+
+export interface QuickLogInitialValues {
+  type?: ILog['type'];
+  description?: string;
+  comment?: string;
+  tags?: string[];
+  episodes?: number;
+  volume?: number;
+  chars?: number;
+  pages?: number;
+  hours?: number;
+  minutes?: number;
+  private?: boolean;
+}
+
+const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
+
+const getLastLoggedVolumeKey = (type: 'manga' | 'light-novel', mediaId: string) =>
+  `${LAST_LOGGED_VOLUME_KEY_PREFIX}:${type}:${mediaId}`;
+
+const readLastLoggedVolume = (
+  type: 'manga' | 'light-novel',
+  mediaId: string
+): number | undefined => {
+  const stored = localStorage.getItem(getLastLoggedVolumeKey(type, mediaId));
+  if (!stored) return undefined;
+  const parsed = Number(stored);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.floor(parsed);
+};
+
+const writeLastLoggedVolume = (
+  type: 'manga' | 'light-novel',
+  mediaId: string,
+  volume: number
+) => {
+  if (!Number.isFinite(volume) || volume <= 0) return;
+  localStorage.setItem(
+    getLastLoggedVolumeKey(type, mediaId),
+    String(Math.floor(volume))
+  );
+};
+
+const parseVolumeNumberFromTitle = (
+  title: string | null | undefined
+): number | null => {
+  if (!title) return null;
+  const match = title.match(/(\d+)/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getDeckForVolume = (
+  subDecks:
+    | Array<{
+        originalTitle: string;
+        romajiTitle: string | null;
+        englishTitle: string | null;
+        characterCount: number;
+      }>
+    | undefined,
+  volume: number
+) => {
+  const decks = subDecks ?? [];
+  const byTitle = decks.find((deck) => {
+    const candidates = [
+      deck.originalTitle,
+      deck.romajiTitle,
+      deck.englishTitle,
+    ];
+    return candidates.some(
+      (candidate) => parseVolumeNumberFromTitle(candidate) === volume
+    );
+  });
+
+  if (byTitle) return byTitle;
+  return decks[volume - 1];
+};
+
+function QuickLog({
+  open,
+  onClose,
+  media,
+  onLogged,
+  initialValues,
+  allowedTypes,
+}: QuickLogProps) {
+  const { t } = useTranslation('logs');
+  const { t: tCommon } = useTranslation('common');
+  const vt = useValidationText();
+  const { user } = useUserDataStore();
+  // `allowedTypes` narrows the list for callers that log into a fixed context
+  // (a club media, a playlist); it keeps the canonical display order.
+  const logTypeOptions = useMemo(
+    () =>
+      allowedTypes
+        ? LOG_TYPE_OPTIONS.filter(({ value }) => allowedTypes.includes(value))
+        : LOG_TYPE_OPTIONS,
+    [allowedTypes]
+  );
+  const [logType, setLogType] = useState<ILog['type'] | null>(null);
+  const [logDescription, setLogDescription] = useState<string>('');
+  const [logComment, setLogComment] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [episodes, setEpisodes] = useState<number>(0);
+  const [loggedVolume, setLoggedVolume] = useState<number | undefined>(
+    undefined
+  );
+  const [seriesVolumes, setSeriesVolumes] = useState<number | undefined>(
+    undefined
+  );
+  const [chars, setChars] = useState<number>(0);
+  const [pages, setPages] = useState<number>(0);
+  const [hours, setHours] = useState<number>(0);
+  const [minutes, setMinutes] = useState<number>(0);
+  const [contentId, setContentId] = useState<string | undefined>(undefined);
+  const [showTime, setShowTime] = useState<boolean>(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [coverImage, setCoverImage] = useState<string | undefined>(undefined);
+  const [isAdultMedia, setIsAdultMedia] = useState<boolean>(false);
+  const [isAdultImageMedia, setIsAdultImageMedia] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
+  const [defaultDuration, setDefaultDuration] = useState<number>(0);
+  const [customDuration, setCustomDuration] = useState<number | undefined>(
+    undefined
+  );
+  const [privateLog, setPrivateLog] = useState(false);
+  const suggestionRef = useRef<HTMLDivElement>(null);
+  const lastSeedRef = useRef<string | null>(null);
+  const pendingVolumeRef = useRef<{
+    type: ILog['type'] | null;
+    mediaId?: string;
+    volume?: number;
+  } | null>(null);
+
+  const resolveNextRememberedVolume = async (
+    type: 'manga' | 'light-novel',
+    mediaId: string,
+    submittedVolume: number
+  ): Promise<number> => {
+    if (!user?.username) return submittedVolume;
+
+    try {
+      const [mediaData, userLogs] = await Promise.all([
+        getMediaFn(mediaId, type, user.username),
+        getUserLogsFn(user.username, {
+          mediaId,
+          type,
+          limit: 0,
+          page: 1,
+        }),
+      ]);
+
+      const logsArray = Array.isArray(userLogs) ? userLogs : [];
+      const subDecks = mediaData?.jiten?.subDecks;
+      const currentDeck = getDeckForVolume(subDecks, submittedVolume);
+      const currentVolumeCharCount = currentDeck?.characterCount ?? 0;
+
+      if (currentVolumeCharCount <= 0) return submittedVolume;
+
+      const currentVolumeCharsRead = logsArray
+        .filter((log) => log.volume === submittedVolume)
+        .reduce((acc, log) => acc + (log.chars ?? 0), 0);
+
+      if (currentVolumeCharsRead < currentVolumeCharCount) {
+        return submittedVolume;
+      }
+
+      const totalVolumes =
+        mediaData?.volumes ?? mediaData?.jiten?.subDecks?.length ?? 0;
+      const canAdvance = totalVolumes > 0 && submittedVolume < totalVolumes;
+      return canAdvance ? submittedVolume + 1 : submittedVolume;
+    } catch {
+      return submittedVolume;
+    }
+  };
+
+  const queryClient = useQueryClient();
+  const totalMinutes = hours * 60 + minutes;
+  const hasActivity =
+    totalMinutes > 0 || episodes > 0 || chars > 0 || pages > 0;
+
+  useEffect(() => {
+    if (!open) return;
+
+    // When media data is provided, auto-populate the form fields
+    if (media) {
+      setLogType(media.type);
+      setLogDescription(media.title.contentTitleNative);
+      setContentId(media.contentId);
+      setCoverImage(media.contentImage);
+      setIsAdultMedia(media.isAdult);
+      setIsAdultImageMedia(media.isAdultImage ?? false);
+      setSeriesVolumes(media.volumes);
+
+      if (
+        (media.type === 'manga' || media.type === 'light-novel') &&
+        media.contentId
+      ) {
+        setLoggedVolume(readLastLoggedVolume(media.type, media.contentId));
+      } else {
+        setLoggedVolume(undefined);
+      }
+
+      // If it's anime, set episode duration (from API or default to 24 minutes)
+      if (media.type === 'anime') {
+        setDefaultDuration(media.episodeDuration || 24);
+      }
+
+      // For tv show, use episodeDuration if available, otherwise show custom duration field
+      if (media.type === 'tv show') {
+        if (media.episodeDuration) {
+          setDefaultDuration(media.episodeDuration);
+        } else {
+          setShowTime(true);
+        }
+      }
+
+      // For movies, auto-fill duration if available
+      if (media.type === 'movie' && media.runtime) {
+        const totalMinutes = media.runtime;
+        const newHours = Math.floor(totalMinutes / 60);
+        const newMinutes = totalMinutes % 60;
+        setHours(newHours);
+        setMinutes(newMinutes);
+      }
+    }
+  }, [media, open]); // Re-run when media changes or modal reopens
+
+  // Reset custom duration when log type changes
+  useEffect(() => {
+    if (logType === 'anime') {
+      // Set default to 24 minutes for anime if not already set
+      if (defaultDuration === 0) {
+        setDefaultDuration(24);
+      }
+    } else {
+      setCustomDuration(undefined);
+      setDefaultDuration(0);
+    }
+
+    // Reset type-specific fields when changing log type
+    if (logType !== 'anime' && logType !== 'movie' && logType !== 'tv show') {
+      setEpisodes(0);
+    }
+    if (
+      logType !== 'vn' &&
+      logType !== 'game' &&
+      logType !== 'manga' &&
+      logType !== 'light-novel' &&
+      logType !== 'book'
+    ) {
+      setChars(0);
+    }
+    if (logType !== 'manga' && logType !== 'light-novel' && logType !== 'book') {
+      setPages(0);
+    }
+    // Volumes are a series concept — books are standalone
+    if (logType !== 'manga' && logType !== 'light-novel') {
+      setLoggedVolume(undefined);
+      setSeriesVolumes(undefined);
+    }
+    if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
+      // Don't reset time for anime as it's auto-calculated
+    } else if (
+      logType !== 'video' &&
+      logType !== 'audio' &&
+      logType !== 'manga' &&
+      logType !== 'light-novel' &&
+      logType !== 'book' &&
+      logType !== 'movie' &&
+      logType !== 'vn' &&
+      logType !== 'game'
+    ) {
+      // Reset manual time for types that don't typically use it
+      setHours(0);
+      setMinutes(0);
+    }
+  }, [logType, defaultDuration, episodes]);
+
+  const { data: searchResult, isLoading: isSearching } = useSearch(
+    logType ?? '',
+    logDescription,
+    undefined,
+    1,
+    10,
+    {
+      enabled: open,
+    }
+  );
+
+  useEffect(() => {
+    if (!open) {
+      lastSeedRef.current = null;
+      return;
+    }
+
+    if (!initialValues) return;
+
+    const serialized = JSON.stringify(initialValues);
+    if (lastSeedRef.current === serialized) return;
+    lastSeedRef.current = serialized;
+
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'type')) {
+      setLogType(initialValues.type ?? null);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'description')) {
+      setLogDescription(initialValues.description ?? '');
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'comment')) {
+      setLogComment(initialValues.comment ?? '');
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'tags')) {
+      setSelectedTags(initialValues.tags ?? []);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'episodes')) {
+      setEpisodes(initialValues.episodes ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'volume')) {
+      setLoggedVolume(initialValues.volume);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'chars')) {
+      setChars(initialValues.chars ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'pages')) {
+      setPages(initialValues.pages ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'hours')) {
+      setHours(initialValues.hours ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'minutes')) {
+      setMinutes(initialValues.minutes ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'private')) {
+      setPrivateLog(initialValues.private ?? false);
+    }
+  }, [open, initialValues]);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: createLogFn,
+    onSuccess: async () => {
+      const loggedType = logType;
+      const pendingVolume = pendingVolumeRef.current;
+      if (
+        pendingVolume?.mediaId &&
+        pendingVolume?.volume &&
+        pendingVolume.volume > 0 &&
+        (pendingVolume.type === 'manga' || pendingVolume.type === 'light-novel')
+      ) {
+        const nextRememberedVolume = await resolveNextRememberedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          pendingVolume.volume
+        );
+
+        writeLastLoggedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          nextRememberedVolume
+        );
+      }
+      pendingVolumeRef.current = null;
+
+      resetForm();
+      void queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            key.includes('logs') ||
+            key[0] === 'logs' ||
+            (Array.isArray(key) && key.some((k) => k === 'logs')) ||
+            key.includes('recentLogs')
+          );
+        },
+      });
+
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey.includes('comparison'),
+      });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes('recentLogs'),
+      });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) && query.queryKey[0] === 'globalFeed',
+      });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'rankingSummary',
+      });
+      invalidateLogScreenQueries(queryClient, loggedType, user?.username);
+      toast.success(t('quick.created'));
+      if (onLogged) {
+        void onLogged();
+      }
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
+      }
+    },
+  });
+
+  const isSubmitDisabled = isPending || !hasActivity;
+
+  function resetForm() {
+    setLogType(null);
+    setLogDescription('');
+    setLogComment('');
+    setSelectedTags([]);
+    setEpisodes(0);
+    setLoggedVolume(undefined);
+    setSeriesVolumes(undefined);
+    setChars(0);
+    setPages(0);
+    setHours(0);
+    setMinutes(0);
+    setContentId(undefined);
+    setCoverImage(undefined);
+    setIsAdultMedia(false);
+    setIsAdultImageMedia(false);
+    setDefaultDuration(0);
+    setCustomDuration(undefined);
+    setShowTime(false);
+    setPrivateLog(false);
+    lastSeedRef.current = null;
+    onClose();
+  }
+
+  function preventNegativeValues(e: React.InputEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    if (input.valueAsNumber < 0) {
+      input.value = '0';
+    }
+  }
+
+  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    e.preventDefault();
+    setLogDescription(e.target.value);
+  }
+
+  // Validate form before submission
+  const isFormValid = () => {
+    const description = logComment.trim() || logDescription;
+    const validation = validateQuickLogData({
+      type: logType,
+      description,
+      episodes,
+      chars,
+      pages,
+      hours,
+      minutes,
+    });
+
+    setErrors(validation.errors);
+    return validation.isValid;
+  };
+
+  async function logSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!isFormValid()) {
+      toast.error(t('quick.validationErrors'));
+      return;
+    }
+
+    pendingVolumeRef.current = {
+      type: logType,
+      mediaId: contentId,
+      volume:
+        (logType === 'manga' || logType === 'light-novel') &&
+        typeof loggedVolume === 'number' &&
+        loggedVolume > 0
+          ? loggedVolume
+          : undefined,
+    };
+
+    mutate({
+      type: logType,
+      description: logComment.trim() || (contentId ? '' : logDescription),
+      episodes,
+      volume:
+        (logType === 'manga' || logType === 'light-novel') &&
+        typeof loggedVolume === 'number' &&
+        loggedVolume > 0
+          ? loggedVolume
+          : undefined,
+      time: totalMinutes || undefined,
+      mediaId: contentId,
+      chars,
+      pages,
+      date: new Date(),
+      private: privateLog,
+      isAdult: false,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
+    } as ICreateLog);
+  }
+
+  function handleDescriptionInputBlur() {
+    setTimeout(() => {
+      if (
+        suggestionRef.current &&
+        !suggestionRef.current.contains(document.activeElement)
+      ) {
+        setIsSuggestionsOpen(false);
+      }
+    }, 200);
+  }
+
+  function handleSuggestionClick(
+    group: IMediaDocument & { __youtubeChannelInfo?: youtubeChannelInfo }
+  ) {
+    if (logType === 'video' && group.__youtubeChannelInfo) {
+      // Handle YouTube video selection
+      setLogDescription(group.title.contentTitleNative);
+      setContentId(group.__youtubeChannelInfo.channelId); // Use channel ID as contentId
+      setCoverImage(
+        group.contentImage || group.__youtubeChannelInfo.channelImage
+      );
+      setIsAdultMedia(group.isAdult);
+      setIsAdultImageMedia(group.isAdultImage ?? false);
+
+      // Auto-fill duration if available
+      if (group.episodeDuration) {
+        const totalMinutes = group.episodeDuration;
+        const newHours = Math.floor(totalMinutes / 60);
+        const newMinutes = totalMinutes % 60;
+        setHours(newHours);
+        setMinutes(newMinutes);
+      }
+      setSeriesVolumes(undefined);
+      setLoggedVolume(undefined);
+    } else {
+      // Handle regular media
+      setLogDescription(group.title.contentTitleNative);
+      setContentId(group.contentId);
+      setCoverImage(group.coverImage || group.contentImage);
+      setIsAdultMedia(group.isAdult);
+      setIsAdultImageMedia(group.isAdultImage ?? false);
+      setSeriesVolumes(group.volumes);
+
+      if ((logType === 'manga' || logType === 'light-novel') && group.contentId) {
+        setLoggedVolume(readLastLoggedVolume(logType, group.contentId));
+      } else {
+        setLoggedVolume(undefined);
+      }
+
+      // For anime and tv show, store episode duration
+      if (
+        (logType === 'anime' || logType === 'tv show') &&
+        group.episodeDuration
+      ) {
+        setDefaultDuration(group.episodeDuration);
+        setCustomDuration(undefined);
+      } else if (logType === 'anime') {
+        // Set default to 24 minutes if no duration from API
+        setDefaultDuration(24);
+        setCustomDuration(undefined);
+      } else if (logType === 'tv show') {
+        // No episodeDuration available — show the custom duration field
+        setShowTime(true);
+      }
+
+      // For movies, auto-fill duration if available
+      if (logType === 'movie' && group.runtime) {
+        const totalMinutes = group.runtime;
+        const newHours = Math.floor(totalMinutes / 60);
+        const newMinutes = totalMinutes % 60;
+        setHours(newHours);
+        setMinutes(newMinutes);
+      }
+    }
+    setIsSuggestionsOpen(false);
+  }
+
+  return (
+    <>
+      {open && (
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-x-hidden overflow-y-auto p-0">
+            <div className="card-body">
+              <div className="flex justify-between items-center">
+                <h2 className="card-title">{t('quick.title')}</h2>
+                <button
+                  className="btn btn-ghost btn-sm btn-circle"
+                  onClick={onClose}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={logSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="flex flex-col gap-4 flex-grow min-w-0">
+                    <Field label={t('quick.selectType')}>
+                      <DropdownSelect
+                        className="select w-full"
+                        onChange={(e) =>
+                          setLogType(e.target.value as ILog['type'])
+                        }
+                        value={logType ?? ''}
+                      >
+                        <option disabled value="">
+                          {t('quick.logType')}
+                        </option>
+                        {logTypeOptions.map(({ value, labelKey }) => (
+                          <option key={value} value={value}>
+                            {tCommon(labelKey)}
+                          </option>
+                        ))}
+                      </DropdownSelect>
+                    </Field>
+
+                    {logType && (
+                      <>
+                        <Field label={t('quick.titleOrDescription')}>
+                          <input
+                            type="text"
+                            placeholder={t('quick.descriptionPlaceholder')}
+                            className="input w-full"
+                            onFocus={() => setIsSuggestionsOpen(true)}
+                            onBlur={handleDescriptionInputBlur}
+                            onChange={handleSearch}
+                            value={logDescription}
+                          />
+                          <div
+                            ref={suggestionRef}
+                            className={`dropdown dropdown-open ${
+                              isSuggestionsOpen && searchResult
+                                ? 'block'
+                                : 'hidden'
+                            }`}
+                          >
+                            <ul className="dropdown-content menu surface-raised w-full mt-2 z-10">
+                              {isSearching ? (
+                                <li>
+                                  <a>{t('quick.loading')}</a>
+                                </li>
+                              ) : searchResult?.length === 0 ? (
+                                <li>
+                                  <a>{t('quick.noResults')}</a>
+                                </li>
+                              ) : null}
+                              {searchResult?.map((group, i) => (
+                                <li
+                                  key={i}
+                                  onClick={() => handleSuggestionClick(group)}
+                                >
+                                  <a>{group.title.contentTitleNative}</a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </Field>
+
+                        <Field
+                          label={t('quick.comment')}
+                          aside={t('quick.markdownSupported')}
+                        >
+                          <textarea
+                            className="textarea w-full"
+                            rows={3}
+                            placeholder={t('quick.commentPlaceholder')}
+                            value={logComment}
+                            onChange={(e) => setLogComment(e.target.value)}
+                          ></textarea>
+                        </Field>
+
+                        {/* Media-specific input fields */}
+                        {(logType === 'anime' || logType === 'tv show') && (
+                          <Field label={t('quick.episodesWatched')}>
+                            <input
+                              type="number"
+                              min="0"
+                              onInput={preventNegativeValues}
+                              placeholder={`Number of episodes`}
+                              className="input w-full mb-3"
+                              onChange={(e) => {
+                                const count = Number(e.target.value);
+                                setEpisodes(count);
+
+                                // Auto-calculate time based on duration for anime
+                                if (logType === 'anime') {
+                                  const effectiveDuration =
+                                    customDuration || defaultDuration || 24;
+                                  if (count > 0) {
+                                    const totalMinutes =
+                                      count * effectiveDuration;
+                                    const newHours = Math.floor(
+                                      totalMinutes / 60
+                                    );
+                                    const newMinutes = totalMinutes % 60;
+                                    setHours(newHours);
+                                    setMinutes(newMinutes);
+                                  }
+                                } else if (logType === 'tv show') {
+                                  const effectiveDuration =
+                                    customDuration || defaultDuration || 0;
+                                  if (count > 0) {
+                                    const totalMinutes =
+                                      count * effectiveDuration;
+                                    const newHours = Math.floor(
+                                      totalMinutes / 60
+                                    );
+                                    const newMinutes = totalMinutes % 60;
+                                    setHours(newHours);
+                                    setMinutes(newMinutes);
+                                  }
+                                }
+                              }}
+                              value={episodes || ''}
+                            />
+
+                            {/* Custom Episode/Movie Duration for anime and movies */}
+                            {logType === 'anime' || logType === 'tv show' ? (
+                              <>
+                                <div>
+                                  <label className="label cursor-pointer">
+                                    <span>
+                                      {t('quick.customEpisodeDuration')}
+                                    </span>
+                                    <input
+                                      type="checkbox"
+                                      checked={showTime}
+                                      onChange={() => setShowTime(!showTime)}
+                                      className="checkbox"
+                                    />
+                                  </label>
+                                </div>
+
+                                {showTime && (
+                                  <Field
+                                    label={t('quick.episodeDurationMinutes')}
+                                    aside={
+                                      defaultDuration > 0 && (
+                                        <span className="text-info">
+                                          Default: {defaultDuration} min
+                                        </span>
+                                      )
+                                    }
+                                    className="mt-2"
+                                  >
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="300"
+                                      placeholder={
+                                        defaultDuration > 0
+                                          ? `${defaultDuration}`
+                                          : logType === 'anime'
+                                            ? '24'
+                                            : t('quick.durationMinutes')
+                                      }
+                                      className="input input-sm"
+                                      onChange={(e) => {
+                                        const duration = Number(e.target.value);
+                                        setCustomDuration(duration);
+
+                                        // Recalculate time if episodes are set
+                                        if (episodes > 0) {
+                                          const totalMinutes =
+                                            episodes * duration;
+                                          const newHours = Math.floor(
+                                            totalMinutes / 60
+                                          );
+                                          const newMinutes = totalMinutes % 60;
+                                          setHours(newHours);
+                                          setMinutes(newMinutes);
+                                        }
+                                      }}
+                                      value={customDuration || ''}
+                                    />
+                                  </Field>
+                                )}
+
+                                {/* Auto-calculated time display */}
+                                {episodes > 0 && (
+                                  <div className="alert alert-success mt-2">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="stroke-current shrink-0 h-4 w-4"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                    <span className="text-sm">
+                                      Total time:{' '}
+                                      {Math.floor(
+                                        (episodes *
+                                          (customDuration ||
+                                            defaultDuration ||
+                                            (logType === 'anime' ? 24 : 0))) /
+                                          60
+                                      )}
+                                      h{' '}
+                                      {(episodes *
+                                        (customDuration ||
+                                          defaultDuration ||
+                                          (logType === 'anime' ? 24 : 0))) %
+                                        60}
+                                      m
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            ) : null}
+                          </Field>
+                        )}
+
+                        {/* Pages field for Manga, Reading */}
+                        {(logType === 'manga' || logType === 'light-novel') && (
+                          <Field label={t('quick.volume')}>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                max={seriesVolumes}
+                                onInput={preventNegativeValues}
+                                placeholder={t('quick.volumePlaceholder')}
+                                className="input input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                onChange={(e) => {
+                                  if (e.target.value === '') {
+                                    setLoggedVolume(undefined);
+                                    return;
+                                  }
+                                  const value = Number(e.target.value);
+                                  setLoggedVolume(
+                                    Number.isFinite(value) && value > 0
+                                      ? value
+                                      : undefined
+                                  );
+                                }}
+                                value={loggedVolume ?? ''}
+                              />
+                              <span className="text-base-content/70 font-medium">
+                                /{seriesVolumes ?? '?'}
+                              </span>
+                            </div>
+                          </Field>
+                        )}
+
+                        {/* Characters field for VN, Manga, Reading, Book */}
+                        {(logType === 'vn' ||
+                          logType === 'game' ||
+                          logType === 'manga' ||
+                          logType === 'light-novel' ||
+                          logType === 'book') && (
+                          <Field label={t('quick.charactersRead')}>
+                            <input
+                              type="number"
+                              min="0"
+                              onInput={preventNegativeValues}
+                              placeholder={t('create.charsPlaceholder')}
+                              className="input w-full"
+                              onChange={(e) => setChars(Number(e.target.value))}
+                              value={chars || ''}
+                            />
+                          </Field>
+                        )}
+
+                        {(logType === 'manga' ||
+                          logType === 'light-novel' ||
+                          logType === 'book') && (
+                          <Field label={t('quick.pagesRead')}>
+                            <input
+                              type="number"
+                              min="0"
+                              onInput={preventNegativeValues}
+                              placeholder={t('create.pagesPlaceholder')}
+                              className="input w-full"
+                              onChange={(e) => setPages(Number(e.target.value))}
+                              value={pages || ''}
+                            />
+                          </Field>
+                        )}
+
+                        {/* Time fields for Video, Audio, Manga, Reading, Book, VN, and when not auto-calculated */}
+                        {(logType === 'video' ||
+                          logType === 'audio' ||
+                          logType === 'manga' ||
+                          logType === 'light-novel' ||
+                          logType === 'book' ||
+                          logType === 'vn' ||
+                          logType === 'game' ||
+                          (logType === 'movie' && !episodes)) && (
+                          <Field label={t('quick.timeSpent')}>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="24"
+                                  onInput={preventNegativeValues}
+                                  placeholder={t('create.hoursPlaceholder')}
+                                  className="input w-full"
+                                  onChange={(e) =>
+                                    setHours(Number(e.target.value))
+                                  }
+                                  value={hours || ''}
+                                />
+                                <label className="label">
+                                  <span>{t('quick.hours')}</span>
+                                </label>
+                              </div>
+                              <div className="flex-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="59"
+                                  onInput={preventNegativeValues}
+                                  placeholder={t('create.minutesPlaceholder')}
+                                  className="input w-full"
+                                  onChange={(e) =>
+                                    setMinutes(Number(e.target.value))
+                                  }
+                                  value={minutes || ''}
+                                />
+                                <label className="label">
+                                  <span>{t('quick.minutes')}</span>
+                                </label>
+                              </div>
+                            </div>
+                          </Field>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {coverImage && (
+                    <div className="flex-shrink-0 self-start lg:self-auto">
+                      <Link
+                        to={
+                          logType && contentId
+                            ? `/${logType}/${contentId}`
+                            : '#'
+                        }
+                        className="block rounded-lg w-20 h-28 lg:w-24 lg:h-32 overflow-hidden mx-auto lg:mx-0"
+                      >
+                        <img
+                          src={coverImage}
+                          alt={t('quick.coverAlt')}
+                          className={`w-full h-full object-cover ${
+                            (
+                              logType === 'vn'
+                                ? isAdultImageMedia
+                                : isAdultMedia
+                            )
+                              ? 'blur-sm scale-110'
+                              : ''
+                          }`}
+                        />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Show validation errors */}
+                {Object.keys(errors).length > 0 && (
+                  <div className="alert alert-error">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 w-6 h-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div>
+                      <ul className="list-disc list-inside text-sm">
+                        {Object.entries(errors).map(([field, error]) => (
+                          <li key={field}>{vt(error)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {logType && (
+                  <TagSelector
+                    selectedTags={selectedTags}
+                    onChange={setSelectedTags}
+                    label={t('quick.tags')}
+                  />
+                )}
+
+                {logType && (
+                  <LogPrivacyToggle
+                    checked={privateLog}
+                    onChange={setPrivateLog}
+                  />
+                )}
+
+                {logType && (
+                  <div className="card-actions justify-end mt-4">
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={onClose}
+                    >
+                      {t('quick.cancel')}
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      type="submit"
+                      disabled={isSubmitDisabled}
+                    >
+                      {isPending ? (
+                        <span className="loading loading-spinner loading-md"></span>
+                      ) : (
+                        'Log'
+                      )}
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={onClose}>close</button>
+          </form>
+        </dialog>
+      )}
+    </>
+  );
+}
+
+export default QuickLog;

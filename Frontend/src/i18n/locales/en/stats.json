@@ -1,0 +1,230 @@
+{
+  "cards": {
+    "avgReadingSpeed": "Average Reading Speed",
+    "avgReadingSpeedHint": "Based on reading, manga, and visual novels",
+    "balance": "Balance",
+    "balanceHint": "Reading vs. listening ratio",
+    "charsRead": "Characters Read",
+    "currentStreak": "Current Streak",
+    "currentStreakHint": "Consecutive days of immersion activity",
+    "dailyAverage": "Daily Average",
+    "dailyAvgChars": "Daily Avg Characters",
+    "listening": "Listening",
+    "listeningHint": "Anime, video, audio, movies, and TV",
+    "logCount": "Log Count",
+    "longestStreak": "Longest Streak",
+    "longestStreakHint": "Longest streak you have maintained",
+    "pages": "Pages",
+    "reading": "Reading",
+    "readingHint": "Reading, manga, visual novels, and video games",
+    "timeSpent": "Time Spent",
+    "totalXp": "Total XP"
+  },
+  "charts": {
+    "bar": "Bar",
+    "byLog": "By log",
+    "byMediaAverage": "Average by media",
+    "difficultyAxis": "Jiten difficulty (%)",
+    "hours": "Hours",
+    "immersionTimeline": "Immersion Timeline",
+    "line": "Line",
+    "metric": "Metric:",
+    "progressTimeline": "Progress Timeline",
+    "readingSpeedByDifficulty": "Reading Speed by Jiten Difficulty",
+    "readingSpeedAxis": "Reading speed (characters/hour)",
+    "readingSpeedOverTime": "Reading Speed Over Time",
+    "timeDistribution": "Time Distribution",
+    "timelineFailed": "Could not load timeline data.",
+    "timelineHint": "Each bar spans from your first to your last log session for",
+    "view": "View:",
+    "tooltipDifficulty": "Difficulty: {{value}}%",
+    "tooltipLogCount": "{{count}} logs",
+    "tooltipMedia": "Media: {{value}}",
+    "tooltipSpeed": "Speed: {{value}} characters/hour",
+    "unknownMedia": "Unknown media",
+    "xpDistribution": "XP Distribution"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "clear": "Clear"
+  },
+  "episodeLabel": {
+    "episodes": "Episodes",
+    "movies": "Movies",
+    "videos": "Videos"
+  },
+  "filters": {
+    "apply": "Apply",
+    "clearSearch": "Clear search",
+    "customRange": "Custom range",
+    "endDate": "End Date",
+    "immersedDaysOnly": "Immersed days only",
+    "maxLogs": "Max logs",
+    "maxLogsValue": "Max {{value}}",
+    "minLogs": "Min logs",
+    "minLogsValue": "Min {{value}}",
+    "rangeTo": "to",
+    "searchTitles": "Search titles",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "startDate": "Start Date"
+  },
+  "gantt": {
+    "completed": "Completed",
+    "done": "Done",
+    "empty": "No immersion data to display for this filter.",
+    "hint": "Ctrl+Scroll to zoom · Middle-click drag to pan",
+    "resetZoom": "Reset zoom",
+    "started": "Started:",
+    "viewMedia": "View media page",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "logCount_one": "{{count}} log",
+    "logCount_other": "{{count}} logs",
+    "daysLabel": "days"
+  },
+  "groups": {
+    "totals": "Totals",
+    "streaks": "Streaks",
+    "timeBreakdown": "Time Breakdown",
+    "readingMetrics": "Reading Metrics",
+    "chartDistribution": "Distributions",
+    "chartProgress": "Progress",
+    "chartReading": "Reading"
+  },
+  "heatmap": {
+    "less": "Less",
+    "more": "More"
+  },
+  "hints": {
+    "chars": "Characters in {{types}} logs",
+    "charsAll": "Characters across all reading types",
+    "dailyAverage": "{{period}} daily {{types}} immersion average",
+    "dailyAverageAll": "{{period}} daily immersion average",
+    "dailyChars": "{{period}} daily {{types}} reading average",
+    "dailyCharsAll": "{{period}} daily reading average",
+    "logCount": "{{types}} entries",
+    "logCountAll": "Total log entries",
+    "pages": "Total pages read in {{types}} logs",
+    "pagesAll": "Total pages recorded across reading logs",
+    "time": "{{period}} {{types}} immersion time",
+    "timeAll": "{{period}} immersion time",
+    "untracked_one": "{{count}} untracked",
+    "untracked_other": "{{count}} untracked",
+    "watchedEpisodes": "Total episodes watched",
+    "watchedMovies": "Total movies watched",
+    "watchedVideos": "Total videos watched",
+    "xp": "{{period}} {{types}} experience",
+    "xpAll": "{{period}} experience gained"
+  },
+  "layout": {
+    "edit": "Edit Layout",
+    "hideCard": "Hide card",
+    "hideGroup": "Hide group",
+    "hint": "Drag groups or cards · click 👁 to hide/show",
+    "save": "Save",
+    "showCard": "Show card",
+    "showGroup": "Show group"
+  },
+  "loadFailed": "We could not retrieve your statistics right now.",
+  "loadFailedHint": "Try adjusting your filters or refreshing the page.",
+  "loading": "Loading your stats...",
+  "period": {
+    "custom": "Custom",
+    "month": "This month's",
+    "today": "Today's",
+    "total": "All time",
+    "week": "This week's",
+    "year": "This year's"
+  },
+  "progress": {
+    "activity": "Activity",
+    "month": "Month",
+    "total": "Total",
+    "week": "Week",
+    "year": "Year"
+  },
+  "ranking": {
+    "empty": "No immersed works match the selected filters.",
+    "global": "Global",
+    "hours": "Hours",
+    "individual": "Individual",
+    "loadFailed": "Could not load the immersion ranking.",
+    "loadMore": "Load more",
+    "loading": "Loading the immersion ranking...",
+    "loadingMore": "Loading more...",
+    "logs": "Logs",
+    "metricLabel": "Ranking metric",
+    "noTypes": "Select at least one work type to view the ranking.",
+    "position": "#",
+    "scopeLabel": "Ranking scope",
+    "subtitle": "Compare your immersed works with the community.",
+    "title": "Immersion ranking",
+    "users": "Users",
+    "work": "Work",
+    "xp": "XP"
+  },
+  "range": {
+    "allTime": "All Time",
+    "thisMonth": "This Month",
+    "thisWeek": "This Week",
+    "thisYear": "This Year",
+    "today": "Today"
+  },
+  "share": {
+    "title": "Share your stats",
+    "allTime": "All time",
+    "thisYear": "This year",
+    "thisMonth": "This month",
+    "custom": "Custom",
+    "generateFailed": "Failed to generate stats image",
+    "shareFailed": "Could not share the image",
+    "downloadedInstead": "Sharing not supported here, image downloaded instead",
+    "from": "From",
+    "to": "To",
+    "pickDates": "Pick a start and end date.",
+    "previewAlt": "Stats card preview",
+    "download": "Download PNG",
+    "share": "Share"
+  },
+  "sort": {
+    "azAsc": "Alphabetical (A-Z)",
+    "azDesc": "Alphabetical (Z-A)",
+    "firstLog": "First log (oldest)",
+    "lastLog": "Last log (newest)",
+    "mostLogs": "Most logs",
+    "mostTime": "Most time",
+    "mostXp": "Most XP"
+  },
+  "speed": {
+    "empty": "No data available for the selected timeframe."
+  },
+  "stacked": {
+    "activity": "Activity",
+    "noData": "No data available for the selected timeframe."
+  },
+  "subtitle": "Track your immersion progress with detailed breakdowns and",
+  "tabs": {
+    "charts": "Charts",
+    "overview": "Overview",
+    "ranking": "Ranking",
+    "timeline": "Timeline"
+  },
+  "typeDescriptor": {
+    "all": "all types",
+    "multiple": "selected types",
+    "none": "no types"
+  },
+  "types": {
+    "all": "All Types",
+    "count_one": "{{count}} Type",
+    "count_other": "{{count}} Types",
+    "none": "No Types"
+  },
+  "units": {
+    "chars": "chars",
+    "charsPerHour": "chars/hr",
+    "days": "days",
+    "hours": "hours"
+  }
+}

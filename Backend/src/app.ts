@@ -1,0 +1,150 @@
+import express, { NextFunction, Request, Response, Router } from 'express';
+import morgan from 'morgan';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import {
+  errorHandler,
+  notFoundHandler,
+} from './middlewares/errorMiddleware.js';
+import authRoutes from './routes/auth.routes.js';
+import logsRoutes from './routes/logs.routes.js';
+import userRoutes from './routes/user.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import mediaRoutes from './routes/media.routes.js';
+import mediaRequestRoutes from './routes/mediaRequest.routes.js';
+import mediaListRoutes from './routes/mediaList.routes.js';
+import goalsRoutes from './routes/goals.routes.js';
+import clubRoutes from './routes/club.routes.js';
+import notificationsRoutes from './routes/notifications.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
+import ogImageRoutes from './routes/ogImage.routes.js';
+import patreonRoutes from './routes/patreon.routes.js';
+import anilistRoutes from './routes/anilist.routes.js';
+import tagRoutes from './routes/tag.routes.js';
+import changelogRoutes from './routes/changelog.routes.js';
+import textSessionRoutes from './routes/textSession.routes.js';
+import apiKeyRoutes from './routes/apiKey.routes.js';
+import achievementRoutes from './routes/achievement.routes.js';
+import activityRoutes from './routes/activity.routes.js';
+import mediaRecommendationRoutes from './routes/mediaRecommendation.routes.js';
+import swaggerRoutes from './swagger.js';
+import { metaTagsMiddleware } from './middlewares/metaTags.js';
+
+const app = express();
+
+app.use(
+  '/api/patreon/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res, next) => {
+    if (req.body) {
+      const webhookRequest = req as Request & { rawBody?: string };
+      const rawBody = req.body.toString('utf8');
+      webhookRequest.rawBody = rawBody;
+      try {
+        req.body = JSON.parse(rawBody);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+    }
+    return next();
+  }
+);
+
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'https://nihongotracker.app'],
+    credentials: true,
+  })
+);
+app.use(express.urlencoded({ extended: true }));
+// A full browser-side AniList sync can contain up to 3,000 compact activity
+// records plus deduplicated media metadata. Keep the limit bounded but large
+// enough for that authenticated import payload.
+app.use(express.json({ limit: '2mb' }));
+app.use(morgan('dev'));
+app.use(cookieParser());
+
+app.use('/api/auth', authRoutes);
+app.use('/api/media', mediaRoutes);
+app.use('/api/media-requests', mediaRequestRoutes);
+app.use('/api/lists', mediaListRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/texthooker', textSessionRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/clubs', clubRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/patreon', patreonRoutes);
+app.use('/api/anilist', anilistRoutes);
+app.use('/api/tags', tagRoutes);
+app.use('/api/changelogs', changelogRoutes);
+app.use('/api/api-keys', apiKeyRoutes);
+app.use('/api/achievements', achievementRoutes);
+app.use('/api/activities', activityRoutes);
+app.use('/api/media-recommendations', mediaRecommendationRoutes);
+app.use('/api/docs', swaggerRoutes);
+app.use('/og-image', ogImageRoutes);
+app.use('/api/og-image', ogImageRoutes);
+
+app.use(
+  '/api',
+  Router().get('/', (_req, res) => {
+    res.json({ message: 'API Working' });
+  })
+);
+
+// Serve index.html for all non-API routes (SPA fallback)
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+app.use(
+  express.static(path.join(currentDir, '../dist'), {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return;
+      }
+
+      if (
+        filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/i)
+      ) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  })
+);
+
+app.get('/assets/*', (_req: Request, res: Response) => {
+  res.status(404).end();
+});
+
+app.use(metaTagsMiddleware);
+
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/assets/')) {
+    return next();
+  }
+
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(currentDir, '../dist/index.html'));
+});
+
+// Error handlers
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const globalErrorHandler = function (err: Error): void {
+  console.error('Uncaught Exception', err);
+};
+
+process.on('unhandledRejection', globalErrorHandler);
+process.on('uncaughtException', globalErrorHandler);
+
+export default app;

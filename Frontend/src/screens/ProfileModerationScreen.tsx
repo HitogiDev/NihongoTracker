@@ -1,0 +1,529 @@
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useOutletContext } from 'react-router-dom';
+import {
+  ShieldAlert,
+  Ban,
+  Trophy,
+  RefreshCw,
+  Save,
+  AlertTriangle,
+  Clock3,
+  Award,
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
+
+import {
+  adminGetUserModerationFn,
+  adminGetAchievementsFn,
+  adminGrantAchievementFn,
+  adminRecalculateUserStreakFn,
+  adminUpdateUserModerationFn,
+  getUserAchievementsFn,
+} from '../api/trackerApi';
+import { OutletProfileContextType } from '../types';
+import { useUserDataStore } from '../store/userData';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { getApiErrorMessage } from '../utils/apiError';
+import { getAchievementName } from '../utils/achievementText';
+
+type ModerationHistoryEntry = {
+  field: 'rankingBanned' | 'banned' | 'banReason';
+  previousValue: boolean | string;
+  newValue: boolean | string;
+  reasonSnapshot?: string;
+  updatedAt: string;
+  updatedByUsername?: string;
+};
+
+function getHistoryBadgeLabelKey(
+  entry: ModerationHistoryEntry
+): ParseKeys<'admin'> {
+  if (entry.field === 'rankingBanned') {
+    return entry.newValue === true
+      ? 'moderation.history.rankingBanEnabled'
+      : 'moderation.history.rankingBanRemoved';
+  }
+
+  if (entry.field === 'banned') {
+    return entry.newValue === true
+      ? 'moderation.history.accountBanned'
+      : 'moderation.history.accountUnbanned';
+  }
+
+  return String(entry.newValue || '').trim()
+    ? 'moderation.history.banReasonUpdated'
+    : 'moderation.history.banReasonCleared';
+}
+
+function getHistoryBadgeClass(entry: ModerationHistoryEntry) {
+  if (entry.field === 'rankingBanned') {
+    return entry.newValue === true ? 'badge-warning' : 'badge-success';
+  }
+
+  if (entry.field === 'banned') {
+    return entry.newValue === true ? 'badge-error' : 'badge-success';
+  }
+
+  return 'badge-info';
+}
+
+interface HistoryDescription {
+  key: ParseKeys<'admin'>;
+  params?: Record<string, string>;
+}
+
+function getHistoryDescription(
+  entry: ModerationHistoryEntry
+): HistoryDescription {
+  if (entry.field === 'banReason') {
+    const previous = String(entry.previousValue || '').trim();
+    const next = String(entry.newValue || '').trim();
+
+    if (!previous && next) {
+      return { key: 'moderation.history.reasonSet', params: { reason: next } };
+    }
+
+    if (previous && !next) {
+      return { key: 'moderation.history.reasonCleared' };
+    }
+
+    return {
+      key: 'moderation.history.reasonChanged',
+      params: { reason: next },
+    };
+  }
+
+  return {
+    key: 'moderation.history.changed',
+    params: {
+      previous:
+        entry.previousValue === true
+          ? 'moderation.history.enabled'
+          : 'moderation.history.disabled',
+      next:
+        entry.newValue === true
+          ? 'moderation.history.enabled'
+          : 'moderation.history.disabled',
+    },
+  };
+}
+
+function ProfileModerationScreen() {
+  const { t } = useTranslation('admin');
+  const { formatDate } = useDateFormatting();
+  const { username } = useOutletContext<OutletProfileContextType>();
+  const loggedUser = useUserDataStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  const isAdmin = loggedUser?.roles?.includes('admin');
+
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['profileModeration', username],
+    queryFn: () => adminGetUserModerationFn(username),
+    enabled: Boolean(username) && Boolean(isAdmin),
+    staleTime: 0,
+  });
+
+  const { data: achievementCatalog = [] } = useQuery({
+    queryKey: ['adminAchievements'],
+    queryFn: adminGetAchievementsFn,
+    enabled: Boolean(isAdmin),
+  });
+  const { data: userAchievements = [] } = useQuery({
+    queryKey: ['userAchievements', username],
+    queryFn: () => getUserAchievementsFn(username),
+    enabled: Boolean(username) && Boolean(isAdmin),
+  });
+
+  const [rankingBanned, setRankingBanned] = useState(false);
+  const [banned, setBanned] = useState(false);
+  const [banReason, setBanReason] = useState('');
+  const [selectedAchievementKey, setSelectedAchievementKey] = useState('');
+
+  useEffect(() => {
+    if (!data?.moderation) return;
+
+    setRankingBanned(Boolean(data.moderation.rankingBanned));
+    setBanned(Boolean(data.moderation.banned));
+    setBanReason(data.moderation.banReason || '');
+  }, [data]);
+
+  const sortedHistory = [...(data?.moderation?.history || [])].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  const { mutate: saveModeration, isPending: isSaving } = useMutation({
+    mutationFn: () =>
+      adminUpdateUserModerationFn(username, {
+        rankingBanned,
+        banned,
+        banReason,
+      }),
+    onSuccess: () => {
+      toast.success(t('moderation.toast.updated'));
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          if (!Array.isArray(key)) return false;
+          return key.some((k) =>
+            [
+              'profileModeration',
+              'ranking',
+              'rankingSummary',
+              'user',
+              'adminBannedUsers',
+            ].includes(String(k))
+          );
+        },
+      });
+    },
+    onError: () => {
+      toast.error(t('moderation.toast.updateFailed'));
+    },
+  });
+
+  const { mutate: recalculateStreak, isPending: isRecalculatingStreak } =
+    useMutation({
+      mutationFn: () => adminRecalculateUserStreakFn(username),
+      onSuccess: (result) => {
+        queryClient.invalidateQueries({ queryKey: ['user', username] });
+        queryClient.invalidateQueries({ queryKey: ['userStats', username] });
+        queryClient.invalidateQueries({
+          queryKey: ['profileModeration', username],
+        });
+        toast.success(
+          t('moderation.toast.streakRecalculated', {
+            username: result.username,
+            streak: result.streaks.currentStreak,
+          })
+        );
+      },
+      onError: (error) => {
+        toast.error(getApiErrorMessage(error));
+      },
+    });
+
+  const earnedAchievementKeys = new Set(
+    userAchievements.filter((achievement) => achievement.isEarned).map((a) => a.key)
+  );
+  const grantableAchievements = achievementCatalog.filter(
+    (achievement) =>
+      achievement.isActive !== false && !earnedAchievementKeys.has(achievement.key)
+  );
+
+  const { mutate: grantAchievement, isPending: isGrantingAchievement } =
+    useMutation({
+      mutationFn: () =>
+        adminGrantAchievementFn(username, selectedAchievementKey),
+      onSuccess: (result) => {
+        toast.success(
+          result.alreadyOwned
+            ? t('moderation.achievementAlreadyOwned')
+            : t('moderation.achievementGranted')
+        );
+        setSelectedAchievementKey('');
+        queryClient.invalidateQueries({
+          queryKey: ['userAchievements', username],
+        });
+        queryClient.invalidateQueries({ queryKey: ['myAchievements'] });
+        queryClient.invalidateQueries({ queryKey: ['achievementFeed'] });
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error)),
+    });
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center py-8 px-4">
+        <div className="w-full max-w-3xl card bg-base-100 shadow-sm border border-error/30">
+          <div className="card-body">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-error" />
+              <h2 className="card-title text-error">
+                {t('moderation.accessDeniedTitle')}
+              </h2>
+            </div>
+            <p className="text-base-content/70">
+              {t('moderation.accessDeniedBody')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center py-8 px-4">
+      <div className="w-full max-w-3xl space-y-5">
+        <div className="card surface">
+          <div className="card-body">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="card-title flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-warning" />
+                  {t('moderation.title')}
+                </h2>
+                <p className="text-sm text-base-content/70 mt-1">
+                  <Trans
+                    t={t}
+                    i18nKey="moderation.subtitle"
+                    values={{ username }}
+                    components={{ b: <b /> }}
+                  />
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => void refetch()}
+                disabled={isFetching || isLoading}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`}
+                />
+                {t('moderation.refresh')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="card surface">
+          <div className="card-body gap-5">
+            <div className="rounded-lg border border-base-300 px-4 py-3 bg-base-200/40">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold text-base-content">
+                    {t('moderation.recalculateTitle')}
+                  </p>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    <Trans
+                      t={t}
+                      i18nKey="moderation.recalculateBody"
+                      values={{ username }}
+                      components={{ b: <span className="font-semibold" /> }}
+                    />
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => recalculateStreak()}
+                  disabled={isRecalculatingStreak || isLoading}
+                >
+                  {isRecalculatingStreak ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {t('moderation.recalculateAction')}
+                </button>
+              </div>
+            </div>
+
+            <label className="flex w-full cursor-pointer items-start gap-3 rounded-lg border border-base-300 px-4 py-3">
+              <div className="min-w-0 flex items-start gap-3">
+                <Trophy className="w-5 h-5 text-warning mt-0.5" />
+                <div>
+                  <span className="font-semibold text-base-content">
+                    {t('moderation.rankingBanTitle')}
+                  </span>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    {t('moderation.rankingBanBody')}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-warning ml-auto mt-0.5 shrink-0"
+                checked={rankingBanned}
+                onChange={(e) => setRankingBanned(e.target.checked)}
+              />
+            </label>
+
+            <label className="flex w-full cursor-pointer items-start gap-3 rounded-lg border border-base-300 px-4 py-3">
+              <div className="min-w-0 flex items-start gap-3">
+                <Ban className="w-5 h-5 text-error mt-0.5" />
+                <div>
+                  <span className="font-semibold text-base-content">
+                    {t('moderation.banTitle')}
+                  </span>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    {t('moderation.banBody')}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-error ml-auto mt-0.5 shrink-0"
+                checked={banned}
+                onChange={(e) => setBanned(e.target.checked)}
+              />
+            </label>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-base-content">
+                  {t('moderation.banReason')}
+                </span>
+                <span className="text-xs text-base-content/60">
+                  {banReason.length}/500
+                </span>
+              </div>
+              <textarea
+                className="textarea w-full min-h-28"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder={t('moderation.banReasonPlaceholder')}
+                maxLength={500}
+              />
+            </div>
+
+            <div className="card-actions justify-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => saveModeration()}
+                disabled={isSaving || isLoading}
+              >
+                {isSaving ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {t('moderation.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="card surface">
+          <div className="card-body">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Award className="w-5 h-5 text-warning" />
+                  {t('moderation.grantAchievementTitle')}
+                </h3>
+                <p className="mt-1 text-sm text-base-content/60">
+                  {t('moderation.grantAchievementBody')}
+                </p>
+                <select
+                  className="select mt-3 w-full"
+                  value={selectedAchievementKey}
+                  onChange={(event) =>
+                    setSelectedAchievementKey(event.target.value)
+                  }
+                  disabled={isLoading || achievementCatalog.length === 0}
+                >
+                  <option value="">
+                    {t('moderation.selectAchievement')}
+                  </option>
+                  {grantableAchievements.map((achievement) => (
+                    <option key={achievement.key} value={achievement.key}>
+                      {getAchievementName(achievement)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => grantAchievement()}
+                disabled={!selectedAchievementKey || isGrantingAchievement}
+              >
+                {isGrantingAchievement ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  <Award className="w-4 h-4" />
+                )}
+                {t('moderation.grantAchievementAction')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="card surface">
+          <div className="card-body">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-base-content/70" />
+              {t('moderation.timeline')}
+            </h3>
+
+            {sortedHistory.length === 0 ? (
+              <p className="text-sm text-base-content/60">
+                {t('moderation.timelineEmpty')}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {sortedHistory.map((item, index) => {
+                  const entry = item as ModerationHistoryEntry;
+
+                  return (
+                    <li
+                      key={`${entry.field}-${entry.updatedAt}-${index}`}
+                      className="rounded-lg border border-base-300 p-3"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`badge badge-soft ${getHistoryBadgeClass(entry)}`}
+                        >
+                          {t(getHistoryBadgeLabelKey(entry))}
+                        </span>
+                        <span className="text-xs text-base-content/60">
+                          {t('moderation.by', {
+                            username:
+                              entry.updatedByUsername ||
+                              t('moderation.unknownAdmin'),
+                          })}
+                        </span>
+                        <span className="text-xs text-base-content/50">
+                          {Number.isNaN(new Date(entry.updatedAt).getTime())
+                            ? t('moderation.unknownDate')
+                            : formatDate(entry.updatedAt)}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm text-base-content/75">
+                        {(() => {
+                          const description = getHistoryDescription(entry);
+                          const params = description.params;
+                          return t(description.key, {
+                            ...params,
+                            // The on/off wording is itself a key.
+                            ...(params?.previous
+                              ? {
+                                  previous: t(
+                                    params.previous as ParseKeys<'admin'>
+                                  ),
+                                  next: t(params.next as ParseKeys<'admin'>),
+                                }
+                              : {}),
+                            reason:
+                              params?.reason ||
+                              t('moderation.history.reasonEmpty'),
+                          });
+                        })()}
+                      </p>
+
+                      {entry.reasonSnapshot ? (
+                        <p className="mt-2 text-xs text-base-content/60">
+                          {t('moderation.reasonSnapshot', {
+                            reason: entry.reasonSnapshot,
+                          })}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ProfileModerationScreen;

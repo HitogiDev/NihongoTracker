@@ -1,0 +1,488 @@
+{
+  "calculator": {
+    "characters": "Characters:",
+    "charactersLabel": "Characters",
+    "configure": "Configure your calculation",
+    "episodes": "Episodes:",
+    "episodesLabel": "Episodes",
+    "heading": "Calculator",
+    "immersionToXp": "Immersion → XP",
+    "immersionType": "Immersion Type",
+    "input": "Input:",
+    "minutes": "Minutes",
+    "mode": "Calculation Mode",
+    "pages": "Pages:",
+    "pagesLabel": "Pages",
+    "quantity": "Quantity",
+    "subtitle": "Calculate XP with content type, personal pace and relative difficulty",
+    "targetXp": "Target XP",
+    "time": "Time:",
+    "tip1": "Credited immersion earns 135 base XP per hour",
+    "tip2": "Content 0.5 Jiten above your estimated comfort earns the full 30% bonus",
+    "tip3": "Reading time is the base; characters validate it or estimate time when it is missing",
+    "tip4": "Inverse estimates keep your level, history and speed fixed",
+    "tips": "Quick Tips",
+    "title": "Immersion Calculator",
+    "xpCalculation": "XP Calculation",
+    "xpGained": "XP Gained:",
+    "xpToImmersion": "XP to immersion",
+    "context": "Context",
+    "personal": "My data",
+    "simulation": "Simulation",
+    "contentType": "Content type",
+    "difficulty": "Jiten difficulty",
+    "difficultyHint": "Optional. A manual value overrides the selected title's difficulty.",
+    "media": "Title",
+    "mediaHint": "Optional. Uses stored difficulty without modifying the title.",
+    "searchMedia": "Search titles",
+    "clearMedia": "Clear title",
+    "noMedia": "No titles found.",
+    "categoryLevel": "Category level",
+    "historyDifficulty": "Usual Jiten difficulty",
+    "readingSpeed": "Speed, characters per hour",
+    "optional": "Optional",
+    "unit": "Unit to calculate",
+    "timeHint": "When characters are also entered, they cap implausible reading time.",
+    "charsHint": "Without time, characters are converted using your reading speed.",
+    "otherNoXp": "The Other type earns no XP.",
+    "fixedContext": "This estimate keeps level, history and speed fixed for the session.",
+    "calculating": "Calculating XP",
+    "calculationError": "Calculation failed. Check the entered values.",
+    "requiredAmount": "Minimum amount required",
+    "creditedTime": "Credited minutes",
+    "baseXp": "Base XP",
+    "bonus": "Difficulty bonus",
+    "contentDifficulty": "Content difficulty",
+    "noDifficulty": "No data",
+    "comfort": "Estimated comfort",
+    "fullBonusAt": "Full bonus at {{target}} Jiten",
+    "units": { "time": "minutes", "chars": "characters", "pages": "pages", "episodes": "episodes" },
+    "types": { "reading": "Reading", "lightNovel": "Light Novel", "manga": "Manga", "vn": "Visual Novel", "game": "Video Game", "book": "Book", "anime": "Anime", "video": "Video", "movie": "Movie", "tvShow": "TV Show", "audio": "Audio", "other": "Other" }
+  },
+  "common": {
+    "close": "Close"
+  },
+  "cta": {
+    "body": "Track your immersion for free.",
+    "joinNow": "Join Now",
+    "madeBy": "Made with ❤️ by a fellow learner",
+    "seeFeatures": "See all features →",
+    "title": "Ready to start?"
+  },
+  "dashboard": {
+    "greetings": {
+      "immersion": "Let's get some immersion done!",
+      "track": "Time to track your progress!",
+      "fluency": "Another day, another step towards fluency!",
+      "keepUp": "Nice work. Keep the streak going!",
+      "journey": "What are you reading or watching today?"
+    },
+    "feed": {
+      "all": "All activity",
+      "logs": "Logs",
+      "achievements": "Achievements",
+      "globalFeed": "Global Feed",
+      "allTypes": "All types",
+      "subtitle": "See what the community is immersing in right now",
+      "empty": "No activity for the selected filters.",
+      "emptyScopes": {
+        "clubs": "There is no activity from your clubs yet.",
+        "following": "There is no activity from people you follow yet.",
+        "global": "There is no public activity yet."
+      },
+      "followingHint": "Follow learners from their profiles to build your feed.",
+      "loadError": "The activity feed could not be loaded.",
+      "loadMore": "Load more activity",
+      "retry": "Try again",
+      "scopes": {
+        "clubs": "Clubs",
+        "following": "Following",
+        "global": "Global"
+      },
+      "tracked": "tracked"
+    },
+    "time": {
+      "day": "Last 24h",
+      "week": "Last 7 days",
+      "month": "Last 30 days",
+      "year": "Last year",
+      "all": "All time"
+    },
+    "stats": {
+      "reading": "Reading",
+      "listening": "Listening",
+      "total": "Total",
+      "change": "{{percent}}% vs. last month",
+      "noChange": "No change"
+    },
+    "ranking": {
+      "gap": "<xp>{{xp}} XP behind </xp><user>{{username}}</user> this month",
+      "leading": "You are leading the monthly ranking!",
+      "notRanked": "Log something to enter this month’s ranking."
+    },
+    "recentMedia": "Recent Media",
+    "jumpBackIn": "Jump back in",
+    "swipe": "Swipe",
+    "hideTitle": "Hide from Recent Media?",
+    "hideAria": "Hide from recent media",
+    "someone": "Someone",
+    "playlistBatch": "Playlist batch",
+    "refreshFailed": "Failed to refresh user data after quick log",
+    "welcomeBack": "Welcome back",
+    "actions": {
+      "createLog": "Create Log",
+      "profile": "Profile",
+      "rankings": "Rankings",
+      "cancel": "Cancel",
+      "hide": "Hide"
+    },
+    "streak": {
+      "label": "Streak",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "hint": "Keep it burning with daily immersion"
+    },
+    "monthlyRanking": "Monthly Ranking",
+    "immersion": {
+      "title": "This Month's Immersion",
+      "subtitle": "Compared to the same period last month"
+    },
+    "quickLog": "Quick Log",
+    "quickShortcuts": "Quick log shortcuts",
+    "recentEmpty": "Your recent media will appear here after you log it.",
+    "thisMedia": "this media",
+    "hideConfirm": "Are you sure you want to hide <title>{{title}}</title> from your recent media? It will no longer appear in quick actions.",
+    "manage": "Manage",
+    "unhide": "Unhide",
+    "manageHiddenTitle": "Hidden recent media",
+    "manageHiddenDescription": "Media you hid from quick actions can be restored here. Restored media will reappear in recent media when logged again.",
+    "manageHiddenEmpty": "Nothing hidden yet."
+  },
+  "onboarding": {
+    "beFair": "Keep dates honest",
+    "guidelinesLink": "community guidelines",
+    "guidelinesPrefix": "For more details, read the",
+    "importBody": "Already have logs in another tracker? You can import them from Settings. Or skip this and start fresh today.",
+    "importLink": "Go to import settings",
+    "importTitle": "Bring your old logs, if you want",
+    "later": "Maybe later",
+    "logBody": "Open Create Log, choose what you read, watched, played, or listened to, fill in the details, then save.",
+    "logTitle": "How to log",
+    "startLogging": "Start logging",
+    "subtitle": "A few quick tips to help you get started and keep the rankings fair.",
+    "title": "Welcome to NihongoTracker",
+    "unknownDate": "When adding very old logs, if you do not know the date, open Advanced Options and choose Unknown date instead of guessing. This keeps date-based rankings fair.",
+    "whenBody": "Log while you immerse or as soon as you can afterward. The date defaults to today, so timely logs are the most accurate.",
+    "whenTitle": "Log close to the session"
+  },
+  "features": {
+    "hero": {
+      "badge": "Built for immersion",
+      "title": "Track the Japanese you <hl>read, watch, and hear</hl>",
+      "subtitle": "Log your immersion, see the numbers, earn XP, and join clubs with other learners.",
+      "ctaPrimary": "Start for Free",
+      "ctaSecondary": "View Leaderboard"
+    },
+    "stats": {
+      "features": "Features",
+      "mediaTypes": "Media Types",
+      "progressTracking": "Progress Tracking",
+      "freeCore": "Free Core Features"
+    },
+    "count_one": "{{count}} feature",
+    "count_other": "{{count}} features",
+    "planned": "Planned",
+    "categories": {
+      "tracking": {
+        "title": "Smart Immersion Tracking",
+        "description": "Log the Japanese content you read, watch, play, and hear",
+        "items": {
+          "multiMedia": {
+            "title": "Multi-Media Support",
+            "description": "Track anime, manga, visual novels, books, audiobooks, movies, TV shows, and more"
+          },
+          "durationEstimates": {
+            "title": "Automatic Duration Estimates",
+            "description": "Smart time calculation for episodes and reading sessions"
+          },
+          "characterCount": {
+            "title": "Character Count Tracking",
+            "description": "Monitor characters read for visual novels, books, and manga"
+          },
+          "episodePages": {
+            "title": "Episode & Page Progress",
+            "description": "Keep track of episodes watched and pages read"
+          },
+          "databaseIntegration": {
+            "title": "Media Database Integration",
+            "description": "Match titles with AniList, VNDB, and the built-in media database"
+          },
+          "importExport": {
+            "title": "Import/Export Logs",
+            "description": "Import from other trackers and export your data"
+          },
+          "anilistSync": {
+            "title": "Automatic AniList Sync",
+            "description": "Link AniList to automatically log watched anime episodes"
+          },
+          "texthooker": {
+            "title": "TextHooker Integration",
+            "description": "Track VN reading sessions in real time with character and line analytics synced to your logs"
+          }
+        }
+      },
+      "analytics": {
+        "title": "Advanced Analytics & Statistics",
+        "description": "Detailed insights into your learning progress and patterns",
+        "items": {
+          "readingSpeed": {
+            "title": "Reading Speed Analysis",
+            "description": "Track your characters per hour improvement over time"
+          },
+          "charts": {
+            "title": "Progress Charts & Graphs",
+            "description": "See how your time, reading speed, and totals change over time"
+          },
+          "timeBased": {
+            "title": "Time-Based Statistics",
+            "description": "Daily, weekly, monthly, and yearly progress breakdowns"
+          },
+          "mediaSpecific": {
+            "title": "Media-Specific Stats",
+            "description": "Detailed statistics for each anime, manga, or book"
+          },
+          "typeBased": {
+            "title": "Type-Based Analysis",
+            "description": "Compare your progress across different media types"
+          },
+          "completion": {
+            "title": "Completion Percentages",
+            "description": "See how much of each media you've completed"
+          }
+        }
+      },
+      "gamification": {
+        "title": "Gamification & Motivation",
+        "description": "RPG-style progression system to keep you engaged",
+        "items": {
+          "xpLeveling": {
+            "title": "XP & Leveling System",
+            "description": "Earn experience points and level up your Japanese skills"
+          },
+          "streaks": {
+            "title": "Daily Streak Tracking",
+            "description": "Build and maintain consistent immersion habits"
+          },
+          "achievements": {
+            "title": "Achievement System",
+            "description": "Unlock milestones and celebrate your progress"
+          },
+          "goals": {
+            "title": "Daily & Long-term Goals",
+            "description": "Set targets for different media types and time periods"
+          },
+          "progressIndicators": {
+            "title": "Progress Indicators",
+            "description": "Visual feedback on your daily and monthly targets"
+          },
+          "dashboard": {
+            "title": "Motivation Dashboard",
+            "description": "See your achievements, streaks, and upcoming goals"
+          }
+        }
+      },
+      "social": {
+        "title": "Social Features & Competition",
+        "description": "Connect with fellow learners and compare progress",
+        "items": {
+          "rankings": {
+            "title": "Global Rankings",
+            "description": "Compete on leaderboards by XP, time, and different metrics"
+          },
+          "comparison": {
+            "title": "User Comparison",
+            "description": "Compare your stats with other learners on specific media"
+          },
+          "profiles": {
+            "title": "Profile Pages",
+            "description": "Put your stats, favorites, and achievements on your profile"
+          },
+          "sharedMedia": {
+            "title": "Shared Media Pages",
+            "description": "See community stats and recent activity for any media"
+          },
+          "logSharing": {
+            "title": "Log Sharing",
+            "description": "Share interesting logs and discoveries with the community"
+          },
+          "activityFeed": {
+            "title": "Recent Activity Feed",
+            "description": "See what other learners are reading and watching"
+          },
+          "reviews": {
+            "title": "Reviews & Ratings",
+            "description": "Review media, rate it, and discover opinions from other learners"
+          },
+          "notifications": {
+            "title": "Notifications",
+            "description": "Stay informed about achievements, clubs, reviews, and social activity"
+          },
+          "profileCustomization": {
+            "title": "Profile Customization",
+            "description": "Personalize profile layouts, colors, titles, frames, and visual effects"
+          }
+        }
+      },
+      "clubs": {
+        "title": "Immersion Clubs",
+        "description": "Join or create communities around specific content",
+        "items": {
+          "createJoin": {
+            "title": "Create & Join Clubs",
+            "description": "Form groups around anime, manga, or book clubs"
+          },
+          "mediaTracking": {
+            "title": "Club Media Tracking",
+            "description": "Collectively track progress on club-selected content"
+          },
+          "memberRankings": {
+            "title": "Member Rankings",
+            "description": "See how you rank against other club members"
+          },
+          "statistics": {
+            "title": "Club Statistics",
+            "description": "View aggregated stats for all club members"
+          },
+          "voting": {
+            "title": "Media Voting",
+            "description": "Vote on what content the club should read/watch next"
+          },
+          "activity": {
+            "title": "Activity Tracking",
+            "description": "Monitor club engagement and progress over time"
+          }
+        }
+      },
+      "tools": {
+        "title": "Productivity Tools",
+        "description": "Plan your immersion and keep your data organized",
+        "items": {
+          "calculator": {
+            "title": "Time Calculator",
+            "description": "Convert between different time units and estimate reading times"
+          },
+          "discovery": {
+            "title": "Media Discovery",
+            "description": "Find new content based on your preferences and difficulty"
+          },
+          "lists": {
+            "title": "Personal Lists",
+            "description": "Create custom lists of media to track and organize"
+          },
+          "goals": {
+            "title": "Goal Management",
+            "description": "Set up and track both daily and long-term objectives"
+          },
+          "export": {
+            "title": "Data Export",
+            "description": "Export your logs and statistics for external analysis"
+          },
+          "sync": {
+            "title": "Multi-Device Sync",
+            "description": "Keep the same data on every device"
+          }
+        }
+      }
+    },
+    "howItWorks": {
+      "badge": "From log to leaderboard",
+      "title": "How it all works together",
+      "step": "Step {{number}}",
+      "steps": {
+        "track": {
+          "title": "Track Everything",
+          "description": "Log anime, manga, books, and any Japanese content with detailed metrics."
+        },
+        "analyze": {
+          "title": "Analyze Progress",
+          "description": "Get insights into your reading speed, time investment, and skill growth."
+        },
+        "motivate": {
+          "title": "Stay Motivated",
+          "description": "Earn XP, maintain streaks, and achieve goals while building habits."
+        },
+        "connect": {
+          "title": "Connect & Compete",
+          "description": "Join clubs, compare progress, and climb leaderboards."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to start?",
+      "subtitle": "Track your immersion for free.",
+      "primary": "Start tracking",
+      "secondary": "Browse rankings →",
+      "madeWith": "Made with ❤️ by a fellow learner"
+    }
+  },
+  "hero": {
+    "builtForVn": "Built for visual<br />novel readers",
+    "clubBody": "Join or create an immersion club. Vote on titles and compare progress with the group.",
+    "clubBullet1": "Vote to decide what media to consume together next",
+    "clubBullet2": "Public and private clubs with tags",
+    "clubBullet3": "Find clubs by genre, style, or level",
+    "clubs": "Clubs",
+    "dashboardAlt": "NihongoTracker Dashboard",
+    "freeForever": "Core tracking features are free",
+    "friendly": "A little friendly<br />competition",
+    "hookerAlt": "TextHooker Dashboard",
+    "hookerBody": "Capture lines and log VN reading sessions from one screen.",
+    "hookerBullet1": "Multiplayer texthooker rooms for shared reading sessions",
+    "hookerBullet2": "Full session history per title",
+    "hookerBullet3": "Easy one-click reading session logging",
+    "leaderboards": "Leaderboards",
+    "learnBetter": "Learn better<br />together",
+    "logBody": "Search a title, add your numbers, and save the log.",
+    "logBullet1": "Anime, manga, VNs, audio, light novels & more",
+    "logBullet2": "AniList & VNDB integration for instant metadata",
+    "logBullet3": "XP and streaks calculated automatically",
+    "logInstant": "Log in an instant",
+    "logTracking": "Log Tracking",
+    "rankBody": "See how you rank against other learners globally or by medium.",
+    "rankBullet1": "Global & per-medium rankings",
+    "rankBullet2": "Monthly & all-time leaderboards",
+    "rankBullet3": "Filters for time range, medium, and listening/reading",
+    "seeFeatures": "See all features",
+    "seeHowFar": "See exactly how far<br />you've come",
+    "startTracking": "Start Tracking",
+    "statistics": "Statistics",
+    "statsBody": "Charts break down your time, XP, reading speed, and streaks.",
+    "statsBullet1": "Overall, listening & reading level progress",
+    "statsBullet2": "Activity heatmap, streaks & daily averages",
+    "statsBullet3": "Filter by time range, medium, or tags",
+    "trackEveryType": "Track every type of immersion",
+    "tagline": "The best way to <verb></verb> your Japanese immersion",
+    "taglineVerbs": {
+      "track": "track",
+      "gamify": "gamify",
+      "celebrate": "celebrate",
+      "share": "share"
+    },
+    "chips": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "vn": "Visual Novels",
+      "audio": "Audio & Podcasts",
+      "books": "Books & Reading",
+      "video": "Video",
+      "games": "Video Games"
+    },
+    "alt": {
+      "screenshot": "Screenshot",
+      "logTracking": "Log Tracking",
+      "statistics": "Statistics",
+      "leaderboards": "Leaderboards",
+      "clubs": "Clubs"
+    }
+  }
+}

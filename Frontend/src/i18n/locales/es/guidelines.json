@@ -1,0 +1,90 @@
+{
+  "lastUpdated": "Última actualización: {{date}}",
+  "document": {
+    "title": "Normas de la comunidad",
+    "lastUpdated": "9 de septiembre de 2026",
+    "intro": [
+      "Estas normas se aplican a todas las áreas públicas de NihongoTracker, incluidos perfiles, actividades, reseñas, comentarios, clubes y clasificaciones.",
+      "El equipo de moderación interpretará estas normas según el contexto de cada caso. Incumplirlas puede provocar la eliminación de contenido, restricciones, la exclusión de las clasificaciones o el baneo de la cuenta. Podemos actualizar estas normas cuando sea necesario."
+    ],
+    "sections": [
+      {
+        "heading": "Respeto entre usuarios",
+        "items": [
+          "Trata a los demás con respeto. No se permiten el acoso, los insultos, las amenazas ni los ataques personales.",
+          "No publiques contenido discriminatorio ni promuevas odio contra una persona o un grupo.",
+          "No inicies discusiones con el único propósito de provocar, enfrentar o perseguir a otros usuarios.",
+          "No compartas información privada de otra persona sin su consentimiento.",
+          "Las críticas y los desacuerdos son bienvenidos cuando se centran en el tema y no en atacar a quienes participan."
+        ]
+      },
+      {
+        "heading": "Contenido público",
+        "items": [
+          "Marca claramente los spoilers.",
+          "No publiques contenido sexual explícito, violencia gráfica extrema ni material ilegal.",
+          "No suplantes a otras personas ni presentes como propio el trabajo de alguien más.",
+          "No envíes spam ni publiques repetidamente el mismo contenido.",
+          "Se permite la promoción ocasional de proyectos relacionados con el aprendizaje de japonés. No utilices perfiles, comentarios, reseñas o clubes únicamente para hacer publicidad.",
+          "No compartas enlaces creados para comprometer la seguridad o privacidad de otros usuarios."
+        ]
+      },
+      {
+        "heading": "Uso de la plataforma",
+        "items": [
+          "No abuses de errores, automatizaciones, scripts, múltiples cuentas o cualquier función de NihongoTracker para manipular estadísticas, logros, XP o clasificaciones.",
+          "No intentes evadir una restricción mediante otra cuenta ni con la ayuda de otro usuario.",
+          "Informa de los errores que otorguen XP, logros o posiciones de forma incorrecta. Aprovecharlos deliberadamente puede resultar en una restricción.",
+          "No manipules reseñas, votos, actividades o interacciones para aumentar artificialmente su visibilidad."
+        ]
+      },
+      {
+        "heading": "Registros de inmersión",
+        "paragraphs": [
+          "Registra únicamente contenido que hayas consumido. Las estimaciones razonables son válidas cuando no puedes conocer una cifra exacta, pero los registros deben ser honestos."
+        ],
+        "items": [
+          "No inventes horas, páginas, caracteres, episodios u otras cantidades para conseguir XP, logros o una posición más alta.",
+          "No dupliques sesiones ni registres el mismo contenido más de una vez.",
+          "Usa la categoría y la unidad que mejor representen la actividad realizada.",
+          "Si no sabes cuándo realizaste una sesión de inmersión, abre las opciones avanzadas al crear el registro y selecciona Fecha desconocida (Unknown date). No elijas una fecha al azar.",
+          "Puedes importar o añadir registros antiguos cuando correspondan a inmersión que realmente hayas realizado."
+        ]
+      },
+      {
+        "heading": "Clasificaciones y registros falsos",
+        "paragraphs": [
+          "Las clasificaciones dependen de que los registros sean honestos. Los usuarios que registren grandes cantidades durante un mes sin haber consumido realmente ese contenido serán baneados de las clasificaciones.",
+          "Los registros falsos no aportan ningún beneficio. Solo arruinan las estadísticas de la propia cuenta y hacen que su nivel, progreso y promedios dejen de representar la inmersión real."
+        ],
+        "link": {
+          "before": "Si crees que un baneo de las clasificaciones fue un error o quieres aportar contexto sobre tus registros, presenta una reclamación en el",
+          "label": "Discord de NihongoTracker",
+          "href": "https://discord.gg/6QtXrVdwmx",
+          "after": "Cada reclamación se revisa de forma individual."
+        }
+      },
+      {
+        "heading": "Clubes",
+        "items": [
+          "Los responsables de un club pueden establecer normas adicionales para sus miembros, siempre que no contradigan estas normas.",
+          "Los nombres, descripciones, imágenes y publicaciones de los clubes deben respetar las mismas reglas que el resto del contenido público.",
+          "No utilices un club para organizar acoso, manipular clasificaciones o coordinar abusos de la plataforma.",
+          "La moderación de NihongoTracker puede intervenir en cualquier club que incumpla las normas del sitio."
+        ]
+      },
+      {
+        "heading": "Reportes y restricciones",
+        "paragraphs": [
+          "Utiliza las herramientas de reporte o el Discord de NihongoTracker para informar sobre contenido o conductas que incumplan estas normas. No organices campañas públicas contra otros usuarios ni publiques acusaciones para presionar a los moderadores para que restrinjan una cuenta.",
+          "La gravedad y duración de una restricción dependerán de la conducta, su frecuencia y el historial de la cuenta. Repetir una infracción o intentar evadir una restricción puede provocar medidas más severas."
+        ],
+        "link": {
+          "before": "Si tienes dudas sobre estas normas o quieres reclamar una decisión de moderación, contacta con el equipo en el",
+          "label": "Discord de NihongoTracker",
+          "href": "https://discord.gg/6QtXrVdwmx"
+        }
+      }
+    ]
+  }
+}

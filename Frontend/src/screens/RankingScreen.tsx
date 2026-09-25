@@ -1,0 +1,1967 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  Trophy,
+  BookOpen,
+  Headphones,
+  Zap,
+  Calendar1,
+  BarChart,
+  Calendar,
+  Flame,
+  Bookmark,
+  BookmarkX,
+  MoreHorizontal,
+  Globe2,
+  UserRoundCheck,
+  Handshake,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
+
+import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  filterTypes,
+  IStats,
+  IUserCustomization,
+  type RankingAudience,
+} from '../types';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useTimezone } from '../hooks/useTimezone';
+import { numberWithCommas } from '../utils/utils';
+import { DayPicker } from 'react-day-picker';
+import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
+import UserAvatar from '../components/UserAvatar';
+import { useUserDataStore } from '../store/userData';
+import { getNameEffectRender } from '../utils/customization';
+import { getLogTypeLabelKey } from '../utils/logTypes';
+
+type RankedUser = {
+  username: string;
+  avatar?: string;
+  stats?: Partial<IStats>;
+  xp?: number;
+  hours?: number;
+  episodes?: number;
+  pages?: number;
+  chars?: number;
+  patreon?: {
+    isActive: boolean;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+  };
+  customization?: Pick<
+    IUserCustomization,
+    'nameEffect' | 'nameColor1' | 'nameColor2' | 'avatarFrame'
+  >;
+};
+
+type RankingMode = 'global' | 'medium';
+type RankingTimeFilter =
+  | 'all-time'
+  | 'today'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'custom';
+type RankingDisplayMode = 'xp' | 'hours' | 'chars';
+type RankingMediumType =
+  | 'anime'
+  | 'manga'
+  | 'light-novel'
+  | 'vn'
+  | 'game'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'book'
+  | 'audio';
+type RankingMediumMetric = 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+
+type RankingDefaults = {
+  mode?: RankingMode;
+  audience?: RankingAudience;
+  timeFilter?: RankingTimeFilter;
+  xpFilter?: filterTypes;
+  displayMode?: RankingDisplayMode;
+  mediumType?: RankingMediumType;
+  mediumMetric?: RankingMediumMetric;
+  startDate?: string;
+  endDate?: string;
+};
+
+const RANKING_DEFAULTS_STORAGE_KEY = 'rankingDefaults';
+const VALID_TIME_FILTERS: RankingTimeFilter[] = [
+  'all-time',
+  'today',
+  'week',
+  'month',
+  'year',
+  'custom',
+];
+const VALID_MODES: RankingMode[] = ['global', 'medium'];
+const VALID_AUDIENCES: RankingAudience[] = ['all', 'following', 'mutual'];
+const VALID_SCOPES: filterTypes[] = [
+  'userXp',
+  'readingXp',
+  'listeningXp',
+  'currentStreak',
+];
+const VALID_DISPLAY_MODES: RankingDisplayMode[] = ['xp', 'hours', 'chars'];
+const VALID_MEDIUM_TYPES: RankingMediumType[] = [
+  'anime',
+  'manga',
+  'light-novel',
+  'vn',
+  'game',
+  'video',
+  'movie',
+  'tv show',
+  'book',
+  'audio',
+];
+const isOneOf = <T extends string>(
+  value: string | null | undefined,
+  options: readonly T[]
+): value is T => !!value && options.includes(value as T);
+
+const getRankingDefaultsKey = (userId?: string | null) =>
+  userId
+    ? `${RANKING_DEFAULTS_STORAGE_KEY}:${userId}`
+    : RANKING_DEFAULTS_STORAGE_KEY;
+
+const loadRankingDefaults = (userId?: string | null): RankingDefaults => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    const stored = localStorage.getItem(getRankingDefaultsKey(userId));
+    if (!stored) {
+      return {};
+    }
+
+    const parsed = JSON.parse(stored);
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+
+    return parsed as RankingDefaults;
+  } catch {
+    return {};
+  }
+};
+
+const saveRankingDefaults = (
+  userId: string | null | undefined,
+  defaults: RankingDefaults
+) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      getRankingDefaultsKey(userId),
+      JSON.stringify(defaults)
+    );
+  } catch {
+    return;
+  }
+};
+
+const removeRankingDefaults = (userId?: string | null) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.removeItem(getRankingDefaultsKey(userId));
+};
+
+function RankingScreen() {
+  const { t } = useTranslation('ranking');
+  const { t: tCommon } = useTranslation('common');
+  const badgeText = usePatreonBadgeText();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useUserDataStore();
+  const initialDefaults = loadRankingDefaults(user?._id);
+  const [savedDefaults, setSavedDefaults] =
+    useState<RankingDefaults>(initialDefaults);
+  const [limit] = useState(10);
+  const modeParam = searchParams.get('mode');
+  const audienceParam = searchParams.get('audience');
+  const scopeParam = searchParams.get('scope');
+  const timeParam = searchParams.get('time');
+  const metricParam = searchParams.get('metric');
+  const mediumTypeParam = searchParams.get('mtype');
+  const mediumMetricParam = searchParams.get('mmetric');
+  const startParam = searchParams.get('start');
+  const endParam = searchParams.get('end');
+
+  const resolvedScope = isOneOf(scopeParam, VALID_SCOPES)
+    ? scopeParam
+    : isOneOf(initialDefaults.xpFilter, VALID_SCOPES)
+      ? initialDefaults.xpFilter
+      : 'userXp';
+
+  const resolvedMode =
+    resolvedScope === 'currentStreak'
+      ? 'global'
+      : isOneOf(modeParam, VALID_MODES)
+        ? modeParam
+        : isOneOf(initialDefaults.mode, VALID_MODES)
+          ? initialDefaults.mode
+          : 'global';
+
+  const resolvedDisplayMode = isOneOf(metricParam, VALID_DISPLAY_MODES)
+    ? metricParam
+    : isOneOf(initialDefaults.displayMode, VALID_DISPLAY_MODES)
+      ? initialDefaults.displayMode
+      : 'xp';
+
+  const resolvedAudience =
+    user && isOneOf(audienceParam, VALID_AUDIENCES)
+      ? audienceParam
+      : user && isOneOf(initialDefaults.audience, VALID_AUDIENCES)
+        ? initialDefaults.audience
+        : 'all';
+
+  const resolvedTimeFilterCandidate = isOneOf(timeParam, VALID_TIME_FILTERS)
+    ? timeParam
+    : isOneOf(initialDefaults.timeFilter, VALID_TIME_FILTERS)
+      ? initialDefaults.timeFilter
+      : 'month';
+  const resolvedStartCandidate = startParam || initialDefaults.startDate || '';
+  const resolvedEndCandidate = endParam || initialDefaults.endDate || '';
+  const resolvedTimeFilter =
+    resolvedScope === 'currentStreak'
+      ? 'all-time'
+      : resolvedTimeFilterCandidate === 'custom' &&
+          (!resolvedStartCandidate || !resolvedEndCandidate)
+        ? 'month'
+        : resolvedTimeFilterCandidate;
+  const resolvedStartDate =
+    resolvedTimeFilter === 'custom' ? resolvedStartCandidate : '';
+  const resolvedEndDate =
+    resolvedTimeFilter === 'custom' ? resolvedEndCandidate : '';
+
+  const resolvedMediumType = isOneOf(mediumTypeParam, VALID_MEDIUM_TYPES)
+    ? mediumTypeParam
+    : isOneOf(initialDefaults.mediumType, VALID_MEDIUM_TYPES)
+      ? initialDefaults.mediumType
+      : 'anime';
+
+  const [xpFilter, setXpFilter] = useState<filterTypes>(resolvedScope);
+  const [timeFilter, setTimeFilter] =
+    useState<RankingTimeFilter>(resolvedTimeFilter);
+  const [displayMode, setDisplayMode] =
+    useState<RankingDisplayMode>(resolvedDisplayMode);
+  const [mode, setMode] = useState<RankingMode>(resolvedMode);
+  const [audience, setAudience] =
+    useState<RankingAudience>(resolvedAudience);
+  const rankingAudience: RankingAudience = user ? audience : 'all';
+  const [mediumType, setMediumType] =
+    useState<RankingMediumType>(resolvedMediumType);
+  const mediumMetricOptions: Record<
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book'
+    | 'audio',
+    Array<{
+      label: string;
+      value: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+    }>
+  > = useMemo(() => {
+    return {
+      anime: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.episodes'), value: 'episodes' },
+      ],
+      audio: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+      ],
+      'light-novel': [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
+      ],
+      manga: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.pages'), value: 'pages' },
+        { label: t('metrics.characters'), value: 'chars' },
+      ],
+      video: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+      ],
+      vn: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
+      ],
+      game: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
+      ],
+      movie: [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+      ],
+      'tv show': [
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+      ],
+      book: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Pages', value: 'pages' },
+        { label: 'Characters', value: 'chars' },
+      ],
+    };
+  }, [t]);
+  const [mediumMetric, setMediumMetric] = useState<RankingMediumMetric>(() => {
+    const allowed = mediumMetricOptions[resolvedMediumType].map(
+      (item) => item.value
+    );
+
+    if (isOneOf(mediumMetricParam, allowed)) {
+      return mediumMetricParam;
+    }
+
+    if (isOneOf(initialDefaults.mediumMetric, allowed)) {
+      return initialDefaults.mediumMetric;
+    }
+
+    return mediumMetricOptions[resolvedMediumType][0].value;
+  });
+  const { timezone } = useTimezone(); // Get user's timezone
+  const [startDate, setStartDate] = useState<string>(resolvedStartDate); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>(resolvedEndDate); // YYYY-MM-DD
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
+    () =>
+      resolvedStartDate ? new Date(`${resolvedStartDate}T00:00:00`) : undefined
+  );
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(() =>
+    resolvedEndDate ? new Date(`${resolvedEndDate}T00:00:00`) : undefined
+  );
+  const startBtnRef = useRef<HTMLDivElement | null>(null);
+  const endBtnRef = useRef<HTMLDivElement | null>(null);
+
+  const formatDateOnly = (d?: Date) =>
+    d
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      : '';
+
+  const currentDefaults: RankingDefaults = {
+    mode,
+    audience: rankingAudience,
+    timeFilter,
+    xpFilter,
+    displayMode,
+    mediumType,
+    mediumMetric,
+    startDate: timeFilter === 'custom' ? startDate : undefined,
+    endDate: timeFilter === 'custom' ? endDate : undefined,
+  };
+
+  const savedStartDate =
+    savedDefaults.timeFilter === 'custom'
+      ? (savedDefaults.startDate ?? '')
+      : '';
+  const savedEndDate =
+    savedDefaults.timeFilter === 'custom' ? (savedDefaults.endDate ?? '') : '';
+  const currentStartDate = timeFilter === 'custom' ? startDate : '';
+  const currentEndDate = timeFilter === 'custom' ? endDate : '';
+  const hasSavedDefaults = Object.keys(savedDefaults).length > 0;
+  const isDefaultMatch =
+    hasSavedDefaults &&
+    savedDefaults.mode === currentDefaults.mode &&
+    (savedDefaults.audience ?? 'all') === currentDefaults.audience &&
+    savedDefaults.timeFilter === currentDefaults.timeFilter &&
+    savedDefaults.xpFilter === currentDefaults.xpFilter &&
+    savedDefaults.displayMode === currentDefaults.displayMode &&
+    savedDefaults.mediumType === currentDefaults.mediumType &&
+    savedDefaults.mediumMetric === currentDefaults.mediumMetric &&
+    savedStartDate === currentStartDate &&
+    savedEndDate === currentEndDate;
+
+  const handleSaveDefaults = () => {
+    if (timeFilter === 'custom' && (!startDate || !endDate)) {
+      toast.error(t('defaults.needDates'));
+      return;
+    }
+
+    saveRankingDefaults(user?._id, currentDefaults);
+    setSavedDefaults(currentDefaults);
+    toast.success(t('defaults.saved'));
+  };
+
+  const handleRemoveDefaults = () => {
+    removeRankingDefaults(user?._id);
+    setSavedDefaults({});
+    toast.success(t('defaults.removed'));
+  };
+
+  useEffect(() => {
+    setSavedDefaults(loadRankingDefaults(user?._id));
+  }, [user?._id]);
+
+  // Get the actual filter to send to backend based on display mode
+  const getBackendFilter = () => {
+    if (xpFilter === 'currentStreak') {
+      return 'currentStreak';
+    }
+
+    if (displayMode === 'hours') {
+      return xpFilter === 'userXp'
+        ? 'userHours'
+        : xpFilter === 'readingXp'
+          ? 'readingHours'
+          : 'listeningHours';
+    } else if (displayMode === 'chars') {
+      return 'userChars';
+    }
+    return xpFilter;
+  };
+
+  const {
+    data: rankedUsers,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: [
+      'ranking',
+      xpFilter,
+      timeFilter,
+      displayMode,
+      timezone,
+      startDate,
+      endDate,
+      rankingAudience,
+    ],
+    queryFn: ({ pageParam }) =>
+      getRankingFn({
+        limit,
+        page: pageParam as number,
+        filter: getBackendFilter(),
+        timeFilter,
+        timezone, // Pass user's timezone to backend
+        start: startDate || undefined,
+        end: endDate || undefined,
+        audience: rankingAudience,
+      }),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (lastPage.length < limit) return undefined;
+      return lastPageParam + 1;
+    },
+    initialPageParam: 1,
+    staleTime: Infinity,
+    enabled: mode === 'global',
+  });
+
+  // Medium-based leaderboard
+  const {
+    data: mediumUsers,
+    fetchNextPage: fetchNextPageMedium,
+    hasNextPage: hasNextPageMedium,
+    isFetchingNextPage: isFetchingNextPageMedium,
+    isLoading: isLoadingMedium,
+  } = useInfiniteQuery({
+    queryKey: [
+      'ranking-medium',
+      mediumType,
+      mediumMetric,
+      timeFilter,
+      timezone,
+      startDate,
+      endDate,
+      rankingAudience,
+    ],
+    queryFn: ({ pageParam }) =>
+      getMediumRankingFn({
+        limit,
+        page: pageParam as number,
+        type: mediumType,
+        metric: mediumMetric,
+        timeFilter,
+        timezone,
+        start: startDate || undefined,
+        end: endDate || undefined,
+        audience: rankingAudience,
+      }),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (lastPage.length < limit) return undefined;
+      return lastPageParam + 1;
+    },
+    initialPageParam: 1,
+    staleTime: Infinity,
+    enabled: mode === 'medium',
+  });
+
+  // Combined filter options: scope (Total/Reading/Listening) and metric (XP/Hours/Chars)
+  const scopeOptions = [
+    {
+      label: t('scope.total'),
+      value: 'userXp',
+      icon: <Zap className="w-4 h-4" />,
+    },
+    {
+      label: t('scope.reading'),
+      value: 'readingXp',
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      label: t('scope.listening'),
+      value: 'listeningXp',
+      icon: <Headphones className="w-4 h-4" />,
+    },
+    {
+      label: t('scope.streaks'),
+      value: 'currentStreak',
+      icon: <Flame className="w-4 h-4" />,
+    },
+  ] as const;
+  const metricOptions = [
+    { label: t('metrics.xp'), value: 'xp' as const },
+    { label: t('metrics.hours'), value: 'hours' as const },
+    { label: t('metrics.chars'), value: 'chars' as const },
+  ];
+  const allowedMetricOptions = () =>
+    xpFilter === 'currentStreak'
+      ? []
+      : xpFilter === 'listeningXp'
+      ? metricOptions.filter((m) => m.value !== 'chars')
+      : metricOptions;
+
+  // Ensure invalid metric is corrected when switching to Listening scope
+  useEffect(() => {
+    if (xpFilter === 'currentStreak') {
+      setTimeFilter('all-time');
+      setStartDate('');
+      setEndDate('');
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+      if (displayMode !== 'xp') {
+        setDisplayMode('xp');
+      }
+      return;
+    }
+
+    if (xpFilter === 'listeningXp' && displayMode === 'chars') {
+      setDisplayMode('xp');
+    }
+  }, [xpFilter, displayMode]);
+
+  useEffect(() => {
+    if (!user && audience !== 'all') {
+      setAudience('all');
+    }
+  }, [user, audience]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (mode !== 'global') {
+      params.set('mode', mode);
+    }
+
+    if (rankingAudience !== 'all') {
+      params.set('audience', rankingAudience);
+    }
+
+    if (timeFilter !== 'month') {
+      params.set('time', timeFilter);
+    }
+
+    if (startDate) {
+      params.set('start', startDate);
+    }
+
+    if (endDate) {
+      params.set('end', endDate);
+    }
+
+    if (mode === 'global') {
+      if (xpFilter !== 'userXp') {
+        params.set('scope', xpFilter);
+      }
+      if (displayMode !== 'xp') {
+        params.set('metric', displayMode);
+      }
+    } else {
+      if (mediumType !== 'anime') {
+        params.set('mtype', mediumType);
+      }
+
+      if (mediumMetric !== mediumMetricOptions[mediumType][0].value) {
+        params.set('mmetric', mediumMetric);
+      }
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [
+    mode,
+    rankingAudience,
+    timeFilter,
+    startDate,
+    endDate,
+    xpFilter,
+    displayMode,
+    mediumType,
+    mediumMetric,
+    setSearchParams,
+    mediumMetricOptions,
+  ]);
+
+  // Time filter options
+  const timeFilterOptions = [
+    {
+      label: t('time.allTime'),
+      value: 'all-time',
+      icon: <Trophy className="w-4 h-4" />,
+    },
+    {
+      label: t('time.today'),
+      value: 'today',
+      icon: <Calendar1 className="w-4 h-4" />,
+    },
+    {
+      label: t('time.week'),
+      value: 'week',
+      icon: <Calendar1 className="w-4 h-4" />,
+    },
+    {
+      label: t('time.month'),
+      value: 'month',
+      icon: <BarChart className="w-4 h-4" />,
+    },
+    {
+      label: t('time.year'),
+      value: 'year',
+      icon: <Calendar className="w-4 h-4" />,
+    },
+  ] as const;
+
+  // Get display value based on mode
+  const getDisplayValue = (user: {
+    stats?: {
+      currentStreak?: number;
+      userXp?: number;
+      readingXp?: number;
+      listeningXp?: number;
+      userHours?: number;
+      readingHours?: number;
+      listeningHours?: number;
+    };
+  }) => {
+    if (xpFilter === 'currentStreak') {
+      return user.stats?.currentStreak || 0;
+    }
+
+    if (displayMode === 'hours') {
+      return xpFilter === 'userXp'
+        ? user.stats?.userHours || 0
+        : xpFilter === 'readingXp'
+          ? user.stats?.readingHours || 0
+          : user.stats?.listeningHours || 0;
+    } else {
+      return xpFilter === 'userXp'
+        ? user.stats?.userXp || 0
+        : xpFilter === 'readingXp'
+          ? user.stats?.readingXp || 0
+          : user.stats?.listeningXp || 0;
+    }
+  };
+
+  // Get formatted display value for the podium (top 3)
+  const getTopDisplayValue = (user: {
+    stats?: {
+      currentStreak?: number;
+      userChars?: number;
+      userXp?: number;
+      readingXp?: number;
+      listeningXp?: number;
+      userHours?: number;
+      readingHours?: number;
+      listeningHours?: number;
+    };
+  }) => {
+    if (xpFilter === 'currentStreak') {
+      return `${numberWithCommas(getDisplayValue(user) as number)} ${t('units.days')}`;
+    }
+
+    if (displayMode === 'hours') {
+      return `${numberWithCommas(getDisplayValue(user) as number)} hrs`;
+    }
+    if (displayMode === 'chars') {
+      return numberWithCommas(user.stats?.userChars || 0);
+    }
+    return numberWithCommas(getDisplayValue(user) as number);
+  };
+
+  // Medium-mode podium value formatter
+  const getTopDisplayValueMedium = (user: {
+    xp?: number;
+    hours?: number;
+    episodes?: number;
+    pages?: number;
+    chars?: number;
+  }) => {
+    if (mediumMetric === 'time') {
+      return `${numberWithCommas(user.hours || 0)} hrs`;
+    }
+    const val =
+      mediumMetric === 'episodes'
+        ? user.episodes || 0
+        : mediumMetric === 'pages'
+          ? user.pages || 0
+          : mediumMetric === 'chars'
+            ? user.chars || 0
+            : user.xp || 0;
+    return numberWithCommas(val);
+  };
+
+  const topGlobalUsers = (
+    (rankedUsers?.pages?.[0] ?? []) as RankedUser[]
+  ).slice(0, 3);
+  const [firstGlobalUser, secondGlobalUser, thirdGlobalUser] = topGlobalUsers;
+  const firstGlobalBadge = getPatreonBadgeProps(firstGlobalUser?.patreon);
+  const secondGlobalBadge = getPatreonBadgeProps(secondGlobalUser?.patreon);
+  const thirdGlobalBadge = getPatreonBadgeProps(thirdGlobalUser?.patreon);
+
+  const topMediumUsers = (
+    (mediumUsers?.pages?.[0] ?? []) as RankedUser[]
+  ).slice(0, 3);
+  const [firstMediumUser, secondMediumUser, thirdMediumUser] = topMediumUsers;
+  const firstMediumBadge = getPatreonBadgeProps(firstMediumUser?.patreon);
+  const secondMediumBadge = getPatreonBadgeProps(secondMediumUser?.patreon);
+  const thirdMediumBadge = getPatreonBadgeProps(thirdMediumUser?.patreon);
+  const isRankingEmpty =
+    mode === 'global'
+      ? (rankedUsers?.pages[0]?.length ?? 0) === 0
+      : (mediumUsers?.pages[0]?.length ?? 0) === 0;
+
+  // (units displayed inline per mode)
+
+  // Get the correct label for the selected filter
+  const getFilterLabel = () => {
+    const option = scopeOptions.find((option) => option.value === xpFilter);
+    const metric =
+      xpFilter === 'currentStreak'
+        ? t('metrics.streaks')
+        : metricOptions.find((m) => m.value === displayMode)?.label;
+    return t('filterLabel', {
+      scope: option?.label || t('scope.total'),
+      metric,
+    });
+  };
+
+  const getFilterIcon = () => {
+    const option = scopeOptions.find((option) => option.value === xpFilter);
+    return option?.icon || <Zap className="w-4 h-4" />;
+  };
+
+  // Get the correct label for the selected time filter
+  const getTimeFilterLabel = () => {
+    if (timeFilter === 'custom') return t('time.custom');
+    const option = timeFilterOptions.find(
+      (option) => option.value === timeFilter
+    );
+    return option?.label || t('time.allTime');
+  };
+
+  const getTimeFilterIcon = () => {
+    const option = timeFilterOptions.find(
+      (option) => option.value === timeFilter
+    );
+    return option?.icon || <Trophy className="w-4 h-4" />;
+  };
+
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'text-warning';
+      case 2:
+        return 'text-base-content';
+      case 3:
+        return 'text-accent';
+      default:
+        return 'text-base-content/70';
+    }
+  };
+
+  const getMediumTypeLabel = (type: string) => {
+    const labelKey = getLogTypeLabelKey(type);
+    return labelKey ? tCommon(labelKey) : type;
+  };
+
+  const getAudienceButtonClass = (value: RankingAudience) =>
+    audience === value
+      ? 'join-item btn btn-primary btn-sm flex-1 sm:flex-none'
+      : 'join-item btn btn-outline btn-sm flex-1 sm:flex-none';
+
+  return (
+    <div className="min-h-screen pt-20 bg-base-200">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Trophy className="w-10 h-10 text-warning" />
+            <h1 className="text-4xl font-bold text-base-content">
+              {t('title')}
+            </h1>
+          </div>
+          <p className="text-base-content/70">{t('subtitle')}</p>
+        </div>
+
+        {user && (
+          <div className="flex justify-center mb-4">
+            <div
+              className="join w-full sm:w-auto"
+              role="group"
+              aria-label={t('audience.label')}
+            >
+              <button
+                type="button"
+                className={getAudienceButtonClass('all')}
+                onClick={() => setAudience('all')}
+              >
+                <Globe2 className="w-4 h-4" />
+                {t('audience.all')}
+              </button>
+              <button
+                type="button"
+                className={getAudienceButtonClass('following')}
+                onClick={() => setAudience('following')}
+              >
+                <UserRoundCheck className="w-4 h-4" />
+                {t('audience.following')}
+              </button>
+              <button
+                type="button"
+                className={getAudienceButtonClass('mutual')}
+                onClick={() => setAudience('mutual')}
+              >
+                <Handshake className="w-4 h-4" />
+                {t('audience.mutuals')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+          {xpFilter !== 'currentStreak' && (
+            <div className="join w-full sm:w-auto">
+              <button
+                className={`join-item btn flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setMode('global')}
+              >
+                {t('modes.global')}
+              </button>
+              <button
+                className={`join-item btn flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setMode('medium')}
+              >
+                {t('modes.medium')}
+              </button>
+            </div>
+          )}
+
+          {/* Combined scope+metric dropdown (Global mode only) */}
+
+          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-4">
+            {/* Start-aligned on mobile: this trigger sits in the left grid
+                column, so an end-aligned 18rem panel would hang off the left
+                edge of the screen. From `sm` up the toolbar is a flex row at
+                the right, where end alignment is the correct one. */}
+            <div
+              className="dropdown dropdown-start sm:dropdown-end w-full sm:w-auto"
+              hidden={mode !== 'global' || xpFilter === 'currentStreak'}
+            >
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-outline gap-2 w-full sm:w-auto"
+              >
+                {getTimeFilterIcon()}
+                {getTimeFilterLabel()}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 surface-raised w-72 max-w-[calc(100vw-2rem)]"
+              >
+                {timeFilterOptions.map((option) => (
+                  <li key={option.value}>
+                    <button
+                      className={`gap-3 ${timeFilter === option.value ? 'active' : ''}`}
+                      onClick={() => {
+                        setTimeFilter(option.value);
+                        setStartDate('');
+                        setEndDate('');
+                        setCustomStartDate(undefined);
+                        setCustomEndDate(undefined);
+                      }}
+                    >
+                      {option.icon}
+                      {option.label}
+                    </button>
+                  </li>
+                ))}
+                <li className="menu-title px-2 mt-2">
+                  {t('time.customRange')}
+                </li>
+                <li className="px-2 py-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline btn-sm w-full"
+                          ref={startBtnRef}
+                        >
+                          {customStartDate
+                            ? formatDateOnly(customStartDate)
+                            : t('time.startDate')}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div
+                          tabIndex={0}
+                          className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                        >
+                          <DayPicker
+                            className="react-day-picker mx-auto"
+                            mode="single"
+                            selected={customStartDate}
+                            onSelect={(date) => {
+                              setCustomStartDate(date ?? undefined);
+                              if (
+                                customEndDate &&
+                                date &&
+                                customEndDate < date
+                              ) {
+                                setCustomEndDate(undefined);
+                              }
+                              // Move focus back to the trigger to close only this picker and keep the main dropdown open
+                              startBtnRef.current?.focus();
+                            }}
+                            disabled={() => false}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-center text-base-content/50">
+                        {t('time.to')}
+                      </span>
+
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          // Not a <button>, so `btn-disabled` is the right class
+                          // here — but on its own it only blocks pointer events,
+                          // so the tab stop and the ARIA state go with it.
+                          tabIndex={customStartDate ? 0 : -1}
+                          role="button"
+                          aria-disabled={!customStartDate}
+                          // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
+                          className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
+                          ref={endBtnRef}
+                        >
+                          {customEndDate
+                            ? formatDateOnly(customEndDate)
+                            : t('time.endDate')}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        {customStartDate && (
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                          >
+                            <DayPicker
+                              className="react-day-picker mx-auto"
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => {
+                                setCustomEndDate(date ?? undefined);
+                                // Move focus back to the trigger to close only this picker and keep the main dropdown open
+                                endBtnRef.current?.focus();
+                              }}
+                              disabled={(date) => {
+                                const startD = customStartDate;
+                                return startD && date < startD;
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          setStartDate(formatDateOnly(customStartDate));
+                          setEndDate(formatDateOnly(customEndDate));
+                          setTimeFilter('custom');
+                        }}
+                        disabled={!customStartDate || !customEndDate}
+                      >
+                        {t('time.apply')}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                          setCustomStartDate(undefined);
+                          setCustomEndDate(undefined);
+                          setTimeFilter('all-time');
+                        }}
+                      >
+                        {t('time.clear')}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div
+              className="dropdown dropdown-end w-full sm:w-auto"
+              hidden={mode !== 'global'}
+            >
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-primary gap-2 w-full sm:w-auto"
+              >
+                {getFilterIcon()}
+                {getFilterLabel()}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 surface-raised w-52"
+              >
+                <li className="menu-title px-2">{t('scopeLabel')}</li>
+                {scopeOptions.map((option) => (
+                  <li key={option.value}>
+                    <button
+                      className={`gap-3 ${xpFilter === option.value ? 'active' : ''}`}
+                      onClick={() => {
+                        setXpFilter(option.value as filterTypes);
+                        if (option.value === 'currentStreak') {
+                          setTimeFilter('all-time');
+                          setStartDate('');
+                          setEndDate('');
+                          setCustomStartDate(undefined);
+                          setCustomEndDate(undefined);
+                          setDisplayMode('xp');
+                        } else if (
+                          option.value === 'listeningXp' &&
+                          displayMode === 'chars'
+                        ) {
+                          setDisplayMode('xp');
+                        }
+                      }}
+                    >
+                      {option.icon}
+                      {option.label}
+                    </button>
+                  </li>
+                ))}
+                {xpFilter !== 'currentStreak' && (
+                  <>
+                    <li className="menu-title px-2 mt-2">
+                      {t('metricLabel')}
+                    </li>
+                    {allowedMetricOptions().map((m) => (
+                      <li key={m.value}>
+                        <button
+                          className={`gap-3 ${displayMode === m.value ? 'active' : ''}`}
+                          onClick={() => setDisplayMode(m.value)}
+                        >
+                          {m.label}
+                        </button>
+                      </li>
+                    ))}
+                  </>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={isDefaultMatch ? handleRemoveDefaults : handleSaveDefaults}
+            className={`btn w-full sm:hidden justify-start gap-2 ${isDefaultMatch ? 'btn-error' : 'btn-outline'}`}
+          >
+            {isDefaultMatch ? (
+              <BookmarkX className="w-4 h-4" />
+            ) : (
+              <Bookmark className="w-4 h-4" />
+            )}
+            {isDefaultMatch ? t('defaults.remove') : t('defaults.save')}
+          </button>
+
+          <div className="dropdown dropdown-end hidden sm:block">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-outline btn-circle"
+              aria-label={t('defaults.menu')}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 surface-raised w-56"
+            >
+              <li>
+                <button
+                  type="button"
+                  onClick={
+                    isDefaultMatch ? handleRemoveDefaults : handleSaveDefaults
+                  }
+                  className={`gap-2 ${isDefaultMatch ? 'text-error hover:text-error hover:bg-error/10' : ''}`}
+                >
+                  {isDefaultMatch ? (
+                    <BookmarkX className="w-4 h-4" />
+                  ) : (
+                    <Bookmark className="w-4 h-4" />
+                  )}
+                  {isDefaultMatch ? t('defaults.remove') : t('defaults.save')}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Medium filters */}
+          <div
+            className="dropdown dropdown-end w-full sm:w-auto"
+            hidden={mode !== 'medium'}
+          >
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-primary gap-2 w-full sm:w-auto"
+            >
+              {getMediumTypeLabel(mediumType)}
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 surface-raised w-52"
+            >
+              {(
+                [
+                  'anime',
+                  'manga',
+                  'light-novel',
+                  'vn',
+                  'game',
+                  'video',
+                  'movie',
+                  'tv show',
+                  'book',
+                  'audio',
+                ] as const
+              ).map((t) => (
+                <li key={t}>
+                  <button
+                    onClick={() => {
+                      setMediumType(t);
+                      setMediumMetric(mediumMetricOptions[t][0].value);
+                    }}
+                  >
+                    {getMediumTypeLabel(t)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div
+            className="dropdown dropdown-end w-full sm:w-auto"
+            hidden={mode !== 'medium'}
+          >
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-outline gap-2 w-full sm:w-auto"
+            >
+              {
+                mediumMetricOptions[mediumType].find(
+                  (o) => o.value === mediumMetric
+                )?.label
+              }
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 surface-raised w-52"
+            >
+              {mediumMetricOptions[mediumType].map((opt) => (
+                <li key={opt.value}>
+                  <button onClick={() => setMediumMetric(opt.value)}>
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {(mode === 'global' ? isLoading : isLoadingMedium) ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="text-center">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <p className="mt-4 text-base-content/70">{t('loading')}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="card surface overflow-hidden">
+            <div className="card-body p-0">
+              {mode === 'global' &&
+                rankedUsers?.pages[0] &&
+                rankedUsers.pages[0].length >= 3 && (
+                  <div className="bg-primary/15 p-3 sm:p-8">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
+                      <div className="text-center order-1">
+                        <div className="relative mb-1 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={secondGlobalUser?.username}
+                              avatar={secondGlobalUser?.avatar}
+                              frame={
+                                secondGlobalUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  secondGlobalUser?.username ??
+                                  t('unknownUser'),
+                              })}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-base-content text-base-100 font-bold">
+                            2nd
+                          </div>
+                          <Link
+                            to={`/user/${secondGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {secondGlobalUser?.username}
+                            </span>
+                            {secondGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondGlobalBadge.colorClass}`}
+                                style={secondGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(secondGlobalBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{secondGlobalUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
+                          {secondGlobalUser
+                            ? getTopDisplayValue(secondGlobalUser)
+                            : null}
+                        </div>
+                      </div>
+
+                      <div className="text-center order-2">
+                        <div className="relative mb-2 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={firstGlobalUser?.username}
+                              avatar={firstGlobalUser?.avatar}
+                              frame={
+                                firstGlobalUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  firstGlobalUser?.username ?? t('unknownUser'),
+                              })}
+                              containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-lg sm:text-2xl font-bold"
+                            />
+                          </div>
+                          <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                              className="w-7 h-7 sm:w-9 sm:h-9 text-warning"
+                            >
+                              <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-warning text-warning-content font-bold">
+                            1st
+                          </div>
+                          <Link
+                            to={`/user/${firstGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-base flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {firstGlobalUser?.username}
+                            </span>
+                            {firstGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstGlobalBadge.colorClass}`}
+                                style={firstGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(firstGlobalBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{firstGlobalUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-base sm:text-xl font-bold text-warning mt-1">
+                          {firstGlobalUser
+                            ? getTopDisplayValue(firstGlobalUser)
+                            : null}
+                        </div>
+                      </div>
+
+                      <div className="text-center order-3">
+                        <div className="relative mb-1 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={thirdGlobalUser?.username}
+                              avatar={thirdGlobalUser?.avatar}
+                              frame={
+                                thirdGlobalUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  thirdGlobalUser?.username ?? t('unknownUser'),
+                              })}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-accent text-accent-content font-bold">
+                            3rd
+                          </div>
+                          <Link
+                            to={`/user/${thirdGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {thirdGlobalUser?.username}
+                            </span>
+                            {thirdGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdGlobalBadge.colorClass}`}
+                                style={thirdGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(thirdGlobalBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{thirdGlobalUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
+                          {thirdGlobalUser
+                            ? getTopDisplayValue(thirdGlobalUser)
+                            : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {mode === 'medium' &&
+                mediumUsers?.pages[0] &&
+                mediumUsers.pages[0].length >= 3 && (
+                  <div className="bg-primary/15 p-3 sm:p-8">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
+                      <div className="text-center order-1">
+                        <div className="relative mb-1 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={secondMediumUser?.username}
+                              avatar={secondMediumUser?.avatar}
+                              frame={
+                                secondMediumUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  secondMediumUser?.username ??
+                                  t('unknownUser'),
+                              })}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-base-content text-base-100 font-bold">
+                            2nd
+                          </div>
+                          <Link
+                            to={`/user/${secondMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {secondMediumUser?.username}
+                            </span>
+                            {secondMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondMediumBadge.colorClass}`}
+                                style={secondMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(secondMediumBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{secondMediumUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
+                          {secondMediumUser
+                            ? getTopDisplayValueMedium(secondMediumUser)
+                            : null}
+                        </div>
+                      </div>
+
+                      <div className="text-center order-2">
+                        <div className="relative mb-2 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={firstMediumUser?.username}
+                              avatar={firstMediumUser?.avatar}
+                              frame={
+                                firstMediumUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  firstMediumUser?.username ?? t('unknownUser'),
+                              })}
+                              containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-lg sm:text-2xl font-bold"
+                            />
+                          </div>
+                          <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                              className="w-7 h-7 sm:w-9 sm:h-9 text-warning"
+                            >
+                              <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-warning text-warning-content font-bold">
+                            1st
+                          </div>
+                          <Link
+                            to={`/user/${firstMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-base flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {firstMediumUser?.username}
+                            </span>
+                            {firstMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstMediumBadge.colorClass}`}
+                                style={firstMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(firstMediumBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{firstMediumUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-base sm:text-xl font-bold text-warning mt-1">
+                          {firstMediumUser
+                            ? getTopDisplayValueMedium(firstMediumUser)
+                            : null}
+                        </div>
+                      </div>
+
+                      <div className="text-center order-3">
+                        <div className="relative mb-1 sm:mb-4">
+                          <div className="avatar">
+                            <UserAvatar
+                              username={thirdMediumUser?.username}
+                              avatar={thirdMediumUser?.avatar}
+                              frame={
+                                thirdMediumUser?.customization?.avatarFrame
+                              }
+                              alt={t('avatarAlt', {
+                                username:
+                                  thirdMediumUser?.username ?? t('unknownUser'),
+                              })}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-accent text-accent-content font-bold">
+                            3rd
+                          </div>
+                          <Link
+                            to={`/user/${thirdMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {thirdMediumUser?.username}
+                            </span>
+                            {thirdMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdMediumBadge.colorClass}`}
+                                style={thirdMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {badgeText(thirdMediumBadge)}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
+                          Lv.{thirdMediumUser?.stats?.userLevel ?? 1}
+                        </div>
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
+                          {thirdMediumUser
+                            ? getTopDisplayValueMedium(thirdMediumUser)
+                            : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              <div className="overflow-x-auto">
+                <table className="table w-full">
+                  <thead>
+                    <tr className="border-b border-base-300">
+                      <th className="text-center w-10 sm:w-16">
+                        {t('table.rank')}
+                      </th>
+                      <th>{t('table.user')}</th>
+                      <th className="text-center hidden sm:table-cell">
+                        {t('table.level')}
+                      </th>
+                      <th className="text-end">
+                        {mode === 'global'
+                          ? xpFilter === 'currentStreak'
+                            ? t('metrics.streaks')
+                            : displayMode === 'chars'
+                            ? t('metrics.characters')
+                            : t('columnHeader', {
+                                filter: getFilterLabel(),
+                                unit:
+                                displayMode === 'hours'
+                                  ? t('units.hours')
+                                  : t('units.xp'),
+                              })
+                          : mediumMetricOptions[mediumType].find(
+                              (o) => o.value === mediumMetric
+                            )?.label}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isRankingEmpty && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="py-12 text-center text-base-content/70"
+                        >
+                          {audience === 'all'
+                            ? t('empty')
+                            : t('audience.empty')}
+                        </td>
+                      </tr>
+                    )}
+                    {(mode === 'global'
+                      ? rankedUsers?.pages
+                      : mediumUsers?.pages
+                    )?.map((group, groupIndex) =>
+                      (group as unknown as RankedUser[]).map((user, index) => {
+                        const rank = groupIndex * limit + index + 1;
+                        const displayValue =
+                          mode === 'global'
+                            ? displayMode === 'chars'
+                              ? user.stats?.userChars || 0
+                              : getDisplayValue(user)
+                            : mediumMetric === 'time'
+                              ? user.hours || 0
+                              : mediumMetric === 'episodes'
+                                ? user.episodes || 0
+                                : mediumMetric === 'pages'
+                                  ? user.pages || 0
+                                  : mediumMetric === 'chars'
+                                    ? user.chars || 0
+                                    : user.xp || 0;
+                        const patreonBadge = getPatreonBadgeProps(user.patreon);
+                        const nameEffect = getNameEffectRender(
+                          user.customization
+                        );
+
+                        // Skip top 3 in the table if they're already shown in podium
+                        if (
+                          (mode === 'global' &&
+                            rank <= 3 &&
+                            rankedUsers!.pages[0].length >= 3) ||
+                          (mode === 'medium' &&
+                            rank <= 3 &&
+                            mediumUsers!.pages[0].length >= 3)
+                        )
+                          return null;
+
+                        return (
+                          <tr key={`${user.username}-${rank}`}>
+                            <td className="text-center">
+                              <div
+                                className={`flex items-center justify-center gap-1 sm:gap-2 ${getRankColor(rank)}`}
+                              >
+                                <span className="font-bold text-sm sm:text-lg">
+                                  {rank}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="avatar">
+                                  <UserAvatar
+                                    username={user.username}
+                                    avatar={user.avatar}
+                                    frame={user?.customization?.avatarFrame}
+                                    alt={t('avatarAlt', {
+                                      username: user.username,
+                                    })}
+                                    containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
+                                    imageClassName="w-full h-full rounded-full object-cover"
+                                    fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                                    textClassName="text-xs sm:text-lg font-bold"
+                                  />
+                                </div>
+                                <div className="min-w-0">
+                                  <Link
+                                    to={`/user/${user.username}`}
+                                    className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-nowrap max-w-full"
+                                    title={tCommon('viewProfile', {
+                                      username: user.username,
+                                    })}
+                                  >
+                                    {/* Username: full on md+, truncated on small screens */}
+                                    <span
+                                      className={`hidden md:inline ${nameEffect.className}`}
+                                      style={nameEffect.style}
+                                    >
+                                      {user.username}
+                                    </span>
+                                    <span
+                                      className={`inline md:hidden truncate max-w-[6rem] sm:max-w-[8rem] ${nameEffect.className}`}
+                                      style={nameEffect.style}
+                                    >
+                                      {user.username}
+                                    </span>
+                                    {/* Patreon Badge */}
+                                    {patreonBadge && (
+                                      <div
+                                        className={`badge badge-sm gap-1 hidden sm:inline-flex ${patreonBadge.colorClass} md:max-w-none md:overflow-visible md:whitespace-normal max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap`}
+                                        style={patreonBadge.style}
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        <span className="font-bold md:max-w-none md:overflow-visible md:whitespace-normal max-w-[5.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                          {badgeText(patreonBadge)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </Link>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="text-center hidden sm:table-cell">
+                              <div className="badge badge-outline">
+                                Lv.{user.stats?.userLevel ?? 1}
+                              </div>
+                            </td>
+                            <td className="text-end">
+                              <div className="font-bold text-sm sm:text-lg">
+                                {numberWithCommas(displayValue as number)}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                {mode === 'global'
+                                  ? xpFilter === 'currentStreak'
+                                    ? t('units.days')
+                                    : displayMode === 'hours'
+                                    ? 'hrs'
+                                    : displayMode === 'chars'
+                                      ? 'chars'
+                                      : 'XP'
+                                  : mediumMetric === 'time'
+                                    ? 'hrs'
+                                    : mediumMetric === 'episodes'
+                                      ? 'ep'
+                                      : mediumMetric}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {(mode === 'global' ? hasNextPage : hasNextPageMedium) && (
+                <div className="p-6 text-center border-t border-base-300">
+                  <button
+                    className="btn btn-primary btn-wide"
+                    onClick={() =>
+                      mode === 'global'
+                        ? fetchNextPage()
+                        : fetchNextPageMedium()
+                    }
+                    disabled={
+                      !(mode === 'global' ? hasNextPage : hasNextPageMedium) ||
+                      (mode === 'global'
+                        ? isFetchingNextPage
+                        : isFetchingNextPageMedium)
+                    }
+                  >
+                    {(
+                      mode === 'global'
+                        ? isFetchingNextPage
+                        : isFetchingNextPageMedium
+                    ) ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        {t('loadingMore')}
+                      </>
+                    ) : (
+                      t('loadMore')
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default RankingScreen;

@@ -1,0 +1,73 @@
+{
+  "title": "Clasificación",
+  "subtitle": "Mira cómo te comparas con el resto",
+  "modes": {
+    "global": "Global",
+    "medium": "Por tipo"
+  },
+  "audience": {
+    "label": "Personas en la clasificación",
+    "all": "Todos",
+    "following": "Siguiendo",
+    "mutuals": "Mutuos",
+    "empty": "Nadie de este grupo tiene actividad en la clasificación todavía."
+  },
+  "scope": {
+    "total": "Total",
+    "reading": "Lectura",
+    "listening": "Escucha",
+    "streaks": "Rachas"
+  },
+  "metrics": {
+    "xp": "XP",
+    "hours": "Horas",
+    "chars": "Caracteres",
+    "time": "Tiempo",
+    "episodes": "Episodios",
+    "characters": "Caracteres",
+    "pages": "Páginas",
+    "streaks": "Racha actual"
+  },
+  "filterLabel": "{{scope}} · {{metric}}",
+  "columnHeader": "{{filter}} ({{unit}})",
+  "units": {
+    "hours": "Horas",
+    "xp": "XP",
+    "days": "días"
+  },
+  "time": {
+    "allTime": "Histórico",
+    "today": "Hoy",
+    "week": "Esta semana",
+    "month": "Este mes",
+    "year": "Este año",
+    "custom": "Personalizado",
+    "customRange": "Rango personalizado",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "to": "a",
+    "apply": "Aplicar",
+    "clear": "Limpiar"
+  },
+  "defaults": {
+    "save": "Guardar como predeterminado",
+    "remove": "Quitar predeterminado",
+    "menu": "Preferencias de clasificación",
+    "needDates": "Elige una fecha de inicio y otra de fin para el rango personalizado.",
+    "saved": "Filtros por defecto de la clasificación guardados.",
+    "removed": "Filtros por defecto de la clasificación eliminados."
+  },
+  "table": {
+    "rank": "Puesto",
+    "user": "Usuario",
+    "level": "Nivel"
+  },
+  "avatarAlt": "Avatar de {{username}}",
+  "unknownUser": "Usuario",
+  "loading": "Cargando la clasificación...",
+  "empty": "No hay actividad para estos filtros.",
+  "loadingMore": "Cargando más...",
+  "loadMore": "Cargar más puestos",
+  "scopeLabel": "Ámbito",
+  "metricLabel": "Métrica"
+}

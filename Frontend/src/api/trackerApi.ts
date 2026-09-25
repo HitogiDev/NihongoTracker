@@ -1,0 +1,1987 @@
+import axiosInstance from './axiosConfig';
+import { revealAchievements } from '../store/achievementReveal';
+import { celebrateLog } from '../store/logCelebration';
+import { fetchAnilistSyncPayload } from './anilistApi';
+import {
+  ILoginResponse,
+  IRegisterInput,
+  ILoginInput,
+  ICreateLog,
+  ILog,
+  IUser,
+  IRankingResponse,
+  IRankingParams,
+  ILogsParams,
+  IMediaDocument,
+  IImmersionList,
+  IAverageColor,
+  IUserStats,
+  IUpdateLogRequest,
+  IDailyGoal,
+  IDailyGoalsResponse,
+  ILongTermGoal,
+  ILongTermGoalsResponse,
+  IJitenResponse,
+  IMediaReview,
+  IConnectionsResponse,
+  ISocialSummary,
+  ITag,
+  SearchResultType,
+  IRankingSummary,
+  IRankingHistory,
+  ITextSession,
+  ITextLine,
+  ITextSessionHistoryEntry,
+  ITextSessionIntelligenceSettings,
+  StatsGroupLayout,
+  ProfileWidgetLayout,
+  ICustomizationOptionsResponse,
+  IUserCustomization,
+  IGanttMediaItem,
+  IAchievement,
+  IAnilistStatus,
+  IAnilistSyncResult,
+  ILogCelebration,
+  IPendingAchievement,
+  IMediaRequest,
+  ICreateMediaRequest,
+  IMediaRequestListResponse,
+  MediaRequestStatus,
+  IFavoriteEntry,
+  MediaListMediaType,
+  IHiddenRecentMediaItem,
+  IImmersionForecast,
+  IImmersionForecastsResponse,
+  IXpCalculatorRequest,
+  IXpCalculatorResponse,
+  ISocialPrivacySettings,
+} from '../types';
+
+const api = axiosInstance;
+
+export async function calculateXpScenarioFn(
+  request: IXpCalculatorRequest
+): Promise<IXpCalculatorResponse> {
+  const { data } = await api.post<IXpCalculatorResponse>(
+    'logs/calculate-xp',
+    request
+  );
+  return data;
+}
+
+export async function registerUserFn(
+  user: IRegisterInput
+): Promise<ILoginResponse> {
+  const userParams = Object.entries(user).reduce((params, [key, value]) => {
+    params.append(key, value);
+    return params;
+  }, new URLSearchParams());
+
+  const { data } = await api.post<ILoginResponse>('auth/register', userParams);
+  return data;
+}
+
+export async function loginUserFn(user: ILoginInput): Promise<ILoginResponse> {
+  const userParams = Object.entries(user).reduce((params, [key, value]) => {
+    params.append(key, value);
+    return params;
+  }, new URLSearchParams());
+
+  const { data } = await api.post<ILoginResponse>('auth/login', userParams);
+  return data;
+}
+
+export async function logoutUserFn() {
+  const { data } = await api.post('auth/logout');
+  return data;
+}
+
+export async function forgotPasswordFn(email: string) {
+  const { data } = await api.post('auth/forgot-password', { email });
+  return data;
+}
+
+export async function resetPasswordFn(
+  token: string,
+  password: string,
+  passwordConfirmation: string
+) {
+  const { data } = await api.post(`auth/reset-password/${token}`, {
+    password,
+    passwordConfirmation,
+  });
+  return data;
+}
+
+export async function resendVerificationEmailFn() {
+  const { data } = await api.post('auth/resend-verification');
+  return data;
+}
+
+export async function getPublicStatsFn(): Promise<{
+  totalUsers: number;
+  totalLogs: number;
+  totalXp: number;
+}> {
+  const { data } = await api.get('auth/stats');
+  return data;
+}
+
+export async function getUserFn(username: string): Promise<IUser> {
+  const { data } = await api.get<IUser>(`users/${username}`);
+  return data;
+}
+
+export async function searchUsersFn(
+  query: string
+): Promise<
+  { _id: string; username: string; avatar?: string; stats?: { xp: number } }[]
+> {
+  const { data } = await api.get('users/search', { params: { q: query } });
+  return data;
+}
+
+export async function updateUserFn(updateValues: FormData) {
+  const { data } = await api.put<IUser>(`/users`, updateValues, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+}
+
+export async function clearUserDataFn(username: string) {
+  const { data } = await api.post(`users/cleardata`, { username });
+  return data;
+}
+
+export async function getRankingFn(params?: IRankingParams) {
+  const { data } = await api.get<IRankingResponse[]>(`users/ranking`, {
+    params,
+  });
+  return data;
+}
+
+export async function getMediumRankingFn(params: {
+  page?: number;
+  limit?: number;
+  type:
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book'
+    | 'audio';
+  metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+  audience?: import('../types').RankingAudience;
+  timeFilter?: string;
+  timezone?: string;
+  start?: string;
+  end?: string;
+}) {
+  const { data } = await api.get<
+    Array<{
+      username: string;
+      avatar?: string;
+      stats?: { userLevel?: number };
+      xp?: number;
+      hours?: number;
+      episodes?: number;
+      chars?: number;
+      pages?: number;
+      patreon?: {
+        isActive: boolean;
+        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        customBadgeText?: string;
+        badgeColor?: string;
+        badgeTextColor?: string;
+      };
+    }>
+  >(`users/ranking/media`, { params });
+  return data;
+}
+
+export async function getLogFn(id: string): Promise<ILog> {
+  const { data } = await api.get<ILog>(`logs/${id}`);
+  return data;
+}
+
+export const updateLogFn = async (id: string, data: IUpdateLogRequest) => {
+  const response = await api.patch(`/logs/${id}`, data);
+  return response.data;
+};
+
+export async function searchMediaFn(params: {
+  type: string;
+  search: string;
+  ids?: number[];
+  page?: number;
+  perPage?: number;
+}): Promise<SearchResultType[]> {
+  const { data } = await api.get<SearchResultType[]>(`media/search`, {
+    params,
+  });
+  return data || [];
+}
+
+export async function searchGoogleBooksFn(
+  search: string
+): Promise<SearchResultType[]> {
+  const { data } = await api.get<SearchResultType[]>(
+    `media/googlebooks/search`,
+    {
+      params: { search },
+    }
+  );
+  return data || [];
+}
+
+export async function multiSearchMediaFn(params: {
+  search: string;
+  perPage?: number;
+}): Promise<SearchResultType[]> {
+  const { data } = await api.get<SearchResultType[]>(`media/multi-search`, {
+    params,
+  });
+  return data || [];
+}
+
+export async function getMediaFn(
+  mediaId: string,
+  mediaType: string,
+  username?: string
+): Promise<IMediaDocument & { jiten?: IJitenResponse }> {
+  if (!mediaId || !mediaType) {
+    throw new Error('Both mediaId and mediaType are required');
+  }
+  const { data } = await api.get<IMediaDocument & { jiten?: IJitenResponse }>(
+    `media/${mediaType}/${mediaId}`,
+    {
+      params: username ? { username } : undefined,
+    }
+  );
+  return data;
+}
+
+export async function getMediaReviewsFn(
+  mediaId: string,
+  mediaType: string
+): Promise<{ reviews: IMediaReview[] }> {
+  const { data } = await api.get<{ reviews: IMediaReview[] }>(
+    `media/${mediaType}/${mediaId}/reviews`
+  );
+  return data;
+}
+
+export async function getMediaReviewByIdFn(
+  reviewId: string
+): Promise<{ review: IMediaReview; media: IMediaDocument | null }> {
+  const { data } = await api.get<{
+    review: IMediaReview;
+    media: IMediaDocument | null;
+  }>(`media/reviews/${reviewId}`);
+  return data;
+}
+
+export async function addMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewData: {
+    content: string;
+    summary: string;
+    rating?: number;
+    hasSpoilers?: boolean;
+  }
+): Promise<{ message: string; review: IMediaReview }> {
+  const { data } = await api.post<{ message: string; review: IMediaReview }>(
+    `media/${mediaType}/${mediaId}/reviews`,
+    reviewData
+  );
+  return data;
+}
+
+export async function editMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string,
+  reviewData: {
+    content: string;
+    summary: string;
+    rating?: number;
+    hasSpoilers?: boolean;
+  }
+): Promise<{ message: string; review: IMediaReview }> {
+  const { data } = await api.put<{ message: string; review: IMediaReview }>(
+    `media/${mediaType}/${mediaId}/reviews/${reviewId}`,
+    reviewData
+  );
+  return data;
+}
+
+export async function toggleMediaReviewLikeFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string
+): Promise<{ message: string; liked: boolean; likesCount: number }> {
+  const { data } = await api.post<{
+    message: string;
+    liked: boolean;
+    likesCount: number;
+  }>(`media/${mediaType}/${mediaId}/reviews/${reviewId}/like`);
+  return data;
+}
+
+export async function deleteMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string
+): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(
+    `media/${mediaType}/${mediaId}/reviews/${reviewId}`
+  );
+  return data;
+}
+
+interface IAssignData {
+  logsId: string[];
+  contentMedia: IMediaDocument;
+}
+
+export async function assignMediaFn(assignData: Array<IAssignData>) {
+  const { data } = await api.put(`logs/assign-media`, assignData);
+  return data;
+}
+
+export async function getUserLogsFn(username: string, params?: ILogsParams) {
+  const { data } = await api.get<ILog[]>(`users/${username}/logs`, { params });
+  return data;
+}
+
+export async function createLogFn(logValues: ICreateLog) {
+  // Ensure date is properly serialized with timezone information
+  const logData = {
+    ...logValues,
+    date: logValues.date
+      ? logValues.date instanceof Date
+        ? logValues.date.toISOString()
+        : logValues.date
+      : new Date().toISOString(),
+  };
+  const { data } = await api.post<
+    ILog & {
+      newAchievements?: IAchievement[];
+      celebration?: ILogCelebration;
+    }
+  >(`logs`, logData);
+  // Celebrate/reveal here rather than per-caller so every log entry point
+  // (log screen, quick log, texthooker, shared log, playlist batches) gets
+  // the full feedback sequence.
+  celebrateLog(data?.celebration);
+  revealAchievements(data?.newAchievements);
+  return data;
+}
+
+export async function deleteLogFn(id: string) {
+  const { data } = await api.delete(`logs/${id}`);
+  return data;
+}
+
+export async function importLogsFn() {
+  const { data } = await api.post(`logs/import`);
+  return data;
+}
+
+export async function getImmersionListFn(
+  username: string,
+  params?: {
+    completed?: 'completed';
+    status?:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'all'
+      | 'in_progress';
+  }
+) {
+  const { data } = await api.get<IImmersionList>(
+    `users/${username}/immersionlist`,
+    { params }
+  );
+  return data;
+}
+
+export async function updateMediaCompletionStatusFn(payload: {
+  mediaId: string;
+  type: IMediaDocument['type'];
+  completed?: boolean;
+  status?: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress';
+  source?: 'manual' | 'auto';
+}) {
+  const { data } = await api.post(`users/media/status`, payload);
+  revealAchievements(data?.newAchievements);
+  return data as {
+    mediaId: string;
+    type: IMediaDocument['type'];
+    status:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'in_progress'
+      | null;
+    isCompleted: boolean;
+    completedAt: string | null;
+    autoCompleteSuppressed: boolean;
+    newAchievements?: IAchievement[];
+  };
+}
+
+export async function removeMediaFromImmersionListFn(payload: {
+  mediaId: string;
+  type: IMediaDocument['type'];
+  /** When false (default) the logs and their XP are kept, entry is just hidden. */
+  deleteLogs?: boolean;
+}) {
+  const { data } = await api.delete(
+    `users/media/${encodeURIComponent(payload.type)}/${encodeURIComponent(
+      payload.mediaId
+    )}`,
+    { params: { deleteLogs: payload.deleteLogs ? 'true' : 'false' } }
+  );
+  return data as {
+    mediaId: string;
+    type: IMediaDocument['type'];
+    deletedLogs: number;
+    hidden: boolean;
+    removedStatus: boolean;
+  };
+}
+
+export async function getAverageColorFn(imageUrl?: string) {
+  if (!imageUrl) return null;
+  const { data } = await api.get<IAverageColor>(`media/utils/avgcolor`, {
+    params: { imageUrl },
+  });
+  return data;
+}
+
+export async function getUntrackedLogsFn() {
+  const { data } = await api.get<ILog[]>(`logs/untrackedlogs`);
+  return data;
+}
+
+export async function dismissLogsFn(logsId: string[], dismissed = true) {
+  const { data } = await api.put<{ modifiedCount: number }>(
+    `logs/dismiss-match`,
+    { logsId, dismissed }
+  );
+  return data;
+}
+
+export async function importLogFileFn(file: FormData) {
+  const { data } = await api.post(`logs/logfileimport`, file, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+}
+
+export async function exportLogsCSVFn() {
+  const { data } = await api.get(`users/export/csv`, {
+    responseType: 'blob',
+  });
+  return data;
+}
+
+interface IDashboardHours {
+  currentMonth: {
+    totalTime: number;
+    readingTime: number;
+    listeningTime: number;
+  };
+  previousMonth: {
+    totalTime: number;
+    readingTime: number;
+    listeningTime: number;
+  };
+}
+
+export async function getDashboardHoursFn(username: string | undefined) {
+  if (!username) {
+    throw new Error('Username is required to fetch dashboard hours');
+  }
+  const { data } = await api.get<IDashboardHours>(
+    `users/${username}/dashboard`
+  );
+  return data;
+}
+
+export async function getRecentLogsFn(username: string | undefined) {
+  if (!username) {
+    throw new Error('Username is required to fetch recent logs');
+  }
+  const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`, {
+    params: { limit: 10 },
+  });
+  return data;
+}
+
+export async function getRankingSummaryFn(username: string, timezone?: string) {
+  const params = timezone ? { timezone } : undefined;
+  const { data } = await api.get<IRankingSummary>(
+    `users/${username}/ranking-summary`,
+    { params }
+  );
+  return data;
+}
+
+export async function getRankingHistoryFn(
+  username: string
+): Promise<IRankingHistory> {
+  const { data } = await api.get<IRankingHistory>(
+    `users/${username}/ranking-history`
+  );
+  return data;
+}
+
+export async function getGlobalFeedFn(params?: {
+  type?: ILog['type'] | 'all';
+  timeRange?: 'day' | 'week' | 'month' | 'year' | 'all';
+  limit?: number;
+  page?: number;
+  includeSelf?: boolean;
+}) {
+  const { data } = await api.get<ILog[]>('logs/feed', {
+    params,
+  });
+  return data;
+}
+
+export async function getUserStatsFn(
+  username: string | undefined,
+  params?: {
+    timeRange?: string;
+    type?: string | string[];
+    start?: string;
+    end?: string;
+    timezone?: string;
+    includedTags?: string;
+    excludedTags?: string;
+  }
+) {
+  if (!username) {
+    throw new Error('Username is required to fetch user stats');
+  }
+  const queryParams = new URLSearchParams();
+  if (params?.timeRange) queryParams.append('timeRange', params.timeRange);
+  if (params?.type) {
+    if (Array.isArray(params.type)) {
+      params.type.forEach((entry) => queryParams.append('type', entry));
+    } else {
+      queryParams.append('type', params.type);
+    }
+  }
+  if (params?.start) queryParams.append('start', params.start);
+  if (params?.end) queryParams.append('end', params.end);
+  if (params?.timezone) queryParams.append('timezone', params.timezone);
+  if (params?.includedTags)
+    queryParams.append('includedTags', params.includedTags);
+  if (params?.excludedTags)
+    queryParams.append('excludedTags', params.excludedTags);
+  const { data } = await api.get<IUserStats>(`users/${username}/stats`, {
+    params: queryParams,
+  });
+  return data;
+}
+
+export const compareUserStatsFn = async (
+  user1: string,
+  user2: string,
+  mediaId: string,
+  type: string
+): Promise<IComparisonResult> => {
+  const { data } = await api.get<IComparisonResult>('/users/compare', {
+    params: { user1, user2, mediaId, type },
+  });
+  return data;
+};
+
+export async function searchYouTubeVideoFn(url: string) {
+  const { data } = await api.get<{
+    video: IMediaDocument;
+    channel: IMediaDocument;
+  }>(`media/youtube/video`, {
+    params: { url },
+  });
+  return data;
+}
+
+export interface IPlaylistVideo {
+  video: IMediaDocument;
+  channel: IMediaDocument;
+}
+
+export interface IPlaylistResult {
+  playlistTitle: string;
+  truncated: boolean;
+  videos: IPlaylistVideo[];
+}
+
+export async function searchYouTubePlaylistFn(
+  url: string
+): Promise<IPlaylistResult> {
+  const { data } = await api.get<IPlaylistResult>(`media/youtube/playlist`, {
+    params: { url },
+  });
+  return data;
+}
+
+export async function getDailyGoalsFn(username: string | undefined) {
+  if (!username) return null;
+  const { data } = await api.get<IDailyGoalsResponse>(
+    `goals/daily/${username}`
+  );
+  return data;
+}
+
+export async function createDailyGoalFn(
+  goal: Omit<IDailyGoal, '_id' | 'createdAt' | 'updatedAt'>
+) {
+  const { data } = await api.post<IDailyGoal>('goals/daily', goal);
+  return data;
+}
+
+export async function updateDailyGoalFn(
+  goalId: string,
+  goal: Partial<IDailyGoal>
+) {
+  const { data } = await api.patch<IDailyGoal>(`goals/daily/${goalId}`, goal);
+  return data;
+}
+
+export async function deleteDailyGoalFn(goalId: string) {
+  const { data } = await api.delete(`goals/daily/${goalId}`);
+  return data;
+}
+
+// Long-term goals API functions
+export async function getLongTermGoalsFn(username: string | undefined) {
+  if (!username) return null;
+  const { data } = await api.get<ILongTermGoalsResponse>(
+    `goals/long-term/${username}`
+  );
+  return data;
+}
+
+export async function createLongTermGoalFn(
+  goal: Omit<ILongTermGoal, '_id' | 'createdAt' | 'updatedAt' | 'progress'>
+) {
+  const { data } = await api.post<ILongTermGoal>('goals/long-term', goal);
+  return data;
+}
+
+export async function updateLongTermGoalFn(
+  goalId: string,
+  goal: Partial<ILongTermGoal>
+) {
+  const { data } = await api.patch<ILongTermGoal>(
+    `goals/long-term/${goalId}`,
+    goal
+  );
+  return data;
+}
+
+export async function deleteLongTermGoalFn(goalId: string) {
+  const { data } = await api.delete(`goals/long-term/${goalId}`);
+  return data;
+}
+
+export async function followUserFn(
+  username: string
+): Promise<{ relationship: ISocialSummary }> {
+  const { data } = await api.post(`users/${encodeURIComponent(username)}/follow`);
+  return data;
+}
+
+export async function unfollowUserFn(
+  username: string
+): Promise<{ relationship: NonNullable<IUser['social']> }> {
+  const { data } = await api.delete(
+    `users/${encodeURIComponent(username)}/follow`
+  );
+  return data;
+}
+
+export async function getConnectionsFn(
+  username: string,
+  direction: 'followers' | 'following',
+  page = 1,
+  limit = 20
+): Promise<IConnectionsResponse> {
+  const { data } = await api.get<IConnectionsResponse>(
+    `users/${encodeURIComponent(username)}/${direction}`,
+    { params: { page, limit } }
+  );
+  return data;
+}
+
+export async function getImmersionForecastsFn() {
+  const { data } = await api.get<IImmersionForecastsResponse>(
+    'goals/forecasts'
+  );
+  return data;
+}
+
+export async function createImmersionForecastFn(payload: {
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  targetDate: string;
+}) {
+  const { data } = await api.post<IImmersionForecast>(
+    'goals/forecasts',
+    payload
+  );
+  return data;
+}
+
+export async function updateImmersionForecastFn(
+  forecastId: string,
+  targetDate: string
+) {
+  const { data } = await api.patch<IImmersionForecast>(
+    `goals/forecasts/${forecastId}`,
+    { targetDate }
+  );
+  return data;
+}
+
+export async function deleteImmersionForecastFn(forecastId: string) {
+  const { data } = await api.delete(`goals/forecasts/${forecastId}`);
+  return data;
+}
+
+export const getLogDetailsFn = async (logId: string) => {
+  const response = await api.get(`/logs/${logId}/details`);
+  return response.data;
+};
+
+export async function getRecentMediaLogsFn(
+  mediaId: string,
+  type: string,
+  limit = 50
+) {
+  const { data } = await api.get<ILog[]>(`logs/media/recent`, {
+    params: { mediaId, type, limit },
+  });
+  return data;
+}
+
+export interface IComparisonStats {
+  totalXp: number;
+  totalTime: number;
+  totalChars: number;
+  totalPages: number;
+  totalEpisodes: number;
+  totalVolumes: number;
+  logCount: number;
+  readingSpeed: number;
+  readingPercentage: number | null; // null when no character count data available
+}
+
+export interface IComparisonResult {
+  user1: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  user2: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  mediaInfo: {
+    contentId: string;
+    type: string;
+    totalCharCount?: number;
+  };
+}
+
+// Log screen statistics interface
+export interface ILogScreenStats {
+  type: string;
+  total: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  today: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisWeek: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisMonth: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+}
+
+export async function getLogScreenStatsFn(
+  type?: string
+): Promise<ILogScreenStats> {
+  const { data } = await api.get<ILogScreenStats>('logs/stats/logscreen', {
+    params: type ? { type } : undefined,
+  });
+  return data;
+}
+
+// Media-specific statistics interface
+export interface IMediaStats {
+  mediaId: string;
+  type: string;
+  total: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+    firstLogDate: string | null;
+    lastLogDate: string | null;
+  };
+  today: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisWeek: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisMonth: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+}
+
+export async function getUserMediaStatsFn(
+  mediaId: string,
+  type: string
+): Promise<IMediaStats> {
+  const { data } = await api.get<IMediaStats>('logs/stats/media', {
+    params: { mediaId, type },
+  });
+  return data;
+}
+
+export async function getGlobalMediaStatsFn(
+  mediaId: string,
+  type: string
+): Promise<IMediaStats> {
+  const { data } = await api.get<IMediaStats>('logs/stats/media/global', {
+    params: { mediaId, type },
+  });
+  return data;
+}
+
+// Admin API functions
+export async function getAdminStatsFn() {
+  const { data } = await api.get('admin/stats');
+  return data;
+}
+
+export async function getAdminUsersFn(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
+  const { data } = await api.get('admin/users', { params });
+  return data;
+}
+
+export interface IAdminBannedUser {
+  _id: string;
+  username: string;
+  roles: string[];
+  rankingBanned: boolean;
+  banned: boolean;
+  banReason: string;
+  updatedAt: string | null;
+  updatedByUsername: string;
+}
+
+export interface IAdminBannedUsersResponse {
+  users: IAdminBannedUser[];
+  total: number;
+  page: number;
+  totalPages: number;
+  type: 'all' | 'ranking' | 'site';
+}
+
+export async function getAdminBannedUsersFn(params: {
+  page?: number;
+  limit?: number;
+  type?: 'all' | 'ranking' | 'site';
+}): Promise<IAdminBannedUsersResponse> {
+  const { data } = await api.get<IAdminBannedUsersResponse>(
+    'admin/users/banned',
+    { params }
+  );
+  return data;
+}
+
+export async function deleteUserFn(userId: string) {
+  const { data } = await api.delete(`admin/users/${userId}`);
+  return data;
+}
+
+export async function recalculateStatsFn({
+  type,
+  dryRun = false,
+}: {
+  type: 'streaks' | 'xp';
+  dryRun?: boolean;
+}) {
+  const endpoint =
+    type === 'streaks' ? 'recalculateStreaks' : 'recalculateStats';
+  const { data } = await api.get(`admin/${endpoint}`, {
+    params: type === 'xp' ? { dryRun } : undefined,
+  });
+  return data;
+}
+
+export async function syncManabeIdsFn() {
+  const { data } = await api.post('logs/sync-manabe-ids');
+  return data;
+}
+
+export async function forceSyncMeilisearchFn(rebuild: boolean = true) {
+  const { data } = await api.post('admin/meilisearch/sync', { rebuild });
+  return data;
+}
+
+export interface IIgdbDumpEndpointStatus {
+  fileName: string;
+  updatedAt: number | null;
+  schemaVersion: string;
+  sizeBytes: number;
+  processedAt: string | null;
+}
+
+export interface IIgdbDumpSyncStatus {
+  isRunning: boolean;
+  currentPhase: string;
+  currentMessage: string;
+  lastTrigger: 'manual' | 'scheduled' | 'unknown';
+  lastStartedAt: string | null;
+  lastFinishedAt: string | null;
+  lastSuccessfulAt: string | null;
+  lastFailedAt: string | null;
+  lastError: string;
+  counters: {
+    scanned: number;
+    upserted: number;
+    skipped: number;
+    failed: number;
+  };
+  dumps: {
+    games: IIgdbDumpEndpointStatus;
+    genres: IIgdbDumpEndpointStatus;
+    platforms: IIgdbDumpEndpointStatus;
+  };
+  updatedAt: string | null;
+}
+
+export interface ITriggerIgdbDumpSyncResponse {
+  started: boolean;
+  message: string;
+  status: IIgdbDumpSyncStatus;
+}
+
+export async function triggerIgdbDumpSyncFn(
+  force: boolean = false
+): Promise<ITriggerIgdbDumpSyncResponse> {
+  const { data } = await api.post('admin/igdb-dump/sync', { force });
+  return data;
+}
+
+export async function getIgdbDumpSyncStatusFn(): Promise<IIgdbDumpSyncStatus> {
+  const { data } = await api.get('admin/igdb-dump/status');
+  return data;
+}
+
+export interface IVndbDumpSyncStatus {
+  isRunning: boolean;
+  currentPhase: string;
+  currentMessage: string;
+  lastTrigger: 'manual' | 'scheduled' | 'unknown';
+  lastStartedAt: string | null;
+  lastFinishedAt: string | null;
+  lastSuccessfulAt: string | null;
+  lastFailedAt: string | null;
+  lastError: string;
+  lastDumpFileName: string;
+  counters: {
+    scanned: number;
+    upserted: number;
+    skipped: number;
+    failed: number;
+  };
+  updatedAt: string | null;
+}
+
+export interface ITriggerVndbDumpSyncResponse {
+  started: boolean;
+  message: string;
+  status: IVndbDumpSyncStatus;
+}
+
+export async function triggerVndbDumpSyncFn(
+  force: boolean = false
+): Promise<ITriggerVndbDumpSyncResponse> {
+  const { data } = await api.post('admin/vndb-dump/sync', { force });
+  return data;
+}
+
+export async function getVndbDumpSyncStatusFn(): Promise<IVndbDumpSyncStatus> {
+  const { data } = await api.get('admin/vndb-dump/status');
+  return data;
+}
+
+export interface IJitenBackfillStatus {
+  running: boolean;
+  total: number;
+  processed: number;
+  matched: number;
+  decksIndexed: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+export async function adminTriggerJitenDifficultyBackfillFn(
+  force = false
+): Promise<IJitenBackfillStatus & { message: string }> {
+  const { data } = await api.post('admin/jiten-difficulty/backfill', null, {
+    params: force ? { force: 'true' } : undefined,
+  });
+  return data;
+}
+
+export async function getJitenDifficultyBackfillStatusFn(): Promise<IJitenBackfillStatus> {
+  const { data } = await api.get('admin/jiten-difficulty/backfill/status');
+  return data;
+}
+
+// Admin: logs management
+export async function searchAdminLogsFn(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  username?: string;
+  start?: string; // YYYY-MM-DD
+  end?: string; // YYYY-MM-DD
+}) {
+  const { data } = await api.get(`admin/logs`, { params });
+  return data as {
+    logs: Array<{
+      _id: string;
+      username?: string;
+      user: string;
+      type: string;
+      description: string;
+      episodes?: number;
+      pages?: number;
+      chars?: number;
+      time?: number;
+      xp: number;
+      date: string;
+      mediaTitle?: string;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+}
+
+export async function adminUpdateLogFn(
+  logId: string,
+  payload: Partial<IUpdateLogRequest>
+) {
+  const { data } = await api.put(`admin/logs/${logId}`, payload);
+  return data;
+}
+
+export async function adminDeleteLogFn(logId: string) {
+  const { data } = await api.delete(`admin/logs/${logId}`);
+  return data;
+}
+
+export async function deleteLogsBulkFn(ids: string[]) {
+  const { data } = await api.delete<{ deletedCount: number }>('logs/bulk', {
+    data: { ids },
+  });
+  return data;
+}
+
+export async function adminDeleteLogsBulkFn(ids: string[]) {
+  const { data } = await api.delete<{ deletedCount: number }>(
+    'admin/logs/bulk',
+    { data: { ids } }
+  );
+  return data;
+}
+
+export async function adminUpdateUserFn(
+  userId: string,
+  payload: Partial<Omit<IUser, 'roles'>> & { roles?: string[] }
+) {
+  const { data } = await api.put(`admin/users/${userId}`, payload);
+  return data;
+}
+
+export async function adminMarkUntrackedToInProgressFn() {
+  const { data } = await api.post('admin/logs/mark-untracked-inprogress');
+  return data as {
+    created: number;
+    updated: number;
+    completed: number;
+    inProgress: number;
+    totalAffected: number;
+  };
+}
+
+export async function adminResetPasswordFn(
+  userId: string,
+  newPassword: string
+) {
+  const { data } = await api.post(`admin/users/${userId}/reset-password`, {
+    newPassword,
+  });
+  return data;
+}
+
+export async function adminGetUserModerationFn(username: string) {
+  const { data } = await api.get(`admin/users/username/${username}/moderation`);
+  return data as {
+    username: string;
+    roles: string[];
+    moderation: {
+      rankingBanned: boolean;
+      banned: boolean;
+      banReason?: string;
+      updatedAt?: string | null;
+      updatedBy?: string | null;
+      updatedByUsername?: string;
+      history?: {
+        field: 'rankingBanned' | 'banned' | 'banReason';
+        previousValue: boolean | string;
+        newValue: boolean | string;
+        reasonSnapshot?: string;
+        updatedAt: string;
+        updatedBy?: string | null;
+        updatedByUsername?: string;
+      }[];
+    };
+  };
+}
+
+export async function adminUpdateUserModerationFn(
+  username: string,
+  payload: {
+    rankingBanned?: boolean;
+    banned?: boolean;
+    banReason?: string;
+  }
+) {
+  const { data } = await api.patch(
+    `admin/users/username/${username}/moderation`,
+    payload
+  );
+  return data;
+}
+
+export async function adminRecalculateUserStreakFn(username: string) {
+  const { data } = await api.post(
+    `admin/users/username/${username}/recalculate-streaks`
+  );
+  return data as {
+    message: string;
+    username: string;
+    streaks: {
+      currentStreak: number;
+      longestStreak: number;
+      lastStreakDate: string | null;
+    };
+  };
+}
+
+// Patreon API functions
+export async function getPatreonStatusFn(): Promise<{
+  patreonEmail?: string;
+  patreonId?: string;
+  tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+  isActive: boolean;
+  lastChecked?: Date;
+  customBadgeText?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  hideBadge?: boolean;
+}> {
+  const { data } = await api.get('patreon/status');
+  return data;
+}
+
+export async function initiatePatreonOAuthFn(): Promise<{
+  authUrl: string;
+  message: string;
+}> {
+  const { data } = await api.get('patreon/oauth/init');
+  return data;
+}
+
+export async function linkPatreonAccountFn(patreonEmail: string) {
+  const { data } = await api.post('patreon/link', { patreonEmail });
+  return data;
+}
+
+export async function unlinkPatreonAccountFn() {
+  const { data } = await api.post('patreon/unlink');
+  return data;
+}
+
+export async function updateCustomBadgeTextFn(customBadgeText: string) {
+  const { data } = await api.patch('patreon/badge', { customBadgeText });
+  return data;
+}
+
+export async function updateBadgeColorsFn(
+  badgeColor: string,
+  badgeTextColor: string
+) {
+  const { data } = await api.patch('patreon/badge-colors', {
+    badgeColor,
+    badgeTextColor,
+  });
+  return data;
+}
+
+export async function updateBadgeVisibilityFn(
+  hideBadge: boolean
+): Promise<{ message: string; hideBadge: boolean }> {
+  const { data } = await api.patch('patreon/badge-visibility', { hideBadge });
+  return data;
+}
+
+// AniList integration (automatic anime logging)
+export async function getAnilistStatusFn(): Promise<IAnilistStatus> {
+  const { data } = await api.get<IAnilistStatus>('anilist/status');
+  return data;
+}
+
+export async function initiateAnilistOAuthFn(): Promise<{ authUrl: string }> {
+  const { data } = await api.get('anilist/oauth/init');
+  return data;
+}
+
+export async function unlinkAnilistAccountFn() {
+  const { data } = await api.post('anilist/unlink');
+  return data;
+}
+
+export interface IUpdateAnilistSettings {
+  autoSync?: boolean;
+  excludedMedia?: Array<{
+    anilistId: number;
+    title?: string;
+    image?: string | null;
+  }>;
+}
+
+export async function updateAnilistSettingsFn(
+  settings: IUpdateAnilistSettings
+): Promise<IAnilistStatus> {
+  const { data } = await api.patch<IAnilistStatus>('anilist/settings', settings);
+  return data;
+}
+
+export async function syncAnilistNowFn(
+  status: IAnilistStatus
+): Promise<IAnilistSyncResult> {
+  const payload = await fetchAnilistSyncPayload(status, false);
+  const { data } = await api.post<IAnilistSyncResult>('anilist/sync', payload);
+  return data;
+}
+
+/** Walks the whole AniList activity feed instead of only what's new. */
+export async function backfillAnilistFn(
+  status: IAnilistStatus,
+  includeExistingMedia: boolean
+): Promise<IAnilistSyncResult> {
+  const payload = await fetchAnilistSyncPayload(status, true);
+  const { data } = await api.post<IAnilistSyncResult>('anilist/backfill', {
+    ...payload,
+    includeExistingMedia,
+  });
+  return data;
+}
+
+export async function getPatronStatsFn() {
+  const { data } = await api.get('admin/stats/patrons');
+  return data;
+}
+
+export async function adminSetPatreonStatusFn(
+  userId: string,
+  payload: { tier: 'donator' | 'enthusiast' | 'consumer' | null; days?: number }
+) {
+  const { data } = await api.post(`admin/users/${userId}/patreon`, payload);
+  return data;
+}
+
+export async function syncPatreonMembersFn(): Promise<{
+  message: string;
+  checked: number;
+  updated: number;
+  failed: number;
+}> {
+  const { data } = await api.post('admin/patreon/sync');
+  return data;
+}
+
+// Tags API
+export async function getUserTagsByUsernameFn(
+  username: string
+): Promise<ITag[]> {
+  const { data } = await api.get(`tags/user/${username}`);
+  return data;
+}
+
+export async function createTagFn(tag: {
+  name: string;
+  color: string;
+}): Promise<ITag> {
+  const { data } = await api.post('tags', tag);
+  return data;
+}
+
+export async function updateTagFn(
+  id: string,
+  tag: { name?: string; color?: string }
+): Promise<ITag> {
+  const { data } = await api.patch(`tags/${id}`, tag);
+  return data;
+}
+
+export async function deleteTagFn(id: string): Promise<{ message: string }> {
+  const { data } = await api.delete(`tags/${id}`);
+  return data;
+}
+
+// Changelog API
+export interface IChangelogChange {
+  type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
+  description: string;
+}
+
+export interface IChangelog {
+  _id: string;
+  version: string;
+  title: string;
+  description?: string;
+  changes: IChangelogChange[];
+  date: Date;
+  createdBy: {
+    _id: string;
+    username: string;
+  };
+  published: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export async function getChangelogsFn(): Promise<IChangelog[]> {
+  const { data } = await api.get('changelogs');
+  return data.data;
+}
+
+export async function getAdminChangelogsFn(): Promise<IChangelog[]> {
+  const { data } = await api.get('changelogs/admin/all');
+  return data.data;
+}
+
+export async function getChangelogByIdFn(id: string): Promise<IChangelog> {
+  const { data } = await api.get(`changelogs/${id}`);
+  return data.data;
+}
+
+export async function createChangelogFn(payload: {
+  version: string;
+  title: string;
+  description?: string;
+  changes: IChangelogChange[];
+  date?: Date;
+  published?: boolean;
+}): Promise<IChangelog> {
+  const { data } = await api.post('changelogs', payload);
+  return data.data;
+}
+
+export async function updateChangelogFn(
+  id: string,
+  payload: Partial<{
+    version: string;
+    title: string;
+    description: string;
+    changes: IChangelogChange[];
+    date: Date;
+    published: boolean;
+  }>
+): Promise<IChangelog> {
+  const { data } = await api.patch(`changelogs/${id}`, payload);
+  return data.data;
+}
+
+export async function deleteChangelogFn(
+  id: string
+): Promise<{ message: string }> {
+  const { data } = await api.delete(`changelogs/${id}`);
+  return data;
+}
+
+export async function getRecentTextSessionsFn(): Promise<{
+  sessions: ITextSession[];
+  stats: {
+    totalSessions: number;
+    totalLines: number;
+    totalChars: number;
+    totalTimerSeconds: number;
+  };
+}> {
+  const { data } = await api.get('texthooker/recent');
+  return data;
+}
+
+export async function getTextSessionFn(
+  contentId: string
+): Promise<ITextSession> {
+  const { data } = await api.get<ITextSession>(`texthooker/${contentId}`);
+  return data;
+}
+
+export async function createBlankTextSessionFn(
+  name: string
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>('texthooker/blank', {
+    name,
+  });
+  return data;
+}
+
+export async function updateSessionTimerFn(
+  contentId: string,
+  timerSeconds: number
+): Promise<{ timerSeconds: number }> {
+  const { data } = await api.patch<{ timerSeconds: number }>(
+    `texthooker/${contentId}/timer`,
+    { timerSeconds }
+  );
+  return data;
+}
+
+export async function addLinesToSessionFn(
+  contentId: string,
+  lines: Partial<ITextLine>[]
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>(
+    `texthooker/${contentId}/lines`,
+    { lines }
+  );
+  return data;
+}
+
+export async function checkRoomExistsFn(
+  roomId: string
+): Promise<{ exists: boolean }> {
+  const { data } = await api.get<{ exists: boolean }>(
+    `texthooker/room/${roomId}/exists`
+  );
+  return data;
+}
+
+export async function removeLinesFromSessionFn(
+  contentId: string,
+  lineIds: string[]
+): Promise<ITextSession> {
+  const { data } = await api.delete<ITextSession>(
+    `texthooker/${contentId}/lines`,
+    { data: { lineIds } }
+  );
+  return data;
+}
+
+export async function clearSessionLinesFn(
+  contentId: string
+): Promise<ITextSession> {
+  const { data } = await api.delete<ITextSession>(
+    `texthooker/${contentId}/lines/all`
+  );
+  return data;
+}
+
+export async function addSessionHistoryEntryFn(
+  contentId: string,
+  entry: Omit<ITextSessionHistoryEntry, 'loggedAt' | 'intelligence'> & {
+    loggedAt?: string;
+    lineIds?: string[];
+    intelligenceSettings?: ITextSessionIntelligenceSettings;
+  }
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>(
+    `texthooker/${contentId}/history`,
+    entry
+  );
+  return data;
+}
+
+export async function deleteTextSessionFn(contentId: string) {
+  const { data } = await api.delete(`texthooker/${contentId}`);
+  return data;
+}
+
+export async function hideRecentMediaFn(
+  action: 'add' | 'remove',
+  mediaId: string
+) {
+  const { data } = await api.patch(`users/settings/hidden-media`, {
+    action,
+    mediaId,
+  });
+  return data;
+}
+
+export async function getHiddenRecentMediaFn() {
+  const { data } = await api.get<IHiddenRecentMediaItem[]>(
+    'users/settings/hidden-media'
+  );
+  return data;
+}
+
+// API Keys
+export interface IApiKey {
+  _id: string;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface ICreatedApiKey extends IApiKey {
+  key: string; // Raw key, returned only once
+}
+
+export async function listApiKeysFn(): Promise<IApiKey[]> {
+  const { data } = await api.get<IApiKey[]>('api-keys');
+  return data;
+}
+
+export async function generateApiKeyFn(payload: {
+  name: string;
+  expiresAt?: string;
+}): Promise<ICreatedApiKey> {
+  const { data } = await api.post<ICreatedApiKey>('api-keys', payload);
+  return data;
+}
+
+export async function deleteApiKeyFn(id: string): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(`api-keys/${id}`);
+  return data;
+}
+
+export async function updateStatsLayoutFn(
+  layout: StatsGroupLayout[]
+): Promise<{ message: string; statsLayout: StatsGroupLayout[] }> {
+  const { data } = await api.patch<{
+    message: string;
+    statsLayout: StatsGroupLayout[];
+  }>('users/settings/stats-layout', { layout });
+  return data;
+}
+
+export async function updateProfileLayoutFn(
+  layout: ProfileWidgetLayout[]
+): Promise<{ message: string; profileLayout: ProfileWidgetLayout[] }> {
+  const { data } = await api.patch<{
+    message: string;
+    profileLayout: ProfileWidgetLayout[];
+  }>('users/settings/profile-layout', { layout });
+  return data;
+}
+
+export async function updateSocialPrivacyFn(
+  socialPrivacy: ISocialPrivacySettings
+): Promise<{ message: string; socialPrivacy: typeof socialPrivacy }> {
+  const { data } = await api.patch<{
+    message: string;
+    socialPrivacy: typeof socialPrivacy;
+  }>('users/settings/social-privacy', { socialPrivacy });
+  return data;
+}
+
+export interface IStatsCardTiles {
+  timeSpentHours: number;
+  dailyAvgHours: number;
+  readingHours: number;
+  listeningHours: number;
+  chars: number;
+  streakDays: number;
+}
+
+export async function generateStatsCardFn(payload: {
+  username: string;
+  dateLabel: string;
+  tiles: IStatsCardTiles;
+}): Promise<Blob> {
+  const { data } = await api.post<Blob>('og-image/stats-card', payload, {
+    responseType: 'blob',
+  });
+  return data;
+}
+
+export interface IFavoriteInput {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+}
+
+export async function updateFavoritesFn(
+  favorites: IFavoriteInput[]
+): Promise<{ favorites: IFavoriteEntry[] }> {
+  const { data } = await api.patch<{ favorites: IFavoriteEntry[] }>(
+    'users/favorites',
+    { favorites }
+  );
+  return data;
+}
+
+export async function getCustomizationFn(): Promise<ICustomizationOptionsResponse> {
+  const { data } = await api.get<ICustomizationOptionsResponse>(
+    'users/me/customization'
+  );
+  return data;
+}
+
+export async function updateCustomizationFn(
+  patch: IUserCustomization
+): Promise<{ customization: IUserCustomization }> {
+  const { data } = await api.patch<{ customization: IUserCustomization }>(
+    'users/me/customization',
+    patch
+  );
+  return data;
+}
+
+export async function getGanttDataFn(
+  username: string,
+  params?: { type?: string; timezone?: string; start?: string; end?: string }
+): Promise<IGanttMediaItem[]> {
+  const { data } = await api.get<IGanttMediaItem[]>(`users/${username}/gantt`, {
+    params,
+  });
+  return data;
+}
+
+export interface IGlobalImmersionRankingItem {
+  rank: number;
+  mediaId: string;
+  type: string;
+  title: string;
+  titleEnglish?: string;
+  contentImage?: string;
+  totalHours: number;
+  totalXp: number;
+  userCount: number;
+  logCount: number;
+}
+
+export interface IGlobalImmersionRankingResponse {
+  items: IGlobalImmersionRankingItem[];
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+}
+
+export async function getGlobalImmersionRankingFn(params: {
+  page?: number;
+  limit?: number;
+  metric: 'xp' | 'hours';
+  types?: string[];
+  timezone?: string;
+  start?: string;
+  end?: string;
+}): Promise<IGlobalImmersionRankingResponse> {
+  const queryParams = new URLSearchParams();
+  queryParams.set('metric', params.metric);
+  if (params.page) queryParams.set('page', String(params.page));
+  if (params.limit) queryParams.set('limit', String(params.limit));
+  if (params.timezone) queryParams.set('timezone', params.timezone);
+  if (params.start) queryParams.set('start', params.start);
+  if (params.end) queryParams.set('end', params.end);
+  params.types?.forEach((type) => queryParams.append('type', type));
+
+  const { data } = await api.get<IGlobalImmersionRankingResponse>(
+    'users/immersion-ranking/global',
+    { params: queryParams }
+  );
+  return data;
+}
+
+// ─── Achievement API ──────────────────────────────────────────────────────────
+
+export async function getAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements');
+  return data;
+}
+
+export async function getMyAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements/me');
+  return data;
+}
+
+export async function getUserAchievementsFn(
+  username: string
+): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>(
+    `achievements/user/${username}`
+  );
+  return data;
+}
+
+export async function getPendingAchievementsFn(): Promise<
+  IPendingAchievement[]
+> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    'achievements/me/pending'
+  );
+  return data;
+}
+
+export async function getShowcaseFn(): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    'achievements/me/showcase'
+  );
+  return data;
+}
+
+export async function updateShowcaseFn(showcaseIds: string[]) {
+  const { data } = await api.put('achievements/me/showcase', { showcaseIds });
+  return data;
+}
+
+export async function getAchievementFeedFn(
+  limit = 20
+): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>('achievements/feed', {
+    params: { limit },
+  });
+  return data;
+}
+
+export async function getUserAchievementActivityFn(
+  username: string,
+  limit = 10
+): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    `achievements/user/${username}/recent`,
+    { params: { limit } }
+  );
+  return data;
+}
+
+// Admin
+export async function adminGetAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements/admin');
+  return data;
+}
+
+export async function adminCreateAchievementFn(
+  achievement: Partial<IAchievement>
+) {
+  const { data } = await api.post('achievements/admin', achievement);
+  return data;
+}
+
+export async function adminUpdateAchievementFn(
+  id: string,
+  achievement: Partial<IAchievement>
+) {
+  const { data } = await api.put(`achievements/admin/${id}`, achievement);
+  return data;
+}
+
+export async function adminDeleteAchievementFn(id: string) {
+  const { data } = await api.delete(`achievements/admin/${id}`);
+  return data;
+}
+
+export async function adminGrantAchievementFn(
+  username: string,
+  achievementKey: string
+) {
+  const { data } = await api.post('achievements/admin/grant', {
+    username,
+    achievementKey,
+  });
+  return data;
+}
+
+export async function adminRevokeAchievementFn(
+  username: string,
+  achievementKey: string
+) {
+  const { data } = await api.post('achievements/admin/revoke', {
+    username,
+    achievementKey,
+  });
+  return data;
+}
+
+export async function adminBackfillAchievementsFn(): Promise<{
+  message: string;
+  totalGranted: number;
+  totalRevoked: number;
+  usersProcessed: number;
+  usersWithNewAchievements: number;
+}> {
+  const { data } = await api.post('achievements/admin/backfill-all', {
+    revoke: false,
+  });
+  return data;
+}
+
+export async function adminBackfillRankingHistoryFn(): Promise<{
+  message: string;
+  weeks: number;
+  snapshots: number;
+}> {
+  const { data } = await api.post('admin/ranking-history/backfill');
+  return data;
+}
+
+export async function adminBackfillRankAchievementsFn(): Promise<{
+  message: string;
+  weeks: number;
+  granted: number;
+}> {
+  const { data } = await api.post('admin/rank-achievements/backfill');
+  return data;
+}
+
+export interface IActivityBackfillStatus {
+  running: boolean;
+  total: number;
+  processed: number;
+  created: number;
+  existing: number;
+  skipped: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+export async function adminTriggerActivityBackfillFn(): Promise<
+  IActivityBackfillStatus & { message: string }
+> {
+  const { data } = await api.post('admin/activity-feed/backfill');
+  return data;
+}
+
+export async function getActivityBackfillStatusFn(): Promise<IActivityBackfillStatus> {
+  const { data } = await api.get('admin/activity-feed/backfill/status');
+  return data;
+}
+
+// ---- Media requests ----
+
+export async function createMediaRequestFn(
+  payload: ICreateMediaRequest
+): Promise<{ message: string; request: IMediaRequest }> {
+  const { data } = await api.post('media-requests', payload);
+  return data;
+}
+
+export async function getMyMediaRequestsFn(): Promise<{
+  requests: IMediaRequest[];
+}> {
+  const { data } = await api.get('media-requests/mine');
+  return data;
+}
+
+export async function getMediaRequestsFn(params: {
+  page?: number;
+  limit?: number;
+  status?: MediaRequestStatus;
+}): Promise<IMediaRequestListResponse> {
+  const { data } = await api.get('media-requests', { params });
+  return data;
+}
+
+export async function reviewMediaRequestFn(
+  id: string,
+  payload: { action: 'approve' | 'reject'; reviewNote?: string }
+): Promise<{ message: string; request: IMediaRequest }> {
+  const { data } = await api.patch(`media-requests/${id}/review`, payload);
+  return data;
+}
+
+export async function adminUpdateMediaFn(
+  id: string,
+  payload: Partial<IMediaDocument>
+): Promise<{ message: string; media: IMediaDocument }> {
+  const { data } = await api.patch(`admin/media/${id}`, payload);
+  return data;
+}

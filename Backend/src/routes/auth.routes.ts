@@ -1,0 +1,38 @@
+import { Router } from 'express';
+import {
+  login,
+  register,
+  logout,
+  verifyToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  resendVerificationEmail,
+  getPublicStats,
+} from '../controllers/auth.controller.js';
+import {
+  protect,
+  requireSessionAuth,
+} from '../middlewares/authMiddleware.js';
+
+const router = Router();
+
+router.post('/register', register);
+
+router.post('/login', login);
+
+router.post('/logout', logout);
+
+router.get('/verify', requireSessionAuth, protect, verifyToken);
+
+router.post('/verify-email', verifyEmail);
+
+router.post('/resend-verification', protect, resendVerificationEmail);
+
+router.post('/forgot-password', forgotPassword);
+
+router.post('/reset-password/:token', resetPassword);
+
+router.get('/stats', getPublicStats);
+
+export default router;

@@ -1,0 +1,844 @@
+import { ILog, IMediaDocument } from '../types';
+import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import {
+  assignMediaFn,
+  getUserLogsFn,
+  searchYouTubeVideoFn,
+  searchYouTubePlaylistFn,
+  IPlaylistResult,
+} from '../api/trackerApi';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
+import { useUserDataStore } from '../store/userData';
+import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
+import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
+import PlaylistSelectorModal, {
+  PlaylistVideoWithOverride,
+} from './PlaylistSelectorModal';
+import { useTranslation } from 'react-i18next';
+
+interface VideoLogsProps {
+  username?: string;
+  isActive?: boolean;
+}
+
+function VideoLogs({ username, isActive = true }: VideoLogsProps) {
+  const { t } = useTranslation(['logs', 'common']);
+  const [selectedLogs, setSelectedLogs] = useState<ILog[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [assignedLogs, setAssignedLogs] = useState<ILog[]>([]);
+  const [autoMatchingProgress, setAutoMatchingProgress] = useState<{
+    current: number;
+    total: number;
+    isRunning: boolean;
+  }>({ current: 0, total: 0, isRunning: false });
+
+  const { user } = useUserDataStore();
+  const currentUsername = user?.username;
+
+  const {
+    data: logs,
+    error: logError,
+    isLoading: isLoadingLogs,
+  } = useQuery({
+    queryKey: ['videoLogs', username, 'video'],
+    queryFn: () =>
+      getUserLogsFn(username as string, { limit: 0, type: 'video' }),
+    enabled: !!username && isActive,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const queryClient = useQueryClient();
+
+  const handleCheckboxChange = useCallback((log: ILog) => {
+    setSelectedLogs((prevSelectedLogs) =>
+      prevSelectedLogs.includes(log)
+        ? prevSelectedLogs.filter((selectedLog) => selectedLog !== log)
+        : [...prevSelectedLogs, log]
+    );
+  }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
+
+  const handleOpenGroup = useCallback(
+    (group: ILog[] | null, groupIndex: number) => {
+      if (!group) return;
+      setSelectedGroup(groupIndex);
+      setSelectedLogs(group);
+    },
+    []
+  );
+
+  const extractYouTubeVideoId = useCallback((input: string): string | null => {
+    const normalizeVideoId = (value: string | null | undefined) => {
+      if (!value) return null;
+      const cleaned = value.trim();
+      return /^[A-Za-z0-9_-]{11}$/.test(cleaned) ? cleaned : null;
+    };
+
+    try {
+      const parsed = new URL(
+        input.startsWith('http://') || input.startsWith('https://')
+          ? input
+          : `https://${input}`
+      );
+
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+
+      if (host === 'youtu.be') {
+        return normalizeVideoId(pathSegments[0]);
+      }
+
+      if (host.endsWith('youtube.com')) {
+        if (parsed.pathname === '/watch') {
+          return normalizeVideoId(parsed.searchParams.get('v'));
+        }
+
+        if (
+          pathSegments[0] === 'live' ||
+          pathSegments[0] === 'shorts' ||
+          pathSegments[0] === 'embed' ||
+          pathSegments[0] === 'v'
+        ) {
+          return normalizeVideoId(pathSegments[1]);
+        }
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }, []);
+
+  const extractYouTubeUrl = useCallback(
+    (description: string): string | null => {
+      const youtubeUrlRegex =
+        /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com\/(?:watch\?[^\s]*v=|live\/|shorts\/|embed\/|v\/)[^\s]+|youtu\.be\/[^\s]+)/i;
+      const match = description.match(youtubeUrlRegex);
+      if (!match) return null;
+
+      const videoId = extractYouTubeVideoId(match[0]);
+      return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+    },
+    [extractYouTubeVideoId]
+  );
+
+  const groupedLogs = useGroupLogs(logs, 'video');
+
+  const filteredGroupedLogs = useFilteredGroupedLogs(
+    logs,
+    groupedLogs,
+    assignedLogs
+  );
+
+  const logsWithYouTubeUrls = (() => {
+    if (!logs) return [];
+    return logs.filter((log) => {
+      if (log.mediaId || !log.description) return false;
+      return extractYouTubeUrl(log.description) !== null;
+    });
+  })();
+
+  const { mutate: assignMedia, isPending: isAssigning } = useMutation({
+    mutationFn: (
+      data: {
+        logsId: string[];
+        contentMedia: IMediaDocument;
+      }[]
+    ) => assignMediaFn(data),
+    onSuccess: (_, variables) => {
+      if (!autoMatchingProgress.isRunning) {
+        const totalLogs = variables.reduce(
+          (sum, item) => sum + item.logsId.length,
+          0
+        );
+        const channelCount = variables.length;
+
+        setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+        setSelectedLogs([]);
+        setSelectedGroup(null);
+
+        queryClient.invalidateQueries({
+          queryKey: ['videoLogs', username, 'video'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
+        queryClient.invalidateQueries({
+          queryKey: ['ImmersionList', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['userStats', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            ['user', 'ranking'].includes(query.queryKey[0] as string),
+        });
+        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+
+        toast.success(
+          t('video.assignedChannels', {
+            logs: totalLogs,
+            channels: channelCount,
+          })
+        );
+      }
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error(t('matcher.assignError'));
+      }
+    },
+  });
+
+  const [pasteUrl, setPasteUrl] = useState<string>('');
+  const [isMatchingPaste, setIsMatchingPaste] = useState(false);
+
+  // ── Playlist state ──────────────────────────────────────────────────────
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const [isFetchingPlaylist, setIsFetchingPlaylist] = useState(false);
+  const [playlistResult, setPlaylistResult] = useState<IPlaylistResult | null>(
+    null
+  );
+  const [isBatchAssigning, setIsBatchAssigning] = useState(false);
+  // ───────────────────────────────────────────────────────────────────────
+
+  const handlePasteMatch = useCallback(async () => {
+    const entries = Object.entries(filteredGroupedLogs);
+    const hasSelected = selectedLogs && selectedLogs.length > 0;
+    const group =
+      selectedGroup !== null && entries[selectedGroup]
+        ? (entries[selectedGroup][1] as ILog[])
+        : null;
+
+    const logsToAssign: ILog[] | null = hasSelected
+      ? selectedLogs
+      : group && group.length
+        ? group
+        : null;
+
+    if (!logsToAssign || logsToAssign.length === 0) {
+      toast.info(t('video.selectToMatch'));
+      return;
+    }
+
+    // ── Detect playlist URL first ────────────────────────────────────────
+    try {
+      const parsed = new URL(
+        (pasteUrl || '').startsWith('http') ? pasteUrl : `https://${pasteUrl}`
+      );
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const isYouTubeHost = host.endsWith('youtube.com') || host === 'youtu.be';
+      const list = parsed.searchParams.get('list');
+      if (isYouTubeHost && list && list.length > 2) {
+        // It's a playlist URL — open the selector modal
+        setPlaylistResult(null);
+        setPlaylistModalOpen(true);
+        setIsFetchingPlaylist(true);
+        try {
+          const result = await searchYouTubePlaylistFn(pasteUrl);
+          setPlaylistResult(result);
+        } catch (err) {
+          toast.error(
+            err instanceof AxiosError
+              ? (err.response?.data?.message ?? t('toast.playlistLoadFailed'))
+              : t('toast.playlistLoadFailed')
+          );
+          setPlaylistModalOpen(false);
+        } finally {
+          setIsFetchingPlaylist(false);
+          setPasteUrl('');
+        }
+        return;
+      }
+    } catch {
+      /* not a URL — fall through to single video */
+    }
+    // ── End playlist detection ───────────────────────────────────────────
+
+    const videoId = extractYouTubeVideoId(pasteUrl || '');
+    if (!videoId) {
+      toast.error(t('video.invalidUrl'));
+      return;
+    }
+
+    const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    setIsMatchingPaste(true);
+    try {
+      const result = await searchYouTubeVideoFn(normalizedUrl);
+      if (!result || !result.channel) {
+        toast.error(t('video.channelNotFound'));
+        return;
+      }
+
+      const payload = [
+        {
+          logsId: logsToAssign.map((l) => l._id),
+          contentMedia: {
+            contentId: result.channel.contentId,
+            contentImage: result.channel.contentImage,
+            coverImage: result.channel.contentImage,
+            description: result.channel.description,
+            type: 'video' as const,
+            title: result.channel.title,
+            isAdult: result.channel.isAdult,
+          } as IMediaDocument,
+        },
+      ];
+
+      assignMedia(payload, {
+        onError: (err) => {
+          console.error('Paste match assign error', err);
+        },
+      });
+    } catch (error) {
+      console.error('Paste match error', error);
+      toast.error(t('video.pasteMatchError'));
+    } finally {
+      setIsMatchingPaste(false);
+      setPasteUrl('');
+    }
+  }, [
+    pasteUrl,
+    selectedLogs,
+    selectedGroup,
+    filteredGroupedLogs,
+    assignMedia,
+    extractYouTubeVideoId,
+    t,
+  ]);
+
+  // ── Handle playlist confirm (assign each channel to the selected logs) ──
+  const handlePlaylistConfirm = useCallback(
+    async (selected: PlaylistVideoWithOverride[]) => {
+      if (!selected.length) return;
+
+      const entries = Object.entries(filteredGroupedLogs);
+      const hasSelected = selectedLogs && selectedLogs.length > 0;
+      const group =
+        selectedGroup !== null && entries[selectedGroup]
+          ? (entries[selectedGroup][1] as ILog[])
+          : null;
+      const logsToAssign: ILog[] | null = hasSelected
+        ? selectedLogs
+        : group && group.length
+          ? group
+          : null;
+
+      if (!logsToAssign || logsToAssign.length === 0) {
+        toast.info(t('video.selectFirst'));
+        setPlaylistModalOpen(false);
+        return;
+      }
+
+      setIsBatchAssigning(true);
+
+      // Group selected videos by channel so we send one assign call per channel
+      const byChannel = new Map<string, IMediaDocument>();
+      for (const { playlistVideo } of selected) {
+        const ch = playlistVideo.channel;
+        if (!byChannel.has(ch.contentId)) byChannel.set(ch.contentId, ch);
+      }
+
+      const payload = Array.from(byChannel.values()).map((ch) => ({
+        logsId: logsToAssign.map((l) => l._id),
+        contentMedia: {
+          contentId: ch.contentId,
+          contentImage: ch.contentImage ?? null,
+          coverImage: ch.contentImage ?? null,
+          description: ch.description,
+          type: 'video' as const,
+          title: ch.title,
+          isAdult: ch.isAdult,
+        } as IMediaDocument,
+      }));
+
+      try {
+        await new Promise<void>((resolve, reject) =>
+          assignMedia(payload, { onSuccess: resolve, onError: reject })
+        );
+        toast.success(
+          `Assigned ${logsToAssign.length} log${logsToAssign.length !== 1 ? 's' : ''} to ${byChannel.size} channel${byChannel.size !== 1 ? 's' : ''} from playlist`
+        );
+      } catch (err) {
+        console.error('Playlist assign error', err);
+        toast.error(t('video.playlistAssignError'));
+      } finally {
+        setIsBatchAssigning(false);
+        setPlaylistModalOpen(false);
+        setPlaylistResult(null);
+      }
+    },
+    [selectedLogs, selectedGroup, filteredGroupedLogs, assignMedia, t]
+  );
+  // ── End playlist confirm ─────────────────────────────────────────────────
+
+  const handleAutoMatch = useCallback(async () => {
+    if (logsWithYouTubeUrls.length === 0) {
+      toast.info(t('video.noUrlsToMatch'));
+      return;
+    }
+
+    setAutoMatchingProgress({
+      current: 0,
+      total: logsWithYouTubeUrls.length,
+      isRunning: true,
+    });
+
+    const channelGroups = new Map<
+      string,
+      { logs: ILog[]; channel: IMediaDocument }
+    >();
+    let processed = 0;
+
+    try {
+      for (const log of logsWithYouTubeUrls) {
+        const youtubeUrl = extractYouTubeUrl(log.description!);
+        if (!youtubeUrl) continue;
+
+        try {
+          const result = await searchYouTubeVideoFn(youtubeUrl);
+          if (result?.channel) {
+            const channelId = result.channel.contentId;
+
+            if (channelGroups.has(channelId)) {
+              channelGroups.get(channelId)!.logs.push(log);
+            } else {
+              channelGroups.set(channelId, {
+                logs: [log],
+                channel: result.channel,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(
+            `Failed to process YouTube URL for log ${log._id}:`,
+            error
+          );
+        }
+
+        processed++;
+        setAutoMatchingProgress((prev) => ({ ...prev, current: processed }));
+      }
+
+      const assignmentData = Array.from(channelGroups.values()).map(
+        ({ logs, channel }) => ({
+          logsId: logs.map((log) => log._id),
+          contentMedia: {
+            contentId: channel.contentId,
+            contentImage: channel.contentImage,
+            coverImage: channel.contentImage,
+            description: channel.description,
+            type: 'video' as const,
+            title: channel.title,
+            isAdult: channel.isAdult,
+          } as IMediaDocument,
+        })
+      );
+
+      if (assignmentData.length > 0) {
+        const BATCH_SIZE = 50;
+        const batches = [];
+        for (let i = 0; i < assignmentData.length; i += BATCH_SIZE) {
+          batches.push(assignmentData.slice(i, i + BATCH_SIZE));
+        }
+
+        let totalProcessed = 0;
+        for (const batch of batches) {
+          await new Promise<void>((resolve, reject) => {
+            assignMedia(batch, {
+              onSuccess: () => {
+                totalProcessed += batch.reduce(
+                  (sum, item) => sum + item.logsId.length,
+                  0
+                );
+                resolve();
+              },
+              onError: (error) => {
+                reject(error);
+              },
+            });
+          });
+        }
+
+        // Show final success message
+        const totalChannels = assignmentData.length;
+        toast.success(
+          t('video.assignedChannels', {
+            logs: totalProcessed,
+            channels: totalChannels,
+          })
+        );
+
+        // Update state after all batches are processed
+        setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+        setSelectedLogs([]);
+        setSelectedGroup(null);
+
+        // Comprehensive query invalidation to update all related data
+        queryClient.invalidateQueries({
+          queryKey: ['videoLogs', username, 'video'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
+        queryClient.invalidateQueries({
+          queryKey: ['ImmersionList', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['userStats', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            ['user', 'ranking'].includes(query.queryKey[0] as string),
+        });
+        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      } else {
+        toast.info(t('video.noValidChannels'));
+      }
+    } catch (error) {
+      toast.error(t('video.autoMatchError'));
+      console.error('Auto-matching error:', error);
+    } finally {
+      setAutoMatchingProgress({ current: 0, total: 0, isRunning: false });
+    }
+  }, [
+    logsWithYouTubeUrls,
+    extractYouTubeUrl,
+    assignMedia,
+    queryClient,
+    currentUsername,
+    username,
+    selectedLogs,
+    t,
+  ]);
+
+  if (isLoadingLogs) {
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
+        <div className="card surface w-full max-w-md">
+          <div className="card-body text-center">
+            <div className="flex justify-center mb-4">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+
+            <h2 className="card-title justify-center text-2xl mb-2">
+              {t('matcher.loadingTitle')}
+            </h2>
+
+            <p className="text-base-content/70 mb-4">
+              {t('matcher.preparing')}
+            </p>
+
+            <div className="divider">{t('matcher.pleaseWait')}</div>
+
+            <div className="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="stroke-current shrink-0 w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <div className="text-sm">
+                <div className="font-semibold">
+                  {t('matcher.mayTakeAMoment')}
+                </div>
+                <div>{t('matcher.loadingLogs')}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (logError) {
+    return (
+      <div className="alert alert-error">
+        <span>
+          {t('matcher.errorLoading', {
+            type: t('common:mediaTypesPlural.video'),
+          })}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full p-4">
+      <h1 className="text-2xl font-bold text-center mb-4">
+        {t('video.assignChannels')}
+      </h1>
+
+      <div className="stats shadow-sm mb-4 w-full">
+        <div className="stat">
+          <div className="stat-title">{t('matcher.selectedLogs')}</div>
+          <div className="stat-value">{selectedLogs.length}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">{t('matcher.availableGroups')}</div>
+          <div className="stat-value">
+            {Object.keys(filteredGroupedLogs).length}
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">{t('video.autoMatchable')}</div>
+          <div className="stat-value text-success">
+            {logsWithYouTubeUrls.length}
+          </div>
+        </div>
+      </div>
+
+      {/* Auto-match section */}
+      {logsWithYouTubeUrls.length > 0 && (
+        <div className="card bg-primary/10 border border-primary mb-6">
+          <div className="card-body">
+            <h3 className="card-title text-primary">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              {t('video.autoMatchYoutube')}
+            </h3>
+            <p className="text-sm mb-4">
+              {t('video.autoMatchFound', {
+                count: logsWithYouTubeUrls.length,
+              })}
+            </p>
+
+            {autoMatchingProgress.isRunning ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="loading loading-spinner loading-sm"></span>
+                  <span>{t('video.autoMatchInProgress')}</span>
+                </div>
+                <progress
+                  className="progress progress-primary w-full"
+                  value={autoMatchingProgress.current}
+                  max={autoMatchingProgress.total}
+                ></progress>
+                <p className="text-sm text-base-content/70">
+                  Processing {autoMatchingProgress.current} of{' '}
+                  {autoMatchingProgress.total} videos
+                </p>
+              </div>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={handleAutoMatch}
+                disabled={isAssigning}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                Auto-Match {logsWithYouTubeUrls.length} Videos
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Manual matching section */}
+      <div className="card surface-muted">
+        <div className="card-body p-4">
+          <h2 className="card-title">{t('video.manualGroups')}</h2>
+          <div className="divider my-1"></div>
+
+          <div className="mb-4 flex gap-2 items-center">
+            {(() => {
+              const entries = Object.entries(filteredGroupedLogs);
+              const hasTargetLogs =
+                selectedLogs.length > 0 ||
+                (selectedGroup !== null &&
+                  !!entries[selectedGroup] &&
+                  Array.isArray(entries[selectedGroup][1]) &&
+                  (entries[selectedGroup][1] as ILog[]).length > 0);
+
+              return (
+                <>
+                  <input
+                    type="text"
+                    placeholder={t('video.pasteUrlPlaceholder')}
+                    className="input input-sm flex-grow"
+                    value={pasteUrl}
+                    onChange={(e) => setPasteUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handlePasteMatch();
+                      }
+                    }}
+                    disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
+                  />
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={handlePasteMatch}
+                    disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
+                  >
+                    {isMatchingPaste ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                      t('video.matchLink')
+                    )}
+                  </button>
+                  <DismissLogsButton
+                    selectedLogs={selectedLogs}
+                    onDismissed={handleLogsDismissed}
+                    className="btn-sm"
+                  />
+                </>
+              );
+            })()}
+          </div>
+
+          {Object.keys(filteredGroupedLogs).length > 0 ? (
+            <div className="overflow-y-auto max-h-[60vh]">
+              <div className="join join-vertical w-full">
+                {Object.entries(filteredGroupedLogs).map(([key, group], i) => (
+                  <div
+                    className="collapse collapse-arrow join-item border border-base-300 bg-base-100"
+                    key={i}
+                  >
+                    <input
+                      type="radio"
+                      name="log-accordion"
+                      checked={i === selectedGroup}
+                      onChange={() => {
+                        handleOpenGroup(group, i);
+                      }}
+                    />
+                    <div className="collapse-title font-medium">
+                      <div className="flex items-center gap-2">
+                        <div className="badge badge-primary">
+                          {group?.length || 0}
+                        </div>
+                        <span className="text-sm md:text-base">{key}</span>
+                        {group &&
+                          group[0] &&
+                          extractYouTubeUrl(group[0].description || '') && (
+                            <div className="badge badge-success badge-sm">
+                              <svg
+                                className="w-3 h-3 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                              </svg>
+                              YouTube
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                    <div className="collapse-content">
+                      {group?.map((log, i) => (
+                        <div
+                          className="flex items-center gap-4 py-2 hover:bg-base-200 rounded-md px-2"
+                          key={i}
+                        >
+                          <label onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-primary checkbox-sm"
+                              checked={selectedLogs.includes(log)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleCheckboxChange(log);
+                              }}
+                            />
+                          </label>
+                          <div className="grow">
+                            <h3 className="text-sm">{log.description}</h3>
+                            <p className="text-xs text-base-content/70">
+                              {log.unknownDate
+                                ? t('create.unknownDate')
+                                : new Date(log.date).toLocaleDateString()}
+                            </p>
+                            {extractYouTubeUrl(log.description || '') && (
+                              <div className="text-xs text-success mt-1">
+                                {t('video.containsYoutubeUrl')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="stroke-current shrink-0 w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <span>
+                {t('matcher.noUnassigned', {
+                  type: t('common:mediaTypesPlural.video'),
+                })}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Playlist selector modal ──────────────────────────────────────── */}
+      <PlaylistSelectorModal
+        isOpen={playlistModalOpen}
+        isFetching={isFetchingPlaylist}
+        playlistResult={playlistResult}
+        onClose={() => {
+          if (!isBatchAssigning) {
+            setPlaylistModalOpen(false);
+            setPlaylistResult(null);
+          }
+        }}
+        onConfirm={handlePlaylistConfirm}
+        isSubmitting={isBatchAssigning}
+      />
+    </div>
+  );
+}
+
+export default VideoLogs;

@@ -1,0 +1,814 @@
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
+import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  User,
+  Play,
+  Book,
+  Gamepad,
+  Video,
+  Clapperboard,
+  MonitorPlay,
+  Filter,
+  ChevronDown,
+  X,
+} from 'lucide-react';
+import { searchUsersFn, multiSearchMediaFn } from '../api/trackerApi';
+import { searchAnilist } from '../api/anilistApi';
+import { SearchResultType } from '../types';
+import { useDebounce } from '../hooks/useDebounce';
+import { useUserDataStore } from '../store/userData';
+
+type SearchTab = 'all' | 'users' | 'media';
+type MediaTypeFilter = 'all' | string;
+
+interface UserResult {
+  _id: string;
+  username: string;
+  avatar?: string;
+  banner?: string;
+  stats?: { xp: number };
+}
+
+const MEDIA_TYPE_CONFIG: Record<
+  string,
+  { icon: typeof Play; color: string; labelKey: ParseKeys<'common'> }
+> = {
+  anime: {
+    icon: Play,
+    color: 'text-secondary',
+    labelKey: 'mediaTypes.anime',
+  },
+  manga: {
+    icon: Book,
+    color: 'text-warning',
+    labelKey: 'mediaTypes.manga',
+  },
+  'light-novel': {
+    icon: Book,
+    color: 'text-primary',
+    labelKey: 'mediaTypes.light-novel',
+  },
+  vn: { icon: Gamepad, color: 'text-accent', labelKey: 'mediaTypes.vn' },
+  game: {
+    icon: Gamepad,
+    color: 'text-neutral',
+    labelKey: 'mediaTypes.game',
+  },
+  video: {
+    icon: Video,
+    color: 'text-info',
+    labelKey: 'mediaTypes.video',
+  },
+  movie: {
+    icon: Clapperboard,
+    color: 'text-error',
+    labelKey: 'mediaTypes.movie',
+  },
+  'tv show': {
+    icon: MonitorPlay,
+    color: 'text-success',
+    labelKey: 'mediaTypes.tvShow',
+  },
+  book: {
+    icon: Book,
+    color: 'text-accent',
+    labelKey: 'mediaTypes.book',
+  },
+};
+
+// Media type filter options for the search bar dropdown (keys map to
+// SearchResultType.type / MEDIA_TYPE_CONFIG).
+const MEDIA_TYPE_FILTERS: {
+  value: MediaTypeFilter;
+  labelKey: ParseKeys<'common'>;
+}[] = [
+  { value: 'all', labelKey: 'allTypes' },
+  { value: 'anime', labelKey: 'mediaTypes.anime' },
+  { value: 'manga', labelKey: 'mediaTypes.manga' },
+  { value: 'light-novel', labelKey: 'mediaTypes.light-novel' },
+  { value: 'vn', labelKey: 'mediaTypes.vn' },
+  { value: 'game', labelKey: 'mediaTypes.game' },
+  { value: 'video', labelKey: 'mediaTypes.video' },
+  { value: 'movie', labelKey: 'mediaTypes.movie' },
+  { value: 'tv show', labelKey: 'mediaTypes.tvShow' },
+  { value: 'book', labelKey: 'mediaTypes.book' },
+];
+
+type SearchResultEntry = {
+  type: 'user' | 'media';
+  data: UserResult | SearchResultType;
+};
+
+const SCORE_BOOST_CAP = 100;
+
+function normalizeSearchValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+// Heuristic: exact > prefix > substring, with earlier matches ranked higher.
+function scoreSearchMatch(query: string, candidate?: string | null): number {
+  if (!query || !candidate) return 0;
+  const target = candidate.toLowerCase();
+
+  if (target === query) return 1000;
+  if (target.startsWith(query)) {
+    return 800 - Math.min(target.length - query.length, SCORE_BOOST_CAP);
+  }
+
+  const index = target.indexOf(query);
+  if (index >= 0) {
+    return 600 - Math.min(index, SCORE_BOOST_CAP);
+  }
+
+  return 0;
+}
+
+function scoreSearchCandidates(
+  query: string,
+  candidates: Array<string | null | undefined>
+): number {
+  return candidates.reduce(
+    (best, candidate) => Math.max(best, scoreSearchMatch(query, candidate)),
+    0
+  );
+}
+
+function getUserMatchScore(query: string, user: UserResult): number {
+  return scoreSearchCandidates(query, [user.username]);
+}
+
+// Round-robin results by media type so every type gets representation in the
+// top slice. Bucket order follows first appearance (DB relevance order), and
+// within each bucket the original order is preserved. Prevents any one type
+// (e.g. anime/manga) from crowding out light novels, visual novels, etc.
+function interleaveByType(items: SearchResultType[]): SearchResultType[] {
+  const buckets = new Map<string, SearchResultType[]>();
+  const order: string[] = [];
+
+  for (const item of items) {
+    let bucket = buckets.get(item.type);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(item.type, bucket);
+      order.push(item.type);
+    }
+    bucket.push(item);
+  }
+
+  const result: SearchResultType[] = [];
+  let round = 0;
+  let addedThisRound = true;
+
+  while (addedThisRound) {
+    addedThisRound = false;
+    for (const type of order) {
+      const bucket = buckets.get(type)!;
+      if (round < bucket.length) {
+        result.push(bucket[round]);
+        addedThisRound = true;
+      }
+    }
+    round++;
+  }
+
+  return result;
+}
+
+function getMediaMatchScore(query: string, media: SearchResultType): number {
+  const title = media.title || {};
+  const rawSynonyms = (media as { synonyms?: unknown }).synonyms;
+  const synonyms = Array.isArray(rawSynonyms) ? (rawSynonyms as string[]) : [];
+
+  return scoreSearchCandidates(query, [
+    title.contentTitleNative,
+    title.contentTitleEnglish,
+    title.contentTitleRomaji,
+    ...synonyms,
+  ]);
+}
+
+function MediaResultRow({
+  media,
+  isSelected,
+  isHovered,
+  onSelect,
+  blurAdult,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  media: SearchResultType;
+  isSelected: boolean;
+  isHovered: boolean;
+  onSelect: () => void;
+  blurAdult: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  const { t: tCommon } = useTranslation('common');
+  const config = MEDIA_TYPE_CONFIG[media.type] || MEDIA_TYPE_CONFIG.anime;
+  const TypeIcon = config.icon;
+  const shouldBlur =
+    (media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) &&
+    blurAdult;
+  const isActive = isHovered || isSelected;
+
+  return (
+    <button
+      data-selected={isActive}
+      className={`group/row relative w-full flex items-center gap-3 px-4 py-3 overflow-hidden cursor-pointer transition-all duration-200 ${
+        isActive
+          ? 'bg-primary/15 border-l-3 border-primary pl-3.5'
+          : 'hover:bg-base-content/5'
+      }`}
+      onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Background banner image (coverImage preferred, contentImage fallback) */}
+      {(media.coverImage || media.contentImage) && (
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src={media.coverImage || media.contentImage}
+            alt=""
+            className={`absolute inset-0 w-full h-full object-cover ${shouldBlur ? 'blur-lg' : ''}`}
+          />
+          <div
+            className={`absolute inset-0 bg-gradient-to-r ${
+              isActive
+                ? 'from-primary/30 via-base-100/70 to-base-100/50'
+                : 'from-base-100/95 via-base-100/80 to-base-100/60'
+            }`}
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 flex items-center gap-3 w-full">
+        {/* Poster thumbnail */}
+        <div className="w-9 h-12 rounded-md overflow-hidden flex-shrink-0 ring-1 ring-base-content/10">
+          {media.contentImage ? (
+            <img
+              src={media.contentImage}
+              alt={media.title.contentTitleNative}
+              className={`w-full h-full object-cover ${shouldBlur ? 'blur-sm' : ''}`}
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full bg-base-300">
+              <TypeIcon className={`w-4 h-4 ${config.color} opacity-50`} />
+            </div>
+          )}
+        </div>
+
+        {/* Text */}
+        <div className="flex-1 text-left min-w-0">
+          <p className="font-semibold text-sm truncate leading-tight">
+            {media.title.contentTitleNative ||
+              media.title.contentTitleEnglish ||
+              media.title.contentTitleRomaji}
+          </p>
+          {media.title.contentTitleEnglish &&
+            media.title.contentTitleNative && (
+              <p className="text-xs text-base-content/50 truncate mt-0.5">
+                {media.title.contentTitleEnglish}
+              </p>
+            )}
+        </div>
+
+        {/* Type badge */}
+        <span
+          className={`badge badge-sm gap-1 flex-shrink-0 ${
+            isActive ? 'badge-primary' : 'badge-ghost'
+          }`}
+        >
+          <TypeIcon className="w-3 h-3" />
+          {tCommon(config.labelKey)}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function UserResultRow({
+  user,
+  isSelected,
+  isHovered,
+  onSelect,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  user: UserResult;
+  isSelected: boolean;
+  isHovered: boolean;
+  onSelect: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  const isActive = isHovered || isSelected;
+
+  return (
+    <button
+      data-selected={isActive}
+      className={`group/row relative w-full flex items-center gap-3 px-4 py-3 overflow-hidden cursor-pointer transition-all duration-200 ${
+        isActive
+          ? 'bg-primary/15 border-l-3 border-primary pl-3.5'
+          : 'hover:bg-base-content/5'
+      }`}
+      onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Background from banner (preferred) or avatar */}
+      {(user.banner || user.avatar) && (
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src={user.banner || user.avatar}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div
+            className={`absolute inset-0 bg-gradient-to-r ${
+              isActive
+                ? 'from-primary/30 via-base-100/70 to-base-100/50'
+                : 'from-base-100/95 via-base-100/80 to-base-100/60'
+            }`}
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 flex items-center gap-3 w-full">
+        <div className="avatar">
+          <div className="w-9 h-9 rounded-full ring-1 ring-base-content/10">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.username} loading="lazy" />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full bg-base-300">
+                <User className="w-4 h-4 text-base-content/40" />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="font-semibold text-sm truncate">{user.username}</p>
+          {user.stats?.xp != null && (
+            <p className="text-xs text-base-content/50">
+              {user.stats.xp.toLocaleString()} XP
+            </p>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function SearchModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation('media');
+  const { t: tCommon } = useTranslation('common');
+  const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<SearchTab>('all');
+  const [mediaTypeFilter, setMediaTypeFilter] =
+    useState<MediaTypeFilter>('all');
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [mediaResults, setMediaResults] = useState<SearchResultType[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [keyboardSelectionVisible, setKeyboardSelectionVisible] =
+    useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user } = useUserDataStore();
+  const blurAdult = user?.settings?.blurAdultContent ?? false;
+
+  const debouncedQuery = useDebounce(query, 300);
+
+  // Focus input when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setUserResults([]);
+      setMediaResults([]);
+      setSelectedIndex(0);
+      setHoveredIndex(null);
+      setKeyboardSelectionVisible(false);
+      setActiveTab('all');
+      setMediaTypeFilter('all');
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  // Search logic
+  useEffect(() => {
+    if (!debouncedQuery || debouncedQuery.trim().length < 2) {
+      setUserResults([]);
+      setMediaResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function performSearch() {
+      setIsSearching(true);
+      try {
+        const promises: Promise<void>[] = [];
+
+        if (activeTab === 'all' || activeTab === 'users') {
+          promises.push(
+            searchUsersFn(debouncedQuery).then((users) => {
+              if (!controller.signal.aborted) setUserResults(users);
+            })
+          );
+        }
+
+        if (activeTab === 'all' || activeTab === 'media') {
+          // Single multi-index search across all MeiliSearch indexes (unified relevance ranking)
+          const dbSearchPromise = multiSearchMediaFn({
+            search: debouncedQuery,
+            perPage: 3,
+          }).catch(() => [] as SearchResultType[]);
+
+          // AniList searches for anime/manga/reading (discovers content not yet in DB)
+          const anilistPromises = [
+            searchAnilist(debouncedQuery, 'ANIME', 1, 3).catch(
+              () => [] as SearchResultType[]
+            ),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3).catch(
+              () => [] as SearchResultType[]
+            ),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'NOVEL').catch(
+              () => [] as SearchResultType[]
+            ),
+          ];
+
+          promises.push(
+            Promise.all([dbSearchPromise, ...anilistPromises]).then(
+              ([dbResults, ...anilistResults]) => {
+                if (!controller.signal.aborted) {
+                  // DB results first (cross-index relevance ranked), then AniList results
+                  const allMedia = [...dbResults, ...anilistResults.flat()];
+                  const seen = new Set<string>();
+                  const unique = allMedia.filter((item) => {
+                    // Dedupe by contentId + type to handle same content from DB and AniList
+                    const key = `${item.type}:${item.contentId}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                  });
+                  // Round-robin by type so light novels / VNs / etc. aren't
+                  // crowded out of the top slice by anime & manga.
+                  setMediaResults(interleaveByType(unique).slice(0, 15));
+                }
+              }
+            )
+          );
+        }
+
+        await Promise.all(promises);
+      } catch {
+        // Silently ignore search errors
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    }
+
+    performSearch();
+    return () => controller.abort();
+  }, [debouncedQuery, activeTab]);
+
+  // Build combined results list for keyboard navigation
+  const normalizedQuery = normalizeSearchValue(debouncedQuery);
+  const allResults = useMemo<SearchResultEntry[]>(() => {
+    const filteredMedia =
+      mediaTypeFilter === 'all'
+        ? mediaResults
+        : mediaResults.filter((media) => media.type === mediaTypeFilter);
+
+    if (activeTab === 'users') {
+      return userResults.map((user) => ({ type: 'user', data: user }));
+    }
+
+    if (activeTab === 'media') {
+      return filteredMedia.map((media) => ({ type: 'media', data: media }));
+    }
+
+    const scoredResults: Array<
+      SearchResultEntry & { score: number; order: number }
+    > = [];
+
+    userResults.forEach((user, index) => {
+      scoredResults.push({
+        type: 'user',
+        data: user,
+        score: getUserMatchScore(normalizedQuery, user),
+        order: index,
+      });
+    });
+
+    filteredMedia.forEach((media, index) => {
+      scoredResults.push({
+        type: 'media',
+        data: media,
+        score: getMediaMatchScore(normalizedQuery, media),
+        order: index,
+      });
+    });
+
+    return scoredResults
+      .sort((a, b) => b.score - a.score || a.order - b.order)
+      .map(({ type, data }) => ({ type, data }));
+  }, [activeTab, userResults, mediaResults, mediaTypeFilter, normalizedQuery]);
+
+  const allResultsRef = useRef(allResults);
+  allResultsRef.current = allResults;
+
+  // Mirror hoveredIndex/selectedIndex into refs so the keydown listener reads
+  // the latest values without re-subscribing on every hover.
+  const hoveredIndexRef = useRef(hoveredIndex);
+  hoveredIndexRef.current = hoveredIndex;
+  const selectedIndexRef = useRef(selectedIndex);
+  selectedIndexRef.current = selectedIndex;
+
+  const handleSelect = useCallback(
+    (result: (typeof allResults)[number]) => {
+      if (result.type === 'user') {
+        const user = result.data as UserResult;
+        navigate(`/user/${user.username}`);
+      } else {
+        const media = result.data as SearchResultType;
+        navigate(`/${media.type}/${media.contentId}`);
+      }
+      onClose();
+    },
+    [navigate, onClose]
+  );
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const results = allResultsRef.current;
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setKeyboardSelectionVisible(true);
+          setSelectedIndex((prev) =>
+            prev < results.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setKeyboardSelectionVisible(true);
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : results.length - 1
+          );
+          break;
+        case 'Enter': {
+          e.preventDefault();
+          const index = hoveredIndexRef.current ?? selectedIndexRef.current;
+          if (results[index]) {
+            handleSelect(results[index]);
+          }
+          break;
+        }
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          break;
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleSelect, onClose]);
+
+  // Reset selection when results change
+  useEffect(() => {
+    setSelectedIndex(0);
+    setHoveredIndex(null);
+    setKeyboardSelectionVisible(false);
+  }, [allResults]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (
+      !resultsRef.current ||
+      !keyboardSelectionVisible ||
+      hoveredIndex != null
+    ) {
+      return;
+    }
+    const selected = resultsRef.current.querySelector('[data-selected="true"]');
+    selected?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex, hoveredIndex, keyboardSelectionVisible]);
+
+  if (!isOpen) return null;
+
+  const hasResults = allResults.length > 0;
+  const hasQuery = debouncedQuery.trim().length >= 2;
+
+  return (
+    <dialog
+      className="modal modal-bottom sm:modal-middle modal-open"
+      onClick={onClose}
+    >
+      <div
+        className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Search Input */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
+          <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            className="flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
+            placeholder={t('search.placeholder')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {isSearching && (
+            <span className="loading loading-spinner loading-sm text-primary" />
+          )}
+          {/* Media type filter */}
+          <div className="dropdown dropdown-end flex-shrink-0">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-ghost btn-sm gap-1.5 font-normal"
+              title={t('search.filterByType')}
+              aria-label={t('search.filterByType')}
+            >
+              <Filter className="w-3.5 h-3.5 opacity-60" />
+              <span className="text-sm">
+                {tCommon(
+                  MEDIA_TYPE_FILTERS.find((o) => o.value === mediaTypeFilter)
+                    ?.labelKey ?? 'allTypes'
+                )}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu menu-sm z-50 mt-2 w-44 surface-raised p-1"
+            >
+              {MEDIA_TYPE_FILTERS.map((opt) => (
+                <li key={opt.value}>
+                  <button
+                    type="button"
+                    className={mediaTypeFilter === opt.value ? 'active' : ''}
+                    onClick={(e) => {
+                      setMediaTypeFilter(opt.value);
+                      // A type filter only makes sense against media results
+                      if (opt.value !== 'all' && activeTab === 'users') {
+                        setActiveTab('media');
+                      }
+                      // Close the dropdown, then refocus the input
+                      (e.currentTarget as HTMLElement).blur();
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {tCommon(opt.labelKey)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-1 px-4 py-2 border-b border-base-content/10">
+          {(
+            [
+              { id: 'all', label: 'All' },
+              { id: 'users', label: t('search.users') },
+              { id: 'media', label: t('search.media') },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              className={`btn btn-xs ${activeTab === tab.id ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                inputRef.current?.focus();
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Results */}
+        <div
+          ref={resultsRef}
+          className="max-h-[28rem] overflow-y-auto overscroll-contain"
+        >
+          {!hasQuery && (
+            <div className="px-4 py-16 text-center text-base-content/40">
+              <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t('search.typeToSearch')}</p>
+              <p className="text-xs mt-1 text-base-content/25">
+                {t('search.subtitle')}
+              </p>
+            </div>
+          )}
+
+          {hasQuery && !isSearching && !hasResults && (
+            <div className="px-4 py-16 text-center text-base-content/40">
+              <p className="text-sm">
+                {t('search.noResults', { query: debouncedQuery })}
+              </p>
+            </div>
+          )}
+
+          {hasResults && (
+            <div className="divide-y divide-base-content/5">
+              {allResults.map((result, index) => {
+                if (result.type === 'user') {
+                  const user = result.data as UserResult;
+                  const isKeyboardSelected =
+                    keyboardSelectionVisible && index === selectedIndex;
+                  return (
+                    <UserResultRow
+                      key={user._id}
+                      user={user}
+                      isSelected={isKeyboardSelected}
+                      isHovered={index === hoveredIndex}
+                      onSelect={() =>
+                        handleSelect({ type: 'user', data: user })
+                      }
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    />
+                  );
+                }
+
+                const media = result.data as SearchResultType;
+                const isKeyboardSelected =
+                  keyboardSelectionVisible && index === selectedIndex;
+                return (
+                  <MediaResultRow
+                    key={`${media.type}-${media.contentId}`}
+                    media={media}
+                    isSelected={isKeyboardSelected}
+                    isHovered={index === hoveredIndex}
+                    blurAdult={blurAdult}
+                    onSelect={() =>
+                      handleSelect({ type: 'media', data: media })
+                    }
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-2 border-t border-base-content/10 text-[11px] text-base-content/30">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <kbd className="kbd kbd-xs">↑</kbd>
+              <kbd className="kbd kbd-xs">↓</kbd>
+              {t('search.hints.navigate')}
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="kbd kbd-xs">↵</kbd>
+              {t('search.hints.select')}
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="kbd kbd-xs">esc</kbd>
+              {t('search.hints.close')}
+            </span>
+          </div>
+          <span className="flex items-center gap-1">
+            <kbd className="kbd kbd-xs">
+              {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl'}
+            </kbd>
+            <kbd className="kbd kbd-xs">K</kbd>
+          </span>
+        </div>
+      </div>
+      <form method="dialog" className="modal-backdrop">
+        <button onClick={onClose}>close</button>
+      </form>
+    </dialog>
+  );
+}
+
+export default SearchModal;

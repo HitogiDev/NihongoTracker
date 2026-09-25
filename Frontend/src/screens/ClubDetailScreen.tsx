@@ -1,0 +1,2815 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
+import { useState, useEffect } from 'react';
+import Field from '../components/ui/Field';
+import DatePickerInput from '../components/ui/DatePickerInput';
+import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import {
+  Users,
+  Pencil,
+  UserPlus,
+  DoorOpen,
+  Shield,
+  BadgeCheck,
+  Play,
+  Book,
+  Gamepad2,
+  Clapperboard,
+  MonitorPlay,
+  Plus,
+  Clock,
+  X,
+  Vote,
+  BarChart,
+  Info,
+  Settings,
+  Ellipsis,
+} from 'lucide-react';
+import {
+  getClubFn,
+  joinClubFn,
+  leaveClubFn,
+  getClubMediaFn,
+  addClubMediaFn,
+  getPendingMembershipRequestsFn,
+  manageMembershipRequestFn,
+  kickClubMemberFn,
+  transferLeadershipFn,
+  updateClubFn,
+  updateClubWithFilesFn,
+  updateClubMemberRoleFn,
+} from '../api/clubApi';
+import useSearch from '../hooks/useSearch';
+import {
+  IMediaDocument,
+  IClubMedia,
+  IClubGoal,
+  youtubeChannelInfo,
+} from '../types.d';
+import { useUserDataStore } from '../store/userData';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
+import CreateVotingWizard from '../components/club/CreateVotingWizard';
+import VotingSystem from '../components/club/VotingSystem';
+import ClubRankingsTab from '../components/club/ClubRankingsTab';
+import EditClubMediaModal from '../components/club/EditClubMediaModal';
+import QuickLog from '../components/QuickLog';
+import RecentActivity from '../components/club/RecentActivity';
+import ClubObjectives, {
+  ClubIndividualObjectives,
+} from '../components/club/ClubObjectives';
+import UserAvatar from '../components/UserAvatar';
+import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
+import { Trans, useTranslation } from 'react-i18next';
+import {
+  getMaxClubMemberLimitForUser,
+  getClubMemberLimitValidationMessage,
+} from '../utils/patreonClubLimits';
+
+type ClubGoalDraft = {
+  type: IClubGoal['type'];
+  period: IClubGoal['period'];
+  targetValue: number;
+  targetHours: number;
+  targetMinutes: number;
+  currentProgress: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+};
+
+function formatDateInputValue(value: string | Date): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function createClubGoalDraft(goal?: Partial<IClubGoal>): ClubGoalDraft {
+  const target = goal?.target || 0;
+  const isTimeGoal = goal?.type === 'time';
+  const startDate = goal?.startDate
+    ? formatDateInputValue(goal.startDate)
+    : undefined;
+  const endDate = goal?.endDate
+    ? formatDateInputValue(goal.endDate)
+    : undefined;
+  const createdAt = goal?.createdAt
+    ? formatDateInputValue(goal.createdAt)
+    : undefined;
+  const targetHours = isTimeGoal ? Math.floor(target / 60) : 0;
+  const targetMinutes = isTimeGoal ? target % 60 : 0;
+
+  return {
+    type: goal?.type || 'time',
+    period: goal?.period || 'monthly',
+    targetValue: isTimeGoal ? target : goal?.target || 1000,
+    targetHours,
+    targetMinutes,
+    currentProgress: goal?.currentProgress || 0,
+    isActive: goal?.isActive ?? true,
+    startDate:
+      goal?.period === 'custom'
+        ? startDate || formatDateInputValue(new Date())
+        : startDate,
+    endDate:
+      goal?.period === 'custom'
+        ? endDate ||
+          formatDateInputValue(
+            new Date(new Date().setMonth(new Date().getMonth() + 1))
+          )
+        : endDate,
+    createdAt: createdAt || formatDateInputValue(new Date()),
+  };
+}
+
+function clubGoalToDraft(goal: IClubGoal): ClubGoalDraft {
+  return createClubGoalDraft(goal);
+}
+
+function serializeClubGoalDraft(goal: ClubGoalDraft): IClubGoal {
+  const target =
+    goal.type === 'time'
+      ? goal.targetHours * 60 + goal.targetMinutes
+      : goal.targetValue;
+
+  return {
+    type: goal.type,
+    target: Math.max(1, Math.floor(target)),
+    period: goal.period,
+    currentProgress: 0,
+    isActive: goal.isActive,
+    startDate: goal.period === 'custom' ? goal.startDate : undefined,
+    endDate: goal.period === 'custom' ? goal.endDate : undefined,
+    createdAt: goal.createdAt,
+  };
+}
+
+function ClubDetailScreen() {
+  const { t } = useTranslation(['clubs', 'common']);
+  const badgeText = usePatreonBadgeText();
+  const { clubId } = useParams<{ clubId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { user } = useUserDataStore();
+  const hideRankingFeatures = useHideRankingFeatures();
+  const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
+
+  // Fetch club data
+  const {
+    data: club,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['club', clubId],
+    queryFn: () => getClubFn(clubId!),
+    enabled: !!clubId,
+  });
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Fetch club media
+  const { data: clubMedia, isLoading: isMediaLoading } = useQuery({
+    queryKey: ['clubMedia', clubId],
+    queryFn: () => getClubMediaFn(clubId!, true),
+    enabled: !!clubId && !!club?.isUserMember,
+  });
+
+  // Fetch past media for history modal (only when opened)
+  const { data: pastMedia, isLoading: isPastLoading } = useQuery({
+    queryKey: ['clubMedia', clubId, 'history'],
+    queryFn: () => getClubMediaFn(clubId!, false),
+    enabled: !!clubId && isHistoryOpen,
+  });
+
+  // Join club mutation
+  const joinMutation = useMutation({
+    mutationFn: () => joinClubFn(clubId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success(t('toast.joined'));
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.joinFailed');
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'response' in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+
+  // Leave club mutation
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveClubFn(clubId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+
+      // Check if club was disbanded (user was last member)
+      if ((club?.userRole === 'owner' || club?.userRole === 'leader') && club.memberCount === 1) {
+        toast.success(t('toast.disbanded'));
+        navigate('/clubs');
+      } else if (club?.userStatus === 'pending') {
+        toast.success(t('toast.joinCanceled'));
+      } else {
+        toast.success(t('toast.left'));
+        navigate('/clubs');
+      }
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.leaveFailed');
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'response' in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+
+  // Add media modal state
+  const [isAddMediaModalOpen, setIsAddMediaModalOpen] = useState(false);
+  const [isEditMediaModalOpen, setIsEditMediaModalOpen] = useState(false);
+  const [editingMedia, setEditingMedia] = useState<IClubMedia | null>(null);
+  const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
+    useState(false);
+  const [showVotingManagement, setShowVotingManagement] = useState(false);
+  const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false);
+  const [isClubGoalsModalOpen, setIsClubGoalsModalOpen] = useState(false);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+
+  // Confirmation modal states
+  const [isDisbandConfirmModalOpen, setIsDisbandConfirmModalOpen] =
+    useState(false);
+  const [isLeaveConfirmModalOpen, setIsLeaveConfirmModalOpen] = useState(false);
+  const [isTransferLeadershipModalOpen, setIsTransferLeadershipModalOpen] =
+    useState(false);
+  const [kickTarget, setKickTarget] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
+  const [selectedNewLeader, setSelectedNewLeader] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'media' | 'members' | 'rankings'
+  >('overview');
+  const [selectedMedia, setSelectedMedia] = useState<{
+    _id: string;
+    mediaId: string;
+    mediaType: string;
+    title: string;
+  } | null>(null);
+  const [mediaForm, setMediaForm] = useState({
+    mediaId: '',
+    mediaType: 'anime' as
+      | 'anime'
+      | 'manga'
+      | 'light-novel'
+      | 'vn'
+      | 'game'
+      | 'video'
+      | 'movie',
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    // Add media data for creation if media doesn't exist
+    mediaData: undefined as Partial<IMediaDocument> | undefined,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+
+    if (
+      tab === 'overview' ||
+      tab === 'media' ||
+      tab === 'members' ||
+      tab === 'rankings'
+    ) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+  // Search state for media autocomplete
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
+
+  // Use the search hook for media search
+  const { data: searchResults, isLoading: isSearching } = useSearch(
+    mediaForm.mediaType,
+    searchQuery,
+    undefined,
+    1,
+    10
+  );
+
+  const handleConfirmKick = () => {
+    if (!kickTarget) return;
+    kickMemberMutation.mutate(kickTarget.userId, {
+      onSettled: () => setKickTarget(null),
+    });
+  };
+
+  // Add media mutation
+  const addMediaMutation = useMutation({
+    mutationFn: (mediaData: typeof mediaForm) =>
+      addClubMediaFn(clubId!, mediaData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['clubMedia', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success(data.message || t('toast.mediaAdded'));
+      setIsAddMediaModalOpen(false);
+      setMediaForm({
+        mediaId: '',
+        mediaType: 'anime',
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        mediaData: undefined,
+      });
+      // Reset search state
+      setSearchQuery('');
+      setShowResults(false);
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.mediaAddFailed');
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'response' in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+
+  const canManageClub = (() => {
+    return ['owner', 'leader', 'moderator', 'event_manager'].includes(
+      club?.userRole ?? 'member'
+    );
+  })();
+
+  const canEditClubSettings = club?.userRole === 'owner' || club?.userRole === 'leader';
+  const canCreateChallenges = canManageClub;
+  const canPinObjectives = ['owner', 'leader', 'moderator'].includes(
+    club?.userRole ?? 'member'
+  );
+
+  // Pending membership requests (leaders only)
+  const { data: pendingRequests, refetch: refetchPending } = useQuery({
+    queryKey: ['clubPending', clubId],
+    queryFn: () => getPendingMembershipRequestsFn(clubId!),
+    enabled: !!clubId && (club?.userRole === 'owner' || club?.userRole === 'leader'),
+  });
+
+  const membershipActionMutation = useMutation({
+    mutationFn: ({
+      memberId,
+      action,
+    }: {
+      memberId: string;
+      action: 'approve' | 'reject';
+    }) => manageMembershipRequestFn(clubId!, memberId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
+      refetchPending();
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.membershipFailed');
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: 'moderator' | 'event_manager' | 'member' }) =>
+      updateClubMemberRoleFn(clubId!, memberId, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['club', clubId] }),
+    onError: () => toast.error(t('toast.roleUpdateFailed')),
+  });
+
+  const kickMemberMutation = useMutation({
+    mutationFn: (memberId: string) => kickClubMemberFn(clubId!, memberId),
+    onSuccess: (data) => {
+      toast.success(data.message || t('toast.memberRemoved'));
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.memberRemoveFailed');
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'response' in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+
+  // Transfer leadership mutation
+  const transferLeadershipMutation = useMutation({
+    mutationFn: (newLeaderId: string) =>
+      transferLeadershipFn(clubId!, newLeaderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success(t('toast.leadershipTransferred'));
+      setIsTransferLeadershipModalOpen(false);
+      setSelectedNewLeader(null);
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.transferFailed');
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  // Edit club form state
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    isPublic: true,
+    tags: [] as string[],
+    rules: '',
+    memberLimit: 100,
+  });
+
+  const [clubGoalsForm, setClubGoalsForm] = useState<ClubGoalDraft[]>([]);
+
+  // File upload state for edit
+  const [editFiles, setEditFiles] = useState<{
+    avatar?: File;
+    banner?: File;
+  }>({});
+
+  const [editPreviews, setEditPreviews] = useState<{
+    avatar?: string;
+    banner?: string;
+  }>({});
+
+  // Update club mutation
+  const updateClubMutation = useMutation({
+    mutationFn: (updateData: typeof editForm) => {
+      return updateClubWithFilesFn(clubId!, {
+        ...updateData,
+        avatarFile: editFiles.avatar,
+        bannerFile: editFiles.banner,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success(t('toast.updated'));
+      setIsEditClubModalOpen(false);
+      setEditFiles({});
+      setEditPreviews({});
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('toast.clubUpdateFailed');
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  // Initialize edit form when club data is loaded
+  React.useEffect(() => {
+    if (club) {
+      setEditForm({
+        name: club.name,
+        description: club.description || '',
+        isPublic: club.isPublic,
+        tags: club.tags || [],
+        rules: club.rules || '',
+        memberLimit: club.memberLimit,
+      });
+      setClubGoalsForm((club.clubGoals || []).map(clubGoalToDraft));
+    }
+  }, [club]);
+
+  const canLeaveClub = (() => {
+    if (!club?.isUserMember) return false;
+
+    if ((club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1) return false;
+
+    return true;
+  })();
+
+  const getLeaveButtonText = (() => {
+    if (!club) return t('detail.leave');
+
+    if (club.userRole === 'owner' || club.userRole === 'leader') {
+      if (club.memberCount === 1) {
+        return t('detail.disband');
+      }
+      return t('detail.transferFirst');
+    }
+
+    return t('detail.leaveClub');
+  })();
+
+  const handleLeaveClick = () => {
+    if (!club) return;
+
+    if ((club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount === 1) {
+      setIsDisbandConfirmModalOpen(true);
+      return;
+    }
+
+    setIsLeaveConfirmModalOpen(true);
+  };
+
+  const buildClubGoalsPayload = (goals: ClubGoalDraft[]) =>
+    goals.map((goal) => {
+      if (
+        goal.type === 'time' &&
+        goal.targetHours * 60 + goal.targetMinutes <= 0
+      ) {
+        throw new Error(t('goals.timeMin'));
+      }
+
+      if (goal.type !== 'time' && goal.targetValue <= 0) {
+        throw new Error(t('goals.targetPositive'));
+      }
+
+      if (goal.period === 'custom') {
+        if (!goal.startDate || !goal.endDate) {
+          throw new Error(t('goals.customDates'));
+        }
+
+        if (new Date(goal.endDate) < new Date(goal.startDate)) {
+          throw new Error(t('goals.customOrder'));
+        }
+      }
+
+      return serializeClubGoalDraft(goal);
+    });
+
+  const clubGoalsMutation = useMutation({
+    mutationFn: (goals: ClubGoalDraft[]) => {
+      return updateClubFn(clubId!, {
+        clubGoals: buildClubGoalsPayload(goals),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success(t('toast.goalsUpdated'));
+      setIsClubGoalsModalOpen(false);
+    },
+    onError: (error: unknown) => {
+      let errorMessage = t('goals.updateFailed');
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  // Handle selecting media from search results
+  const handleSelectResult = (
+    result: IMediaDocument & { __youtubeChannelInfo?: youtubeChannelInfo }
+  ) => {
+    const isVideoChannel =
+      mediaForm.mediaType === 'video' && !!result.__youtubeChannelInfo;
+    const title = isVideoChannel
+      ? result.__youtubeChannelInfo?.channelTitle || ''
+      : result.title.contentTitleEnglish ||
+        result.title.contentTitleRomaji ||
+        result.title.contentTitleNative;
+
+    // Get description from the first available description
+    const description = isVideoChannel
+      ? result.__youtubeChannelInfo?.channelDescription || ''
+      : result.description?.[0]?.description || '';
+    const cleanDescription = description
+      .replace(/<[^>]*>/g, '')
+      .substring(0, 200);
+
+    setMediaForm((prev) => ({
+      ...prev,
+      mediaId: isVideoChannel
+        ? result.__youtubeChannelInfo?.channelId || result.contentId
+        : result.contentId,
+      title,
+      description: cleanDescription ? cleanDescription + '...' : '',
+      // Store full media data for potential creation
+      mediaData: isVideoChannel
+        ? undefined
+        : {
+            contentId: result.contentId,
+            contentTitleNative: result.title.contentTitleNative,
+            contentTitleEnglish: result.title.contentTitleEnglish,
+            contentTitleRomaji: result.title.contentTitleRomaji,
+            contentImage: result.contentImage,
+            coverImage: result.coverImage,
+            episodes: result.episodes,
+            episodeDuration: result.episodeDuration,
+            runtime: result.runtime,
+            chapters: result.chapters,
+            volumes: result.volumes,
+            isAdult: result.isAdult,
+            description: result.description,
+            synonyms: result.synonyms,
+          },
+    }));
+    setSearchQuery(title);
+    setShowResults(false);
+  };
+
+  // Handle search input
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.length >= 2) {
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  };
+
+  // Handle closing add media modal
+  const handleCloseAddMediaModal = () => {
+    setIsAddMediaModalOpen(false);
+    setSearchQuery('');
+    setShowResults(false);
+    setMediaForm({
+      mediaId: '',
+      mediaType: 'anime',
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      mediaData: undefined,
+    });
+  };
+
+  // Handle closing edit club modal
+  const handleCloseEditModal = () => {
+    setIsEditClubModalOpen(false);
+    // Reset form to original club data
+    if (club) {
+      setEditForm({
+        name: club.name,
+        description: club.description || '',
+        isPublic: club.isPublic,
+        tags: club.tags || [],
+        rules: club.rules || '',
+        memberLimit: club.memberLimit,
+      });
+    }
+    // Clear file selections
+    setEditFiles({});
+    setEditPreviews({});
+  };
+
+  // Handle file selection for edit modal
+  const handleEditFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: 'avatar' | 'banner'
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('toast.selectImage'));
+      return;
+    }
+
+    // Validate file size (3MB limit)
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error(t('toast.fileTooLarge'));
+      return;
+    }
+
+    // Update file state
+    setEditFiles((prev) => ({ ...prev, [type]: file }));
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setEditPreviews((prev) => ({ ...prev, [type]: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove selected file
+  const handleEditFileRemove = (type: 'avatar' | 'banner') => {
+    setEditFiles((prev) => {
+      const newFiles = { ...prev };
+      delete newFiles[type];
+      return newFiles;
+    });
+    setEditPreviews((prev) => {
+      const newPreviews = { ...prev };
+      delete newPreviews[type];
+      return newPreviews;
+    });
+  };
+
+  const updateClubGoalDraft = (
+    index: number,
+    field: keyof ClubGoalDraft,
+    value: string | number | boolean
+  ) => {
+    setClubGoalsForm((prev) =>
+      prev.map((goal, goalIndex) =>
+        goalIndex === index ? { ...goal, [field]: value } : goal
+      )
+    );
+  };
+
+  const addClubGoalDraft = () => {
+    setClubGoalsForm((prev) => [...prev, createClubGoalDraft()]);
+  };
+
+  const removeClubGoalDraft = (index: number) => {
+    setClubGoalsForm((prev) =>
+      prev.filter((_, goalIndex) => goalIndex !== index)
+    );
+  };
+
+  const getMediaTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'anime':
+        return <Play className="text-lg" />;
+      case 'manga':
+      case 'light-novel':
+      case 'book':
+        return <Book className="text-lg" />;
+      case 'movie':
+      case 'video':
+        return <Clapperboard className="text-lg" />;
+      case 'tv show':
+        return <MonitorPlay className="text-lg" />;
+      case 'vn':
+      case 'game':
+        return <Gamepad2 className="text-lg" />;
+      default:
+        return <Play className="text-lg" />;
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'owner':
+      case 'leader':
+        return <Shield className="text-warning w-4 h-4" />;
+      case 'moderator':
+        return <BadgeCheck className="text-info w-4 h-4" />;
+      case 'event_manager':
+        return <Clock className="text-accent w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'owner':
+        return (
+          <span className="badge badge-warning badge-xs">
+            {t('roles.owner')}
+          </span>
+        );
+      case 'leader':
+        return (
+          <span className="badge badge-warning badge-xs">
+            {t('roles.leader')}
+          </span>
+        );
+      case 'moderator':
+        return (
+          <span className="badge badge-info badge-xs">
+            {t('roles.moderator')}
+          </span>
+        );
+      case 'event_manager':
+        return (
+          <span className="badge badge-accent badge-xs">
+            {t('roles.event_manager')}
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-base-200">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !club) {
+    return (
+      <div className="min-h-screen bg-base-200">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-error mb-4">
+              {t('detail.notFound')}
+            </h1>
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/clubs')}
+            >
+              {t('media.backToClubs')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-base-200">
+      {/* Header with Banner */}
+      <div className="relative">
+        {/* Banner */}
+        <div className="h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
+          {club.banner && (
+            <img
+              src={club.banner}
+              alt={`${club.name} banner`}
+              className="w-full h-full object-cover"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        </div>
+
+        {/* Club Info Overlay */}
+        <div className="bg-base-100 border-b border-base-300 relative">
+          <div className="container mx-auto px-4">
+            {/* Club Avatar - Responsive positioning */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 -top-12 sm:left-4 sm:translate-x-0 sm:-top-16">
+              <div className="avatar">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-base-100 p-1 shadow-sm">
+                  {club.avatar ? (
+                    <img
+                      src={club.avatar}
+                      alt={club.name}
+                      className="rounded-full w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="text-3xl text-primary" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Club Info Content */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-16 pb-4 sm:pt-4 sm:pb-4 sm:pl-40">
+              {/* Club details - Centered on mobile, left-aligned on desktop */}
+              <div className="flex flex-col items-center sm:items-start gap-3 text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <h1 className="text-xl sm:text-2xl font-bold">{club.name}</h1>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-4 text-sm text-base-content/70">
+                  <div className="flex items-center gap-1">
+                    <Users className="text-base w-4 h-4" />
+                    <span>
+                      {t('browse.memberCount', {
+                        current: club.memberCount,
+                        limit: club.memberLimit,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons - Centered on mobile, right-aligned on desktop */}
+              <div className="flex gap-2 justify-center sm:justify-end mt-4 sm:mt-0">
+                {user && club.isUserMember && club.userStatus === 'active' ? (
+                  <>
+                    {canEditClubSettings && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsEditClubModalOpen(true)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                        <span className="hidden sm:inline">
+                          {t('common.edit')}
+                        </span>
+                      </button>
+                    )}
+                    <button
+                      // The `disabled` attribute below already covers the
+                      // leader-with-members case; `btn-disabled` only sets
+                      // pointer-events:none and leaves the button focusable.
+                      className={`btn btn-sm ${
+                        (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1
+                          ? ''
+                          : (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount === 1
+                            ? 'btn-warning'
+                            : 'btn-error'
+                      }`}
+                      onClick={handleLeaveClick}
+                      disabled={leaveMutation.isPending || !canLeaveClub}
+                      title={
+                        (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1
+                          ? t('detail.transferHint')
+                          : undefined
+                      }
+                    >
+                      <DoorOpen className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        {leaveMutation.isPending
+                          ? t('detail.processing')
+                          : getLeaveButtonText}
+                      </span>
+                    </button>
+                  </>
+                ) : user &&
+                  club.isUserMember &&
+                  club.userStatus === 'pending' ? (
+                  <button
+                    className="btn btn-warning btn-sm"
+                    onClick={handleLeaveClick}
+                    disabled={leaveMutation.isPending}
+                  >
+                    <DoorOpen className="text-lg" />
+                    <span className="hidden sm:inline">
+                      {leaveMutation.isPending
+                        ? t('detail.canceling')
+                        : t('detail.cancelRequest')}
+                    </span>
+                  </button>
+                ) : user ? (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => joinMutation.mutate()}
+                    disabled={
+                      joinMutation.isPending ||
+                      club.memberCount >= club.memberLimit
+                    }
+                  >
+                    <UserPlus className="text-lg" />
+                    <span className="hidden sm:inline">
+                      {joinMutation.isPending
+                        ? club.isPublic
+                          ? t('detail.joining')
+                          : t('detail.requesting')
+                        : club.isPublic
+                          ? t('detail.joinClub')
+                          : t('detail.requestToJoin')}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => navigate('/login')}
+                  >
+                    <UserPlus className="text-lg" />
+                    <span className="hidden sm:inline">
+                      {t('detail.loginToJoin')}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Tab Navigation */}
+        <div role="tablist" className="tabs tabs-border mb-8 w-fit mx-auto">
+          <button
+            className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <Info className="mr-2 w-4 h-4" />
+            {t('tabs.overview')}
+          </button>
+          <button
+            className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('media')}
+          >
+            <Play className="mr-2 w-4 h-4" />
+            {t('tabs.media')}
+          </button>
+          <button
+            className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('members')}
+          >
+            <Users className="mr-2 w-4 h-4" />
+            {t('detail.members')}
+            {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
+              pendingRequests?.pending &&
+              pendingRequests.pending.length > 0 && (
+                <span className="badge badge-warning badge-sm ml-2">
+                  {pendingRequests.pending.length}
+                </span>
+              )}
+          </button>
+          {!hideRankingFeatures && <button
+            className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('rankings')}
+          >
+            <BarChart className="mr-2 w-4 h-4" />
+            {t('tabs.rankings')}
+          </button>}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Club Info (now contains Activity Feed and Voting) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Media Voting Section */}
+              <div className="card surface">
+                <div className="card-body">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="card-title text-lg flex items-center gap-2">
+                      <Vote className="text-xl" />
+                      {t('voting.title')}
+                    </h2>
+                    {canManageClub && (
+                      <div className="flex gap-2">
+                        <button
+                          className={`btn btn-outline btn-sm ${showVotingManagement ? 'btn-primary' : ''}`}
+                          onClick={() =>
+                            setShowVotingManagement(!showVotingManagement)
+                          }
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span className="hidden sm:inline">
+                            {showVotingManagement
+                              ? t('detail.hide')
+                              : t('detail.manage')}
+                          </span>
+                        </button>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => setIsCreateVotingWizardOpen(true)}
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline">
+                            {t('voting.create')}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <VotingSystem
+                    club={club}
+                    canManageVoting={canManageClub}
+                    showManagement={showVotingManagement}
+                    sharedVotingId={
+                      new URLSearchParams(location.search).get('voting') ||
+                      undefined
+                    }
+                  />
+                </div>
+              </div>
+              {club.isUserMember && club.userStatus === 'active' && (
+                <>
+                  <ClubObjectives
+                    clubId={club._id}
+                    canManage={canCreateChallenges}
+                    canPin={canPinObjectives}
+                    onManageCollective={
+                      canEditClubSettings
+                        ? () => setIsClubGoalsModalOpen(true)
+                        : undefined
+                    }
+                  />
+                  <RecentActivity clubId={club._id} />
+                </>
+              )}
+            </div>
+
+            {/* Right Column - Sidebar: About, Rules, Tags */}
+            <div className="space-y-6">
+              {/* About */}
+              {club.description && (
+                <div className="card surface">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">
+                      {t('detail.about')}
+                    </h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap text-sm">
+                      {club.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rules */}
+              {club.rules && (
+                <div className="card surface">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">
+                      {t('detail.rules')}
+                    </h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap text-sm">
+                      {club.rules}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {club.isUserMember && club.userStatus === 'active' && (
+                <ClubIndividualObjectives clubId={club._id} />
+              )}
+
+              {/* Tags */}
+              {club.tags && club.tags.length > 0 && (
+                <div className="card surface">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">
+                      {t('common.tags')}
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {club.tags.map((tag) => (
+                        <span key={tag} className="badge badge-outline">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isHistoryOpen && (
+          <dialog
+            open
+            className="modal modal-bottom sm:modal-middle modal-open"
+          >
+            <div className="modal-box w-11/12 max-w-4xl">
+              <h3 className="font-bold text-lg mb-4">
+                {t('detail.pastMedia')}
+              </h3>
+
+              {isPastLoading ? (
+                <div className="flex justify-center py-8">
+                  <span className="loading loading-spinner loading-md"></span>
+                </div>
+              ) : pastMedia?.media && pastMedia.media.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {pastMedia.media.map((m) => {
+                    const contentId = m.mediaDocument?.contentId || m.mediaId;
+                    const url = `/${m.mediaType}/${encodeURIComponent(
+                      String(contentId)
+                    )}?clubId=${encodeURIComponent(String(clubId!))}&clubMediaId=${encodeURIComponent(
+                      String(m._id)
+                    )}`;
+
+                    return (
+                      <div
+                        key={m._id}
+                        className="flex items-center justify-between p-3 surface"
+                      >
+                        <div>
+                          <div className="font-medium">{m.title}</div>
+                          <div className="text-xs text-base-content/60">
+                            {new Date(m.startDate).toLocaleDateString()} ·{' '}
+                            {new Date(m.endDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {m.mediaDocument && (
+                            <Link
+                              to={url}
+                              className="btn btn-outline btn-sm"
+                              onClick={() => setIsHistoryOpen(false)}
+                            >
+                              {t('common.view')}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-base-content/60">
+                  <p>{t('detail.noPastMedia')}</p>
+                </div>
+              )}
+
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setIsHistoryOpen(false)}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+            <div
+              className="modal-backdrop"
+              onClick={() => setIsHistoryOpen(false)}
+            >
+              <button type="button">{t('common.close')}</button>
+            </div>
+          </dialog>
+        )}
+
+        {/* Media Tab */}
+        {activeTab === 'media' && (
+          <div className="max-w-6xl mx-auto">
+            <div className="card surface">
+              <div className="card-body">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="card-title text-lg">
+                    {t('activity.clubMedia')}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setIsHistoryOpen(true)}
+                      title={t('detail.viewPastMedia')}
+                    >
+                      <Clock className="w-4 h-4" />
+                      <span className="hidden sm:inline ml-1">
+                        {t('detail.history')}
+                      </span>
+                    </button>
+
+                    {canManageClub && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setIsAddMediaModalOpen(true)}
+                      >
+                        <Plus className="text-lg" />
+                        <span className="hidden sm:inline">
+                          {t('detail.addMedia')}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {isMediaLoading ? (
+                  <div className="flex justify-center py-8">
+                    <span className="loading loading-spinner loading-md"></span>
+                  </div>
+                ) : clubMedia?.media && clubMedia.media.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {clubMedia.media.map((media) => (
+                      <div
+                        key={media._id}
+                        className="card surface hover:shadow-lg transition-all duration-200"
+                      >
+                        {/* Media Image/Banner */}
+                        <figure className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
+                          {media.mediaDocument?.contentImage ||
+                          media.mediaDocument?.coverImage ? (
+                            <img
+                              src={
+                                media.mediaDocument.contentImage ||
+                                media.mediaDocument.coverImage
+                              }
+                              alt={media.title}
+                              className={`w-full h-full object-cover ${
+                                (media.mediaType === 'vn' ||
+                                media.mediaDocument.type === 'vn'
+                                  ? (media.mediaDocument.isAdultImage ?? false)
+                                  : media.mediaDocument.isAdult) &&
+                                user?.settings?.blurAdultContent
+                                  ? 'blur-sm'
+                                  : ''
+                              }`}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-6xl text-base-content/30">
+                              {getMediaTypeIcon(media.mediaType)}
+                            </div>
+                          )}
+
+                          {/* Status Badge */}
+                          <div className="absolute top-2 right-2">
+                            <span
+                              className={`badge ${
+                                media.isActive ? 'badge-success' : 'badge-ghost'
+                              } badge-sm`}
+                            >
+                              {media.isActive
+                                ? t('detail.active')
+                                : t('detail.ended')}
+                            </span>
+                          </div>
+
+                          {/* Media Type Badge */}
+                          <div className="absolute top-2 left-2">
+                            <span className="badge badge-primary badge-sm capitalize">
+                              {media.mediaType
+                                ? media.mediaType === 'vn'
+                                  ? 'visual novel'
+                                  : media.mediaType === 'game'
+                                    ? 'video game'
+                                    : media.mediaType === 'light-novel'
+                                      ? 'light novel'
+                                      : media.mediaType
+                                : 'unknown'}
+                            </span>
+                          </div>
+                        </figure>
+
+                        <div className="card-body p-4">
+                          <h3 className="card-title text-base font-semibold line-clamp-2 mb-2">
+                            {media.title}
+                          </h3>
+
+                          {media.description && (
+                            <p className="text-sm text-base-content/70 line-clamp-3 mb-3">
+                              {media.description}
+                            </p>
+                          )}
+
+                          <div className="flex flex-col gap-2 text-xs text-base-content/60 mb-4">
+                            {media.community && (
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {t('media.participants', {
+                                  count: media.community.participantCount,
+                                })}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span>
+                                Start:{' '}
+                                {new Date(media.startDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>
+                                End:{' '}
+                                {new Date(media.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Added by: {media.addedBy.username}</span>
+                            </div>
+                          </div>
+
+                          {club.isUserMember &&
+                            club.userStatus === 'active' && (
+                              <div className="card-actions justify-between">
+                                {media.mediaDocument && (
+                                  <Link
+                                    to={`/${media.mediaType}/${encodeURIComponent(
+                                      String(
+                                        media.mediaDocument?.contentId ||
+                                          media.mediaId
+                                      )
+                                    )}?clubId=${encodeURIComponent(
+                                      String(clubId!)
+                                    )}&clubMediaId=${encodeURIComponent(
+                                      String(media._id)
+                                    )}`}
+                                    className="btn btn-outline btn-sm flex-1"
+                                  >
+                                    {t('common.viewDetails')}
+                                  </Link>
+                                )}
+
+                                <div className="flex gap-2">
+                                  {canManageClub && (
+                                    <button
+                                      className="btn btn-outline btn-sm"
+                                      onClick={() => {
+                                        setEditingMedia(media);
+                                        setIsEditMediaModalOpen(true);
+                                      }}
+                                      title={t('detail.editPeriod')}
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                  )}
+
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => {
+                                      setSelectedMedia({
+                                        _id: media._id || '',
+                                        mediaId: media.mediaId,
+                                        mediaType: media.mediaType,
+                                        title: media.title,
+                                      });
+                                      setLogModalOpen(true);
+                                    }}
+                                    title={t('media.quickLog')}
+                                  >
+                                    {t('common.log')}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-base-content/60">
+                    <Book className="mx-auto text-4xl mb-2 opacity-50" />
+                    <p>{t('detail.noMedia')}</p>
+                    {canManageClub && (
+                      <p className="text-sm mt-1">{t('detail.noMediaHint')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Members Tab */}
+        {activeTab === 'members' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="card surface">
+              <div className="card-body">
+                <h2 className="card-title text-lg mb-4">
+                  {t('detail.membersCount', { count: club.memberCount })}
+                </h2>
+                {(club.userRole === 'owner' || club.userRole === 'leader') &&
+                  pendingRequests?.pending &&
+                  pendingRequests.pending.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        {t('detail.pendingRequests')}
+                        <span className="badge badge-warning badge-sm">
+                          {pendingRequests.pending.length}
+                        </span>
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {pendingRequests.pending.map((member) => (
+                          <div
+                            key={member.user._id}
+                            className="flex items-center gap-3 p-3 surface"
+                          >
+                            <Link
+                              to={`/user/${encodeURIComponent(member.user.username)}`}
+                              className="avatar"
+                            >
+                              <UserAvatar
+                                username={member.user.username}
+                                avatar={member.user.avatar}
+                                containerClassName="w-10 h-10 rounded-full"
+                                imageClassName="w-full h-full rounded-full object-cover"
+                                fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                                textClassName="text-primary font-semibold"
+                              />
+                            </Link>
+                            <div className="flex-1">
+                              <div className="font-medium">
+                                <Link
+                                  to={`/user/${encodeURIComponent(member.user.username)}`}
+                                  className="link link-hover"
+                                >
+                                  {member.user.username}
+                                </Link>
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                Requested{' '}
+                                {new Date(member.joinedAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                className="btn btn-success btn-xs"
+                                onClick={() =>
+                                  membershipActionMutation.mutate({
+                                    memberId: member.user._id,
+                                    action: 'approve',
+                                  })
+                                }
+                                disabled={membershipActionMutation.isPending}
+                              >
+                                {membershipActionMutation.isPending
+                                  ? '...'
+                                  : t('detail.approve')}
+                              </button>
+                              <button
+                                className="btn btn-error btn-xs"
+                                onClick={() =>
+                                  membershipActionMutation.mutate({
+                                    memberId: member.user._id,
+                                    action: 'reject',
+                                  })
+                                }
+                                disabled={membershipActionMutation.isPending}
+                              >
+                                {membershipActionMutation.isPending
+                                  ? '...'
+                                  : t('detail.reject')}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="divider my-6" />
+                    </div>
+                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {club.members
+                    .filter((member) => member.status === 'active')
+                    .sort((a, b) => {
+                      const roleOrder = {
+                        owner: 0,
+                        leader: 0,
+                        moderator: 1,
+                        event_manager: 2,
+                        member: 3,
+                      };
+                      return roleOrder[a.role] - roleOrder[b.role];
+                    })
+                    .map((member, index) => {
+                      const patreonBadge = getPatreonBadgeProps(
+                        member.user.patreon
+                      );
+
+                      return (
+                        <div
+                          key={member.user._id || index}
+                          className="card surface"
+                        >
+                          <div className="card-body p-4">
+                            <div className="flex items-center gap-3">
+                              <Link
+                                to={`/user/${encodeURIComponent(member.user.username)}`}
+                                className="avatar"
+                              >
+                                <UserAvatar
+                                  username={member.user.username}
+                                  avatar={member.user.avatar}
+                                  containerClassName="w-12 h-12 rounded-full"
+                                  imageClassName="w-full h-full rounded-full object-cover"
+                                  fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                                  textClassName="text-primary font-semibold"
+                                />
+                              </Link>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <Link
+                                    to={`/user/${encodeURIComponent(member.user.username)}`}
+                                    className="link link-hover"
+                                  >
+                                    <span className="font-medium">
+                                      {member.user.username}
+                                    </span>
+                                  </Link>
+
+                                  {getRoleIcon(member.role)}
+                                  {patreonBadge && (
+                                    <div
+                                      className={`badge badge-sm gap-1 ${patreonBadge.colorClass}`}
+                                      style={patreonBadge.style}
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      <span className="font-bold">
+                                        {badgeText(patreonBadge)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  {getRoleBadge(member.role)}
+                                  <span className="text-xs text-base-content/70">
+                                    {t('detail.joined', {
+                                      date: new Date(
+                                        member.joinedAt
+                                      ).toLocaleDateString(),
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {(club?.userRole === 'owner' ||
+                            club?.userRole === 'leader' ||
+                            club?.userRole === 'moderator') &&
+                            member.user._id !== user?._id && (
+                              <div className="mt-3 flex justify-end border-t border-base-300 px-3 pb-3 pt-3">
+                                <div className="dropdown dropdown-end">
+                                  <button
+                                    type="button"
+                                    tabIndex={0}
+                                    className="btn btn-ghost btn-sm btn-square"
+                                    aria-label={t('detail.manage')}
+                                  >
+                                    <Ellipsis className="h-4 w-4" />
+                                  </button>
+                                  <ul
+                                    tabIndex={0}
+                                    className="dropdown-content menu surface-raised z-[100] w-56 p-2"
+                                  >
+                                {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'leader' && member.role !== 'owner' && (
+                                    <li>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedNewLeader({
+                                            userId: member.user._id,
+                                            username: member.user.username,
+                                          });
+                                          setIsTransferLeadershipModalOpen(true);
+                                        }}
+                                        disabled={
+                                          transferLeadershipMutation.isPending
+                                        }
+                                      >
+                                        {t('detail.transferLeadership')}
+                                      </button>
+                                    </li>
+                                  )}
+                                {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'owner' && (
+                                  <>
+                                    <li className="menu-title">
+                                      <span>{t('detail.manage')}</span>
+                                    </li>
+                                    {(['member', 'moderator', 'event_manager'] as const).map(
+                                      (role) => (
+                                        <li key={role}>
+                                          <button
+                                            type="button"
+                                            className={
+                                              (member.role === 'leader'
+                                                ? 'member'
+                                                : member.role) === role
+                                                ? 'active'
+                                                : ''
+                                            }
+                                            onClick={() =>
+                                              roleMutation.mutate({
+                                                memberId: member.user._id,
+                                                role,
+                                              })
+                                            }
+                                            disabled={roleMutation.isPending}
+                                          >
+                                            {t(`roles.${role}`)}
+                                          </button>
+                                        </li>
+                                      )
+                                    )}
+                                  </>
+                                )}
+                                {(((club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'leader' && member.role !== 'owner') ||
+                                  (club?.userRole === 'moderator' &&
+                                    member.role === 'member')) && (
+                                  <li>
+                                    <button
+                                      type="button"
+                                      className="text-error"
+                                      onClick={() =>
+                                        setKickTarget({
+                                          userId: member.user._id,
+                                          username: member.user.username,
+                                        })
+                                      }
+                                      disabled={kickMemberMutation.isPending}
+                                    >
+                                      {kickMemberMutation.isPending
+                                        ? t('detail.removing')
+                                        : t('detail.kickMember')}
+                                    </button>
+                                  </li>
+                                )}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rankings Tab */}
+        {activeTab === 'rankings' && clubId && (
+          <ClubRankingsTab clubId={clubId} clubName={club?.name} />
+        )}
+      </div>
+
+      {/* Add Media Modal */}
+      {isAddMediaModalOpen && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">{t('addMedia.title')}</h3>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={handleCloseAddMediaModal}
+              >
+                <X className="text-lg" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (
+                  mediaForm.title &&
+                  mediaForm.startDate &&
+                  mediaForm.endDate
+                ) {
+                  addMediaMutation.mutate(mediaForm);
+                }
+              }}
+              className="space-y-4"
+            >
+              {/* Media Type */}
+              <Field label={t('addMedia.mediaType')}>
+                <DropdownSelect
+                  className="select w-full"
+                  value={mediaForm.mediaType}
+                  onChange={(e) => {
+                    setMediaForm({
+                      ...mediaForm,
+                      mediaType: e.target.value as typeof mediaForm.mediaType,
+                    });
+                    // Reset search when media type changes
+                    setSearchQuery('');
+                    setShowResults(false);
+                  }}
+                >
+                  <option value="anime">{t('common:mediaTypes.anime')}</option>
+                  <option value="manga">{t('common:mediaTypes.manga')}</option>
+                  <option value="light-novel">
+                    {t('common:mediaTypes.light-novel')}
+                  </option>
+                  <option value="vn">{t('common:mediaTypes.vn')}</option>
+                  <option value="game">{t('common:mediaTypes.game')}</option>
+                  <option value="video">{t('common:mediaTypes.video')}</option>
+                  <option value="movie">{t('common:mediaTypes.movie')}</option>
+                </DropdownSelect>
+              </Field>
+
+              {/* Title with Search */}
+              <Field label={t('suggest.searchLabel')} className="relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="input w-full"
+                    placeholder={t('detail.searchFor', {
+                      type: mediaForm.mediaType,
+                    })}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      handleSearch(e.target.value);
+                    }}
+                  />
+                  {isSearching && (
+                    <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
+                  )}
+
+                  {/* Search Results - Positioned as absolute popup */}
+                  {showResults && searchResults && searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1">
+                      <div className="card surface max-h-60 overflow-y-auto">
+                        <div className="card-body p-2">
+                          {searchResults.map((result) => (
+                            <div
+                              key={result.contentId}
+                              onClick={() => handleSelectResult(result)}
+                              className="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer rounded"
+                            >
+                              <img
+                                src={result.contentImage || ''}
+                                alt={
+                                  result.title.contentTitleRomaji ||
+                                  result.title.contentTitleNative
+                                }
+                                className="w-12 h-16 object-cover rounded"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium">
+                                  {result.title.contentTitleEnglish ||
+                                    result.title.contentTitleRomaji ||
+                                    result.title.contentTitleNative}
+                                </div>
+                                <div className="text-sm text-base-content/60">
+                                  {result.type}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="divider">OR</div>
+
+                <Field label={t('common.titleRequired')}>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    placeholder={t('addMedia.titlePlaceholder')}
+                    value={mediaForm.title}
+                    onChange={(e) =>
+                      setMediaForm({ ...mediaForm, title: e.target.value })
+                    }
+                    required
+                  />
+                </Field>
+              </Field>
+
+              {/* Media ID (optional for external links) */}
+              <Field label={t('addMedia.mediaId')}>
+                <input
+                  type="text"
+                  className="input w-full"
+                  placeholder={t('addMedia.mediaIdPlaceholder')}
+                  value={mediaForm.mediaId}
+                  onChange={(e) =>
+                    setMediaForm({ ...mediaForm, mediaId: e.target.value })
+                  }
+                />
+              </Field>
+
+              {/* Description */}
+              <Field label={t('common.description')}>
+                <textarea
+                  className="textarea w-full"
+                  placeholder={t('addMedia.descriptionPlaceholder')}
+                  value={mediaForm.description}
+                  onChange={(e) =>
+                    setMediaForm({ ...mediaForm, description: e.target.value })
+                  }
+                  rows={3}
+                />
+              </Field>
+
+              {/* Start Date */}
+              <Field label={t('addMedia.startRequired')}>
+                <DatePickerInput
+                  value={mediaForm.startDate}
+                  onChange={(startDate) =>
+                    setMediaForm({ ...mediaForm, startDate })
+                  }
+                  required
+                />
+              </Field>
+
+              {/* End Date */}
+              <Field label={t('addMedia.endRequired')}>
+                <DatePickerInput
+                  value={mediaForm.endDate}
+                  onChange={(endDate) =>
+                    setMediaForm({ ...mediaForm, endDate })
+                  }
+                  required
+                />
+              </Field>
+
+              {/* Submit buttons */}
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={handleCloseAddMediaModal}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    addMediaMutation.isPending ||
+                    !mediaForm.title ||
+                    !mediaForm.startDate ||
+                    !mediaForm.endDate
+                  }
+                >
+                  {addMediaMutation.isPending
+                    ? t('detail.adding')
+                    : t('detail.addMediaAction')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Voting Wizard */}
+      {club && (
+        <CreateVotingWizard
+          isOpen={isCreateVotingWizardOpen}
+          onClose={() => setIsCreateVotingWizardOpen(false)}
+          club={club}
+        />
+      )}
+
+      {/* Quick Log Modal */}
+      {selectedMedia && (
+        <QuickLog
+          open={logModalOpen}
+          onClose={() => setLogModalOpen(false)}
+          media={{
+            contentId: selectedMedia.mediaId,
+            title: {
+              contentTitleNative: selectedMedia.title,
+              contentTitleRomaji: selectedMedia.title,
+              contentTitleEnglish: selectedMedia.title,
+            },
+            type: selectedMedia.mediaType as
+              | 'anime'
+              | 'manga'
+              | 'light-novel'
+              | 'vn'
+              | 'game'
+              | 'video'
+              | 'movie',
+            contentImage: undefined, // Let QuickLog handle image loading
+            isAdult: false,
+          }}
+        />
+      )}
+
+      {/* Edit Club Modal */}
+      {isEditClubModalOpen && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box max-w-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">{t('edit.title')}</h3>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={handleCloseEditModal}
+              >
+                <X className="text-lg" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+
+                if (!club) {
+                  return;
+                }
+
+                const isChangingMemberLimit =
+                  editForm.memberLimit !== club.memberLimit;
+
+                if (editForm.memberLimit < club.memberCount) {
+                  toast.error(
+                    t('detail.memberLimitTooLow', { count: club.memberCount })
+                  );
+                  return;
+                }
+
+                if (
+                  isChangingMemberLimit &&
+                  editForm.memberLimit > maxAllowedMemberLimit
+                ) {
+                  toast.error(
+                    getClubMemberLimitValidationMessage(maxAllowedMemberLimit)
+                  );
+                  return;
+                }
+
+                try {
+                  buildClubGoalsPayload(clubGoalsForm);
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : t('goals.invalidConfig')
+                  );
+                  return;
+                }
+
+                updateClubMutation.mutate(editForm);
+              }}
+              className="space-y-4"
+            >
+              {/* Club Name */}
+              <Field label={t('edit.nameRequired')}>
+                <input
+                  type="text"
+                  className="input w-full"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                  required
+                  maxLength={100}
+                />
+              </Field>
+
+              {/* Avatar Upload */}
+              <Field label={t('edit.avatar')}>
+                {/* Current/Preview Avatar - Centered */}
+                <div className="flex justify-center mb-4">
+                  <div className="avatar">
+                    <div className="w-24 h-24 rounded-full ring ring-base-300 ring-offset-2">
+                      {editPreviews.avatar ? (
+                        <img
+                          src={editPreviews.avatar}
+                          alt={t('edit.newAvatarAlt')}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : club?.avatar ? (
+                        <img
+                          src={club.avatar}
+                          alt={t('edit.currentAvatarAlt')}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="text-3xl text-primary" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload/Remove buttons - Centered */}
+                <div className="flex flex-col items-center gap-2">
+                  <label className="btn btn-outline btn-sm">
+                    <Pencil className="text-base mr-1" />
+                    {editPreviews.avatar || club?.avatar
+                      ? t('detail.changeAvatar')
+                      : t('detail.uploadAvatar')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleEditFileSelect(e, 'avatar')}
+                      className="hidden"
+                    />
+                  </label>
+                  {(editPreviews.avatar || club?.avatar) && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs text-error"
+                      onClick={() => handleEditFileRemove('avatar')}
+                    >
+                      {t('edit.removeAvatar')}
+                    </button>
+                  )}
+                </div>
+
+                <div className="label">
+                  <span className="text-center block">
+                    {t('edit.avatarHint')}
+                  </span>
+                </div>
+              </Field>
+
+              {/* Banner Upload */}
+              <Field label={t('create.banner')}>
+                {/* Current/Preview Banner */}
+                <div className="mb-4">
+                  <div className="w-full h-32 rounded-lg overflow-hidden border-2 border-dashed border-base-300 bg-base-50 flex items-center justify-center">
+                    {editPreviews.banner ? (
+                      <img
+                        src={editPreviews.banner}
+                        alt={t('edit.newBannerAlt')}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : club?.banner ? (
+                      <img
+                        src={club.banner}
+                        alt={t('edit.currentBannerAlt')}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-base-content/50">
+                        <div className="text-3xl mb-2">🖼️</div>
+                        <div className="text-sm">{t('edit.noBanner')}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upload/Remove buttons - Centered */}
+                <div className="flex flex-col items-center gap-2">
+                  <label className="btn btn-outline btn-sm">
+                    <Pencil className="text-base mr-1" />
+                    {editPreviews.banner || club?.banner
+                      ? t('detail.changeBanner')
+                      : t('detail.uploadBanner')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleEditFileSelect(e, 'banner')}
+                      className="hidden"
+                    />
+                  </label>
+                  {(editPreviews.banner || club?.banner) && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs text-error"
+                      onClick={() => handleEditFileRemove('banner')}
+                    >
+                      {t('edit.removeBanner')}
+                    </button>
+                  )}
+                </div>
+
+                <div className="label">
+                  <span className="text-center block">
+                    {t('edit.bannerHint')}
+                  </span>
+                </div>
+              </Field>
+
+              {/* Description */}
+              <Field label={t('common.description')}>
+                <textarea
+                  className="textarea w-full"
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                  rows={3}
+                  maxLength={500}
+                />
+              </Field>
+
+              {/* Privacy */}
+              <Field label={t('create.privacy')}>
+                <div className="flex gap-4">
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="privacy"
+                      className="radio radio-primary"
+                      checked={editForm.isPublic}
+                      onChange={() =>
+                        setEditForm({ ...editForm, isPublic: true })
+                      }
+                    />
+                    <span className="ml-2">{t('create.public')}</span>
+                  </label>
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="privacy"
+                      className="radio radio-primary"
+                      checked={!editForm.isPublic}
+                      onChange={() =>
+                        setEditForm({ ...editForm, isPublic: false })
+                      }
+                    />
+                    <span className="ml-2">{t('create.private')}</span>
+                  </label>
+                </div>
+              </Field>
+
+              {/* Member Limit */}
+              <Field label={t('create.memberLimit')}>
+                <input
+                  type="number"
+                  className="input w-full"
+                  value={editForm.memberLimit}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      memberLimit: parseInt(e.target.value) || 100,
+                    })
+                  }
+                  min={1}
+                  max={Math.max(
+                    maxAllowedMemberLimit,
+                    club?.memberLimit || maxAllowedMemberLimit
+                  )}
+                />
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-base-content/60">
+                    {t('detail.currentTierMax', {
+                      max: maxAllowedMemberLimit,
+                    })}
+                  </p>
+                  <p className="text-xs text-base-content/70">
+                    {t('create.needMoreMembers')}{' '}
+                    <Link to="/support" className="link link-primary">
+                      {t('create.donate')}
+                    </Link>{' '}
+                    {t('detail.tierUnlock')}
+                  </p>
+                </div>
+              </Field>
+
+              {/* Rules */}
+              <Field label={t('detail.rules')}>
+                <textarea
+                  className="textarea w-full"
+                  value={editForm.rules}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, rules: e.target.value })
+                  }
+                  rows={4}
+                  maxLength={1000}
+                />
+              </Field>
+
+              {/* Tags */}
+              <Field label={t('common.tags')}>
+                <input
+                  type="text"
+                  className="input w-full"
+                  placeholder={t('edit.tagsPlaceholder')}
+                  value={editForm.tags.join(', ')}
+                  onChange={(e) => {
+                    const tags = e.target.value
+                      .split(',')
+                      .map((tag) => tag.trim())
+                      .filter((tag) => tag.length > 0);
+                    setEditForm({ ...editForm, tags });
+                  }}
+                />
+                <div className="label">
+                  <span>{t('edit.tagsHint')}</span>
+                </div>
+              </Field>
+
+              {/* Submit buttons */}
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={handleCloseEditModal}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    updateClubMutation.isPending || !editForm.name.trim()
+                  }
+                >
+                  {updateClubMutation.isPending
+                    ? t('detail.updating')
+                    : t('detail.updateClub')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Club Goals Modal */}
+      {isClubGoalsModalOpen && club && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box max-w-3xl">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="font-bold text-lg">{t('goals.title')}</h3>
+                <p className="text-sm text-base-content/60">
+                  {t('goals.editorHint')}
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={() => setIsClubGoalsModalOpen(false)}
+              >
+                <X className="text-lg" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-sm text-base-content/70">
+                {clubGoalsForm.length === 0
+                  ? t('goals.empty')
+                  : t('goals.adjustHint')}
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={addClubGoalDraft}
+              >
+                <Plus className="w-4 h-4" />
+                {t('goals.add')}
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-4">
+              {clubGoalsForm.length === 0 ? (
+                <div className="rounded-[2rem] border-2 border-dashed border-base-300 bg-base-200/30 p-8 text-center min-h-[280px] flex flex-col items-center justify-center gap-5">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-base-content/90">
+                    <Plus
+                      className="h-14 w-14 text-base-content/90"
+                      strokeWidth={2.4}
+                    />
+                  </div>
+                  <div className="space-y-1 max-w-sm">
+                    <p className="text-xl font-semibold text-base-content">
+                      {t('goals.addTitle')}
+                    </p>
+                    <p className="text-sm text-base-content/70">
+                      {t('goals.addBody')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                clubGoalsForm.map((goal, index) => (
+                  <div
+                    key={`${goal.type}-${goal.period}-${index}`}
+                    className="rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-primary badge-sm">
+                          {t('goals.item')} {index + 1}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm text-error"
+                        onClick={() => removeClubGoalDraft(index)}
+                      >
+                        <X className="w-4 h-4" />
+                        {t('common.remove')}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label={t('goals.type')}>
+                        <DropdownSelect
+                          className="select w-full"
+                          value={goal.type}
+                          onChange={(e) => {
+                            const nextType = e.target
+                              .value as ClubGoalDraft['type'];
+                            setClubGoalsForm((prev) =>
+                              prev.map((item, goalIndex) => {
+                                if (goalIndex !== index) return item;
+
+                                if (nextType === 'time') {
+                                  const fallbackMinutes = Math.max(
+                                    item.targetValue,
+                                    0
+                                  );
+
+                                  return {
+                                    ...item,
+                                    type: nextType,
+                                    targetHours: Math.floor(
+                                      fallbackMinutes / 60
+                                    ),
+                                    targetMinutes: fallbackMinutes % 60,
+                                  };
+                                }
+
+                                return {
+                                  ...item,
+                                  type: nextType,
+                                  targetValue:
+                                    item.targetHours * 60 +
+                                      item.targetMinutes ||
+                                    item.targetValue ||
+                                    1000,
+                                };
+                              })
+                            );
+                          }}
+                        >
+                          <option value="time">{t('goals.time')}</option>
+                          <option value="chars">{t('goals.characters')}</option>
+                          <option value="episodes">
+                            {t('goals.episodes')}
+                          </option>
+                          <option value="pages">{t('goals.pages')}</option>
+                        </DropdownSelect>
+                      </Field>
+
+                      {goal.type === 'time' ? (
+                        <div className="grid grid-cols-2 gap-3 md:col-span-1">
+                          <Field label={t('goals.hours')}>
+                            <input
+                              type="number"
+                              min={0}
+                              className="input w-full"
+                              value={goal.targetHours}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'targetHours',
+                                  Math.max(parseInt(e.target.value, 10) || 0, 0)
+                                )
+                              }
+                            />
+                          </Field>
+                          <Field label={t('goals.minutes')}>
+                            <input
+                              type="number"
+                              min={0}
+                              max={59}
+                              className="input w-full"
+                              value={goal.targetMinutes}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'targetMinutes',
+                                  Math.min(
+                                    Math.max(
+                                      parseInt(e.target.value, 10) || 0,
+                                      0
+                                    ),
+                                    59
+                                  )
+                                )
+                              }
+                            />
+                          </Field>
+                        </div>
+                      ) : (
+                        <Field label={t('goals.target')}>
+                          <input
+                            type="number"
+                            min={1}
+                            className="input w-full"
+                            value={goal.targetValue}
+                            onChange={(e) =>
+                              updateClubGoalDraft(
+                                index,
+                                'targetValue',
+                                parseInt(e.target.value, 10) || 0
+                              )
+                            }
+                          />
+                        </Field>
+                      )}
+
+                      <Field label={t('media.period')}>
+                        <DropdownSelect
+                          className="select w-full"
+                          value={goal.period}
+                          onChange={(e) =>
+                            setClubGoalsForm((prev) =>
+                              prev.map((item, goalIndex) => {
+                                if (goalIndex !== index) return item;
+
+                                const nextPeriod = e.target
+                                  .value as ClubGoalDraft['period'];
+                                if (nextPeriod === 'custom') {
+                                  const today = formatDateInputValue(
+                                    new Date()
+                                  );
+                                  const nextMonth = formatDateInputValue(
+                                    new Date(
+                                      new Date().setMonth(
+                                        new Date().getMonth() + 1
+                                      )
+                                    )
+                                  );
+
+                                  return {
+                                    ...item,
+                                    period: nextPeriod,
+                                    startDate: item.startDate || today,
+                                    endDate: item.endDate || nextMonth,
+                                  };
+                                }
+
+                                return {
+                                  ...item,
+                                  period: nextPeriod,
+                                  startDate: undefined,
+                                  endDate: undefined,
+                                };
+                              })
+                            )
+                          }
+                        >
+                          <option value="weekly">{t('goals.weekly')}</option>
+                          <option value="monthly">{t('goals.monthly')}</option>
+                          <option value="custom">{t('goals.custom')}</option>
+                          <option value="indefinite">
+                            {t('goals.indefinite')}
+                          </option>
+                        </DropdownSelect>
+                      </Field>
+
+                      <div className="flex items-end">
+                        <label className="label cursor-pointer gap-3 justify-start w-full">
+                          <span>{t('goals.active')}</span>
+                          <input
+                            type="checkbox"
+                            className="toggle toggle-primary"
+                            checked={goal.isActive}
+                            onChange={(e) =>
+                              updateClubGoalDraft(
+                                index,
+                                'isActive',
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {goal.period === 'custom' ? (
+                        <>
+                          <Field label={t('goals.startDate')}>
+                            <DatePickerInput
+                              value={goal.startDate || ''}
+                              onChange={(startDate) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'startDate',
+                                  startDate
+                                )
+                              }
+                            />
+                          </Field>
+
+                          <Field label={t('goals.endDate')}>
+                            <DatePickerInput
+                              value={goal.endDate || ''}
+                              onChange={(endDate) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'endDate',
+                                  endDate
+                                )
+                              }
+                            />
+                          </Field>
+                        </>
+                      ) : (
+                        <div className="md:col-span-2 text-xs text-base-content/60 rounded-lg bg-base-200/50 p-3">
+                          {goal.period === 'weekly'
+                            ? t('goals.resetsWeekly')
+                            : goal.period === 'monthly'
+                              ? t('goals.resetsMonthly')
+                              : t('goals.staysActive')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setIsClubGoalsModalOpen(false)}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={clubGoalsMutation.isPending}
+                onClick={() => {
+                  try {
+                    buildClubGoalsPayload(clubGoalsForm);
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : t('goals.invalidConfig')
+                    );
+                    return;
+                  }
+
+                  clubGoalsMutation.mutate(clubGoalsForm);
+                }}
+              >
+                {clubGoalsMutation.isPending
+                  ? t('goals.saving')
+                  : t('goals.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disband Club Confirmation Modal */}
+      {isDisbandConfirmModalOpen && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-warning">
+              {t('detail.disband')}
+            </h3>
+            <p className="py-4">{t('detail.disbandConfirm')}</p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setIsDisbandConfirmModalOpen(false)}
+                disabled={leaveMutation.isPending}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-warning"
+                onClick={() => {
+                  setIsDisbandConfirmModalOpen(false);
+                  leaveMutation.mutate();
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending
+                  ? t('detail.disbanding')
+                  : t('detail.disband')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Club Confirmation Modal */}
+      {isLeaveConfirmModalOpen && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">{t('detail.leave')}</h3>
+            <p className="py-4">{t('detail.leaveConfirm')}</p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setIsLeaveConfirmModalOpen(false)}
+                disabled={leaveMutation.isPending}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  setIsLeaveConfirmModalOpen(false);
+                  leaveMutation.mutate();
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending
+                  ? t('detail.leaving')
+                  : t('detail.leaveClub')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Leadership Confirmation Modal */}
+      {isTransferLeadershipModalOpen && selectedNewLeader && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-warning">
+              {t('detail.transferLeadership')}
+            </h3>
+            <p className="py-4">
+              <Trans
+                i18nKey="detail.transferQuestion"
+                ns="clubs"
+                values={{ username: selectedNewLeader.username }}
+                components={{ b: <span className="font-semibold" /> }}
+              />
+            </p>
+            <div className="alert alert-warning mb-4">
+              <Info className="text-lg" />
+              <div className="text-sm">
+                <div className="font-semibold">{t('detail.irreversible')}</div>
+                <div>{t('detail.transferConfirm')}</div>
+              </div>
+            </div>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setIsTransferLeadershipModalOpen(false);
+                  setSelectedNewLeader(null);
+                }}
+                disabled={transferLeadershipMutation.isPending}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-warning"
+                onClick={() =>
+                  transferLeadershipMutation.mutate(selectedNewLeader.userId)
+                }
+                disabled={transferLeadershipMutation.isPending}
+              >
+                {transferLeadershipMutation.isPending
+                  ? t('detail.transferring')
+                  : t('detail.transferLeadershipAction')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Kick Member Confirmation Modal */}
+      {kickTarget && (
+        <div className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">
+              {t('detail.removeMember')}
+            </h3>
+            <p className="py-4">
+              <Trans
+                i18nKey="detail.kickQuestion"
+                ns="clubs"
+                values={{ username: kickTarget.username }}
+                components={{ b: <span className="font-semibold" /> }}
+              />
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setKickTarget(null)}
+                disabled={kickMemberMutation.isPending}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={handleConfirmKick}
+                disabled={kickMemberMutation.isPending}
+              >
+                {kickMemberMutation.isPending
+                  ? t('detail.removing')
+                  : t('detail.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Club Media Modal */}
+      {editingMedia && (
+        <EditClubMediaModal
+          isOpen={isEditMediaModalOpen}
+          onClose={() => {
+            setIsEditMediaModalOpen(false);
+            setEditingMedia(null);
+          }}
+          club={club}
+          media={editingMedia}
+        />
+      )}
+    </div>
+  );
+}
+
+export default ClubDetailScreen;

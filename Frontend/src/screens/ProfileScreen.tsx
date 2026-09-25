@@ -1,0 +1,1647 @@
+import { Link, useOutletContext } from 'react-router-dom';
+import LogCard from '../components/LogCard';
+import PlaylistBatchCard from '../components/PlaylistBatchCard';
+import ProgressBar from '../components/ProgressBar';
+import ProfileStatsBand from '../components/ProfileStatsBand';
+import ImmersionGoals from '../components/ImmersionGoals';
+import ImmersionHeatmap from '../components/ImmersionHeatmap';
+import FavoriteMedia from '../components/FavoriteMedia';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  getUserLogsFn,
+  getUserAchievementsFn,
+  getUserAchievementActivityFn,
+} from '../api/trackerApi';
+import { Icon } from '@iconify/react';
+import { getAchievementIconSlug } from '../utils/achievementIcon';
+import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
+import { AchievementDetailModal } from '../components/achievements/AchievementCard';
+import { RARITY_COLOR, rarityTint } from '../components/achievements/rarity';
+import {
+  OutletProfileContextType,
+  UnifiedFeedItem,
+  UnifiedFeedFilter,
+  IPendingAchievement,
+  IAchievement,
+  AchievementCategory,
+  AchievementRarity,
+  ProfileWidgetId,
+} from '../types';
+import {
+  resolveProfileLayout,
+  PROFILE_WIDGET_META,
+} from '../utils/profileWidgets';
+import { useUserDataStore } from '../store/userData';
+import { DayPicker } from 'react-day-picker';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import {
+  Search,
+  Funnel,
+  Clock,
+  ChevronDown,
+  ListFilter,
+  ArrowUp,
+  ArrowDown,
+  LayoutList,
+  Trophy,
+  Star,
+  Tag,
+  X,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
+import Spinner from '../components/ui/Spinner';
+
+/** The shared date formatter adds time and zone unless opted out. */
+const DATE_ONLY: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: undefined,
+  minute: undefined,
+  timeZoneName: undefined,
+};
+
+const RARITY_ORDER: Record<AchievementRarity, number> = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+  secret: 5,
+};
+
+/** Module scope: key names, never text. */
+const achievementCategoryOptions: Array<{
+  value: 'all' | AchievementCategory;
+  labelKey: ParseKeys<'profile'>;
+}> = [
+  { value: 'all', labelKey: 'categories.all' },
+  { value: 'streaks', labelKey: 'categories.streaks' },
+  { value: 'immersion', labelKey: 'categories.immersion' },
+  { value: 'social', labelKey: 'categories.social' },
+  { value: 'milestone', labelKey: 'categories.milestone' },
+  { value: 'secret', labelKey: 'categories.secret' },
+];
+
+function ProfileScreen() {
+  const { t } = useTranslation('profile');
+  const { t: tCommon } = useTranslation('common');
+  const limit = 10;
+  const { user, username } = useOutletContext<OutletProfileContextType>();
+  const { user: loggedUser } = useUserDataStore();
+  const canViewStatistics = user?.socialAccess?.statistics !== false;
+  const canViewImmersionActivity =
+    user?.socialAccess?.immersionActivity !== false;
+  const { getCurrentTime, getDayBounds, formatDateOnly, formatDate } =
+    useDateFormatting();
+  const [showFullAbout, setShowFullAbout] = useState(false);
+  const aboutContentRef = useRef<HTMLDivElement | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<
+    | 'all'
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'book'
+    | 'audio'
+    | 'other'
+  >('all');
+  const [achievementCategory, setAchievementCategory] = useState<
+    'all' | AchievementCategory
+  >('all');
+  const [dateFilter, setDateFilter] = useState<
+    'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
+  >('all');
+  const [showUnknownDates, setShowUnknownDates] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [sortBy, setSortBy] = useState<
+    | 'date'
+    | 'xp'
+    | 'episodes'
+    | 'chars'
+    | 'pages'
+    | 'time'
+    | 'readingSpeed'
+    | 'rarity'
+    | 'points'
+  >('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const aboutText = user?.about?.trim() ?? '';
+  const aboutHtml = aboutText ? renderMarkdownWithSpoilers(aboutText) : '';
+  const [shouldCollapseAbout, setShouldCollapseAbout] = useState(false);
+  const showAboutPreview = shouldCollapseAbout && !showFullAbout;
+  const aboutPreviewHeight = 224;
+  const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
+  const [visibleActivityCount, setVisibleActivityCount] = useState(limit);
+
+  const feedKindOptions: Array<{
+    label: string;
+    value: UnifiedFeedFilter;
+    icon: React.ElementType;
+  }> = [
+    { label: t('feed.all'), value: 'all', icon: Star },
+    { label: t('feed.logs'), value: 'logs', icon: LayoutList },
+    { label: t('feed.achievements'), value: 'achievements', icon: Trophy },
+  ];
+
+  const sortFieldOptions =
+    feedKind === 'achievements'
+      ? [
+          { value: 'date', label: t('sort.date') },
+          { value: 'rarity', label: t('sort.rarity') },
+          { value: 'points', label: t('sort.points') },
+        ]
+      : feedKind === 'logs'
+        ? [
+            { value: 'date', label: t('sort.date') },
+            { value: 'xp', label: t('sort.xp') },
+            { value: 'episodes', label: t('sort.episodes') },
+            { value: 'chars', label: t('sort.chars') },
+            { value: 'pages', label: t('sort.pages') },
+            { value: 'time', label: t('sort.time') },
+            { value: 'readingSpeed', label: t('sort.readingSpeed') },
+          ]
+        : [
+            { value: 'date', label: t('sort.date') },
+            { value: 'xp', label: t('sort.xp') },
+            { value: 'episodes', label: t('sort.episodes') },
+            { value: 'chars', label: t('sort.chars') },
+            { value: 'pages', label: t('sort.pages') },
+            { value: 'time', label: t('sort.time') },
+            { value: 'readingSpeed', label: t('sort.readingSpeed') },
+            { value: 'rarity', label: t('sort.rarity') },
+            { value: 'points', label: t('sort.points') },
+          ];
+
+  useEffect(() => {
+    setShowFullAbout(false);
+  }, [username, aboutText]);
+
+  // "All activity" is one feed, so its page size must include both logs and
+  // achievements. Reset whenever a filter changes and reveal another combined
+  // page only when the user asks for it.
+  useEffect(() => {
+    setVisibleActivityCount(limit);
+  }, [
+    username,
+    searchTerm,
+    filterType,
+    achievementCategory,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+    showUnknownDates,
+    sortBy,
+    sortDirection,
+  ]);
+
+  // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
+  // "all" supports every field (items missing it sort to the end), so it never needs a reset.
+  useEffect(() => {
+    const logOnlyFields = [
+      'xp',
+      'episodes',
+      'chars',
+      'pages',
+      'time',
+      'readingSpeed',
+    ];
+    const achievementOnlyFields = ['rarity', 'points'];
+    if (feedKind === 'achievements' && logOnlyFields.includes(sortBy)) {
+      setSortBy('date');
+    } else if (feedKind === 'logs' && achievementOnlyFields.includes(sortBy)) {
+      setSortBy('date');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedKind]);
+
+  useEffect(() => {
+    const content = aboutContentRef.current;
+
+    if (!content || !aboutHtml) {
+      setShouldCollapseAbout(false);
+      return;
+    }
+
+    const updateShouldCollapse = () => {
+      const contentHeight = content.scrollHeight;
+      const nextValue = contentHeight > aboutPreviewHeight + 1;
+      setShouldCollapseAbout((current) =>
+        current === nextValue ? current : nextValue
+      );
+    };
+
+    updateShouldCollapse();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateShouldCollapse();
+    });
+
+    observer.observe(content);
+
+    return () => observer.disconnect();
+  }, [aboutHtml]);
+
+  const isValidLogType = (
+    value: string
+  ): value is
+    | 'anime'
+    | 'manga'
+    | 'light-novel'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'audio'
+    | 'other' => {
+    return [
+      'anime',
+      'manga',
+      'light-novel',
+      'reading',
+      'vn',
+      'game',
+      'video',
+      'movie',
+      'audio',
+      'other',
+    ].includes(value);
+  };
+
+  // Function to get date range based on filter
+  const getDateRange = () => {
+    const now = getCurrentTime();
+    const today = getDayBounds(now);
+
+    switch (dateFilter) {
+      case 'today': {
+        return {
+          startDate: today.start,
+          endDate: today.end,
+        };
+      }
+      case 'week': {
+        const weekStart = new Date(today.start);
+        weekStart.setDate(today.start.getDate() - today.start.getDay()); // Start of week (Sunday)
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        return {
+          startDate: weekStart,
+          endDate: weekEnd,
+        };
+      }
+      case 'month': {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59
+        );
+        return {
+          startDate: monthStart,
+          endDate: monthEnd,
+        };
+      }
+      case 'year': {
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+        return {
+          startDate: yearStart,
+          endDate: yearEnd,
+        };
+      }
+      case 'custom': {
+        if (customStartDate && customEndDate) {
+          const startBounds = getDayBounds(customStartDate);
+          const endBounds = getDayBounds(customEndDate);
+          return {
+            startDate: startBounds.start,
+            endDate: endBounds.end,
+          };
+        }
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const dateRange = getDateRange();
+  const totalUserXpToLevelUp = user?.stats?.userXpToNextLevel
+    ? user?.stats?.userXpToNextLevel - user?.stats?.userXpToCurrentLevel
+    : 0;
+  const userProgressXP = user?.stats?.userXp
+    ? user?.stats?.userXp - user?.stats?.userXpToCurrentLevel
+    : 0;
+  const userProgressPercentage = (userProgressXP / totalUserXpToLevelUp) * 100;
+
+  const totalListeningXpToLevelUp = user?.stats?.listeningXpToNextLevel
+    ? user?.stats?.listeningXpToNextLevel -
+      user?.stats?.listeningXpToCurrentLevel
+    : 0;
+  const listeningProgressXP = user?.stats?.listeningXp
+    ? user?.stats?.listeningXp - user?.stats?.listeningXpToCurrentLevel
+    : 0;
+  const listeningProgressPercentage =
+    (listeningProgressXP / totalListeningXpToLevelUp) * 100;
+
+  const totalReadingXpToLevelUp = user?.stats?.readingXpToNextLevel
+    ? user?.stats?.readingXpToNextLevel - user?.stats?.readingXpToCurrentLevel
+    : 0;
+  const readingProgressXP = user?.stats?.readingXp
+    ? user?.stats?.readingXp - user?.stats?.readingXpToCurrentLevel
+    : 0;
+  const readingProgressPercentage =
+    (readingProgressXP / totalReadingXpToLevelUp) * 100;
+
+  const isLogSortValue = sortBy !== 'rarity' && sortBy !== 'points';
+  const backendSortBy = isLogSortValue ? sortBy : 'date';
+  const backendSortDirection = isLogSortValue ? sortDirection : 'desc';
+
+  const {
+    data: logs,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      'logs',
+      username,
+      searchTerm,
+      filterType,
+      dateFilter,
+      customStartDate?.toISOString(),
+      customEndDate?.toISOString(),
+      backendSortBy,
+      backendSortDirection,
+    ],
+    queryFn: ({ pageParam }) =>
+      getUserLogsFn(username as string, {
+        limit,
+        page: pageParam as number,
+        search: searchTerm,
+        type: filterType !== 'all' ? filterType : undefined,
+        start: dateRange?.startDate?.toISOString(),
+        end: dateRange?.endDate?.toISOString(),
+        sortBy: backendSortBy,
+        sortDirection: backendSortDirection,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length === 0) return undefined;
+      // Backend paginates by groups (playlist batches = 1 group).
+      // Count unique groups in this page to check if we got a full page.
+      const groupKeys = new Set(
+        lastPage.map(
+          (log) => log.playlistBatchId?.trim() || `single:${log._id}`
+        )
+      );
+      if (groupKeys.size < limit) return undefined;
+      return allPages ? allPages.length + 1 : 2;
+    },
+    initialPageParam: 1,
+    staleTime: Infinity,
+    enabled: Boolean(username && canViewImmersionActivity),
+  });
+
+  const displayedLogs = (() => {
+    const pages = logs?.pages ?? [];
+    const flattened = pages.flatMap((page) =>
+      Array.isArray(page) ? page : []
+    );
+    return showUnknownDates
+      ? flattened
+      : flattened.filter((log) => !log.unknownDate);
+  })();
+
+  // Group logs by playlistBatchId  - playlist batches become single entries
+  type LogGroup = {
+    key: string;
+    logs: typeof displayedLogs;
+    isPlaylistGroup: boolean;
+  };
+
+  const groupedLogs = useMemo<LogGroup[]>(() => {
+    const grouped = new Map<string, typeof displayedLogs>();
+    const order: string[] = [];
+
+    for (const log of displayedLogs) {
+      const key = log.playlistBatchId?.trim() || `single:${log._id}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+        order.push(key);
+      }
+      grouped.get(key)!.push(log);
+    }
+
+    return order.map((key) => {
+      const logs = grouped.get(key) ?? [];
+      return {
+        key,
+        logs,
+        isPlaylistGroup: Boolean(logs[0]?.playlistBatchId),
+      };
+    });
+  }, [displayedLogs]);
+
+  // Achievement activity for unified feed
+  const { data: achievementActivity } = useQuery({
+    queryKey: ['userAchievementActivity', username],
+    queryFn: () => getUserAchievementActivityFn(username as string, 50),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!username,
+  });
+
+  // Apply the search/category/date/sort filters to achievements too (client-side,
+  // since a user's unlocked achievements are a small bounded set already fetched in full).
+  const filteredAchievements = useMemo(() => {
+    let items = achievementActivity ?? [];
+
+    if (achievementCategory !== 'all') {
+      items = items.filter(
+        (a) => a.achievement.category === achievementCategory
+      );
+    }
+
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      items = items.filter(
+        (a) =>
+          a.achievement.name?.toLowerCase().includes(term) ||
+          a.achievement.description?.toLowerCase().includes(term)
+      );
+    }
+
+    if (dateRange) {
+      items = items.filter((a) => {
+        const unlockedAt = new Date(a.unlockedAt);
+        return (
+          unlockedAt >= dateRange.startDate && unlockedAt <= dateRange.endDate
+        );
+      });
+    }
+
+    const sorted = [...items];
+    if (sortBy === 'rarity') {
+      sorted.sort((a, b) => {
+        const diff =
+          RARITY_ORDER[b.achievement.rarity] -
+          RARITY_ORDER[a.achievement.rarity];
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    } else if (sortBy === 'points') {
+      sorted.sort((a, b) => {
+        const diff = b.achievement.points - a.achievement.points;
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    } else {
+      sorted.sort((a, b) => {
+        const diff =
+          new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime();
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    }
+
+    return sorted;
+  }, [
+    achievementActivity,
+    achievementCategory,
+    searchTerm,
+    dateRange,
+    sortBy,
+    sortDirection,
+  ]);
+
+  // Unified feed (achievements + log groups). Sorting by a field only one
+  // kind has (e.g. XP on logs, Rarity on achievements) pushes the other
+  // kind's items — which lack that field — to the end, in chronological order.
+  const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
+    const logItems: UnifiedFeedItem[] = displayedLogs.map((log) => ({
+      kind: 'log',
+      sortDate: new Date(log.date ?? 0),
+      data: log,
+    }));
+    const achievementItems: UnifiedFeedItem[] = filteredAchievements.map(
+      (a) => ({
+        kind: 'achievement',
+        sortDate: new Date(a.unlockedAt),
+        data: a,
+      })
+    );
+
+    const getSortValue = (item: UnifiedFeedItem): number | null => {
+      if (sortBy === 'date') return item.sortDate.getTime();
+
+      if (item.kind === 'log') {
+        switch (sortBy) {
+          case 'xp':
+            return item.data.xp ?? null;
+          case 'episodes':
+            return item.data.episodes ?? null;
+          case 'chars':
+            return item.data.chars ?? null;
+          case 'pages':
+            return item.data.pages ?? null;
+          case 'time':
+            return item.data.time ?? null;
+          case 'readingSpeed':
+            return (item.data.time ?? 0) > 0 && (item.data.chars ?? 0) > 0
+              ? ((item.data.chars ?? 0) / (item.data.time ?? 1)) * 60
+              : null;
+          default:
+            return null;
+        }
+      }
+
+      switch (sortBy) {
+        case 'rarity':
+          return RARITY_ORDER[item.data.achievement.rarity] ?? null;
+        case 'points':
+          return item.data.achievement.points ?? null;
+        default:
+          return null;
+      }
+    };
+
+    return [...logItems, ...achievementItems].sort((a, b) => {
+      const valueA = getSortValue(a);
+      const valueB = getSortValue(b);
+
+      if (valueA === null && valueB === null) {
+        return b.sortDate.getTime() - a.sortDate.getTime();
+      }
+      if (valueA === null) return 1;
+      if (valueB === null) return -1;
+
+      const diff = valueB - valueA;
+      return sortDirection === 'asc' ? -diff : diff;
+    });
+  }, [displayedLogs, filteredAchievements, sortBy, sortDirection]);
+
+  const visibleUnifiedFeed = unifiedFeed.slice(0, visibleActivityCount);
+  const hasMoreUnifiedActivity =
+    Boolean(hasNextPage) || visibleUnifiedFeed.length < unifiedFeed.length;
+
+  const loadMoreUnifiedActivity = async () => {
+    if (hasNextPage) await fetchNextPage();
+    setVisibleActivityCount((count) => count + limit);
+  };
+
+  const isOwner = username === loggedUser?.username;
+  const profileLayout = resolveProfileLayout(user?.profileLayout);
+
+  // Left-column widgets keyed by id — rendered in the order/visibility the
+  // owner configured in Settings → Profile (see resolveProfileLayout).
+  const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
+    profileStats:
+      username && canViewStatistics ? (
+        <ProfileStatsBand username={username} />
+      ) : null,
+    about: (
+      <div className="card w-full surface">
+        <div className="card-body w-full p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h2 className="card-title">{t('about.title')}</h2>
+            {isOwner && (
+              <Link
+                to="/settings"
+                className="btn btn-ghost btn-xs text-primary"
+              >
+                {t('about.edit')}
+              </Link>
+            )}
+          </div>
+          {aboutHtml ? (
+            <div className="space-y-3">
+              <div className="relative">
+                <div
+                  ref={aboutContentRef}
+                  className={`prose prose-sm max-w-none text-base-content/90 ${
+                    showAboutPreview ? 'max-h-56 overflow-hidden' : ''
+                  }`}
+                  dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                />
+                {showAboutPreview && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 via-base-100/90 to-transparent" />
+                )}
+              </div>
+              {shouldCollapseAbout && (
+                <div className="flex justify-center">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="link link-hover link-primary text-sm"
+                    onClick={() => setShowFullAbout((value) => !value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setShowFullAbout((value) => !value);
+                      }
+                    }}
+                    aria-expanded={showFullAbout}
+                  >
+                    {showFullAbout ? t('about.showLess') : t('about.readMore')}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-base-content/70 text-sm">
+              {isOwner ? t('about.emptyOwn') : t('about.emptyOther')}
+            </p>
+          )}
+        </div>
+      </div>
+    ),
+    favorites: username ? (
+      <FavoriteMedia
+        favorites={user?.favorites ?? []}
+        isOwner={isOwner}
+        username={username}
+        blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
+      />
+    ) : null,
+    progressStats: canViewStatistics ? (
+      <div className="card w-full surface">
+        <div className="card-body w-full p-4 sm:p-6">
+          <h2 className="card-title mb-4">{t('progress.title')}</h2>
+          <div className="stats stats-vertical w-full shadow-none bg-transparent">
+            <div className="stat px-0 py-4">
+              <div className="stat-title">{t('progress.overall')}</div>
+              <div className="stat-value text-2xl">
+                {t('progress.level', { level: user?.stats?.userLevel ?? 0 })}
+              </div>
+              <div className="stat-desc mb-3">
+                {t('progress.xp', {
+                  current: userProgressXP,
+                  total: totalUserXpToLevelUp,
+                })}
+              </div>
+              <ProgressBar
+                progress={userProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+
+            <div className="stat px-0 py-4">
+              <div className="stat-title">{t('progress.listening')}</div>
+              <div className="stat-value text-2xl">
+                {t('progress.level', {
+                  level: user?.stats?.listeningLevel ?? 0,
+                })}
+              </div>
+              <div className="stat-desc mb-3">
+                {t('progress.xp', {
+                  current: listeningProgressXP,
+                  total: totalListeningXpToLevelUp,
+                })}
+              </div>
+              <ProgressBar
+                progress={listeningProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+
+            <div className="stat px-0 py-4">
+              <div className="stat-title">{t('progress.reading')}</div>
+              <div className="stat-value text-2xl">
+                {t('progress.level', {
+                  level: user?.stats?.readingLevel ?? 0,
+                })}
+              </div>
+              <div className="stat-desc mb-3">
+                {t('progress.xp', {
+                  current: readingProgressXP,
+                  total: totalReadingXpToLevelUp,
+                })}
+              </div>
+              <ProgressBar
+                progress={readingProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null,
+    immersionActivity: canViewImmersionActivity ? (
+      <div className="card w-full surface overflow-visible">
+        <div className="card-body w-full p-4 sm:p-6 overflow-visible">
+          <h2 className="card-title mb-4">{t('activity.title')}</h2>
+          {username && (
+            <ImmersionHeatmap
+              username={username}
+              accent={user?.customization}
+            />
+          )}
+        </div>
+      </div>
+    ) : null,
+    immersionGoals: username ? <ImmersionGoals username={username} /> : null,
+    achievements: username ? (
+      <AchievementShowcaseWidget username={username} />
+    ) : null,
+  };
+
+  // Left-column widgets actually rendered (visible, owner rules, node exists).
+  // When none remain, collapse to a single centered column of just the activity.
+  const leftWidgets = profileLayout.filter(({ id, visible }) => {
+    if (!visible) return false;
+    if (PROFILE_WIDGET_META[id]?.ownerOnly && !isOwner) return false;
+    return Boolean(widgetNodes[id]);
+  });
+  const hasLeftColumn = leftWidgets.length > 0;
+
+  return (
+    <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
+      <div className="w-full max-w-7xl">
+        <div
+          className={
+            hasLeftColumn
+              ? 'grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10'
+              : 'flex justify-center'
+          }
+        >
+          {hasLeftColumn && (
+            <div className="flex flex-col shrink gap-4 md:gap-5">
+              {leftWidgets.map(({ id }) => (
+                <div key={id} className="contents">
+                  {widgetNodes[id]}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            className={`flex flex-col gap-4 md:gap-5 ${
+              hasLeftColumn ? '' : 'w-full max-w-3xl'
+            }`}
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="card-title self-start">{username}'s Activity</h2>
+                {/* Kind filter */}
+                <div className="dropdown dropdown-end">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-outline gap-2 justify-start"
+                  >
+                    {(() => {
+                      const Icon = feedKindOptions.find(
+                        (o) => o.value === feedKind
+                      )?.icon;
+                      return Icon ? <Icon className="w-4 h-4" /> : null;
+                    })()}
+                    {feedKindOptions.find((o) => o.value === feedKind)?.label}
+                    <ChevronDown className="w-4 h-4 ml-auto" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu surface-raised z-[1] w-48 p-2"
+                  >
+                    {feedKindOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <li key={option.value}>
+                          <a
+                            className={
+                              feedKind === option.value ? 'active' : ''
+                            }
+                            onClick={() => setFeedKind(option.value)}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {option.label}
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {/* Search Bar and Filter Dropdowns Row */}
+                <div className="flex flex-col lg:flex-row lg:flex-wrap gap-4">
+                  {/* Search Bar */}
+                  <div className="flex-1 min-w-[180px] lg:max-w-md">
+                    <label className="input flex items-center gap-2">
+                      <Search className="w-5 h-5 opacity-70" />
+                      <input
+                        type="text"
+                        className="grow"
+                        placeholder={t('search.placeholder')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Filter Dropdowns */}
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                    {/* Type Filter Dropdown (logs only) */}
+                    {feedKind !== 'achievements' && (
+                      <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                        >
+                          <Funnel className="w-4 h-4" />
+                          {filterType === 'all'
+                            ? t('filters.allTypes')
+                            : filterType.charAt(0).toUpperCase() +
+                              filterType.slice(1)}
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
+                        >
+                          {[
+                            { value: 'all', label: t('filters.allTypes') },
+                            {
+                              value: 'anime',
+                              label: tCommon('mediaTypes.anime'),
+                            },
+                            {
+                              value: 'manga',
+                              label: tCommon('mediaTypes.manga'),
+                            },
+                            {
+                              value: 'light-novel',
+                              label: tCommon('mediaTypes.light-novel'),
+                            },
+                            {
+                              value: 'reading',
+                              label: tCommon('mediaTypes.reading'),
+                            },
+                            { value: 'vn', label: tCommon('mediaTypes.vn') },
+                            {
+                              value: 'game',
+                              label: tCommon('mediaTypes.game'),
+                            },
+                            {
+                              value: 'video',
+                              label: tCommon('mediaTypes.video'),
+                            },
+                            {
+                              value: 'movie',
+                              label: tCommon('mediaTypes.movie'),
+                            },
+                            {
+                              value: 'tv show',
+                              label: tCommon('mediaTypes.tvShow'),
+                            },
+                            {
+                              value: 'book',
+                              label: tCommon('mediaTypes.book'),
+                            },
+                            {
+                              value: 'audio',
+                              label: tCommon('mediaTypes.audio'),
+                            },
+                            {
+                              value: 'other',
+                              label: tCommon('mediaTypes.other'),
+                            },
+                          ].map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  filterType === option.value ? 'active' : ''
+                                }
+                                onClick={() => {
+                                  const value = option.value;
+                                  if (
+                                    value === 'all' ||
+                                    isValidLogType(value)
+                                  ) {
+                                    setFilterType(value as typeof filterType);
+                                  }
+                                }}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Category Filter Dropdown (achievements only) */}
+                    {feedKind !== 'logs' && (
+                      <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                        >
+                          <Tag className="w-4 h-4" />
+                          {t(
+                            achievementCategoryOptions.find(
+                              (o) => o.value === achievementCategory
+                            )?.labelKey ?? 'categories.all'
+                          )}
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
+                        >
+                          {achievementCategoryOptions.map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  achievementCategory === option.value
+                                    ? 'active'
+                                    : ''
+                                }
+                                onClick={() =>
+                                  setAchievementCategory(option.value)
+                                }
+                              >
+                                {t(option.labelKey)}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Date Filter Dropdown */}
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <Clock className="w-4 h-4" />
+                        {dateFilter === 'all'
+                          ? t('time.all')
+                          : dateFilter === 'today'
+                            ? t('time.today')
+                            : dateFilter === 'week'
+                              ? t('time.week')
+                              : dateFilter === 'month'
+                                ? t('time.month')
+                                : dateFilter === 'year'
+                                  ? t('time.year')
+                                  : t('time.custom')}
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
+                      >
+                        {[
+                          { value: 'all', label: t('time.all') },
+                          { value: 'today', label: t('time.today') },
+                          { value: 'week', label: t('time.week') },
+                          { value: 'month', label: t('time.month') },
+                          { value: 'year', label: t('time.year') },
+                          { value: 'custom', label: t('time.custom') },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                dateFilter === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                const value = option.value as typeof dateFilter;
+                                setDateFilter(value);
+                                // Reset custom dates when switching away from custom
+                                if (value !== 'custom') {
+                                  setCustomStartDate(undefined);
+                                  setCustomEndDate(undefined);
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                        <li className="mt-1">
+                          <div className="divider my-1"></div>
+                        </li>
+                        <li>
+                          <label className="flex items-center gap-2 px-2 py-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-sm"
+                              checked={showUnknownDates}
+                              onChange={(e) =>
+                                setShowUnknownDates(e.target.checked)
+                              }
+                            />
+                            <span>{t('filters.includeUnknownDates')}</span>
+                          </label>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Combined Sort Filter Dropdown */}
+                    <div className="dropdown dropdown-end flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <ListFilter className="w-4 h-4" />
+                        {t('filters.sortBadge')}{' '}
+                        {sortFieldOptions.find((o) => o.value === sortBy)
+                          ?.label ?? t('sort.date')}{' '}
+                        {sortDirection === 'desc' ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )}
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu surface-raised z-[1] w-full sm:w-60 p-2"
+                      >
+                        <li className="menu-title">
+                          <span>{t('sort.field')}</span>
+                        </li>
+                        {sortFieldOptions.map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                sortBy === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                setSortBy(option.value as typeof sortBy);
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                        <div className="divider my-1"></div>
+                        <li className="menu-title">
+                          <span>{t('sort.direction')}</span>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'desc' ? 'active' : ''}
+                            onClick={() => setSortDirection('desc')}
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                            {sortBy === 'date'
+                              ? t('sort.newestFirst')
+                              : t('sort.highestToLowest')}
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'asc' ? 'active' : ''}
+                            onClick={() => setSortDirection('asc')}
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                            {sortBy === 'date'
+                              ? t('sort.oldestFirst')
+                              : t('sort.lowestToHighest')}
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom Date Range (when selected) - Now below the main filter row */}
+                {dateFilter === 'custom' && (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline w-full sm:w-auto"
+                      >
+                        {customStartDate
+                          ? formatDateOnly(customStartDate)
+                          : t('time.startDate')}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 ml-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={customStartDate}
+                          onSelect={(date) => {
+                            setCustomStartDate(date);
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                            // Reset end date if it's before the new start date
+                            if (customEndDate && date && customEndDate < date) {
+                              setCustomEndDate(undefined);
+                            }
+                          }}
+                          disabled={(date) => date > new Date()} // Disable future dates
+                        />
+                      </div>
+                    </div>
+                    <span className="hidden sm:flex items-center text-base-content/50 justify-center">
+                      to
+                    </span>
+
+                    <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
+                      <div
+                        // Not a <button>, so `btn-disabled` is the right class
+                        // here — but on its own it only blocks pointer events,
+                        // so the tab stop and the ARIA state go with it.
+                        tabIndex={customStartDate ? 0 : -1}
+                        role="button"
+                        aria-disabled={!customStartDate}
+                        // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
+                        className={`btn btn-outline w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
+                      >
+                        {customEndDate
+                          ? formatDateOnly(customEndDate)
+                          : t('time.endDate')}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 ml-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      {customStartDate && (
+                        <div
+                          tabIndex={0}
+                          className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                        >
+                          <DayPicker
+                            className="react-day-picker mx-auto"
+                            mode="single"
+                            selected={customEndDate}
+                            onSelect={(date) => {
+                              setCustomEndDate(date);
+                              // Close dropdown by removing focus
+                              (document.activeElement as HTMLElement)?.blur?.();
+                            }}
+                            disabled={(date) => {
+                              const today = new Date();
+                              const startDate = customStartDate;
+                              return (
+                                date > today || (startDate && date < startDate)
+                              );
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Active Filters - Now below everything else */}
+                {(dateFilter !== 'all' ||
+                  (feedKind !== 'achievements' && filterType !== 'all') ||
+                  (feedKind !== 'logs' && achievementCategory !== 'all') ||
+                  searchTerm ||
+                  showUnknownDates ||
+                  sortBy !== 'date' ||
+                  sortDirection !== 'desc') && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs text-base-content/60">
+                      {t('filters.active')}
+                    </span>
+
+                    {searchTerm && (
+                      <div className="badge badge-primary badge-sm gap-1">
+                        Search: "{searchTerm}"
+                        <button
+                          className="ml-1 hover:bg-primary-focus rounded-full"
+                          onClick={() => setSearchTerm('')}
+                          aria-label={t('search.clear')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {feedKind !== 'achievements' && filterType !== 'all' && (
+                      <div className="badge badge-secondary badge-sm gap-1">
+                        Type: {filterType}
+                        <button
+                          className="ml-1 hover:bg-secondary-focus rounded-full"
+                          onClick={() => setFilterType('all')}
+                          aria-label={t('filters.clearType')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {feedKind !== 'logs' && achievementCategory !== 'all' && (
+                      <div className="badge badge-secondary badge-sm gap-1">
+                        {t('filters.categoryBadge')}{' '}
+                        {t(
+                          achievementCategoryOptions.find(
+                            (o) => o.value === achievementCategory
+                          )?.labelKey ?? 'categories.all'
+                        )}
+                        <button
+                          className="ml-1 hover:bg-secondary-focus rounded-full"
+                          onClick={() => setAchievementCategory('all')}
+                          aria-label={t('filters.clearCategory')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {dateFilter !== 'all' && (
+                      <div className="badge badge-accent badge-sm gap-1">
+                        {dateFilter === 'custom'
+                          ? t('time.range', {
+                              start:
+                                (customStartDate &&
+                                  formatDate(customStartDate, DATE_ONLY)) ||
+                                t('time.start'),
+                              end:
+                                (customEndDate &&
+                                  formatDate(customEndDate, DATE_ONLY)) ||
+                                t('time.end'),
+                            })
+                          : dateFilter === 'today'
+                            ? t('time.today')
+                            : dateFilter === 'week'
+                              ? t('time.week')
+                              : dateFilter === 'month'
+                                ? t('time.month')
+                                : t('time.year')}
+                        <button
+                          className="ml-1 hover:bg-accent-focus rounded-full"
+                          onClick={() => {
+                            setDateFilter('all');
+                            setCustomStartDate(undefined);
+                            setCustomEndDate(undefined);
+                          }}
+                          aria-label={t('filters.clearDate')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {showUnknownDates && (
+                      <div className="badge badge-neutral badge-sm gap-1">
+                        {t('filters.includeUnknownDates')}
+                        <button
+                          className="ml-1 hover:bg-neutral-focus rounded-full"
+                          onClick={() => setShowUnknownDates(false)}
+                          aria-label={t('filters.hideUnknownDates')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {(sortBy !== 'date' || sortDirection !== 'desc') && (
+                      <div className="badge badge-info badge-sm gap-1">
+                        {t('filters.sortBadge')}{' '}
+                        {sortBy !== 'date'
+                          ? sortFieldOptions.find((o) => o.value === sortBy)
+                              ?.label
+                          : sortDirection === 'asc'
+                            ? t('sort.oldestFirst')
+                            : t('sort.newestFirst')}
+                        <button
+                          className="ml-1 hover:bg-info-focus rounded-full"
+                          onClick={() => {
+                            setSortBy('date');
+                            setSortDirection('desc');
+                          }}
+                          aria-label={t('filters.clearSort')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setFilterType('all');
+                        setAchievementCategory('all');
+                        setDateFilter('all');
+                        setCustomStartDate(undefined);
+                        setCustomEndDate(undefined);
+                        setSortBy('date');
+                        setSortDirection('desc');
+                        setShowUnknownDates(false);
+                      }}
+                    >
+                      {t('filters.clearAll')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Unified feed: achievements + log cards mixed chronologically */}
+            {feedKind === 'achievements' ? (
+              // Show ONLY achievements
+              filteredAchievements.length === 0 ? (
+                <div className="card w-full surface p-4">
+                  <p className="text-center text-base-content/60">
+                    {(achievementActivity ?? []).length === 0
+                      ? t('achievements.none')
+                      : t('achievements.noMatches')}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {filteredAchievements.map((item) => (
+                    <AchievementFeedItem
+                      key={String(item.userAchievementId)}
+                      item={item as IPendingAchievement}
+                    />
+                  ))}
+                </div>
+              )
+            ) : feedKind === 'logs' ? (
+              // Show ONLY logs (original log card rendering)
+              <>
+                {logs?.pages ? (
+                  groupedLogs.map((entry) =>
+                    entry.isPlaylistGroup ? (
+                      <PlaylistBatchCard
+                        key={entry.key}
+                        logs={entry.logs}
+                        user={username}
+                      />
+                    ) : (
+                      <LogCard
+                        key={entry.logs[0]._id}
+                        log={entry.logs[0]}
+                        user={username}
+                      />
+                    )
+                  )
+                ) : (
+                  <div className="card w-full surface p-4">
+                    <p className="text-center">{t('feed.noLogs')}</p>
+                  </div>
+                )}
+                {logs?.pages && displayedLogs.length === 0 ? (
+                  <div className="card w-full surface p-4">
+                    <div className="alert alert-info">
+                      <span>{t('feed.noLogsMatch')}</span>
+                    </div>
+                  </div>
+                ) : null}
+                <button
+                  className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
+                  onClick={() => fetchNextPage()}
+                  disabled={!hasNextPage || isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? (
+                    <Spinner size="sm" />
+                  ) : hasNextPage ? (
+                    t('loadMore')
+                  ) : (
+                    t('nothingMore')
+                  )}
+                </button>
+              </>
+            ) : (
+              // Show ALL — unified chronological mix
+              <>
+                {unifiedFeed.length === 0 ? (
+                  <div className="card w-full surface p-4">
+                    <p className="text-center text-base-content/60">
+                      {t('feed.noActivity')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {visibleUnifiedFeed.map((item) => {
+                      if (item.kind === 'achievement') {
+                        return (
+                          <AchievementFeedItem
+                            key={`ach-${item.data.userAchievementId}`}
+                            item={item.data as IPendingAchievement}
+                          />
+                        );
+                      }
+                      // Log — find group
+                      const log = item.data;
+                      const groupKey =
+                        log.playlistBatchId?.trim() || `single:${log._id}`;
+                      const entry = groupedLogs.find((g) => g.key === groupKey);
+                      if (!entry) return null;
+                      // Skip non-representative logs in a group
+                      if (entry.logs[0]._id !== log._id) return null;
+                      return entry.isPlaylistGroup ? (
+                        <PlaylistBatchCard
+                          key={entry.key}
+                          logs={entry.logs}
+                          user={username}
+                        />
+                      ) : (
+                        <LogCard
+                          key={entry.logs[0]._id}
+                          log={entry.logs[0]}
+                          user={username}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                {logs?.pages &&
+                displayedLogs.length === 0 &&
+                filteredAchievements.length === 0 ? (
+                  <div className="card w-full surface p-4">
+                    <div className="alert alert-info">
+                      <span>{t('feed.noActivityMatch')}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {hasMoreUnifiedActivity && (
+                  <button
+                    className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
+                    onClick={() => void loadMoreUnifiedActivity()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      t('loadMore')
+                    )}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Achievement Showcase Widget ─────────────────────────────────────────────
+
+function AchievementShowcaseWidget({ username }: { username: string }) {
+  const { t } = useTranslation('profile');
+  const { data: achievements, isLoading } = useQuery({
+    queryKey: ['userAchievements', username],
+    queryFn: () => getUserAchievementsFn(username),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [selected, setSelected] = useState<IAchievement | null>(null);
+
+  const earned = achievements?.filter((a) => a.isEarned) ?? [];
+  const topAchievements = [...earned]
+    .sort((a, b) => {
+      const rarityOrder = {
+        secret: 0,
+        legendary: 1,
+        epic: 2,
+        rare: 3,
+        uncommon: 4,
+        common: 5,
+      };
+      return (rarityOrder[a.rarity] ?? 6) - (rarityOrder[b.rarity] ?? 6);
+    })
+    .slice(0, 6);
+
+  if (!isLoading && earned.length === 0) return null;
+
+  return (
+    <div className="card w-full surface">
+      <div className="card-body w-full p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="card-title text-base">{t('achievements.title')}</h2>
+          <Link
+            to={`/user/${username}/achievements`}
+            className="btn btn-ghost btn-xs opacity-60 hover:opacity-100"
+          >
+            {t('achievements.viewAll')}
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="skeleton aspect-square w-full rounded-xl"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {topAchievements.map((a) => {
+              const color = RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common;
+              return (
+                <button
+                  key={a._id}
+                  type="button"
+                  onClick={() => setSelected(a)}
+                  title={a.name ?? '???'}
+                  className="group flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-base-300 bg-base-200/40 p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-base-200 hover:shadow-lg"
+                >
+                  <div
+                    className="flex items-center justify-center rounded-xl border transition-transform duration-200 group-hover:scale-105"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      background: rarityTint(a.rarity, '14'),
+                      borderColor: rarityTint(a.rarity, '40'),
+                    }}
+                  >
+                    {a.iconSlug ? (
+                      <Icon
+                        icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
+                        width={32}
+                        height={32}
+                        color={color}
+                      />
+                    ) : (
+                      <span className="text-2xl">🏆</span>
+                    )}
+                  </div>
+                  <span className="line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight text-base-content/90">
+                    {a.name ?? '???'}
+                  </span>
+                  <span
+                    className="text-[10px] font-medium capitalize leading-none"
+                    style={{ color }}
+                  >
+                    {a.rarity}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {earned.length > 0 && (
+          <p className="text-xs opacity-40 mt-3">
+            {earned.length} achievement{earned.length !== 1 ? 's' : ''} earned
+          </p>
+        )}
+      </div>
+
+      {selected && (
+        <AchievementDetailModal
+          achievement={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+export default ProfileScreen;

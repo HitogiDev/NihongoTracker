@@ -1,0 +1,389 @@
+@import "tailwindcss";
+@import "./animations.css";
+@import "./customization.css";
+
+@font-face {
+  font-family: "Noto Sans JP Local";
+  src:
+    url("/fonts/NotoSansJP.woff2") format("woff2"),
+    local("Noto Sans JP"),
+    local("Noto Sans CJK JP");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif JP Local";
+  src:
+    url("/fonts/NotoSerifJP.woff2") format("woff2"),
+    local("Noto Serif JP"),
+    local("Noto Serif CJK JP");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ackaisyo";
+  src: url("/fonts/ackaisyo.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hyoukinna Pop";
+  src: url("/fonts/JocularPOP.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Humour Original";
+  src:
+    url("/fonts/Humour-Original.woff2") format("woff2"),
+    url("/fonts/Humour-Original.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sawarabi Gothic";
+  src: url("/fonts/SawarabiGothic-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@plugin "daisyui" {
+  themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, valentine, halloween, garden, forest, dracula, cmyk, night, winter, dim, sunset, abyss;
+}
+@plugin "@tailwindcss/typography";
+
+@plugin "daisyui/theme" {
+  name: "light";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(98% 0.005 240);
+  --color-base-200: oklch(95.5% 0.01 240);
+  --color-base-300: oklch(91% 0.015 240);
+  --color-base-content: oklch(25% 0.02 250);
+
+  --color-primary: oklch(55% 0.18 250);
+  --color-primary-content: oklch(98% 0.005 250);
+  --color-secondary: oklch(58% 0.16 300);
+  --color-secondary-content: oklch(98% 0.005 300);
+  --color-accent: oklch(60% 0.16 170);
+  --color-accent-content: oklch(98% 0.005 170);
+
+  --color-neutral: oklch(35% 0.02 250);
+  --color-neutral-content: oklch(96% 0.005 250);
+
+  --color-info: oklch(62% 0.15 240);
+  --color-info-content: oklch(98% 0.005 240);
+  --color-success: oklch(60% 0.18 150);
+  --color-success-content: oklch(98% 0.005 150);
+  --color-warning: oklch(75% 0.15 75);
+  --color-warning-content: oklch(25% 0.05 75);
+  --color-error: oklch(53% 0.22 25);
+  --color-error-content: oklch(98% 0.005 25);
+
+  /* Geometry tokens are pinned app-wide below, not per theme. */
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* ── App geometry ────────────────────────────────────────────────────────────
+   daisyUI ships a different radius scale per theme: stock `dark` (our default)
+   is .5 / .25 / .5rem while our customised `light` was 1 / .5 / .75rem, so the
+   same markup had visibly different corners depending on the theme — and
+   cupcake's --radius-field: 2rem turns every button into a pill.
+
+   Radius is product geometry, not theme character, so pin it once for every
+   theme. Unlayered on purpose: daisyUI emits its theme variables into
+   @layer base, so an unlayered rule wins without a specificity hack, and
+   [data-theme] also covers the nested texthooker theme scope
+   (HookerScreen.tsx). --depth / --noise / --border stay per theme; they are
+   colour/texture character and cause no cross-theme layout drift. */
+:root,
+[data-theme] {
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+}
+
+/* The navbar is translucent (bg-neutral/85) so hero art shows through it. On a
+   dark page the bar stays dark; on a light page that 15% bleed washes it toward
+   grey and drops the near-white neutral-content text below a legible contrast.
+   Make it solid in the light theme (dark keeps the glass). Unlayered on purpose
+   so it beats the Tailwind opacity utility, same as the geometry rule above. */
+[data-theme='light'] .site-navbar {
+  background-color: var(--color-neutral);
+}
+
+/* daisyUI .btn sets its own foreground (base-content), which is dark in light
+   themes, so the ghost logo/search/bell buttons on the dark navbar render
+   dark-on-dark. Give the bar-level ghost buttons the bar's own content colour.
+   Exclude the ones inside dropdown popovers (they sit on a light surface and
+   keep base-content / their own text-primary) and the avatar trigger (its
+   initials fallback stays base-content). Unlayered so it beats the daisyUI btn
+   colour; applies in both themes (neutral-content is already light in dark). */
+.site-navbar .btn-ghost:not(:where(.dropdown-content, .dropdown-content *, .avatar)) {
+  color: var(--color-neutral-content);
+}
+
+@theme {
+  --padding-22px: 22px;
+  --padding-25px: 25px;
+
+  --color-shadow: #060d22;
+
+  /* Bundled Inter renders identically on every OS, matching the macOS/SF look.
+     Falls through to Noto Sans JP for CJK glyphs Inter doesn't cover. */
+  --font-sans: "Inter Variable", "Inter", "Noto Sans JP Local", "Noto Sans JP",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* ── Surfaces ────────────────────────────────────────────────────────────────
+   One recipe for a resting panel, one for an inset panel, one for a floating
+   layer. Use `surface` on hand-rolled <div> panels and alongside `card` on
+   daisyUI cards (`card surface`).
+
+   Deliberately NOT `@utility card { ... }`: Tailwind v4 emits custom utilities
+   after core utilities in the same layer, so overriding `.card` would beat an
+   inline `bg-primary` and silently break every coloured card.
+
+   Only two elevations exist app-wide: shadow-sm (resting) and shadow-lg
+   (floating). If a panel needs a different background, don't use `surface`. */
+@utility surface {
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  @apply border border-base-300/50 shadow-sm;
+}
+
+@utility surface-muted {
+  background-color: var(--color-base-200);
+  border-radius: var(--radius-box);
+  @apply border border-base-300/50;
+}
+
+@utility surface-raised {
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  @apply border border-base-300 shadow-lg;
+}
+
+html, body {
+  font-family: var(--font-sans);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+  
+  textarea::placeholder {
+    white-space: pre-line;
+  }
+}
+
+html, body {
+  height: 100%;
+  /* `clip` prevents horizontal overflow like `hidden`, but without turning
+     body into a scroll container — `hidden` here silently breaks every
+     position: sticky descendant (they stick to body, which never scrolls). */
+  overflow-x: clip;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Ensure smooth scroll behavior and proper reset */
+html {
+  scroll-behavior: auto; /* Override smooth scrolling for instant resets */
+}
+
+/* Force scroll reset for navigation */
+.scroll-reset {
+  scroll-behavior: auto !important;
+}
+
+/* Ensure tooltips don't cause horizontal overflow on mobile */
+@media (max-width: 768px) {
+  .tooltip:before,
+  .tooltip:after {
+    max-width: calc(100vw - 2rem);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+}
+
+/* Rainbow gradient animation for badges */
+@keyframes rainbow-fade {
+  0% { background-color: #be2323; } /* Dark Red */
+  14% { background-color: #cd7b2a; } /* Dark Orange */
+  28% { background-color: #9f9f2c; } /* Gold */
+  42% { background-color: #2c942c; } /* Dark Green */
+  57% { background-color: #2a2aa3; } /* Dark Blue */
+  71% { background-color: #40135f; } /* Dark Indigo */
+  85% { background-color: #7d19a8; } /* Dark Violet */
+  100% { background-color: #be2323; } /* Dark Red */
+}
+
+.badge-rainbow {
+  animation: rainbow-fade 8s ease-in-out infinite;
+}
+
+.spoiler {
+  background-color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+  color: transparent;
+  border-radius: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  user-select: none;
+}
+
+.spoiler * {
+  color: transparent !important;
+}
+
+.spoiler.revealed {
+  background-color: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+  color: inherit;
+  cursor: text;
+  user-select: auto;
+}
+
+.spoiler.revealed * {
+  color: inherit !important;
+}
+
+/* ─── react-day-picker DaisyUI theme ─────────────────────────────────────────
+   Scoped to .rdp-themed so only explicitly opted-in calendars are affected.
+   Overrides rdp's default CSS variables and class styles for dark/light mode. */
+
+.rdp-themed.rdp-root {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  --rdp-day-height: 2.5rem;
+  --rdp-day-width: 2.5rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-day_button-border-radius: 0.5rem;
+  --rdp-day_button-border: 2px solid transparent;
+  --rdp-selected-border: 2px solid var(--color-primary);
+  --rdp-today-color: var(--color-primary);
+  --rdp-outside-opacity: 0.35;
+  --rdp-disabled-opacity: 0.25;
+  --rdp-weekday-opacity: 0.55;
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav-height: 2.75rem;
+  color: var(--color-base-content);
+}
+
+/* Month caption */
+.rdp-themed .rdp-month_caption {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-base-content);
+}
+
+/* Weekday header */
+.rdp-themed .rdp-weekday {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
+
+/* Day button base hover */
+.rdp-themed .rdp-day_button {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.rdp-themed .rdp-day:not(.rdp-selected):not(.rdp-today):not(.rdp-outside):not(.rdp-disabled) .rdp-day_button:hover {
+  background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+/* Today: primary outline only (no fill) */
+.rdp-themed .rdp-today:not(.rdp-outside) {
+  color: var(--color-base-content);
+}
+
+.rdp-themed .rdp-today:not(.rdp-outside) .rdp-day_button {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Selected: filled primary */
+.rdp-themed .rdp-selected .rdp-day_button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.2);
+}
+
+/* When today is also selected, selected (filled) wins */
+.rdp-themed .rdp-today.rdp-selected .rdp-day_button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+/* Nav buttons (prev/next) */
+.rdp-themed .rdp-button_previous,
+.rdp-themed .rdp-button_next {
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+
+.rdp-themed .rdp-button_previous:hover,
+.rdp-themed .rdp-button_next:hover {
+  background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+  color: var(--color-base-content);
+}
+
+/* Override the default SVG chevron fill since we use Lucide stroke icons */
+.rdp-themed .rdp-chevron {
+  fill: none;
+}
+
+/* Disabled days */
+.rdp-themed .rdp-disabled .rdp-day_button {
+  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+}
+
+/* Outside (other month) days */
+.rdp-themed .rdp-outside .rdp-day_button {
+  color: color-mix(in oklab, var(--color-base-content) 35%, transparent);
+}

@@ -1,0 +1,73 @@
+{
+  "title": "Leaderboard",
+  "subtitle": "See how you stack up against other learners",
+  "modes": {
+    "global": "Global",
+    "medium": "By Medium"
+  },
+  "audience": {
+    "label": "Ranking audience",
+    "all": "Everyone",
+    "following": "Following",
+    "mutuals": "Mutuals",
+    "empty": "No people in this group have ranking activity yet."
+  },
+  "scope": {
+    "total": "Total",
+    "reading": "Reading",
+    "listening": "Listening",
+    "streaks": "Streaks"
+  },
+  "metrics": {
+    "xp": "XP",
+    "hours": "Hours",
+    "chars": "Chars",
+    "time": "Time",
+    "episodes": "Episodes",
+    "characters": "Characters",
+    "pages": "Pages",
+    "streaks": "Current streak"
+  },
+  "filterLabel": "{{scope}} · {{metric}}",
+  "columnHeader": "{{filter}} ({{unit}})",
+  "units": {
+    "hours": "Hours",
+    "xp": "XP",
+    "days": "days"
+  },
+  "time": {
+    "allTime": "All Time",
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "year": "This Year",
+    "custom": "Custom",
+    "customRange": "Custom range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "to": "to",
+    "apply": "Apply",
+    "clear": "Clear"
+  },
+  "defaults": {
+    "save": "Save as default",
+    "remove": "Remove default",
+    "menu": "Ranking defaults",
+    "needDates": "Select a start and end date for the custom range.",
+    "saved": "Default ranking filters saved.",
+    "removed": "Default ranking filters removed."
+  },
+  "table": {
+    "rank": "Rank",
+    "user": "User",
+    "level": "Level"
+  },
+  "avatarAlt": "{{username}}'s Avatar",
+  "unknownUser": "User",
+  "loading": "Loading rankings...",
+  "empty": "No ranking activity found for these filters.",
+  "loadingMore": "Loading more...",
+  "loadMore": "Load More Rankings",
+  "scopeLabel": "Scope",
+  "metricLabel": "Metric"
+}

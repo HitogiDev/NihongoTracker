@@ -1,0 +1,4905 @@
+import swaggerUi from 'swagger-ui-express';
+import { Router } from 'express';
+import { protect } from './middlewares/authMiddleware.js';
+
+const swaggerDocument = {
+  openapi: '3.0.3',
+  info: {
+    title: 'NihongoTracker API',
+    description:
+      'API documentation for NihongoTracker, a Japanese immersion tracker. Authenticate using either JWT cookies (browser sessions) or API keys via the `X-API-Key` header.',
+    version: '0.1.0',
+    contact: {
+      name: 'NihongoTracker',
+      url: 'https://nihongotracker.app',
+    },
+  },
+  servers: [
+    {
+      url: '/api',
+      description: 'API Base',
+    },
+  ],
+  tags: [
+    { name: 'Auth', description: 'Authentication & registration' },
+    { name: 'Users', description: 'User profiles, rankings & settings' },
+    { name: 'Logs', description: 'Immersion log CRUD, import & stats' },
+    { name: 'Media', description: 'Media search, details & reviews' },
+    { name: 'Goals', description: 'Daily & long-term goals' },
+    { name: 'Clubs', description: 'Club management & media votings' },
+    { name: 'Tags', description: 'User tag management' },
+    { name: 'Changelogs', description: 'Application changelogs' },
+    { name: 'Notifications', description: 'User notifications' },
+    { name: 'Activity', description: 'Social activity, reactions & comments' },
+    {
+      name: 'Media Social',
+      description: 'Media community data and recommendations',
+    },
+    { name: 'Text Sessions', description: 'TextHooker session management' },
+    { name: 'Patreon', description: 'Patreon integration & badges' },
+    {
+      name: 'AniList',
+      description: 'AniList account link & automatic anime logging',
+    },
+    { name: 'API Keys', description: 'API key generation & management' },
+    { name: 'Upload', description: 'File uploads (avatars, banners)' },
+    { name: 'Admin', description: 'Admin dashboard & moderation' },
+  ],
+  components: {
+    securitySchemes: {
+      cookieAuth: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'jwt',
+        description: 'JWT token stored in a cookie (browser sessions)',
+      },
+      apiKeyAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key',
+        description:
+          'API key for programmatic access. Generate one via POST /api/api-keys',
+      },
+    },
+    schemas: {
+      Error: {
+        type: 'object',
+        properties: {
+          message: { type: 'string' },
+          stack: { type: 'string', description: 'Only in development' },
+        },
+      },
+      User: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          email: { type: 'string' },
+          avatar: { type: 'string' },
+          banner: { type: 'string' },
+          about: { type: 'string' },
+          verified: { type: 'boolean' },
+          roles: {
+            type: 'array',
+            items: { type: 'string', enum: ['user', 'admin', 'mod'] },
+          },
+          stats: { $ref: '#/components/schemas/UserStats' },
+          settings: { $ref: '#/components/schemas/UserSettings' },
+          titles: { type: 'array', items: { type: 'string' } },
+          social: { $ref: '#/components/schemas/SocialSummary' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      UserStats: {
+        type: 'object',
+        properties: {
+          userLevel: { type: 'number' },
+          userXp: { type: 'number' },
+          userXpToNextLevel: { type: 'number' },
+          userXpToCurrentLevel: { type: 'number' },
+          readingXp: { type: 'number' },
+          readingLevel: { type: 'number' },
+          readingXpToNextLevel: { type: 'number' },
+          readingXpToCurrentLevel: { type: 'number' },
+          listeningXp: { type: 'number' },
+          listeningLevel: { type: 'number' },
+          listeningXpToNextLevel: { type: 'number' },
+          listeningXpToCurrentLevel: { type: 'number' },
+          currentStreak: { type: 'number' },
+          longestStreak: { type: 'number' },
+          lastStreakDate: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+          },
+        },
+      },
+      UserSettings: {
+        type: 'object',
+        properties: {
+          blurAdultContent: { type: 'boolean' },
+          hideUnmatchedLogsAlert: { type: 'boolean' },
+          timezone: { type: 'string' },
+          language: { type: 'string', enum: ['en', 'es'] },
+          hiddenRecentMedia: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          socialPrivacy: {
+            $ref: '#/components/schemas/SocialPrivacy',
+          },
+        },
+      },
+      SocialPrivacy: {
+        type: 'object',
+        required: [
+          'profile',
+          'immersionActivity',
+          'statistics',
+        ],
+        properties: {
+          profile: { $ref: '#/components/schemas/SocialVisibility' },
+          immersionActivity: {
+            $ref: '#/components/schemas/SocialVisibility',
+          },
+          statistics: { $ref: '#/components/schemas/SocialVisibility' },
+        },
+      },
+      SocialVisibility: {
+        type: 'string',
+        enum: ['public', 'followers', 'following', 'private'],
+      },
+      SocialSummary: {
+        type: 'object',
+        properties: {
+          followerCount: { type: 'integer', minimum: 0 },
+          followingCount: { type: 'integer', minimum: 0 },
+          isFollowing: { type: 'boolean' },
+          isFollowedBy: { type: 'boolean' },
+          mutualFollow: { type: 'boolean' },
+        },
+      },
+      ConnectionUser: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          avatar: { type: 'string' },
+          followedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ActivityActor: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          avatar: { type: 'string' },
+        },
+      },
+      SocialActivity: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          actor: { $ref: '#/components/schemas/ActivityActor' },
+          type: { type: 'string' },
+          targetType: { type: 'string' },
+          targetId: { type: 'string' },
+          club: { type: 'string', nullable: true },
+          metadata: { type: 'object', additionalProperties: true },
+          visibility: { $ref: '#/components/schemas/SocialVisibility' },
+          importance: { type: 'string', enum: ['normal', 'important'] },
+          reactionCounts: {
+            type: 'object',
+            properties: {
+              like: { type: 'integer', minimum: 0 },
+            },
+          },
+          currentReaction: {
+            type: 'string',
+            enum: ['like'],
+            nullable: true,
+          },
+          commentCount: { type: 'integer', minimum: 0 },
+          occurredAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ActivityComment: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          activity: { type: 'string' },
+          user: { $ref: '#/components/schemas/ActivityActor' },
+          parentComment: { type: 'string', nullable: true },
+          content: { type: 'string', maxLength: 1000 },
+          editedAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      MediaRecommendation: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          sender: { $ref: '#/components/schemas/ActivityActor' },
+          recipient: { $ref: '#/components/schemas/ActivityActor' },
+          mediaId: { type: 'string' },
+          mediaType: { type: 'string' },
+          message: { type: 'string', maxLength: 280 },
+          status: {
+            type: 'string',
+            enum: ['pending', 'viewed', 'dismissed', 'accepted'],
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Log: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          type: {
+            type: 'string',
+            enum: [
+              'light-novel',
+              'reading',
+              'anime',
+              'vn',
+              'game',
+              'video',
+              'manga',
+              'audio',
+              'movie',
+              'other',
+              'tv show',
+              'book',
+            ],
+          },
+          mediaId: { type: 'string' },
+          manabeId: { type: 'string' },
+          mediaTitle: { type: 'string' },
+          xp: { type: 'number' },
+          private: { type: 'boolean' },
+          isAdult: { type: 'boolean' },
+          description: { type: 'string' },
+          episodes: { type: 'number' },
+          volume: { type: 'number' },
+          pages: { type: 'number' },
+          chars: { type: 'number' },
+          time: { type: 'number' },
+          unknownDate: { type: 'boolean' },
+          date: { type: 'string', format: 'date-time' },
+          tags: { type: 'array', items: { type: 'string' } },
+          editedFields: {
+            type: 'object',
+            properties: {
+              episodes: { type: 'number' },
+              volume: { type: 'number' },
+              pages: { type: 'number' },
+              chars: { type: 'number' },
+              time: { type: 'number' },
+              xp: { type: 'number' },
+            },
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CreateLog: {
+        type: 'object',
+        required: ['type'],
+        properties: {
+          type: {
+            type: 'string',
+            enum: [
+              'light-novel',
+              'reading',
+              'anime',
+              'vn',
+              'game',
+              'video',
+              'manga',
+              'audio',
+              'movie',
+              'other',
+              'tv show',
+              'book',
+            ],
+          },
+          mediaId: {
+            type: 'string',
+            description:
+              'For video logs, set this to the YouTube channelId. The backend will resolve channel metadata and create the channel media if needed.',
+          },
+          mediaData: {
+            type: 'object',
+            description:
+              'Optional metadata for non-video media creation. Ignored for video logs.',
+            properties: {
+              contentId: { type: 'string' },
+              contentTitleNative: { type: 'string' },
+              contentTitleEnglish: { type: 'string' },
+              contentTitleRomaji: { type: 'string' },
+              contentImage: { type: 'string' },
+              coverImage: { type: 'string' },
+              channelId: { type: 'string' },
+              channelTitle: { type: 'string' },
+              channelImage: { type: 'string' },
+              channelDescription: { type: 'string' },
+              type: { type: 'string' },
+              episodes: { type: 'number' },
+              episodeDuration: { type: 'number' },
+              chapters: { type: 'number' },
+              volumes: { type: 'number' },
+              synonyms: { type: 'array', items: { type: 'string' } },
+              platforms: { type: 'array', items: { type: 'string' } },
+              description: { type: 'array', items: { type: 'object' } },
+              isAdult: { type: 'boolean' },
+            },
+          },
+          description: { type: 'string' },
+          episodes: { type: 'number' },
+          volume: { type: 'number' },
+          pages: { type: 'number' },
+          chars: { type: 'number' },
+          time: { type: 'number' },
+          date: { type: 'string', format: 'date-time' },
+          unknownDate: { type: 'boolean' },
+          private: { type: 'boolean' },
+          tags: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      UpdateLog: {
+        type: 'object',
+        properties: {
+          description: { type: 'string' },
+          mediaId: { type: 'string' },
+          type: { type: 'string' },
+          episodes: { type: 'number' },
+          volume: { type: 'number' },
+          pages: { type: 'number' },
+          chars: { type: 'number' },
+          time: { type: 'number' },
+          xp: { type: 'number' },
+          date: { type: 'string', format: 'date-time' },
+          tags: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      Media: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          contentId: { type: 'string' },
+          title: {
+            type: 'object',
+            properties: {
+              contentTitleNative: { type: 'string' },
+              contentTitleRomaji: { type: 'string' },
+              contentTitleEnglish: { type: 'string' },
+            },
+          },
+          contentImage: { type: 'string' },
+          coverImage: { type: 'string' },
+          type: {
+            type: 'string',
+            enum: [
+              'anime',
+              'manga',
+              'light-novel',
+              'vn',
+              'game',
+              'video',
+              'movie',
+              'tv show',
+              'book',
+            ],
+          },
+          episodes: { type: 'number' },
+          episodeDuration: { type: 'number' },
+          genres: { type: 'array', items: { type: 'string' } },
+          chapters: { type: 'number' },
+          volumes: { type: 'number' },
+          isAdult: { type: 'boolean' },
+        },
+      },
+      MediaReview: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          mediaContentId: { type: 'string' },
+          mediaType: { type: 'string' },
+          summary: { type: 'string' },
+          content: { type: 'string' },
+          rating: { type: 'number' },
+          hasSpoilers: { type: 'boolean' },
+          likes: { type: 'array', items: { type: 'string' } },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Tag: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          name: { type: 'string' },
+          color: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      DailyGoal: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          type: {
+            type: 'string',
+            enum: ['time', 'chars', 'episodes', 'pages'],
+          },
+          target: { type: 'number' },
+          isActive: { type: 'boolean' },
+        },
+      },
+      LongTermGoal: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          type: {
+            type: 'string',
+            enum: ['time', 'chars', 'episodes', 'pages'],
+          },
+          totalTarget: { type: 'number' },
+          targetDate: { type: 'string', format: 'date-time' },
+          displayTimeframe: {
+            type: 'string',
+            enum: ['daily', 'weekly', 'monthly'],
+          },
+          startDate: { type: 'string', format: 'date-time' },
+          isActive: { type: 'boolean' },
+        },
+      },
+      Club: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          name: { type: 'string' },
+          description: { type: 'string' },
+          avatar: { type: 'string' },
+          banner: { type: 'string' },
+          isPublic: { type: 'boolean' },
+          level: { type: 'number' },
+          totalXp: { type: 'number' },
+          tags: { type: 'array', items: { type: 'string' } },
+          memberLimit: { type: 'number' },
+          memberCount: { type: 'number' },
+          isActive: { type: 'boolean' },
+        },
+      },
+      ApiKeyResponse: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          name: { type: 'string' },
+          keyPrefix: { type: 'string', example: 'ntk_abc12345' },
+          key: {
+            type: 'string',
+            description: 'The full API key, only returned on creation',
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ApiKeyListItem: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          name: { type: 'string' },
+          keyPrefix: { type: 'string', example: 'ntk_abc12345' },
+          lastUsedAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+          },
+          expiresAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Changelog: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          version: { type: 'string' },
+          title: { type: 'string' },
+          description: { type: 'string' },
+          changes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  enum: ['feature', 'improvement', 'bugfix', 'breaking'],
+                },
+                description: { type: 'string' },
+              },
+            },
+          },
+          date: { type: 'string', format: 'date-time' },
+          published: { type: 'boolean' },
+        },
+      },
+      NotificationSummaryItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          count: { type: 'number' },
+          meta: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
+        },
+      },
+      NotificationSummarySection: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['club_join_requests'] },
+          title: { type: 'string' },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationSummaryItem' },
+          },
+        },
+      },
+      NotificationSummaryResponse: {
+        type: 'object',
+        properties: {
+          totalCount: { type: 'number' },
+          sections: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationSummarySection' },
+          },
+        },
+      },
+      NotificationListItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          count: { type: 'number' },
+          isRead: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+          meta: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
+        },
+      },
+      NotificationListResponse: {
+        type: 'object',
+        properties: {
+          total: { type: 'number' },
+          page: { type: 'number' },
+          limit: { type: 'number' },
+          hasMore: { type: 'boolean' },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationListItem' },
+          },
+        },
+      },
+      GanttEntry: {
+        type: 'object',
+        properties: {
+          mediaId: { type: 'string' },
+          type: { type: 'string' },
+          title: { type: 'string' },
+          titleEnglish: { type: 'string', nullable: true },
+          contentImage: { type: 'string', nullable: true },
+          firstLogDate: { type: 'string', format: 'date-time' },
+          lastLogDate: { type: 'string', format: 'date-time' },
+          isCompleted: { type: 'boolean' },
+          completedAt: { type: 'string', format: 'date-time', nullable: true },
+          logCount: { type: 'number' },
+          totalTime: { type: 'number' },
+          totalXp: { type: 'number' },
+          activeDates: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+  },
+  paths: {
+    '/logs/calculate-xp': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Calculate an XP v3 scenario without saving a log',
+        description:
+          'Supports public simulations and personal calculations using the authenticated user context.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['mode', 'contextMode', 'type'],
+                properties: {
+                  mode: { type: 'string', enum: ['direct', 'inverse'] },
+                  contextMode: { type: 'string', enum: ['personal', 'simulation'] },
+                  type: { type: 'string' },
+                  mediaId: { type: 'string' },
+                  difficultyJiten: { type: 'number', minimum: 0, maximum: 5, nullable: true },
+                  input: {
+                    type: 'object',
+                    properties: {
+                      time: { type: 'number', minimum: 0 },
+                      chars: { type: 'number', minimum: 0 },
+                      pages: { type: 'number', minimum: 0 },
+                      episodes: { type: 'number', minimum: 0 },
+                    },
+                  },
+                  targetXp: { type: 'number', exclusiveMinimum: 0 },
+                  unit: { type: 'string', enum: ['time', 'chars', 'pages', 'episodes'] },
+                  simulation: {
+                    type: 'object',
+                    properties: {
+                      categoryLevel: { type: 'number', minimum: 0 },
+                      consumedDifficultyJiten: { type: 'number', minimum: 0, maximum: 5, nullable: true },
+                      personalSpeedCph: { type: 'number', minimum: 0, nullable: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'XP, breakdown, effective context and optional inverse quantity' },
+          400: { description: 'Invalid scenario' },
+          401: { description: 'Personal context requires authentication' },
+        },
+      },
+    },
+    // ──────────────── Auth ────────────────
+    '/auth/register': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Register a new account',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['username', 'password', 'passwordConfirmation'],
+                properties: {
+                  username: { type: 'string' },
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', format: 'password' },
+                  passwordConfirmation: { type: 'string', format: 'password' },
+                  timezone: { type: 'string' },
+                  language: { type: 'string', enum: ['en', 'es'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'User created' },
+          400: { description: 'Validation error' },
+        },
+      },
+    },
+    '/auth/login': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Login with username/email and password',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['login', 'password'],
+                properties: {
+                  login: {
+                    type: 'string',
+                    description: 'Username or email',
+                  },
+                  password: { type: 'string', format: 'password' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Login successful; sets JWT cookie',
+          },
+          401: { description: 'Invalid credentials' },
+        },
+      },
+    },
+    '/auth/logout': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Logout (clears JWT cookie)',
+        responses: {
+          200: { description: 'Logged out' },
+        },
+      },
+    },
+    '/auth/verify': {
+      get: {
+        tags: ['Auth'],
+        summary: 'Verify current JWT token',
+        security: [{ cookieAuth: [] }],
+        responses: {
+          200: { description: 'Token is valid' },
+          403: { description: 'API keys are not accepted' },
+          401: { description: 'Invalid or expired token' },
+        },
+      },
+    },
+    '/auth/verify-email': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Verify email address with token',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['token'],
+                properties: {
+                  token: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Email verified' },
+          400: { description: 'Invalid or expired token' },
+        },
+      },
+    },
+    '/auth/resend-verification': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Resend verification email',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Verification email sent' },
+          429: { description: 'Rate limited' },
+        },
+      },
+    },
+    '/auth/forgot-password': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Request password reset email',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Reset email sent if account exists' },
+        },
+      },
+    },
+    '/auth/reset-password/{token}': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Reset password using token',
+        parameters: [
+          {
+            name: 'token',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['password', 'passwordConfirmation'],
+                properties: {
+                  password: { type: 'string', format: 'password' },
+                  passwordConfirmation: { type: 'string', format: 'password' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Password reset successful' },
+          400: { description: 'Invalid or expired token' },
+        },
+      },
+    },
+    '/auth/stats': {
+      get: {
+        tags: ['Auth'],
+        summary: 'Get public platform statistics',
+        responses: {
+          200: {
+            description: 'Public stats (total users, logs, etc.)',
+          },
+        },
+      },
+    },
+
+    // ──────────────── Users ────────────────
+    '/users/me': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get the authenticated user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'Authenticated user data',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/User' },
+              },
+            },
+          },
+          401: { description: 'Authentication required' },
+        },
+      },
+    },
+    '/users': {
+      put: {
+        tags: ['Users'],
+        summary: 'Update current user profile',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  username: { type: 'string' },
+                  email: { type: 'string' },
+                  password: { type: 'string' },
+                  newPassword: { type: 'string' },
+                  newPasswordConfirm: { type: 'string' },
+                  about: { type: 'string' },
+                  timezone: { type: 'string' },
+                  language: { type: 'string', enum: ['en', 'es'] },
+                  blurAdultContent: { type: 'string' },
+                  avatar: { type: 'string', format: 'binary' },
+                  avatarCrop: {
+                    type: 'string',
+                    description:
+                      'Optional JSON crop metadata for GIF avatar uploads ({x,y,width,height,sourceWidth,sourceHeight})',
+                  },
+                  banner: { type: 'string', format: 'binary' },
+                  bannerCrop: {
+                    type: 'string',
+                    description:
+                      'Optional JSON crop metadata for GIF banner uploads ({x,y,width,height,sourceWidth,sourceHeight})',
+                  },
+                  removeAvatar: {
+                    type: 'string',
+                    enum: ['true'],
+                    description:
+                      'Set to "true" to delete the current avatar. Cannot be combined with an avatar upload.',
+                  },
+                  removeBanner: {
+                    type: 'string',
+                    enum: ['true'],
+                    description:
+                      'Set to "true" to delete the current banner. Cannot be combined with a banner upload.',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'User updated' },
+          400: { description: 'Validation error' },
+        },
+      },
+    },
+    '/users/search': {
+      get: {
+        tags: ['Users'],
+        summary: 'Search users',
+        parameters: [
+          {
+            name: 'q',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Search results' },
+        },
+      },
+    },
+    '/users/compare': {
+      get: {
+        tags: ['Users'],
+        summary: 'Compare stats between users',
+        parameters: [
+          {
+            name: 'users',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Comma-separated usernames',
+          },
+        ],
+        responses: {
+          200: { description: 'Comparison data' },
+        },
+      },
+    },
+    '/users/ranking': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get user rankings',
+        parameters: [
+          {
+            name: 'period',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+        ],
+        responses: {
+          200: { description: 'Ranking data' },
+        },
+      },
+    },
+    '/users/ranking/media': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get medium-specific rankings',
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'metric',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Metric to rank by (xp, time, episodes, chars, pages)',
+          },
+          {
+            name: 'timeFilter',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+        ],
+        responses: {
+          200: { description: 'Medium ranking data' },
+        },
+      },
+    },
+    '/users/immersion-ranking/global': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get global immersion work rankings',
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+          {
+            name: 'metric',
+            in: 'query',
+            schema: { type: 'string', enum: ['xp', 'hours'] },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            style: 'form',
+            explode: true,
+            schema: { type: 'array', items: { type: 'string' } },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date' },
+          },
+        ],
+        responses: {
+          200: { description: 'Global immersion ranking data' },
+          400: { description: 'Invalid ranking filters' },
+        },
+      },
+    },
+    '/users/{username}': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get user profile by username',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'User profile',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/User' },
+              },
+            },
+          },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/ranking-summary': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get ranking summary for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Ranking summary' },
+        },
+      },
+    },
+    '/users/{username}/followers': {
+      get: {
+        tags: ['Users'],
+        summary: 'List a user\'s followers',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: { description: 'Paginated followers' },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/following': {
+      get: {
+        tags: ['Users'],
+        summary: 'List users followed by a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: { description: 'Paginated following list' },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/relationship': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get the current user\'s relationship with a profile',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Relationship status and counts' } },
+      },
+    },
+    '/users/{username}/follow': {
+      post: {
+        tags: ['Users'],
+        summary: 'Follow a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          201: { description: 'Follow created' },
+          200: { description: 'Already following' },
+          400: { description: 'Cannot follow yourself' },
+        },
+      },
+      delete: {
+        tags: ['Users'],
+        summary: 'Unfollow a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Relationship removed or absent' } },
+      },
+    },
+    '/media/{mediaType}/{contentId}/community': {
+      get: {
+        tags: ['Media Social'],
+        summary: 'Get privacy-aware community data for a media title',
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'relation',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              enum: ['followers', 'friends', 'following'],
+            },
+            description:
+              'Connection group whose privacy-visible media progress should be returned',
+          },
+        ],
+        responses: { 200: { description: 'Community data and activities' } },
+      },
+    },
+    '/media-recommendations': {
+      get: {
+        tags: ['Media Social'],
+        summary: 'List received or sent media recommendations',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'direction',
+            in: 'query',
+            schema: { type: 'string', enum: ['received', 'sent'] },
+          },
+        ],
+        responses: { 200: { description: 'Paginated recommendations' } },
+      },
+      post: {
+        tags: ['Media Social'],
+        summary: 'Recommend media to a user who follows the sender',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['recipientUsername', 'mediaId', 'mediaType'],
+                properties: {
+                  recipientUsername: { type: 'string' },
+                  mediaId: { type: 'string' },
+                  mediaType: { type: 'string' },
+                  message: { type: 'string', maxLength: 280 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Recommendation sent' },
+          409: { description: 'Duplicate recommendation' },
+        },
+      },
+    },
+    '/media-recommendations/{recommendationId}/status': {
+      patch: {
+        tags: ['Media Social'],
+        summary: 'Update the status of a received recommendation',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'recommendationId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: {
+                    type: 'string',
+                    enum: ['viewed', 'dismissed', 'accepted'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Recommendation updated' } },
+      },
+    },
+    '/activities': {
+      get: {
+        tags: ['Activity'],
+        summary: 'Get the authenticated user\'s social activity feed',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'scope',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['following', 'clubs', 'global'],
+              default: 'following',
+            },
+          },
+          {
+            name: 'clubId',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'before',
+            in: 'query',
+            description: 'Opaque cursor returned by the previous page',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'A visibility-filtered activity page',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    activities: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/SocialActivity' },
+                    },
+                    nextCursor: {
+                      type: 'string',
+                      nullable: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/activities/{activityId}/reaction': {
+      put: {
+        tags: ['Activity'],
+        summary: 'Add or change a reaction',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['type'],
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['like'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Reaction saved' },
+          404: { description: 'Activity not found or not visible' },
+          429: { description: 'Social action rate limit exceeded' },
+        },
+      },
+      delete: {
+        tags: ['Activity'],
+        summary: 'Remove the authenticated user\'s reaction',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 204: { description: 'Reaction removed or absent' } },
+      },
+    },
+    '/activities/{activityId}/comments': {
+      get: {
+        tags: ['Activity'],
+        summary: 'List comments on a visible activity',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: { 200: { description: 'Paginated comments' } },
+      },
+      post: {
+        tags: ['Activity'],
+        summary: 'Comment on a visible activity',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['content'],
+                properties: {
+                  content: { type: 'string', minLength: 1, maxLength: 1000 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Comment created' },
+          429: { description: 'Social action rate limit exceeded' },
+        },
+      },
+    },
+    '/activities/{activityId}/comments/{commentId}': {
+      patch: {
+        tags: ['Activity'],
+        summary: 'Edit the authenticated user\'s comment',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'commentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['content'],
+                properties: {
+                  content: { type: 'string', minLength: 1, maxLength: 1000 },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Comment updated' } },
+      },
+      delete: {
+        tags: ['Activity'],
+        summary: 'Delete an owned comment, or moderate it as an administrator',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'commentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 204: { description: 'Comment deleted' } },
+      },
+    },
+    '/users/{username}/logs': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get logs for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaTitle',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'search',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'sortBy',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: [
+                'date',
+                'xp',
+                'episodes',
+                'chars',
+                'pages',
+                'time',
+                'readingSpeed',
+              ],
+            },
+          },
+          {
+            name: 'sortDirection',
+            in: 'query',
+            schema: { type: 'string', enum: ['asc', 'desc'] },
+          },
+          {
+            name: 'tags',
+            in: 'query',
+            schema: {
+              type: 'string',
+              description: 'Comma-separated tag IDs or repeated tags params',
+            },
+          },
+          {
+            name: 'tagsMode',
+            in: 'query',
+            schema: { type: 'string', enum: ['any', 'all'] },
+          },
+          {
+            name: 'volume',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'volumeMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'volumeMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodes',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodesMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodesMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pages',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pagesMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pagesMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'chars',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'charsMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'charsMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'time',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'timeMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'timeMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+        ],
+        responses: {
+          200: { description: 'User logs' },
+        },
+      },
+    },
+    '/users/{username}/stats': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get detailed stats for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'User statistics' },
+        },
+      },
+    },
+    '/users/{username}/dashboard': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get dashboard data for a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Dashboard hours data' },
+        },
+      },
+    },
+    '/users/{username}/recentlogs': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get recent logs for a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Recent logs' },
+        },
+      },
+    },
+    '/users/{username}/immersionlist': {
+      get: {
+        tags: ['Users'],
+        summary: "Get a user's immersion list",
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Immersion list' },
+        },
+      },
+    },
+    '/users/{username}/gantt': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get gantt timeline data for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            description: 'Filter by media type or use "all"',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            description: 'IANA timezone for day grouping',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            description: 'Start date (YYYY-MM-DD)',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            description: 'End date (YYYY-MM-DD)',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Gantt data',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/GanttEntry' },
+                },
+              },
+            },
+          },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/media/status': {
+      post: {
+        tags: ['Users'],
+        summary: 'Update media completion status',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  mediaId: { type: 'string' },
+                  type: { type: 'string' },
+                  completed: { type: 'boolean' },
+                  source: { type: 'string', enum: ['manual', 'auto'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Status updated' },
+        },
+      },
+    },
+    '/users/settings/hidden-media': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get hidden recent media list',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'List of hidden recent media with display details',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      contentId: { type: 'string' },
+                      type: { type: 'string' },
+                      title: {
+                        type: 'object',
+                        nullable: true,
+                        properties: {
+                          contentTitleNative: { type: 'string' },
+                          contentTitleRomaji: { type: 'string' },
+                          contentTitleEnglish: { type: 'string' },
+                        },
+                      },
+                      contentImage: { type: 'string', nullable: true },
+                      coverImage: { type: 'string', nullable: true },
+                      isAdult: { type: 'boolean' },
+                      isAdultImage: { type: 'boolean' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      patch: {
+        tags: ['Users'],
+        summary: 'Update hidden recent media list',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  hiddenRecentMedia: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Settings updated' },
+        },
+      },
+    },
+    '/users/settings/social-privacy': {
+      patch: {
+        tags: ['Users'],
+        summary: 'Update social privacy settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['socialPrivacy'],
+                properties: {
+                  socialPrivacy: {
+                    $ref: '#/components/schemas/SocialPrivacy',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Privacy settings updated' },
+          400: { description: 'Invalid visibility or incomplete settings' },
+        },
+      },
+    },
+    '/users/settings/stats-layout': {
+      patch: {
+        tags: ['Users'],
+        summary: 'Update stats layout settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['layout'],
+                properties: {
+                  layout: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        visible: { type: 'boolean' },
+                        cards: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              visible: { type: 'boolean' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Stats layout updated' },
+        },
+      },
+    },
+    '/users/me/customization': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get profile customization and the options unlocked for you',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description:
+              'Current cosmetics plus every option with its unlocked flag and lock reason',
+          },
+        },
+      },
+      patch: {
+        tags: ['Users'],
+        summary: 'Update profile customization (cosmetics)',
+        description:
+          'Partial update: only the provided keys change. Values the user has not unlocked are rejected with 403.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  nameEffect: {
+                    type: 'string',
+                    enum: ['none', 'gradient', 'glow', 'shimmer'],
+                  },
+                  nameColor1: {
+                    type: 'string',
+                    description: '#rrggbb hex, or empty for the theme color',
+                  },
+                  nameColor2: { type: 'string' },
+                  avatarFrame: {
+                    type: 'string',
+                    enum: [
+                      'none',
+                      'bronze',
+                      'silver',
+                      'gold',
+                      'streak',
+                      'sakura',
+                      'neon',
+                      'rainbow',
+                    ],
+                  },
+                  profileAccent: {
+                    type: 'string',
+                    enum: [
+                      'default',
+                      'sakura',
+                      'ocean',
+                      'forest',
+                      'retro',
+                      'mono',
+                      'custom',
+                    ],
+                    description:
+                      'Accent color for the whole profile page, including the heatmap. "custom" requires accentColor.',
+                  },
+                  accentColor: {
+                    type: 'string',
+                    description:
+                      '#rrggbb hex backing profileAccent: "custom"; ignored by the presets',
+                  },
+                  signatureStat: {
+                    type: 'string',
+                    enum: [
+                      'none',
+                      'hours',
+                      'chars',
+                      'streak',
+                      'level',
+                      'xp',
+                      'logs',
+                    ],
+                  },
+                  equippedTitle: {
+                    type: 'string',
+                    description:
+                      'Key of an unlocked achievement, or empty for no title',
+                  },
+                  bannerEffect: {
+                    type: 'string',
+                    enum: ['none', 'sakura', 'snow', 'stars', 'fireflies'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Customization updated' },
+          400: { description: 'Invalid value' },
+          403: { description: 'Option not unlocked for this user' },
+        },
+      },
+    },
+    '/users/cleardata': {
+      post: {
+        tags: ['Users'],
+        summary: 'Clear all user data',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['password'],
+                properties: {
+                  password: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Data cleared' },
+        },
+      },
+    },
+    '/users/export/csv': {
+      get: {
+        tags: ['Users'],
+        summary: 'Export logs as CSV',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'CSV file download',
+            content: { 'text/csv': {} },
+          },
+        },
+      },
+    },
+
+    // ──────────────── Logs ────────────────
+    '/logs': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Create a new log',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateLog' },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Log created',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Log' },
+              },
+            },
+          },
+          400: { description: 'Validation error' },
+        },
+      },
+    },
+    '/logs/import': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Import logs from external services',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['logs'],
+                properties: {
+                  forced: {
+                    type: 'boolean',
+                    description: 'Force import even if duplicates exist',
+                  },
+                  logs: {
+                    type: 'array',
+                    items: {
+                      allOf: [
+                        { $ref: '#/components/schemas/CreateLog' },
+                        {
+                          type: 'object',
+                          properties: {
+                            manabeId: {
+                              type: 'string',
+                              description: 'External ID for deduplication',
+                            },
+                          },
+                        },
+                      ],
+                    },
+                    description: 'Array of logs to import',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Logs imported' },
+        },
+      },
+    },
+    '/logs/logfileimport': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Import logs from a CSV file',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['logFileImport', 'logImportType'],
+                properties: {
+                  logFileImport: { type: 'string', format: 'binary' },
+                  logImportType: {
+                    type: 'string',
+                    enum: ['tmw', 'manabe', 'vncr', 'other', 'kechimochi'],
+                    description: 'Format of the uploaded file',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Logs imported from file' },
+        },
+      },
+    },
+    '/logs/assign-media': {
+      put: {
+        tags: ['Logs'],
+        summary: 'Assign media to untracked logs',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  logIds: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                  mediaData: { type: 'object' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Media assigned' },
+        },
+      },
+    },
+    '/logs/dismiss-match': {
+      put: {
+        tags: ['Logs'],
+        summary:
+          'Dismiss logs from media matching (or undo with dismissed: false)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  logsId: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                  dismissed: { type: 'boolean', default: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Logs dismissed from matching' },
+        },
+      },
+    },
+    '/logs/untrackedlogs': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get untracked logs (no media assigned)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Untracked logs' },
+        },
+      },
+    },
+    '/logs/stats/logscreen': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get log screen statistics',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Log screen stats' },
+        },
+      },
+    },
+    '/logs/stats/media': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get user media statistics',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'User media stats' },
+        },
+      },
+    },
+    '/logs/stats/media/global': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get global media statistics',
+        responses: {
+          200: { description: 'Global media stats' },
+        },
+      },
+    },
+    '/logs/media/recent': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get recently logged media',
+        responses: {
+          200: { description: 'Recent media logs' },
+        },
+      },
+    },
+    '/logs/feed': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get global activity feed',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Global feed' },
+        },
+      },
+    },
+    '/logs/manabe-webhook': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Webhook for Manabe log imports',
+        responses: {
+          200: { description: 'Log imported' },
+        },
+      },
+    },
+    '/logs/sync-manabe-ids': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Sync Manabe IDs for existing logs',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'IDs synced' },
+        },
+      },
+    },
+    '/logs/{id}': {
+      get: {
+        tags: ['Logs'],
+        summary: 'Get a specific log by ID',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Log details',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Log' },
+              },
+            },
+          },
+          404: { description: 'Log not found' },
+        },
+      },
+      delete: {
+        tags: ['Logs'],
+        summary: 'Delete a log',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Log deleted' },
+          404: { description: 'Log not found' },
+        },
+      },
+      patch: {
+        tags: ['Logs'],
+        summary: 'Update a log',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateLog' },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Log updated' },
+        },
+      },
+    },
+
+    // ──────────────── Media ────────────────
+    '/media/search': {
+      get: {
+        tags: ['Media'],
+        summary: 'Search media',
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: [
+                'anime',
+                'manga',
+                'light-novel',
+                'vn',
+                'movie',
+                'tv_show',
+                'game',
+              ],
+            },
+          },
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'perPage',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+        ],
+        responses: {
+          200: { description: 'Search results' },
+        },
+      },
+    },
+    '/media/anilist/search': {
+      get: {
+        tags: ['Media'],
+        summary: 'Proxy AniList search',
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'format',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'ids',
+            in: 'query',
+            description: 'Comma-separated AniList IDs to filter results',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'AniList search results' },
+          400: { description: 'Invalid query parameters' },
+        },
+      },
+    },
+    '/media/multi-search': {
+      get: {
+        tags: ['Media'],
+        summary: 'Multi-index media search',
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'perPage',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+        ],
+        responses: {
+          200: { description: 'Combined search results' },
+          400: { description: 'Search query too short' },
+        },
+      },
+    },
+    '/media/utils/avgcolor': {
+      get: {
+        tags: ['Media'],
+        summary: 'Get average color of an image URL',
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Average color data' },
+        },
+      },
+    },
+    '/media/youtube/video': {
+      get: {
+        tags: ['Media'],
+        summary: 'Search for a YouTube video',
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'YouTube video data' },
+        },
+      },
+    },
+    '/media/youtube/playlist': {
+      get: {
+        tags: ['Media'],
+        summary: 'Search for a YouTube playlist',
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'YouTube playlist data' },
+          400: { description: 'Invalid playlist URL' },
+          404: { description: 'Playlist not found or empty' },
+        },
+      },
+    },
+    '/media/reviews/{reviewId}': {
+      get: {
+        tags: ['Media'],
+        summary: 'Get a specific review by ID',
+        parameters: [
+          {
+            name: 'reviewId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Review details',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MediaReview' },
+              },
+            },
+          },
+          404: { description: 'Review not found' },
+        },
+      },
+    },
+    '/media/{mediaType}/{contentId}': {
+      get: {
+        tags: ['Media'],
+        summary: 'Get media details',
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Media details',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Media' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/media/{mediaType}/{contentId}/reviews': {
+      get: {
+        tags: ['Media'],
+        summary: 'Get reviews for media',
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Reviews list' },
+        },
+      },
+      post: {
+        tags: ['Media'],
+        summary: 'Add a review for media',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['summary', 'content'],
+                properties: {
+                  summary: { type: 'string' },
+                  content: { type: 'string' },
+                  rating: { type: 'number', minimum: 0, maximum: 10 },
+                  hasSpoilers: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Review created' },
+          400: { description: 'Validation error' },
+        },
+      },
+    },
+    '/media/{mediaType}/{contentId}/reviews/{reviewId}': {
+      put: {
+        tags: ['Media'],
+        summary: 'Edit a review',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'reviewId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  summary: { type: 'string' },
+                  content: { type: 'string' },
+                  rating: { type: 'number' },
+                  hasSpoilers: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Review updated' },
+        },
+      },
+      delete: {
+        tags: ['Media'],
+        summary: 'Delete a review',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'reviewId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Review deleted' },
+        },
+      },
+    },
+    '/media/{mediaType}/{contentId}/reviews/{reviewId}/like': {
+      post: {
+        tags: ['Media'],
+        summary: 'Toggle like on a review',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'reviewId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Like toggled' },
+        },
+      },
+    },
+
+    // ──────────────── Goals ────────────────
+    '/goals/daily/{username}': {
+      get: {
+        tags: ['Goals'],
+        summary: 'Get daily goals for a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Daily goals with progress' },
+        },
+      },
+    },
+    '/goals/daily': {
+      post: {
+        tags: ['Goals'],
+        summary: 'Create a daily goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['type', 'target'],
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['time', 'chars', 'episodes', 'pages'],
+                  },
+                  target: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Goal created' },
+        },
+      },
+    },
+    '/goals/daily/{goalId}': {
+      patch: {
+        tags: ['Goals'],
+        summary: 'Update a daily goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'goalId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  target: { type: 'number' },
+                  isActive: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Goal updated' },
+        },
+      },
+      delete: {
+        tags: ['Goals'],
+        summary: 'Delete a daily goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'goalId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Goal deleted' },
+        },
+      },
+    },
+    '/goals/long-term/{username}': {
+      get: {
+        tags: ['Goals'],
+        summary: 'Get long-term goals for a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Long-term goals with progress' },
+        },
+      },
+    },
+    '/goals/long-term': {
+      post: {
+        tags: ['Goals'],
+        summary: 'Create a long-term goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: [
+                  'type',
+                  'totalTarget',
+                  'targetDate',
+                  'displayTimeframe',
+                ],
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['time', 'chars', 'episodes', 'pages'],
+                  },
+                  totalTarget: { type: 'number' },
+                  targetDate: { type: 'string', format: 'date-time' },
+                  displayTimeframe: {
+                    type: 'string',
+                    enum: ['daily', 'weekly', 'monthly'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Goal created' },
+        },
+      },
+    },
+    '/goals/long-term/{goalId}': {
+      patch: {
+        tags: ['Goals'],
+        summary: 'Update a long-term goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'goalId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  totalTarget: { type: 'number' },
+                  targetDate: { type: 'string', format: 'date-time' },
+                  displayTimeframe: { type: 'string' },
+                  isActive: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Goal updated' },
+        },
+      },
+      delete: {
+        tags: ['Goals'],
+        summary: 'Delete a long-term goal',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'goalId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Goal deleted' },
+        },
+      },
+    },
+
+    // ──────────────── Tags ────────────────
+    '/tags': {
+      post: {
+        tags: ['Tags'],
+        summary: 'Create a new tag',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name', 'color'],
+                properties: {
+                  name: { type: 'string' },
+                  color: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Tag created',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Tag' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/tags/user/{username}': {
+      get: {
+        tags: ['Tags'],
+        summary: 'Get tags for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'User tags',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Tag' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/tags/{id}': {
+      patch: {
+        tags: ['Tags'],
+        summary: 'Update a tag',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  color: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Tag updated' },
+        },
+      },
+      delete: {
+        tags: ['Tags'],
+        summary: 'Delete a tag',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Tag deleted' },
+        },
+      },
+    },
+
+    // ──────────────── Clubs ────────────────
+    '/clubs': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get all clubs (paginated, filterable)',
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'search',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Club list' },
+        },
+      },
+      post: {
+        tags: ['Clubs'],
+        summary: 'Create a new club',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  isPublic: { type: 'boolean' },
+                  tags: { type: 'string', description: 'JSON array string' },
+                  rules: { type: 'string' },
+                  avatar: { type: 'string', format: 'binary' },
+                  banner: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Club created' },
+        },
+      },
+    },
+    '/clubs/user/my-clubs': {
+      get: {
+        tags: ['Clubs'],
+        summary: "Get the current user's clubs",
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: "User's clubs" },
+        },
+      },
+    },
+    '/clubs/{clubId}': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get club details',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Club details' },
+        },
+      },
+      put: {
+        tags: ['Clubs'],
+        summary: 'Update club (leaders only)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  isPublic: { type: 'boolean' },
+                  tags: { type: 'string' },
+                  rules: { type: 'string' },
+                  avatar: { type: 'string', format: 'binary' },
+                  banner: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Club updated' },
+        },
+      },
+    },
+    '/clubs/{clubId}/recent-activity': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get recent club activity',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Recent activity entries' },
+        },
+      },
+    },
+    '/clubs/{clubId}/join': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Join a club',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Joined or request sent' },
+        },
+      },
+    },
+    '/clubs/{clubId}/leave': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Leave a club',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Left club' },
+        },
+      },
+    },
+    '/clubs/{clubId}/transfer-leadership': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Transfer club leadership',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['newLeaderId'],
+                properties: {
+                  newLeaderId: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Leadership transferred' },
+        },
+      },
+    },
+    '/clubs/{clubId}/members/pending': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get pending join requests',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Pending requests' },
+        },
+      },
+    },
+    '/clubs/{clubId}/members/{memberId}': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Approve or reject join request',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'memberId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['action'],
+                properties: {
+                  action: {
+                    type: 'string',
+                    enum: ['approve', 'reject'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Request processed' },
+        },
+      },
+    },
+    '/clubs/{clubId}/members/{memberId}/kick': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Kick a club member',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'memberId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Member kicked' },
+        },
+      },
+    },
+    '/clubs/{clubId}/media': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Add media to club',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  mediaId: {
+                    type: 'string',
+                    description:
+                      'For video media, this must be the YouTube channelId. The backend resolves the channel and creates it if needed.',
+                  },
+                  mediaType: { type: 'string' },
+                  title: { type: 'string' },
+                  startDate: { type: 'string', format: 'date-time' },
+                  endDate: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Media added' },
+        },
+      },
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get club media',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Club media list' },
+        },
+      },
+    },
+    '/clubs/{clubId}/media/{mediaId}': {
+      put: {
+        tags: ['Clubs'],
+        summary: 'Edit club media',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Media updated' },
+        },
+      },
+    },
+    '/clubs/{clubId}/media/{mediaId}/logs': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get club member logs for specific media',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Media logs' },
+        },
+      },
+    },
+    '/clubs/{clubId}/media/{mediaId}/rankings': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get club member rankings for specific media',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Media rankings' },
+        },
+      },
+    },
+    '/clubs/{clubId}/media/{mediaId}/stats': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get club media statistics',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Media stats' },
+        },
+      },
+    },
+    '/clubs/{clubId}/rankings': {
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get overall club member rankings',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Member rankings' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Create a media voting session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          201: { description: 'Voting created' },
+        },
+      },
+      get: {
+        tags: ['Clubs'],
+        summary: 'Get media votings for a club',
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Votings list' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings/{votingId}': {
+      put: {
+        tags: ['Clubs'],
+        summary: 'Edit a media voting',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Voting updated' },
+        },
+      },
+      delete: {
+        tags: ['Clubs'],
+        summary: 'Delete a media voting',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Voting deleted' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings/{votingId}/candidates': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Add a candidate to a voting',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Candidate added' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings/{votingId}/finalize': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Finalize voting setup',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Voting finalized' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings/{votingId}/vote/{candidateIndex}': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Vote for a candidate',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'candidateIndex',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+          },
+        ],
+        responses: {
+          200: { description: 'Vote cast' },
+        },
+      },
+    },
+    '/clubs/{clubId}/votings/{votingId}/complete': {
+      post: {
+        tags: ['Clubs'],
+        summary: 'Complete voting and select winner',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'clubId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'votingId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Voting completed' },
+        },
+      },
+    },
+
+    // ──────────────── Notifications ────────────────
+    '/notifications/summary': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Get notification summary',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'Notification summary',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/NotificationSummaryResponse',
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/list': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Get paginated notifications',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Notification list',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/NotificationListResponse',
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/read': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Mark notifications as read',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          204: { description: 'Notifications marked as read' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/unread': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Mark notifications as unread',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          204: { description: 'Notifications marked as unread' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/{id}': {
+      delete: {
+        tags: ['Notifications'],
+        summary: 'Dismiss a notification',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          204: { description: 'Notification dismissed' },
+          401: { description: 'Unauthorized' },
+          400: { description: 'Notification id is required' },
+        },
+      },
+    },
+
+    // ──────────────── Changelogs ────────────────
+    '/changelogs': {
+      get: {
+        tags: ['Changelogs'],
+        summary: 'Get published changelogs',
+        responses: {
+          200: {
+            description: 'Published changelogs',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Changelog' },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ['Changelogs'],
+        summary: 'Create a changelog (admin only)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['version', 'title', 'description', 'changes'],
+                properties: {
+                  version: { type: 'string' },
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  changes: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string' },
+                        description: { type: 'string' },
+                      },
+                    },
+                  },
+                  published: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Changelog created' },
+        },
+      },
+    },
+    '/changelogs/admin/all': {
+      get: {
+        tags: ['Changelogs'],
+        summary: 'Get all changelogs including drafts (admin only)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'All changelogs' },
+        },
+      },
+    },
+    '/changelogs/{id}': {
+      get: {
+        tags: ['Changelogs'],
+        summary: 'Get a specific changelog',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Changelog details' },
+        },
+      },
+      patch: {
+        tags: ['Changelogs'],
+        summary: 'Update a changelog (admin only)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Changelog updated' },
+        },
+      },
+      delete: {
+        tags: ['Changelogs'],
+        summary: 'Delete a changelog (admin only)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Changelog deleted' },
+        },
+      },
+    },
+
+    // ──────────────── Text Sessions ────────────────
+    '/texthooker/recent': {
+      get: {
+        tags: ['Text Sessions'],
+        summary: 'Get recent text sessions',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Recent sessions' },
+        },
+      },
+    },
+    '/texthooker/blank': {
+      post: {
+        tags: ['Text Sessions'],
+        summary: 'Create a blank (media-less), user-named session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: { name: { type: 'string' } },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Blank session created' },
+        },
+      },
+    },
+    '/texthooker/room/{roomId}/exists': {
+      get: {
+        tags: ['Text Sessions'],
+        summary: 'Check if a room exists',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'roomId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Room existence status' },
+        },
+      },
+    },
+    '/texthooker/{contentId}': {
+      get: {
+        tags: ['Text Sessions'],
+        summary: 'Get session by content ID',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Session data' },
+        },
+      },
+      delete: {
+        tags: ['Text Sessions'],
+        summary: 'Delete a session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Session deleted' },
+        },
+      },
+    },
+    '/texthooker/{contentId}/lines': {
+      post: {
+        tags: ['Text Sessions'],
+        summary: 'Add lines to a session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Lines added' },
+        },
+      },
+      delete: {
+        tags: ['Text Sessions'],
+        summary: 'Remove lines from a session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Lines removed' },
+        },
+      },
+    },
+    '/texthooker/{contentId}/lines/all': {
+      delete: {
+        tags: ['Text Sessions'],
+        summary: 'Clear all lines from a session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'All lines cleared' },
+        },
+      },
+    },
+    '/texthooker/{contentId}/timer': {
+      patch: {
+        tags: ['Text Sessions'],
+        summary: 'Update session timer',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Timer updated' },
+        },
+      },
+    },
+    '/texthooker/{contentId}/history': {
+      post: {
+        tags: ['Text Sessions'],
+        summary: 'Add a session history entry',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'History entry added' },
+        },
+      },
+    },
+
+    // ──────────────── AniList ────────────────
+    '/anilist/status': {
+      get: {
+        tags: ['AniList'],
+        summary: 'Get the AniList link status for the current user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Link state, auto-sync flag and last sync info' },
+        },
+      },
+    },
+    '/anilist/logs': {
+      get: {
+        tags: ['AniList'],
+        summary: 'List logs created by the AniList integration',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            in: 'query',
+            name: 'limit',
+            schema: { type: 'integer', default: 20, maximum: 100 },
+          },
+        ],
+        responses: {
+          200: { description: 'Synced logs, newest first' },
+        },
+      },
+    },
+    '/anilist/settings': {
+      patch: {
+        tags: ['AniList'],
+        summary: 'Update AniList integration settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: { autoSync: { type: 'boolean' } },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Updated status' },
+          400: { description: 'No AniList account linked' },
+        },
+      },
+    },
+    '/anilist/sync': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Sync new AniList activity into logs',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Counts of scanned, created and skipped items' },
+          429: { description: 'Sync cooldown still active' },
+        },
+      },
+    },
+    '/anilist/backfill': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Import the full AniList activity history',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Counts of scanned, created and skipped items' },
+        },
+      },
+    },
+    '/anilist/unlink': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Unlink the AniList account (existing logs are kept)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Account unlinked' },
+        },
+      },
+    },
+    '/anilist/oauth/init': {
+      get: {
+        tags: ['AniList'],
+        summary: 'Start the AniList OAuth flow',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Authorization URL to redirect the user to' },
+          500: { description: 'AniList OAuth is not configured' },
+        },
+      },
+    },
+    '/anilist/oauth/callback': {
+      get: {
+        tags: ['AniList'],
+        summary: 'AniList OAuth redirect target (redirects back to /settings)',
+        responses: {
+          302: { description: 'Redirect to the settings page' },
+        },
+      },
+    },
+
+    // ──────────────── Patreon ────────────────
+    '/patreon/status': {
+      get: {
+        tags: ['Patreon'],
+        summary: 'Get Patreon status for current user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Patreon status data' },
+        },
+      },
+    },
+    '/patreon/link': {
+      post: {
+        tags: ['Patreon'],
+        summary: 'Link Patreon account',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Account linked' },
+        },
+      },
+    },
+    '/patreon/unlink': {
+      post: {
+        tags: ['Patreon'],
+        summary: 'Unlink Patreon account',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Account unlinked' },
+        },
+      },
+    },
+    '/patreon/badge': {
+      patch: {
+        tags: ['Patreon'],
+        summary: 'Update custom badge text',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  customBadgeText: { type: 'string', maxLength: 20 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Badge text updated' },
+        },
+      },
+    },
+    '/patreon/badge-colors': {
+      patch: {
+        tags: ['Patreon'],
+        summary: 'Update badge colors',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  badgeColor: { type: 'string' },
+                  badgeTextColor: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Badge colors updated' },
+        },
+      },
+    },
+    '/patreon/badge-visibility': {
+      patch: {
+        tags: ['Patreon'],
+        summary: 'Show or hide the public tier badge',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['hideBadge'],
+                properties: {
+                  hideBadge: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Badge visibility updated' },
+        },
+      },
+    },
+    '/patreon/oauth/init': {
+      get: {
+        tags: ['Patreon'],
+        summary: 'Initiate Patreon OAuth2 flow',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          302: { description: 'Redirect to Patreon OAuth page' },
+        },
+      },
+    },
+    '/patreon/oauth/callback': {
+      get: {
+        tags: ['Patreon'],
+        summary: 'Handle Patreon OAuth2 callback',
+        parameters: [
+          {
+            name: 'code',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'state',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          302: { description: 'Redirect after OAuth completion' },
+        },
+      },
+    },
+    '/patreon/webhook': {
+      post: {
+        tags: ['Patreon'],
+        summary: 'Patreon webhook endpoint',
+        description:
+          'Receives Patreon webhook events. Verified by signature header.',
+        responses: {
+          200: { description: 'Webhook processed' },
+        },
+      },
+    },
+
+    // ──────────────── API Keys ────────────────
+    '/api-keys': {
+      post: {
+        tags: ['API Keys'],
+        summary: 'Generate a new API key',
+        description:
+          'Creates a new API key. The raw key is returned ONLY in this response; store it securely.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    maxLength: 100,
+                    description: 'A label for this API key',
+                    example: 'My Script',
+                  },
+                  expiresAt: {
+                    type: 'string',
+                    format: 'date-time',
+                    description: 'Optional expiration date',
+                    nullable: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'API key created; raw key returned once',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiKeyResponse' },
+              },
+            },
+          },
+          400: {
+            description: 'Validation error or max keys reached',
+          },
+        },
+      },
+      get: {
+        tags: ['API Keys'],
+        summary: 'List your API keys',
+        description:
+          'Returns metadata for all your API keys. The raw key is never returned.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'API key list',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/ApiKeyListItem' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api-keys/{id}': {
+      delete: {
+        tags: ['API Keys'],
+        summary: 'Revoke an API key',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'API key ID to revoke',
+          },
+        ],
+        responses: {
+          200: { description: 'API key revoked' },
+          404: { description: 'API key not found' },
+        },
+      },
+    },
+
+    // ──────────────── Upload ────────────────
+    '/upload': {
+      post: {
+        tags: ['Upload'],
+        summary: 'Upload an avatar image',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  avatar: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Upload result' },
+        },
+      },
+    },
+    '/upload/banner': {
+      post: {
+        tags: ['Upload'],
+        summary: 'Upload a banner image',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  banner: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Upload result' },
+        },
+      },
+    },
+
+    // ──────────────── Admin ────────────────
+    '/admin/stats': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get admin dashboard stats',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Admin stats' },
+          401: { description: 'Unauthorized (admin only)' },
+        },
+      },
+    },
+    '/admin/stats/patrons': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get patron statistics',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Patron stats' },
+        },
+      },
+    },
+    '/admin/users': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get admin user list',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'search',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Admin user list' },
+        },
+      },
+    },
+    '/admin/users/{id}': {
+      put: {
+        tags: ['Admin'],
+        summary: 'Update a user by ID (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'User updated' },
+        },
+      },
+      delete: {
+        tags: ['Admin'],
+        summary: 'Delete a user by ID (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'User deleted' },
+        },
+      },
+    },
+    '/admin/users/{id}/reset-password': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Reset a user password (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Password reset' },
+        },
+      },
+    },
+    '/admin/users/{id}/patreon': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Manually set Patreon status (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Patreon status set' },
+        },
+      },
+    },
+    '/admin/users/username/{username}/moderation': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get user moderation data by username',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Moderation data' },
+        },
+      },
+      patch: {
+        tags: ['Admin'],
+        summary: 'Update user moderation by username',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Moderation updated' },
+        },
+      },
+    },
+    '/admin/users/username/{username}/recalculate-streaks': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Recalculate streaks for a user (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Streaks recalculated' },
+        },
+      },
+    },
+    '/admin/logs': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Search logs (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Log search results' },
+        },
+      },
+    },
+    '/admin/logs/{id}': {
+      delete: {
+        tags: ['Admin'],
+        summary: 'Delete a log (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Log deleted' },
+        },
+      },
+      put: {
+        tags: ['Admin'],
+        summary: 'Update a log (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Log updated' },
+        },
+      },
+    },
+    '/admin/patreon/sync': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Sync Patreon members (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Members synced' },
+        },
+      },
+    },
+    '/admin/recalculateStreaks': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Recalculate all user streaks (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Streaks recalculated' },
+        },
+      },
+    },
+    '/admin/recalculateStats': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Recalculate all user XP/stats (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Stats recalculated' },
+        },
+      },
+    },
+    '/admin/meilisearch/indexes': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get Meilisearch indexes (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Index list' },
+        },
+      },
+    },
+    '/admin/meilisearch/indexes/{indexName}': {
+      delete: {
+        tags: ['Admin'],
+        summary: 'Delete a Meilisearch index (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'indexName',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Index deleted' },
+        },
+      },
+    },
+    '/admin/meilisearch/indexes/{indexName}/settings': {
+      patch: {
+        tags: ['Admin'],
+        summary: 'Update Meilisearch index settings (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'indexName',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Settings updated' },
+        },
+      },
+    },
+    '/admin/meilisearch/sync': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Sync all Meilisearch indexes (admin)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Indexes synced' },
+        },
+      },
+    },
+  },
+};
+
+const PUBLICLY_HIDDEN_PATHS_EXACT = new Set([
+  '/auth/verify',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+  '/auth/forgot-password',
+  '/auth/reset-password/{token}',
+  '/users',
+  '/users/media/status',
+  '/users/settings/hidden-media',
+  '/users/cleardata',
+  '/users/export/csv',
+  '/users/{username}/dashboard',
+  '/users/{username}/recentlogs',
+  '/logs/manabe-webhook',
+  '/logs/sync-manabe-ids',
+]);
+
+const PUBLICLY_HIDDEN_PATH_PREFIXES = ['/admin', '/api-keys', '/patreon'];
+
+function isPathPubliclyHidden(pathname: string) {
+  if (PUBLICLY_HIDDEN_PATHS_EXACT.has(pathname)) {
+    return true;
+  }
+
+  return PUBLICLY_HIDDEN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function buildPublicSwaggerDocument() {
+  const publicDoc = JSON.parse(JSON.stringify(swaggerDocument));
+
+  publicDoc.paths = Object.fromEntries(
+    Object.entries(publicDoc.paths).filter(
+      ([pathname]) => !isPathPubliclyHidden(pathname)
+    )
+  );
+
+  if (publicDoc.tags) {
+    publicDoc.tags = publicDoc.tags.filter(
+      (tag: { name: string }) =>
+        !['Admin', 'Patreon', 'API Keys'].includes(tag.name)
+    );
+  }
+
+  const userProperties = publicDoc.components?.schemas?.User?.properties;
+  if (userProperties) {
+    delete userProperties.email;
+    delete userProperties.roles;
+    delete userProperties.settings;
+  }
+
+  return publicDoc;
+}
+
+const publicSwaggerDocument = buildPublicSwaggerDocument();
+
+const router = Router();
+
+router.use(swaggerUi.serve);
+router.get(
+  '/',
+  swaggerUi.setup(publicSwaggerDocument, {
+    customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { font-size: 2rem; }
+  `,
+    customSiteTitle: 'NihongoTracker Public API Docs',
+  })
+);
+
+router.get(
+  '/internal',
+  protect,
+  swaggerUi.setup(swaggerDocument, {
+    customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { font-size: 2rem; }
+  `,
+    customSiteTitle: 'NihongoTracker Internal API Docs',
+  })
+);
+
+export default router;

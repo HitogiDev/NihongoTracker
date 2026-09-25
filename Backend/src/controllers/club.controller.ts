@@ -1,0 +1,3116 @@
+import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
+import { Club } from '../models/club.model.js';
+import { ClubMediaVoting } from '../models/clubMediaVoting.model.js';
+import User from '../models/user.model.js';
+import { MediaBase } from '../models/media.model.js';
+import Log from '../models/log.model.js';
+import uploadFile, { uploadFileWithCleanup } from '../services/uploadFile.js';
+import {
+  ICreateClubRequest,
+  IClubResponse,
+  IClubListResponse,
+  IClub,
+  IClubMember,
+  IClubGoal,
+  IClubMedia,
+  IUser,
+} from '../types.js';
+import {
+  completeVotingDocument,
+  deleteVotingById,
+  findVotingForClub,
+  updateVotingStatusesForClub,
+} from '../services/clubMediaVoting.js';
+import { calculateLevel } from '../services/calculateLevel.js';
+import {
+  createNotification,
+  createNotifications,
+} from '../services/notifications.service.js';
+import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
+import { checkAchievements } from '../services/achievements/achievementEngine.js';
+import { recordClubJoinedActivity } from '../services/activityEvents.service.js';
+import { buildVisibleImmersionLogFilter } from '../services/socialVisibility.service.js';
+import {
+  hasClubPermission,
+  normalizeClubRole,
+} from '../services/clubAuthorization.service.js';
+import { getClubMediaEngagement } from '../services/clubMedia.service.js';
+import { syncLegacyClubObjectives } from '../services/clubObjectives.service.js';
+
+type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
+
+const MIN_CLUB_MEMBER_LIMIT = 1;
+const DEFAULT_CLUB_MEMBER_LIMIT = 100;
+const ENTHUSIAST_CLUB_MEMBER_LIMIT = 250;
+const CONSUMER_CLUB_MEMBER_LIMIT = 1000;
+
+function getPatreonTierFromUser(
+  user: {
+    patreon?: { tier?: PatreonTier; isActive?: boolean };
+  } | null
+): PatreonTier {
+  // Treat explicitly inactive memberships as no tier.
+  if (user?.patreon?.isActive === false) {
+    return null;
+  }
+
+  return user?.patreon?.tier ?? null;
+}
+
+function getMaxClubMemberLimitForTier(tier: PatreonTier): number {
+  if (tier === 'consumer') {
+    return CONSUMER_CLUB_MEMBER_LIMIT;
+  }
+
+  if (tier === 'enthusiast') {
+    return ENTHUSIAST_CLUB_MEMBER_LIMIT;
+  }
+
+  return DEFAULT_CLUB_MEMBER_LIMIT;
+}
+
+function getEffectiveClubMemberLimit(
+  configuredLimit: number,
+  tier: PatreonTier
+): number {
+  const normalizedConfiguredLimit =
+    Number.isInteger(configuredLimit) &&
+    configuredLimit >= MIN_CLUB_MEMBER_LIMIT
+      ? configuredLimit
+      : DEFAULT_CLUB_MEMBER_LIMIT;
+
+  return Math.min(
+    normalizedConfiguredLimit,
+    getMaxClubMemberLimitForTier(tier)
+  );
+}
+
+function buildClubMemberLimitExceededMessage(maxAllowedLimit: number): string {
+  if (maxAllowedLimit >= CONSUMER_CLUB_MEMBER_LIMIT) {
+    return `Member limit cannot exceed ${CONSUMER_CLUB_MEMBER_LIMIT}.`;
+  }
+
+  return `Your current Patreon tier allows up to ${maxAllowedLimit} club members. Upgrade your Patreon tier for a higher club member cap.`;
+}
+
+function parseClubGoalsInput(value: unknown): IClubGoal[] {
+  const rawValue = typeof value === 'string' ? JSON.parse(value) : value;
+
+  if (!Array.isArray(rawValue)) {
+    throw new Error('clubGoals must be an array');
+  }
+
+  return rawValue.map((goal, index) => {
+    const type = goal?.type;
+    const period = goal?.period;
+    const target = Number(goal?.target);
+    const hasStartDate =
+      goal?.startDate !== undefined &&
+      goal?.startDate !== null &&
+      goal?.startDate !== '';
+    const hasEndDate =
+      goal?.endDate !== undefined &&
+      goal?.endDate !== null &&
+      goal?.endDate !== '';
+    const startDate = hasStartDate ? new Date(goal?.startDate) : undefined;
+    const endDate = hasEndDate ? new Date(goal?.endDate) : undefined;
+
+    if (!['time', 'chars', 'episodes', 'pages'].includes(type)) {
+      throw new Error(`Invalid club goal type at position ${index + 1}`);
+    }
+
+    if (!['weekly', 'monthly', 'custom', 'indefinite'].includes(period)) {
+      throw new Error(`Invalid club goal period at position ${index + 1}`);
+    }
+
+    if (!Number.isFinite(target) || target <= 0) {
+      throw new Error(
+        `Goal target must be a positive number at position ${index + 1}`
+      );
+    }
+
+    if (period === 'custom') {
+      if (!startDate || !endDate) {
+        throw new Error(
+          `Custom goals require start and end dates at position ${index + 1}`
+        );
+      }
+
+      if (
+        Number.isNaN(startDate.getTime()) ||
+        Number.isNaN(endDate.getTime())
+      ) {
+        throw new Error(`Goal dates are invalid at position ${index + 1}`);
+      }
+
+      if (endDate < startDate) {
+        throw new Error(
+          `Goal end date must be after start date at position ${index + 1}`
+        );
+      }
+    }
+
+    return {
+      type,
+      target: Math.floor(target),
+      period,
+      currentProgress: 0,
+      isActive: goal?.isActive !== false,
+      startDate,
+      endDate,
+      createdAt: goal?.createdAt ? new Date(goal.createdAt) : new Date(),
+    } satisfies IClubGoal;
+  });
+}
+
+export async function getClubs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClubListResponse> | void> {
+  try {
+    const {
+      page = 1,
+      limit = 12,
+      search = '',
+      sortBy = 'totalXp',
+      sortOrder = 'desc',
+      isPublic,
+      tags,
+      membership = 'all',
+    } = req.query;
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+    const userId = res.locals.user?._id;
+
+    // Build search query
+    const searchQuery: any = { isActive: true };
+
+    if (search) {
+      searchQuery.$or = [
+        { name: { $regex: search as string, $options: 'i' } },
+        { description: { $regex: search as string, $options: 'i' } },
+      ];
+    }
+
+    if (isPublic !== undefined) {
+      searchQuery.isPublic = isPublic === 'true';
+    }
+
+    if (tags) {
+      const tagArray = (tags as string).split(',');
+      searchQuery.tags = { $in: tagArray };
+    }
+
+    if (membership === 'member' || membership === 'leader') {
+      if (!userId) {
+        searchQuery._id = { $in: [] };
+      } else {
+        searchQuery.members = {
+          $elemMatch:
+            membership === 'leader'
+              ? {
+                  user: userId,
+                  status: 'active',
+                  role: { $in: ['owner', 'leader'] },
+                }
+              : { user: userId, status: 'active' },
+        };
+      }
+    }
+
+    // Build sort query
+    const sortQuery: any = {};
+    sortQuery[sortBy as string] = sortOrder === 'desc' ? -1 : 1;
+
+    // Get clubs with active member count (exclude pending / banned)
+    const clubs = await Club.aggregate([
+      { $match: searchQuery },
+      {
+        $addFields: {
+          memberCount: {
+            $size: {
+              $filter: {
+                input: '$members',
+                as: 'm',
+                cond: { $eq: ['$$m.status', 'active'] },
+              },
+            },
+          },
+        },
+      },
+      { $sort: sortQuery },
+      { $skip: skip },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members.user',
+          foreignField: '_id',
+          as: 'memberDetails',
+          pipeline: [{ $project: { username: 1, avatar: 1 } }],
+        },
+      },
+    ]);
+
+    const total = await Club.countDocuments(searchQuery);
+
+    // Add user membership info if user is authenticated
+    const clubsWithUserInfo: IClubResponse[] = clubs.map((club) => {
+      const userMember = userId
+        ? club.members.find(
+            (member: IClubMember) =>
+              member.user.toString() === userId.toString()
+          )
+        : null;
+
+      return {
+        ...club,
+        isUserMember: !!userMember,
+        userRole: userMember?.role,
+        userStatus: userMember?.status,
+      } as IClubResponse;
+    });
+
+    const response: IClubListResponse = {
+      clubs: clubsWithUserInfo,
+      total,
+      page: pageNum,
+      limit: limitNum,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClubResponse> | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user?._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Auto-update voting statuses based on current date
+    await updateVotingStatusesForClub(club);
+
+    // Refresh club data after potential status updates
+    const updatedClub = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Club not found after update' });
+    }
+
+    // Check if user is a member
+    const userMember = userId
+      ? updatedClub.members.find(
+          (member) => member.user._id.toString() === userId.toString()
+        )
+      : null;
+
+    // All authenticated users can view clubs
+    // The difference between public/private is only in the joining mechanism
+
+    const clubResponse = {
+      ...updatedClub.toObject(),
+      memberCount: updatedClub.members.filter((m) => m.status === 'active')
+        .length,
+      isUserMember: !!userMember,
+      userRole: userMember?.role,
+      userStatus: userMember?.status,
+    } as IClubResponse;
+
+    return res.status(200).json(clubResponse);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function createClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub> | void> {
+  try {
+    const userId = res.locals.user._id;
+    const clubData: ICreateClubRequest = req.body;
+
+    // Parse JSON-stringified arrays from FormData
+    if (typeof clubData.tags === 'string') {
+      try {
+        clubData.tags = JSON.parse(clubData.tags);
+      } catch (error) {
+        console.error('Error parsing tags:', error);
+        clubData.tags = [];
+      }
+    }
+
+    // Convert string numbers back to numbers
+    if (typeof clubData.memberLimit === 'string') {
+      clubData.memberLimit = parseInt(clubData.memberLimit, 10);
+    }
+
+    if (clubData.clubGoals !== undefined) {
+      try {
+        clubData.clubGoals = parseClubGoalsInput(clubData.clubGoals);
+      } catch (error) {
+        return res.status(400).json({
+          message: (error as Error).message,
+        });
+      }
+    }
+
+    // Convert string booleans back to booleans
+    if (typeof clubData.isPublic === 'string') {
+      clubData.isPublic = clubData.isPublic === 'true';
+    }
+
+    // Validate required fields
+    if (!clubData.name || clubData.name.trim().length === 0) {
+      return res.status(400).json({ message: 'Club name is required' });
+    }
+
+    // Check if club name already exists
+    const existingClub = await Club.findOne({ name: clubData.name });
+    if (existingClub) {
+      return res.status(400).json({ message: 'Club name already exists' });
+    }
+
+    const requestedMemberLimit =
+      clubData.memberLimit ?? DEFAULT_CLUB_MEMBER_LIMIT;
+    if (
+      !Number.isInteger(requestedMemberLimit) ||
+      requestedMemberLimit < MIN_CLUB_MEMBER_LIMIT
+    ) {
+      return res.status(400).json({
+        message: `Member limit must be a whole number greater than or equal to ${MIN_CLUB_MEMBER_LIMIT}`,
+      });
+    }
+
+    const creatorPatreonTier = getPatreonTierFromUser(res.locals.user);
+    const maxAllowedMemberLimit =
+      getMaxClubMemberLimitForTier(creatorPatreonTier);
+
+    if (requestedMemberLimit > maxAllowedMemberLimit) {
+      return res.status(400).json({
+        message: buildClubMemberLimitExceededMessage(maxAllowedMemberLimit),
+      });
+    }
+
+    clubData.memberLimit = requestedMemberLimit;
+
+    // Handle file uploads if present
+    let avatarUrl = '';
+    let bannerUrl = '';
+
+    if (req.files && Object.keys(req.files).length > 0) {
+      try {
+        const files = req.files as {
+          [fieldname: string]: Express.Multer.File[];
+        };
+
+        if (files.avatar?.[0]) {
+          const file = await uploadFile(files.avatar[0]);
+          avatarUrl = file.downloadURL;
+        }
+
+        if (files.banner?.[0]) {
+          const file = await uploadFile(files.banner[0]);
+          bannerUrl = file.downloadURL;
+        }
+      } catch (error) {
+        if (error instanceof customError) {
+          return next(error);
+        }
+        return next(
+          apiError(
+            'upload.failed',
+            400,
+            `File upload failed: ${  (error as Error).message}`
+          )
+        );
+      }
+    }
+
+    // Create the club with the creator as the leader
+    const newClub = new Club({
+      ...clubData,
+      avatar: avatarUrl,
+      banner: bannerUrl,
+      members: [
+        {
+          user: userId,
+          role: 'owner',
+          joinedAt: new Date(),
+          status: 'active',
+        },
+      ],
+    });
+
+    await newClub.save();
+
+    // Add club to user's clubs array
+    await User.findByIdAndUpdate(userId, {
+      $push: { clubs: newClub._id },
+    });
+
+    // Club Founder unlocks here rather than waiting for the user's next log
+    await checkAchievements(userId, { trigger: 'log' });
+
+    return res.status(201).json(newClub);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function joinClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is already a member
+    const existingMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (existingMember) {
+      return res.status(400).json({ message: 'Already a member of this club' });
+    }
+
+    // Check member limit (only count active members)
+    const activeMemberCount = club.members.filter(
+      (member) => member.status === 'active'
+    ).length;
+
+    const clubLeader =
+      club.members.find(
+        (member) =>
+          normalizeClubRole(member.role) === 'owner' &&
+          member.status === 'active'
+      ) ||
+      club.members.find(
+        (member) => normalizeClubRole(member.role) === 'owner'
+      );
+
+    const leaderUser = clubLeader
+      ? await User.findById(clubLeader.user).select(
+          'patreon.tier patreon.isActive'
+        )
+      : null;
+
+    const effectiveMemberLimit = getEffectiveClubMemberLimit(
+      club.memberLimit,
+      getPatreonTierFromUser(leaderUser)
+    );
+
+    if (activeMemberCount >= effectiveMemberLimit) {
+      const isPatreonCapped = effectiveMemberLimit < club.memberLimit;
+      return res.status(400).json({
+        message: isPatreonCapped
+          ? `Club has reached the leader Patreon member limit (${effectiveMemberLimit})`
+          : 'Club has reached member limit',
+      });
+    }
+
+    // Add member with appropriate status
+    const memberStatus = club.isPublic ? 'active' : 'pending';
+    club.members.push({
+      user: userId,
+      role: 'member',
+      joinedAt: new Date(),
+      status: memberStatus,
+    });
+
+    await club.save();
+
+    // Add club to user's clubs array if approved
+    if (memberStatus === 'active') {
+      await User.findByIdAndUpdate(userId, {
+        $push: { clubs: clubId },
+      });
+      await checkAchievements(userId, { trigger: 'clubJoin' });
+      await recordClubJoinedActivity({
+        userId,
+        clubId: club._id as Types.ObjectId,
+        clubName: club.name,
+        memberCount: club.members.filter((member) => member.status === 'active').length,
+      });
+    }
+
+    const message = club.isPublic
+      ? 'Successfully joined the club'
+      : 'Join request sent, waiting for approval';
+
+    return res.status(200).json({ message });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function leaveClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const memberIndex = club.members.findIndex((member) =>
+      member.user.equals(userId)
+    );
+
+    if (memberIndex === -1) {
+      return res.status(400).json({ message: 'Not a member of this club' });
+    }
+
+    const member = club.members[memberIndex];
+
+    // If user is the leader and there are other active members, they need to transfer leadership first
+    const activeMembers = club.members.filter((m) => m.status === 'active');
+    if (
+      normalizeClubRole(member.role) === 'owner' &&
+      activeMembers.length > 1
+    ) {
+      return res.status(400).json({
+        message:
+          'Cannot leave club as leader. Transfer leadership or disband the club first.',
+      });
+    }
+
+    // Remove member from club
+    club.members.splice(memberIndex, 1);
+
+    // If no members left, deactivate the club
+    if (club.members.length === 0) {
+      club.isActive = false;
+    }
+
+    await club.save();
+
+    // Remove club from user's clubs array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { clubs: clubId },
+    });
+
+    return res.status(200).json({ message: 'Successfully left the club' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function transferLeadership(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { newLeaderId } = req.body;
+    const currentUserId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    if (!Types.ObjectId.isValid(newLeaderId)) {
+      return res.status(400).json({ message: 'Invalid new leader ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if current user is the leader
+    const currentLeader = club.members.find(
+      (member) =>
+        member.user.equals(currentUserId) &&
+        normalizeClubRole(member.role) === 'owner' &&
+        member.status === 'active'
+    );
+
+    if (!currentLeader) {
+      return res
+        .status(403)
+        .json({ message: 'Only the club leader can transfer leadership' });
+    }
+
+    // Check if new leader is an active member
+    const newLeaderMember = club.members.find(
+      (member) => member.user.equals(newLeaderId) && member.status === 'active'
+    );
+
+    if (!newLeaderMember) {
+      return res
+        .status(400)
+        .json({ message: 'New leader must be an active club member' });
+    }
+
+    // Transfer leadership
+    currentLeader.role = 'member';
+    newLeaderMember.role = 'owner';
+
+    await club.save();
+
+    return res
+      .status(200)
+      .json({ message: 'Leadership transferred successfully' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub> | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+    const updateData = req.body;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is the leader
+    const userMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (!hasClubPermission(userMember, 'manage_settings')) {
+      return res.status(403).json({
+        message: 'Only club leaders can update club settings',
+      });
+    }
+
+    // Parse JSON-stringified arrays from FormData if present
+    if (typeof updateData.tags === 'string') {
+      try {
+        updateData.tags = JSON.parse(updateData.tags);
+      } catch (error) {
+        console.error('Error parsing tags:', error);
+        updateData.tags = [];
+      }
+    }
+
+    // Convert string numbers back to numbers
+    if (typeof updateData.memberLimit === 'string') {
+      updateData.memberLimit = parseInt(updateData.memberLimit, 10);
+    }
+
+    // Convert string booleans back to booleans
+    if (typeof updateData.isPublic === 'string') {
+      updateData.isPublic = updateData.isPublic === 'true';
+    }
+
+    if (updateData.clubGoals !== undefined) {
+      try {
+        updateData.clubGoals = parseClubGoalsInput(updateData.clubGoals);
+      } catch (error) {
+        return res.status(400).json({
+          message: (error as Error).message,
+        });
+      }
+    }
+
+    if (updateData.memberLimit !== undefined) {
+      if (
+        !Number.isInteger(updateData.memberLimit) ||
+        updateData.memberLimit < MIN_CLUB_MEMBER_LIMIT
+      ) {
+        return res.status(400).json({
+          message: `Member limit must be a whole number greater than or equal to ${MIN_CLUB_MEMBER_LIMIT}`,
+        });
+      }
+
+      const isChangingMemberLimit = updateData.memberLimit !== club.memberLimit;
+
+      if (!isChangingMemberLimit) {
+        updateData.memberLimit = club.memberLimit;
+      }
+
+      if (isChangingMemberLimit) {
+        const leaderPatreonTier = getPatreonTierFromUser(res.locals.user);
+        const maxAllowedMemberLimit =
+          getMaxClubMemberLimitForTier(leaderPatreonTier);
+
+        if (updateData.memberLimit > maxAllowedMemberLimit) {
+          return res.status(400).json({
+            message: buildClubMemberLimitExceededMessage(maxAllowedMemberLimit),
+          });
+        }
+
+        const activeMemberCount = club.members.filter(
+          (member) => member.status === 'active'
+        ).length;
+
+        if (updateData.memberLimit < activeMemberCount) {
+          return res.status(400).json({
+            message: `Member limit cannot be lower than the current active member count (${activeMemberCount})`,
+          });
+        }
+      }
+    }
+
+    // Handle file uploads if present
+    if (req.files && Object.keys(req.files).length > 0) {
+      try {
+        const files = req.files as {
+          [fieldname: string]: Express.Multer.File[];
+        };
+
+        if (files.avatar?.[0]) {
+          const file = await uploadFileWithCleanup(
+            files.avatar[0],
+            club.avatar
+          );
+          updateData.avatar = file.downloadURL;
+        }
+
+        if (files.banner?.[0]) {
+          const file = await uploadFileWithCleanup(
+            files.banner[0],
+            club.banner
+          );
+          updateData.banner = file.downloadURL;
+        }
+      } catch (error) {
+        if (error instanceof customError) {
+          return next(error);
+        }
+        return next(
+          apiError(
+            'upload.failed',
+            400,
+            `File upload failed: ${  (error as Error).message}`
+          )
+        );
+      }
+    }
+
+    // Update allowed fields
+    const allowedFields = [
+      'name',
+      'description',
+      'isPublic',
+      'tags',
+      'rules',
+      'memberLimit',
+      'avatar',
+      'banner',
+      'clubGoals',
+    ];
+
+    allowedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        club.set(field, updateData[field]);
+      }
+    });
+
+    await club.save();
+    if (updateData.clubGoals !== undefined) {
+      await syncLegacyClubObjectives(club);
+    }
+
+    const updatedClub = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    return res.status(200).json(updatedClub || club);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getUserClubs(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub[]> | void> {
+  try {
+    const userId = res.locals.user._id;
+
+    const clubs = await Club.find({
+      'members.user': userId,
+      'members.status': 'active',
+      isActive: true,
+    }).select('name avatar level totalXp members');
+
+    return res.status(200).json(clubs);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function manageJoinRequests(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, memberId } = req.params;
+    const { action } = req.body; // 'approve' or 'reject'
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is the leader
+    const userMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (!hasClubPermission(userMember, 'manage_members')) {
+      return res.status(403).json({
+        message: 'Only club leaders can manage membership requests',
+      });
+    }
+
+    // Find the pending member
+    const pendingMember = club.members.find(
+      (member) => member.user.equals(memberId) && member.status === 'pending'
+    );
+
+    if (!pendingMember) {
+      return res.status(404).json({ message: 'Pending member not found' });
+    }
+
+    if (action === 'approve') {
+      const activeMemberCount = club.members.filter(
+        (member) => member.status === 'active'
+      ).length;
+      const effectiveMemberLimit = getEffectiveClubMemberLimit(
+        club.memberLimit,
+        getPatreonTierFromUser(res.locals.user)
+      );
+
+      if (activeMemberCount >= effectiveMemberLimit) {
+        const isPatreonCapped = effectiveMemberLimit < club.memberLimit;
+        return res.status(400).json({
+          message: isPatreonCapped
+            ? `Club has reached the leader Patreon member limit (${effectiveMemberLimit})`
+            : 'Club has reached member limit',
+        });
+      }
+
+      pendingMember.status = 'active';
+      await User.findByIdAndUpdate(memberId, {
+        $push: { clubs: clubId },
+      });
+      await club.save();
+
+      await recordClubJoinedActivity({
+        userId: new Types.ObjectId(memberId),
+        clubId: club._id as Types.ObjectId,
+        clubName: club.name,
+        memberCount: club.members.filter((member) => member.status === 'active').length,
+      });
+      await checkAchievements(new Types.ObjectId(memberId), {
+        trigger: 'clubJoin',
+      });
+
+      await createNotification({
+        recipient: memberId,
+        actor: userId,
+        type: 'club_join_approved',
+        title: `You were accepted into ${club.name}`,
+        titleKey: 'club.joinApproved',
+        link: `/clubs/${clubId}`,
+        image: club.avatar,
+        entityType: 'club',
+        entityId: clubId,
+        meta: { clubName: club.name },
+      });
+
+      return res.status(200).json({ message: 'Member approved' });
+    } if (action === 'reject') {
+      club.members = club.members.filter(
+        (member) => !member.user.equals(memberId)
+      );
+      await club.save();
+
+      await createNotification({
+        recipient: memberId,
+        actor: userId,
+        type: 'club_join_rejected',
+        title: `Your request to join ${club.name} was declined`,
+        titleKey: 'club.joinRejected',
+        link: '/clubs',
+        image: club.avatar,
+        entityType: 'club',
+        entityId: clubId,
+        meta: { clubName: club.name },
+      });
+
+      return res.status(200).json({ message: 'Member rejected' });
+    }
+    return res.status(400).json({ message: 'Invalid action' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function kickClubMember(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, memberId } = req.params;
+    const actorId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const actor = club.members.find(
+      (member) => member.user.toString() === actorId.toString()
+    );
+
+    if (!actor || actor.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'You must be an active member to manage members' });
+    }
+
+    if (!hasClubPermission(actor, 'manage_members')) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    const targetIndex = club.members.findIndex(
+      (member) => member.user.toString() === memberId
+    );
+
+    if (targetIndex === -1) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+
+    const target = club.members[targetIndex];
+
+    if (target.status !== 'active') {
+      return res.status(400).json({ message: 'User is not an active member' });
+    }
+
+    // Prevent self-kick
+    if (target.user.toString() === actorId.toString()) {
+      return res.status(400).json({ message: 'Use leave club to exit' });
+    }
+
+    // Permission rules: leader can kick anyone except other leaders; moderators can kick members only
+    if (actor.role === 'moderator' && target.role !== 'member') {
+      return res
+        .status(403)
+        .json({ message: 'Moderators can only remove members' });
+    }
+
+    if (
+      normalizeClubRole(actor.role) === 'owner' &&
+      normalizeClubRole(target.role) === 'owner'
+    ) {
+      return res.status(400).json({ message: 'Cannot remove another leader' });
+    }
+
+    // Remove member
+    club.members.splice(targetIndex, 1);
+    await club.save();
+
+    await User.findByIdAndUpdate(memberId, {
+      $pull: { clubs: clubId },
+    });
+
+    await createNotification({
+      recipient: memberId,
+      actor: actorId,
+      type: 'club_member_removed',
+      title: `You were removed from ${club.name}`,
+      titleKey: 'club.memberRemoved',
+      link: '/clubs',
+      image: club.avatar,
+      entityType: 'club',
+      entityId: clubId,
+      meta: { clubName: club.name },
+    });
+
+    return res.status(200).json({ message: 'Member removed from club' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getPendingJoinRequests(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find((m) => m.user.equals(userId));
+    if (!hasClubPermission(userMember, 'manage_members')) {
+      return res
+        .status(403)
+        .json({ message: 'Only club leaders can view pending requests' });
+    }
+
+    const pendingMembers = club.members.filter((m) => m.status === 'pending');
+
+    return res.status(200).json({ pending: pendingMembers });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function addClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const {
+      mediaId,
+      mediaType,
+      title,
+      description,
+      startDate,
+      endDate,
+      mediaData,
+    } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can add media' });
+    }
+
+    // Check if media exists in MediaBase and create it if it doesn't
+    let existingMedia = null;
+    let createMedia = true;
+
+    if (mediaId) {
+      existingMedia = await MediaBase.findOne({
+        contentId: mediaId,
+        type: mediaType,
+      });
+      if (existingMedia) {
+        createMedia = false;
+      }
+    }
+
+    // Create media if it doesn't exist and we have media data
+    if (createMedia && mediaId) {
+      if (mediaType === 'video') {
+        const channelInfo = await getYouTubeChannelInfo(mediaId);
+        if (channelInfo) {
+          const channelMedia = await MediaBase.create({
+            contentId: channelInfo.contentId,
+            title: channelInfo.title,
+            contentImage: channelInfo.contentImage,
+            coverImage: channelInfo.contentImage,
+            description: channelInfo.description,
+            type: 'video',
+            isAdult: false,
+          });
+          existingMedia = channelMedia;
+        }
+      } else if (mediaData && mediaType !== 'audio' && mediaType !== 'other') {
+        // Handle regular AniList content
+        const createdMedia = await MediaBase.create({
+          contentId: mediaId,
+          title: {
+            contentTitleNative: mediaData.contentTitleNative || title,
+            contentTitleEnglish: mediaData.contentTitleEnglish || '',
+            contentTitleRomaji: mediaData.contentTitleRomaji || '',
+          },
+          contentImage: mediaData.contentImage,
+          episodes: mediaData.episodes,
+          episodeDuration: mediaData.episodeDuration,
+          runtime: mediaData.runtime,
+          synonyms: mediaData.synonyms || [],
+          chapters: mediaData.chapters,
+          volumes: mediaData.volumes,
+          isAdult: mediaData.isAdult || false,
+          coverImage: mediaData.coverImage,
+          type: mediaType,
+          description: mediaData.description || [
+            { description: '', language: 'eng' },
+          ],
+        });
+        existingMedia = createdMedia;
+      }
+    }
+
+    // If we still don't have media, try one more search
+    if (!existingMedia && mediaId) {
+      existingMedia = await MediaBase.findOne({
+        contentId: mediaId,
+        type: mediaType,
+      });
+    }
+
+    const newMedia = {
+      mediaId,
+      mediaType,
+      title,
+      description,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      addedBy: userId,
+      votes: [],
+      isActive: true,
+    };
+
+    club.currentMedia.push(newMedia);
+    await club.save();
+
+    // Tell every active member except the one who added it.
+    await createNotifications(
+      club.members
+        .filter(
+          (member) =>
+            member.status === 'active' &&
+            member.user.toString() !== userId.toString()
+        )
+        .map((member) => member.user),
+      {
+        actor: userId,
+        type: 'club_media_added',
+        title: `${title} was added to ${club.name}`,
+        link: `/clubs/${club._id.toString()}`,
+        image: existingMedia?.contentImage,
+        entityType: 'club',
+        entityId: club._id.toString(),
+      }
+    );
+
+    return res
+      .status(201)
+      .json({ message: 'Media added successfully', media: newMedia });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Edit club media (consumption period dates)
+export async function editClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { title, description, startDate, endDate } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can edit media' });
+    }
+
+    // Find the media to edit
+    const mediaIndex = club.currentMedia.findIndex(
+      (media) => media._id?.toString() === mediaId
+    );
+
+    if (mediaIndex === -1) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
+    const media = club.currentMedia[mediaIndex];
+
+    // Validate dates
+    const newStartDate = new Date(startDate);
+    const newEndDate = new Date(endDate);
+
+    if (newStartDate >= newEndDate) {
+      return res
+        .status(400)
+        .json({ message: 'End date must be after start date' });
+    }
+
+    // Update the media using findByIdAndUpdate with arrayFilters to avoid validation issues
+    const updatedClub = await Club.findByIdAndUpdate(
+      clubId,
+      {
+        $set: {
+          'currentMedia.$[elem].title': title || media.title,
+          'currentMedia.$[elem].description':
+            description !== undefined ? description : media.description,
+          'currentMedia.$[elem].startDate': newStartDate,
+          'currentMedia.$[elem].endDate': newEndDate,
+        },
+      },
+      {
+        arrayFilters: [{ 'elem._id': new Types.ObjectId(mediaId) }],
+        new: true,
+        runValidators: false, // Skip validation to avoid required field errors
+      }
+    );
+
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Failed to update media' });
+    }
+
+    const updatedMedia = updatedClub.currentMedia.find(
+      (m) => m._id?.toString() === mediaId
+    );
+
+    return res.status(200).json({
+      message: 'Media updated successfully',
+      media: updatedMedia,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club media (current and past)
+export async function getClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { active = 'true' } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId)
+      .populate('currentMedia.addedBy', 'username avatar')
+      .populate('currentMedia.votes.user', 'username avatar');
+
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const isActiveFilter = active === 'true';
+
+    // Compute active state from start/end dates to avoid stale stored flags
+    const now = new Date();
+    const filteredMedia = club.currentMedia.filter((media) => {
+      const start = media.startDate ? new Date(media.startDate) : null;
+      const end = media.endDate ? new Date(media.endDate) : null;
+
+      let computedIsActive: boolean;
+
+      if (start && end) {
+        computedIsActive = now >= start && now <= end;
+      } else if (start && !end) {
+        computedIsActive = now >= start;
+      } else if (!start && end) {
+        computedIsActive = now <= end;
+      } else {
+        // Fallback to stored flag when dates are missing
+        computedIsActive = Boolean(media.isActive);
+      }
+
+      return computedIsActive === isActiveFilter;
+    });
+    const engagementByMedia = await getClubMediaEngagement({
+      club,
+      media: filteredMedia,
+      viewerId: res.locals.user?._id,
+    });
+
+    // Enhance media with actual media documents for images and metadata
+    const enhancedMedia = await Promise.all(
+      filteredMedia.map(async (media) => {
+        try {
+          const mediaDocument = await MediaBase.findOne({
+            contentId: media.mediaId,
+            type: media.mediaType,
+          });
+
+          const obj = (media as IClubMedia & { toObject(): IClubMedia }).toObject();
+
+          // Respect computed active state (in case stored flag is stale)
+          const start = media.startDate ? new Date(media.startDate) : null;
+          const end = media.endDate ? new Date(media.endDate) : null;
+          if (start && end) {
+            obj.isActive = now >= start && now <= end;
+          } else if (start && !end) {
+            obj.isActive = now >= start;
+          } else if (!start && end) {
+            obj.isActive = now <= end;
+          }
+
+          return {
+            ...obj,
+            mediaDocument: mediaDocument || null,
+            community:
+              engagementByMedia.get(
+                `${media.mediaType}:${media.mediaId ?? ''}`
+              ) ?? null,
+          };
+        } catch (error) {
+          return {
+            ...(media as IClubMedia & { toObject(): IClubMedia }).toObject(),
+            mediaDocument: null,
+          };
+        }
+      })
+    );
+
+    return res.status(200).json({ media: enhancedMedia });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Create a new media voting (Step 1: Basic Info)
+export async function createMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const {
+      title,
+      description,
+      mediaType,
+      customMediaType,
+      votingStartDate,
+      votingEndDate,
+      consumptionStartDate,
+      consumptionEndDate,
+      candidateSubmissionType,
+      suggestionStartDate,
+      suggestionEndDate,
+    } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can create votings' });
+    }
+
+    const votingStart = new Date(votingStartDate);
+    const votingEnd = new Date(votingEndDate);
+    const consumptionStart = new Date(consumptionStartDate);
+    const consumptionEnd = new Date(consumptionEndDate);
+
+    const isTestingMode = req.body.testingMode === true;
+    const now = new Date();
+
+    if (votingStart >= votingEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Voting end date must be after start date' });
+    }
+
+    if (consumptionStart >= consumptionEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption end date must be after start date' });
+    }
+
+    if (votingEnd >= consumptionStart) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption must start after voting ends' });
+    }
+
+    if (!isTestingMode && votingStart <= now) {
+      return res
+        .status(400)
+        .json({ message: 'Voting start date must be in the future' });
+    }
+
+    let suggestionStart: Date | undefined;
+    let suggestionEnd: Date | undefined;
+
+    if (candidateSubmissionType === 'member_suggestions') {
+      if (!suggestionStartDate || !suggestionEndDate) {
+        return res.status(400).json({
+          message: 'Suggestion dates are required for member suggestions',
+        });
+      }
+
+      suggestionStart = new Date(suggestionStartDate);
+      suggestionEnd = new Date(suggestionEndDate);
+
+      if (suggestionStart >= suggestionEnd) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion end date must be after start date' });
+      }
+
+      if (suggestionEnd >= votingStart) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestions must end before voting starts' });
+      }
+
+      if (!isTestingMode && suggestionStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion start date must be in the future' });
+      }
+    }
+
+    let initialStatus:
+      | 'setup'
+      | 'suggestions_open'
+      | 'suggestions_closed'
+      | 'voting_open'
+      | 'voting_closed'
+      | 'completed' = 'setup';
+
+    if (candidateSubmissionType === 'member_suggestions' && suggestionStart) {
+      if (isTestingMode) {
+        if (suggestionStart <= now && suggestionEnd && suggestionEnd > now) {
+          initialStatus = 'suggestions_open';
+        } else if (
+          suggestionEnd &&
+          suggestionEnd <= now &&
+          votingStart <= now &&
+          votingEnd > now
+        ) {
+          initialStatus = 'voting_open';
+        } else if (
+          votingEnd <= now &&
+          consumptionStart <= now &&
+          consumptionEnd > now
+        ) {
+          initialStatus = 'completed';
+        } else if (votingEnd <= now) {
+          initialStatus = 'voting_closed';
+        } else if (suggestionEnd && suggestionEnd <= now) {
+          initialStatus = 'suggestions_closed';
+        } else {
+          initialStatus = 'suggestions_open';
+        }
+      } else {
+        initialStatus = suggestionStart <= now ? 'suggestions_open' : 'setup';
+      }
+    }
+
+    const newVoting = await ClubMediaVoting.create({
+      club: club._id,
+      title,
+      description,
+      mediaType,
+      customMediaType: mediaType === 'custom' ? customMediaType : undefined,
+      candidateSubmissionType,
+      suggestionStartDate: suggestionStart,
+      suggestionEndDate: suggestionEnd,
+      votingStartDate: votingStart,
+      votingEndDate: votingEnd,
+      consumptionStartDate: consumptionStart,
+      consumptionEndDate: consumptionEnd,
+      status: initialStatus,
+      isActive: true,
+      createdBy: userId,
+      candidates: [],
+    });
+
+    return res.status(201).json({
+      message: 'Media voting created successfully',
+      voting: newVoting,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Edit media voting (only in setup status)
+export async function editMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const {
+      title,
+      description,
+      mediaType,
+      customMediaType,
+      votingStartDate,
+      votingEndDate,
+      consumptionStartDate,
+      consumptionEndDate,
+      candidateSubmissionType,
+      suggestionStartDate,
+      suggestionEndDate,
+    } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can edit votings' });
+    }
+
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    if (
+      voting.status !== 'setup' &&
+      voting.status !== 'suggestions_closed' &&
+      voting.status !== 'voting_closed' &&
+      voting.status !== 'completed'
+    ) {
+      return res.status(400).json({
+        message:
+          'Can only edit votings that are in setup, suggestions_closed, voting_closed, or completed status',
+      });
+    }
+
+    const submissionType =
+      candidateSubmissionType ?? voting.candidateSubmissionType;
+    const votingStart = new Date(votingStartDate ?? voting.votingStartDate);
+    const votingEnd = new Date(votingEndDate ?? voting.votingEndDate);
+    const consumptionStart = new Date(
+      consumptionStartDate ?? voting.consumptionStartDate
+    );
+    const consumptionEnd = new Date(
+      consumptionEndDate ?? voting.consumptionEndDate
+    );
+
+    const invalidDateProvided = [
+      votingStart,
+      votingEnd,
+      consumptionStart,
+      consumptionEnd,
+    ].some((date) => Number.isNaN(date.getTime()));
+
+    if (invalidDateProvided) {
+      return res.status(400).json({ message: 'Invalid date values provided' });
+    }
+
+    const isTestingMode = req.body.testingMode === true;
+    const now = new Date();
+
+    const isLateStageEdit =
+      voting.status === 'voting_closed' || voting.status === 'completed';
+
+    if (consumptionStart >= consumptionEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption end date must be after start date' });
+    }
+
+    if (!isLateStageEdit) {
+      if (votingStart >= votingEnd) {
+        return res
+          .status(400)
+          .json({ message: 'Voting end date must be after start date' });
+      }
+
+      if (votingEnd >= consumptionStart) {
+        return res
+          .status(400)
+          .json({ message: 'Consumption must start after voting ends' });
+      }
+
+      if (!isTestingMode && votingStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Voting start date must be in the future' });
+      }
+    } else if (!isTestingMode) {
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+      if (consumptionEnd < oneYearAgo) {
+        return res.status(400).json({
+          message:
+            'Consumption end date cannot be more than 1 year in the past',
+        });
+      }
+    }
+
+    let suggestionStart: Date | undefined;
+    let suggestionEnd: Date | undefined;
+
+    if (!isLateStageEdit && submissionType === 'member_suggestions') {
+      suggestionStart = suggestionStartDate
+        ? new Date(suggestionStartDate)
+        : (voting.suggestionStartDate ?? undefined);
+      suggestionEnd = suggestionEndDate
+        ? new Date(suggestionEndDate)
+        : (voting.suggestionEndDate ?? undefined);
+
+      if (!suggestionStart || !suggestionEnd) {
+        return res.status(400).json({
+          message: 'Suggestion dates are required for member suggestions',
+        });
+      }
+
+      if (suggestionStart >= suggestionEnd) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion end date must be after start date' });
+      }
+
+      if (suggestionEnd >= votingStart) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestions must end before voting starts' });
+      }
+
+      if (!isTestingMode && suggestionStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion start date must be in the future' });
+      }
+    } else if (isLateStageEdit) {
+      suggestionStart = voting.suggestionStartDate ?? undefined;
+      suggestionEnd = voting.suggestionEndDate ?? undefined;
+    }
+
+    if (!isLateStageEdit) {
+      if (typeof title === 'string') {
+        voting.title = title;
+      }
+
+      if (typeof description === 'string') {
+        voting.description = description;
+      }
+
+      if (mediaType) {
+        voting.mediaType = mediaType;
+        voting.customMediaType =
+          mediaType === 'custom' ? customMediaType : undefined;
+      }
+
+      if (submissionType) {
+        voting.candidateSubmissionType = submissionType;
+      }
+
+      voting.suggestionStartDate = suggestionStart;
+      voting.suggestionEndDate = suggestionEnd;
+      voting.votingStartDate = votingStart;
+      voting.votingEndDate = votingEnd;
+    }
+
+    voting.consumptionStartDate = consumptionStart;
+    voting.consumptionEndDate = consumptionEnd;
+
+    await voting.save();
+
+    return res.status(200).json({
+      message: 'Media voting updated successfully',
+      voting,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Auto-update voting statuses based on current date
+
+// Delete media voting (only in setup status)
+export async function deleteMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can delete votings' });
+    }
+
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+      return res.status(400).json({
+        message:
+          'Can only delete votings that are in setup or suggestions_closed status',
+      });
+    }
+
+    await deleteVotingById(club._id, votingId);
+
+    return res.status(200).json({
+      message: 'Media voting deleted successfully',
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Add candidate to media voting (Step 2: Add candidates or during suggestion period)
+export async function addVotingCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const { mediaId, title, description, image, isAdult } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can add candidates' });
+    }
+
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const now = new Date();
+    const canAddCandidate =
+      (voting.candidateSubmissionType === 'manual' &&
+        hasClubPermission(userMember, 'manage_media') &&
+        voting.status === 'setup') ||
+      (voting.candidateSubmissionType === 'member_suggestions' &&
+        voting.status === 'suggestions_open' &&
+        voting.suggestionEndDate &&
+        now <= voting.suggestionEndDate);
+
+    if (!canAddCandidate) {
+      return res
+        .status(400)
+        .json({ message: 'Cannot add candidates at this time' });
+    }
+
+    // Check if media already exists in candidates
+    const existingCandidate = voting.candidates.find(
+      (c) => c.mediaId === mediaId
+    );
+    if (existingCandidate) {
+      return res
+        .status(400)
+        .json({ message: 'This media is already a candidate' });
+    }
+
+    const newCandidate = {
+      mediaId,
+      title,
+      description,
+      image,
+      addedBy: userId,
+      votes: [],
+      isAdult: isAdult || false,
+    };
+
+    voting.candidates.push(newCandidate);
+    await voting.save();
+
+    return res.status(201).json({
+      message: 'Candidate added successfully',
+      candidate: newCandidate,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Finalize voting setup (Step 3: Confirm and activate)
+export async function finalizeVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can finalize votings' });
+    }
+
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+      return res
+        .status(400)
+        .json({ message: 'Voting cannot be finalized in current status' });
+    }
+
+    if (voting.candidates.length === 0) {
+      return res
+        .status(400)
+        .json({ message: 'At least one candidate is required' });
+    }
+
+    const now = new Date();
+    let newStatus:
+      | 'setup'
+      | 'suggestions_open'
+      | 'suggestions_closed'
+      | 'voting_open'
+      | 'voting_closed'
+      | 'completed' = 'setup';
+
+    if (voting.candidateSubmissionType === 'member_suggestions') {
+      if (voting.suggestionEndDate && now >= voting.suggestionEndDate) {
+        newStatus = 'suggestions_closed';
+      } else {
+        newStatus = 'suggestions_open';
+      }
+    }
+
+    if (now >= voting.votingStartDate) {
+      newStatus = 'voting_open';
+    }
+
+    voting.status = newStatus;
+    await voting.save();
+
+    return res.status(200).json({
+      message: 'Voting finalized successfully',
+      status: newStatus,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Vote for a candidate in media voting
+export async function voteForCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId, candidateIndex } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    await updateVotingStatusesForClub(club);
+
+    const updatedClub = await Club.findById(clubId);
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = updatedClub.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can vote' });
+    }
+
+    const voting = await findVotingForClub(updatedClub._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    if (voting.status !== 'voting_open') {
+      return res.status(400).json({
+        message: 'Voting is not currently open',
+        currentStatus: voting.status,
+        votingStart: voting.votingStartDate,
+        votingEnd: voting.votingEndDate,
+      });
+    }
+
+    if (new Date() > voting.votingEndDate) {
+      return res.status(400).json({ message: 'Voting period has ended' });
+    }
+
+    const candidateIdx = parseInt(candidateIndex, 10);
+    if (candidateIdx < 0 || candidateIdx >= voting.candidates.length) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+
+    // Check if user has already voted (prevent vote changes)
+    const hasAlreadyVoted = voting.candidates.some((candidate) =>
+      candidate.votes.some((vote) => vote.toString() === userId.toString())
+    );
+
+    if (hasAlreadyVoted) {
+      return res.status(400).json({
+        message:
+          'You have already voted in this voting. Votes cannot be changed.',
+      });
+    }
+
+    // Add vote to selected candidate
+    voting.candidates[candidateIdx].votes.push(userId);
+    await voting.save();
+
+    return res.status(200).json({ message: 'Vote recorded successfully' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get media votings for a club
+export async function getMediaVotings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { active = 'true' } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    await updateVotingStatusesForClub(club);
+
+    const filter: Record<string, unknown> = { club: club._id };
+    if (active === 'true' || active === 'false') {
+      filter.isActive = active === 'true';
+    }
+
+    const votings = await ClubMediaVoting.find(filter)
+      .populate('createdBy', 'username avatar')
+      .populate('candidates.addedBy', 'username avatar')
+      .sort({ votingStartDate: 1 });
+
+    return res.status(200).json({ votings });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Complete voting and select winner
+export async function completeVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!hasClubPermission(userMember, 'manage_media')) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can complete votings' });
+    }
+
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    if (voting.status === 'completed') {
+      return res.status(400).json({ message: 'Voting is already completed' });
+    }
+
+    const { winner } = await completeVotingDocument(club, voting);
+
+    return res.status(200).json({
+      message: 'Voting completed successfully',
+      winner,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get recent activity for club (logs and reviews from last 7 days)
+export async function getClubRecentActivity(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { limit = 10, days = 7, page = 1 } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
+
+    // Calculate date range
+    const daysNum = parseInt(days as string, 10);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysNum);
+
+    const limitNum = parseInt(limit as string, 10);
+    const pageNum = parseInt(page as string, 10);
+    const skipNum = (pageNum - 1) * limitNum;
+    // type for recentLogs
+    interface IRecentLog {
+      _id: Types.ObjectId;
+      user: {
+        _id: Types.ObjectId;
+        username: string;
+        avatar?: string;
+      };
+      description: string;
+      episodes?: number;
+      pages?: number;
+      time?: number;
+      xp?: number;
+      createdAt: Date;
+      media?: {
+        _id: Types.ObjectId;
+        contentId: string;
+        titleEnglish?: string;
+        titleNative?: string;
+        titleRomaji?: string;
+      };
+    }
+    // Get recent logs (do NOT filter by club media)
+    const recentLogs: IRecentLog[] = await Log.aggregate([
+      { $match: { ...visibleLogFilter, createdAt: { $gte: startDate } } },
+      { $sort: { createdAt: -1 } },
+      { $skip: skipNum },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'mediaId',
+          foreignField: 'contentId',
+          as: 'mediaInfo',
+        },
+      },
+      {
+        $unwind: { path: '$mediaInfo', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      {
+        $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          _id: 1,
+          user: {
+            _id: '$userInfo._id',
+            username: '$userInfo.username',
+            avatar: '$userInfo.avatar',
+          },
+          description: 1,
+          episodes: 1,
+          pages: 1,
+          time: 1,
+          xp: 1,
+          createdAt: 1,
+          media: {
+            _id: '$mediaInfo._id',
+            contentId: '$mediaInfo.contentId',
+            titleEnglish: '$mediaInfo.title.contentTitleEnglish',
+            titleNative: '$mediaInfo.title.contentTitleNative',
+            titleRomaji: '$mediaInfo.title.contentTitleRomaji',
+          },
+        },
+      },
+    ]);
+    const activities = recentLogs
+      .map((log) => {
+        // Try to get populated media title
+        const mediaTitle =
+          log.media?.titleEnglish ||
+          log.media?.titleRomaji ||
+          log.media?.titleNative ||
+          null;
+
+        let foundMedia = null;
+        if (log.media?.contentId) {
+          foundMedia = club.currentMedia.find(
+            (m) => m.mediaId === log.media?.contentId
+          );
+        }
+        return {
+          type: 'log' as const,
+          _id: log._id,
+          user: log.user,
+          media: {
+            _id: log.media?._id || null,
+            title: mediaTitle || 'Unknown Media',
+          },
+          clubMedia: !!foundMedia,
+          content: log.description || '',
+          metadata: {
+            episodes: log.episodes,
+            pages: log.pages,
+            time: log.time,
+            xp: log.xp,
+          },
+          createdAt: log.createdAt,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+    // Get total count for pagination
+    const totalLogs = await Log.countDocuments({
+      ...visibleLogFilter,
+      createdAt: { $gte: startDate },
+    });
+    const total = totalLogs;
+
+    return res.status(200).json({
+      activities,
+      total,
+      page: pageNum,
+      pageSize: limitNum,
+      hasMore: pageNum * limitNum < total,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club member logs for specific media (after consumption period started)
+export async function getClubMediaLogs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
+      return res.status(400).json({ message: 'Invalid club or media ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Find the specific media in the club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get logs from club members for this media after the start date
+    const logs = await Log.find({
+      ...visibleLogFilter,
+      mediaId: media.mediaId,
+      type: media.mediaType,
+      createdAt: { $gte: new Date(media.startDate) },
+    })
+      .populate('user', 'username avatar')
+      .populate(
+        'mediaId',
+        'title contentTitleEnglish contentTitleRomaji contentTitleNative'
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    const total = await Log.countDocuments({
+      ...visibleLogFilter,
+      mediaId: media.mediaId,
+      type: media.mediaType,
+      createdAt: { $gte: new Date(media.startDate) },
+    });
+
+    return res.status(200).json({
+      logs,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club member rankings for specific media (after consumption period started)
+export async function getClubMediaRankings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { period = 'consumption' } = req.query; // 'consumption' or 'alltime'
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
+      return res.status(400).json({ message: 'Invalid club or media ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Find the specific media in the club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Get club member user IDs (extract just the _id from populated user objects)
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => {
+        // Handle both populated and non-populated user references
+        if (typeof member.user === 'object' && member.user._id) {
+          return member.user._id;
+        }
+        return member.user;
+      });
+
+    // Base match criteria
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
+    const baseMatch: any = {
+      ...visibleLogFilter,
+      mediaId: media.mediaId,
+      type: media.mediaType,
+    };
+
+    // Add time filter if consumption period
+    if (period === 'consumption') {
+      baseMatch.unknownDate = { $ne: true };
+      baseMatch.createdAt = { $gte: new Date(media.startDate) };
+    }
+
+    const memberStats = await Log.aggregate([
+      {
+        $match: baseMatch,
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalLogs: { $sum: 1 },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          firstLog: { $min: '$createdAt' },
+          lastLog: { $max: '$createdAt' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
+      {
+        $project: {
+          user: {
+            _id: '$user._id',
+            username: '$user.username',
+            avatar: '$user.avatar',
+          },
+          totalLogs: 1,
+          totalXp: 1,
+          totalTime: 1,
+          totalEpisodes: 1,
+          totalPages: 1,
+          firstLog: 1,
+          lastLog: 1,
+          score: '$totalXp', // Use XP as the primary ranking metric
+        },
+      },
+      {
+        $sort: { score: -1, totalLogs: -1 },
+      },
+    ]);
+
+    // Add ranking positions
+    const rankedMembers = memberStats.map((member: any, index: number) => ({
+      ...member,
+      rank: index + 1,
+    }));
+
+    // Include members who haven't logged yet
+    const membersWithLogs = memberStats.map((stat: any) =>
+      stat.user._id.toString()
+    );
+    const membersWithoutLogs = club.members
+      .filter(
+        (member: any) =>
+          member.status === 'active' &&
+          !membersWithLogs.includes(member.user._id.toString())
+      )
+      .map((member: any) => ({
+        user: {
+          _id: member.user._id,
+          username: member.user.username,
+          avatar: member.user.avatar,
+        },
+        totalLogs: 0,
+        totalXp: 0,
+        totalTime: 0,
+        totalEpisodes: 0,
+        totalPages: 0,
+        firstLog: null,
+        lastLog: null,
+        score: 0,
+        rank: rankedMembers.length + 1,
+      }));
+
+    const allRankings = [...rankedMembers, ...membersWithoutLogs];
+
+    return res.status(200).json({
+      rankings: allRankings,
+      mediaInfo: {
+        title: media.title,
+        mediaType: media.mediaType,
+        startDate: media.startDate,
+        endDate: media.endDate,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club media statistics (aggregated stats for all club members)
+export async function getClubMediaStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { period = 'consumption' } = req.query; // 'consumption' or 'alltime'
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
+      return res.status(400).json({ message: 'Invalid club or media ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Find the specific media in the club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+
+    // Base match criteria
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
+    const baseMatch: any = {
+      ...visibleLogFilter,
+      mediaId: media.mediaId,
+      type: media.mediaType,
+    };
+
+    // Add time filter if consumption period
+    if (period === 'consumption') {
+      baseMatch.createdAt = { $gte: new Date(media.startDate) };
+    }
+
+    const totalStats = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: null,
+          totalLogs: { $sum: 1 },
+          totalMembers: { $addToSet: '$user' },
+          totalXp: { $sum: '$xp' },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          firstLogDate: { $min: '$createdAt' },
+          lastLogDate: { $max: '$createdAt' },
+        },
+      },
+      {
+        $project: {
+          totalLogs: 1,
+          totalMembers: { $size: '$totalMembers' },
+          totalXp: 1,
+          totalTime: 1,
+          totalEpisodes: 1,
+          totalChars: 1,
+          totalPages: 1,
+          firstLogDate: 1,
+          lastLogDate: 1,
+        },
+      },
+    ]);
+
+    // Get recent statistics (this week, this month)
+    const now = new Date();
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(now.getDate() - now.getDay());
+    thisWeekStart.setHours(0, 0, 0, 0);
+
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const recentMatch = { ...baseMatch };
+
+    const recentStats = await Log.aggregate([
+      { $match: recentMatch },
+      {
+        $facet: {
+          thisWeek: [
+            { $match: { createdAt: { $gte: thisWeekStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                activeMembers: { $addToSet: '$user' },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+            {
+              $project: {
+                count: 1,
+                activeMembers: { $size: '$activeMembers' },
+                episodes: 1,
+                chars: 1,
+                pages: 1,
+                time: 1,
+                xp: 1,
+              },
+            },
+          ],
+          thisMonth: [
+            { $match: { createdAt: { $gte: thisMonthStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                activeMembers: { $addToSet: '$user' },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+            {
+              $project: {
+                count: 1,
+                activeMembers: { $size: '$activeMembers' },
+                episodes: 1,
+                chars: 1,
+                pages: 1,
+                time: 1,
+                xp: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const total = totalStats[0] || {
+      totalLogs: 0,
+      totalMembers: 0,
+      totalXp: 0,
+      totalTime: 0,
+      totalEpisodes: 0,
+      totalChars: 0,
+      totalPages: 0,
+      firstLogDate: null,
+      lastLogDate: null,
+    };
+
+    const recent = recentStats[0] || { thisWeek: [], thisMonth: [] };
+    const thisWeek = recent.thisWeek[0] || {
+      count: 0,
+      activeMembers: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const thisMonth = recent.thisMonth[0] || {
+      count: 0,
+      activeMembers: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+
+    return res.status(200).json({
+      mediaInfo: {
+        mediaId: media.mediaId,
+        mediaType: media.mediaType,
+        title: media.title,
+        startDate: media.startDate,
+        endDate: media.endDate,
+        isActive: media.isActive,
+      },
+      period: period as string,
+      total: {
+        logs: total.totalLogs,
+        members: total.totalMembers,
+        episodes: total.totalEpisodes,
+        characters: total.totalChars,
+        pages: total.totalPages,
+        minutes: total.totalTime,
+        hours: Math.round((total.totalTime / 60) * 10) / 10,
+        xp: total.totalXp,
+        firstLogDate: total.firstLogDate,
+        lastLogDate: total.lastLogDate,
+      },
+      thisWeek: {
+        logs: thisWeek.count,
+        activeMembers: thisWeek.activeMembers,
+        episodes: thisWeek.episodes,
+        characters: thisWeek.chars,
+        pages: thisWeek.pages,
+        minutes: thisWeek.time,
+        hours: Math.round((thisWeek.time / 60) * 10) / 10,
+        xp: thisWeek.xp,
+      },
+      thisMonth: {
+        logs: thisMonth.count,
+        activeMembers: thisMonth.activeMembers,
+        episodes: thisMonth.episodes,
+        characters: thisMonth.chars,
+        pages: thisMonth.pages,
+        minutes: thisMonth.time,
+        hours: Math.round((thisMonth.time / 60) * 10) / 10,
+        xp: thisMonth.xp,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club member rankings (overall, not media-specific)
+export async function getClubMemberRankings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const {
+      sortBy = 'totalXp',
+      period = 'all-time',
+      limit = 50,
+      page = 1,
+    } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar stats'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Get club member user IDs
+    const activeMembers = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => ({
+        userId: typeof member.user === 'object' ? member.user._id : member.user,
+        joinDate: member.joinedAt,
+        userObj: member.user,
+      }));
+
+    const memberIds = activeMembers.map((m) => m.userId);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
+
+    // Create date filter based on period
+    const dateFilter: { createdAt?: { $gte?: Date; $lt?: Date } } = {};
+    const now = new Date();
+
+    if (period === 'week') {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      dateFilter.createdAt = { $gte: startOfWeek };
+    } else if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      dateFilter.createdAt = { $gte: startOfMonth };
+    }
+
+    const shouldExcludeUnknownDate = period !== 'all-time';
+
+    // Aggregate member stats from logs
+    const memberStats = await Log.aggregate([
+      {
+        $match: {
+          ...visibleLogFilter,
+          ...(shouldExcludeUnknownDate ? { unknownDate: { $ne: true } } : {}),
+          ...dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalLogs: { $sum: 1 },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalHours: {
+            $round: [{ $divide: ['$totalTime', 60] }, 1],
+          },
+        },
+      },
+    ]);
+
+    // Create a map for quick lookup
+    const statsMap = new Map();
+    memberStats.forEach((stat) => {
+      statsMap.set(stat._id.toString(), stat);
+    });
+
+    // Build rankings with member info
+    const rankings = activeMembers
+      .map((member) => {
+        const stats = statsMap.get(member.userId.toString()) || {
+          totalLogs: 0,
+          totalXp: 0,
+          totalTime: 0,
+          totalHours: 0,
+        };
+
+        const userObj = member.userObj as unknown as Partial<IUser>;
+        return {
+          user: {
+            _id: member.userId,
+            username: userObj?.username || 'Unknown',
+            avatar: userObj?.avatar,
+            stats: {
+              userLevel: Math.max(1, calculateLevel(stats.totalXp || 0)),
+              userXp: stats.totalXp || 0,
+            },
+          },
+          totalLogs: stats.totalLogs,
+          totalXp: stats.totalXp,
+          totalTime: stats.totalTime, // in minutes
+          totalHours: stats.totalHours,
+          rank: 0, // Will be assigned after sorting
+          joinDate: member.joinDate.toISOString(),
+        };
+      })
+      .filter((member) => {
+        if (period !== 'all-time') {
+          return member.totalLogs > 0;
+        }
+        return true;
+      });
+
+    // Sort based on selected criteria
+    rankings.sort((a, b) => {
+      let aValue: number;
+      let bValue: number;
+
+      switch (sortBy) {
+        case 'totalLogs':
+          aValue = a.totalLogs;
+          bValue = b.totalLogs;
+          break;
+        case 'totalTime':
+          aValue = a.totalHours;
+          bValue = b.totalHours;
+          break;
+        case 'level':
+          aValue = a.user.stats.userLevel;
+          bValue = b.user.stats.userLevel;
+          break;
+        default: // totalXp
+          aValue = a.totalXp;
+          bValue = b.totalXp;
+          break;
+      }
+
+      return bValue - aValue; // descending order
+    });
+
+    // Assign ranks
+    rankings.forEach((member, index) => {
+      member.rank = index + 1;
+    });
+
+    // Apply pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    const paginatedRankings = rankings.slice(skip, skip + Number(limit));
+
+    return res.status(200).json({
+      rankings: paginatedRankings,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: rankings.length,
+        totalPages: Math.ceil(rankings.length / Number(limit)),
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

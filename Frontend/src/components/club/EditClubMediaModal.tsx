@@ -1,0 +1,290 @@
+import { useState, useEffect } from 'react';
+import Field from '../ui/Field';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
+import { X, Calendar, Save } from 'lucide-react';
+import { DayPicker } from 'react-day-picker';
+import { editClubMediaFn } from '../../api/clubApi';
+import { IClub, IClubMedia } from '../../types.d';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
+
+interface EditClubMediaModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  club: IClub;
+  media: IClubMedia | null;
+}
+
+interface EditMediaData {
+  title: string;
+  description: string;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+}
+
+export default function EditClubMediaModal({
+  isOpen,
+  onClose,
+  club,
+  media,
+}: EditClubMediaModalProps) {
+  const { t } = useTranslation('clubs');
+  const [mediaData, setMediaData] = useState<EditMediaData>({
+    title: '',
+    description: '',
+    startDate: undefined,
+    endDate: undefined,
+  });
+
+  const queryClient = useQueryClient();
+
+  // Initialize form data when media changes
+  useEffect(() => {
+    if (media) {
+      setMediaData({
+        title: media.title,
+        description: media.description || '',
+        startDate: new Date(media.startDate),
+        endDate: new Date(media.endDate),
+      });
+    }
+  }, [media]);
+
+  const editMediaMutation = useMutation({
+    mutationFn: (data: EditMediaData) => {
+      if (!media?._id) throw new Error('Media ID is required');
+
+      return editClubMediaFn(club._id, media._id, {
+        title: data.title,
+        description: data.description,
+        startDate: data.startDate!.toISOString(),
+        endDate: data.endDate!.toISOString(),
+      });
+    },
+    onSuccess: () => {
+      toast.success(t('toast.mediaUpdated'));
+      queryClient.invalidateQueries({ queryKey: ['clubMedia', club._id] });
+      onClose();
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update media';
+      toast.error(message);
+    },
+  });
+
+  const formatDateForDisplay = (date: Date | undefined) => {
+    if (!date) return 'Select date';
+    return date.toLocaleDateString(getLocale(), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const validateForm = () => {
+    const { title, startDate, endDate } = mediaData;
+
+    if (!title.trim()) {
+      toast.error(t('toast.titleRequired'));
+      return false;
+    }
+
+    if (!startDate || !endDate) {
+      toast.error(t('toast.datesRequired'));
+      return false;
+    }
+
+    if (startDate >= endDate) {
+      toast.error(t('toast.endAfterStart'));
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = () => {
+    if (!validateForm()) return;
+    editMediaMutation.mutate(mediaData);
+  };
+
+  if (!isOpen || !media) return null;
+
+  return (
+    <div className="modal modal-bottom sm:modal-middle modal-open">
+      <div className="modal-box max-w-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-xl">{t('editMedia.title')}</h3>
+          <button
+            className="btn btn-ghost btn-sm btn-circle"
+            onClick={onClose}
+            disabled={editMediaMutation.isPending}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label={t('common.titleRequired')} className="md:col-span-2">
+              <input
+                type="text"
+                placeholder={t('editMedia.titlePlaceholder')}
+                value={mediaData.title}
+                onChange={(e) =>
+                  setMediaData((prev) => ({
+                    ...prev,
+                    title: e.target.value,
+                  }))
+                }
+                className="input w-full"
+                required
+              />
+            </Field>
+
+            <Field label={t('common.description')} className="md:col-span-2">
+              <textarea
+                placeholder={t('editMedia.descriptionPlaceholder')}
+                value={mediaData.description}
+                onChange={(e) =>
+                  setMediaData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="textarea w-full"
+                rows={3}
+              />
+            </Field>
+
+            {/* Consumption Period */}
+            <Field label={t('editMedia.start')}>
+              <div className="dropdown dropdown-top dropdown-end w-full">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="input w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span
+                    className={
+                      mediaData.startDate
+                        ? 'text-base-content'
+                        : 'text-base-content/50'
+                    }
+                  >
+                    {formatDateForDisplay(mediaData.startDate)}
+                  </span>
+                  <Calendar className="text-lg" />
+                </div>
+                <div
+                  tabIndex={0}
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                >
+                  <DayPicker
+                    className="react-day-picker mx-auto"
+                    mode="single"
+                    selected={mediaData.startDate}
+                    onSelect={(date) => {
+                      setMediaData((prev) => ({
+                        ...prev,
+                        startDate: date,
+                      }));
+                      // Close dropdown by removing focus
+                      (document.activeElement as HTMLElement)?.blur?.();
+                      // Reset end date if it's before the new start date
+                      if (
+                        mediaData.endDate &&
+                        date &&
+                        mediaData.endDate < date
+                      ) {
+                        setMediaData((prev) => ({
+                          ...prev,
+                          endDate: undefined,
+                        }));
+                      }
+                    }}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0); // Set to start of today
+                      return date < today;
+                    }}
+                  />
+                </div>
+              </div>
+            </Field>
+
+            <Field label={t('editMedia.end')}>
+              <div className="dropdown dropdown-top dropdown-end w-full">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="input w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span
+                    className={
+                      mediaData.endDate
+                        ? 'text-base-content'
+                        : 'text-base-content/50'
+                    }
+                  >
+                    {formatDateForDisplay(mediaData.endDate)}
+                  </span>
+                  <Calendar className="text-lg" />
+                </div>
+                <div
+                  tabIndex={0}
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
+                >
+                  <DayPicker
+                    className="react-day-picker mx-auto"
+                    mode="single"
+                    selected={mediaData.endDate}
+                    onSelect={(date) => {
+                      setMediaData((prev) => ({
+                        ...prev,
+                        endDate: date,
+                      }));
+                      // Close dropdown by removing focus
+                      (document.activeElement as HTMLElement)?.blur?.();
+                    }}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0); // Set to start of today
+
+                      if (!mediaData.startDate) {
+                        return date < today;
+                      }
+
+                      // End date must be after start date AND not before today
+                      return date < mediaData.startDate || date < today;
+                    }}
+                  />
+                </div>
+              </div>
+            </Field>
+          </div>
+
+          <div className="modal-action">
+            <button
+              onClick={onClose}
+              className="btn btn-ghost"
+              disabled={editMediaMutation.isPending}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={handleSave}
+              className="btn btn-primary"
+              disabled={editMediaMutation.isPending}
+            >
+              <Save className="w-4 h-4" />
+              {editMediaMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="modal-backdrop" onClick={onClose}></div>
+    </div>
+  );
+}

@@ -1,0 +1,629 @@
+{
+  "card": {
+    "points": "puntos",
+    "ofUsers": "de usuarios",
+    "unlocked": "desbloqueado",
+    "rarityPercent": "{{percent}} % de usuarios",
+    "pts_one": "{{count}} pt",
+    "pts_many": "{{count}} pts",
+    "pts_other": "{{count}} pts",
+    "hiddenName": "Logro oculto",
+    "hiddenHint": "Desbloquéalo para revelarlo"
+  },
+  "category": {
+    "all": "Todos",
+    "milestone": "Hitos",
+    "streaks": "Rachas",
+    "immersion": "Inmersión",
+    "social": "Social",
+    "secret": "Secretos"
+  },
+  "feed": {
+    "earned": "ha conseguido",
+    "unlocked": "Logro desbloqueado:"
+  },
+  "items": {
+    "achievements_100": {
+      "description": "Desbloquea otros 100 logros.",
+      "name": "Cazador de logros"
+    },
+    "achievements_50": {
+      "description": "Desbloquea otros 50 logros.",
+      "name": "Completista"
+    },
+    "bookworm_hours": {
+      "description": "Loguea 50 horas de lectura (manga y novelas juntos).",
+      "name": "Ratón de biblioteca"
+    },
+    "century_club": {
+      "name": "Club del centenar",
+      "description": "Loguea 100 títulos distintos."
+    },
+    "cinephile": {
+      "description": "Loguea 100 horas de anime.",
+      "name": "Cinéfilo"
+    },
+    "clockwork": {
+      "description": "Loguea a la misma hora todos los días durante 2 semanas.",
+      "name": "Como un reloj"
+    },
+    "club_founder": {
+      "description": "Crea un club de inmersión.",
+      "name": "Fundador de club"
+    },
+    "club_mvp": {
+      "description": "Termina como quien más aporta en un reto de club.",
+      "name": "MVP del club"
+    },
+    "culture_day": {
+      "description": "Loguea inmersión el 3 de noviembre (文化の日).",
+      "name": "Día de la Cultura"
+    },
+    "currently_airing": {
+      "description": "Loguea un anime durante su temporada de emisión.",
+      "name": "En emisión"
+    },
+    "early_bird": {
+      "description": "Loguea inmersión antes de las 7 de la mañana 10 veces.",
+      "name": "Madrugador"
+    },
+    "first_log": {
+      "description": "Loguea tu primera sesión de inmersión.",
+      "name": "Primer paso"
+    },
+    "full_immersion_month": {
+      "description": "Loguea todos los días de un mes entero.",
+      "name": "Inmersión total"
+    },
+    "gamer": {
+      "description": "Loguea 50 horas de novelas visuales.",
+      "name": "Jugador"
+    },
+    "hours_100": {
+      "description": "Loguea 100 horas de inmersión en total.",
+      "name": "Constante"
+    },
+    "hours_1000": {
+      "description": "Loguea 1.000 horas de inmersión en total.",
+      "name": "Esto ya es mi vida"
+    },
+    "hours_2000": {
+      "description": "Loguea 2.000 horas de inmersión en total.",
+      "name": "Máquina de inmersión"
+    },
+    "hours_500": {
+      "description": "Loguea 500 horas de inmersión en total.",
+      "name": "Otaku"
+    },
+    "level_10": {
+      "description": "Llega al nivel 10.",
+      "name": "Subiendo de nivel"
+    },
+    "level_100": {
+      "description": "Llega al nivel 100. Un logro extraordinario.",
+      "name": "Élite"
+    },
+    "level_25": {
+      "description": "Llega al nivel 25.",
+      "name": "Intermedio"
+    },
+    "level_5": {
+      "description": "Llega al nivel 5.",
+      "name": "Primeros pasos"
+    },
+    "level_50": {
+      "description": "Llega al nivel 50.",
+      "name": "Avanzado"
+    },
+    "logs_10": {
+      "description": "Crea 10 logs de inmersión.",
+      "name": "Arrancando"
+    },
+    "logs_100": {
+      "description": "Crea 100 logs de inmersión.",
+      "name": "Habitual"
+    },
+    "logs_1000": {
+      "description": "Crea 1.000 logs de inmersión.",
+      "name": "Veterano"
+    },
+    "logs_50": {
+      "description": "Crea 50 logs de inmersión.",
+      "name": "Inmersión habitual"
+    },
+    "logs_500": {
+      "description": "Crea 500 logs de inmersión.",
+      "name": "Logueador prolífico"
+    },
+    "lunch_break": {
+      "description": "Loguea inmersión entre las 12 y la 1 del mediodía 10 veces.",
+      "name": "Pausa para comer"
+    },
+    "marathon_day": {
+      "description": "Loguea 10 horas o más de inmersión en un solo día.",
+      "name": "Maratón"
+    },
+    "monday_motivation": {
+      "description": "Loguea 10 lunes seguidos.",
+      "name": "Motivación de lunes"
+    },
+    "new_year": {
+      "description": "Loguea inmersión el 1 de enero.",
+      "name": "Año nuevo, yo nuevo"
+    },
+    "night_owl": {
+      "description": "Loguea inmersión después de medianoche 10 veces.",
+      "name": "Ave nocturna"
+    },
+    "no_days_off": {
+      "description": "Loguea en Navidad, en Año Nuevo y en el aniversario de tu cuenta.",
+      "name": "Sin días libres"
+    },
+    "old_school": {
+      "description": "Loguea una novela visual publicada antes de 2005.",
+      "name": "De la vieja escuela"
+    },
+    "platform_year": {
+      "description": "Sé miembro activo de NihongoTracker durante un año entero.",
+      "name": "A largo plazo"
+    },
+    "podcast_brain": {
+      "description": "Loguea 30 horas de contenido solo de audio.",
+      "name": "Cerebro de pódcast"
+    },
+    "rank_consistent": {
+      "description": "Aparece en el top 25 durante 4 semanas seguidas.",
+      "name": "Regularidad"
+    },
+    "rank_king": {
+      "description": "Llega al puesto 1 de cualquier clasificación.",
+      "name": "Número uno"
+    },
+    "rank_podium": {
+      "description": "Entra en el top 3 de cualquier clasificación.",
+      "name": "Podio"
+    },
+    "rank_top10": {
+      "description": "Entra en el top 10 de la clasificación semanal.",
+      "name": "Top 10"
+    },
+    "renaissance_learner": {
+      "description": "Loguea los 6 tipos de contenido en una misma semana.",
+      "name": "Estudiante renacentista"
+    },
+    "secret_absorbed": {
+      "description": "Pasaron las horas. Ni te enteraste.",
+      "fullDescription": "Loguea 6 horas o más de un mismo título en una sola sesión.",
+      "hint": "Absorto por completo...",
+      "name": "夢中"
+    },
+    "secret_club_hopper": {
+      "description": "Un solo grupo nunca iba a bastarte.",
+      "fullDescription": "Únete a 3 clubes.",
+      "hint": "¿Por qué conformarse con un solo grupo?",
+      "name": "Saltaclubes"
+    },
+    "secret_dethroned": {
+      "description": "Estuviste en la cima una vez. La vista valía la pena.",
+      "fullDescription": "Tuviste el puesto 1 y alguien te lo quitó.",
+      "hint": "Cuanto más alto subes...",
+      "name": "Destronado"
+    },
+    "secret_early_adopter": {
+      "description": "Estabas aquí antes de que valiera la pena estarlo.",
+      "fullDescription": "Sé una de las primeras 100 cuentas creadas en NihongoTracker.",
+      "hint": "¿Estabas aquí desde el principio?",
+      "name": "創始者"
+    },
+    "secret_floor_lava": {
+      "description": "No podrías quedarte en un solo sitio ni queriendo.",
+      "fullDescription": "Cambia entre 4 tipos de contenido distintos en un mismo día.",
+      "hint": "No puedes quedarte quieto...",
+      "name": "El suelo es lava"
+    },
+    "secret_iron_will": {
+      "description": "El descanso es para quien tiene planes más modestos.",
+      "fullDescription": "Loguea al menos 4 horas al día durante 7 días seguidos.",
+      "hint": "Ni un día libre, sin excusas...",
+      "name": "鉄の意志"
+    },
+    "secret_keeper": {
+      "description": "Sigues encontrando cosas que nadie anunció.",
+      "fullDescription": "Descubre 5 logros ocultos.",
+      "hint": "Aquí hay más de lo que parece...",
+      "name": "Guardián de secretos"
+    },
+    "secret_long_streak": {
+      "description": "Hay quien dice que no se puede. Tú lo hiciste igual.",
+      "fullDescription": "Mantén una racha de 500 días. Hay quien dice que no se puede.",
+      "hint": "Una hazaña legendaria de constancia...",
+      "name": "不屈の精神"
+    },
+    "secret_loyal": {
+      "description": "No te fuiste del todo. La lealtad no se abandona tan fácil.",
+      "fullDescription": "Loguea todos los días de una semana justo después de romper una racha.",
+      "hint": "La lealtad no se abandona fácilmente...",
+      "name": "Leal"
+    },
+    "secret_phoenix": {
+      "description": "Cenizas atrás, un camino más largo por delante.",
+      "fullDescription": "Rompe una racha y vuelve para superar tu récord personal.",
+      "hint": "Resurge de las cenizas...",
+      "name": "Fénix"
+    },
+    "secret_speedrunner": {
+      "description": "Ni un momento perdido entre una cosa y la siguiente.",
+      "fullDescription": "Loguea una sesión antes de 60 segundos desde el log anterior.",
+      "hint": "Vas muy rápido...",
+      "name": "Speedrunner"
+    },
+    "secret_xp_10m": {
+      "description": "Has trascendido. Ya te queda poco por demostrar.",
+      "fullDescription": "Consigue 10.000.000 XP en total. Has trascendido.",
+      "hint": "Más allá de lo legendario...",
+      "name": "一千万の証"
+    },
+    "sprinter_day": {
+      "description": "Loguea 5 sesiones de inmersión distintas en un solo día.",
+      "name": "Esprínter"
+    },
+    "streak_100": {
+      "description": "Mantén una racha de 100 días.",
+      "name": "Inquebrantable"
+    },
+    "streak_3": {
+      "description": "Mantén una racha de 3 días.",
+      "name": "Cogiéndole el gusto"
+    },
+    "streak_30": {
+      "description": "Mantén una racha de 30 días.",
+      "name": "Hábito formado"
+    },
+    "streak_365": {
+      "description": "Mantén una racha de 365 días. Un año entero. Increíble.",
+      "name": "Legendario"
+    },
+    "streak_7": {
+      "description": "Mantén una racha de 7 días.",
+      "name": "Arrancando la racha"
+    },
+    "tanabata": {
+      "description": "Loguea inmersión el 7 de julio (七夕).",
+      "name": "Tanabata"
+    },
+    "week_24h": {
+      "description": "Loguea 24 horas de inmersión en una sola semana.",
+      "name": "¿Has dormido?"
+    },
+    "weekend_warrior": {
+      "description": "Loguea todos los sábados y domingos de un mes entero.",
+      "name": "Guerrero de fin de semana"
+    },
+    "xp_1000": {
+      "description": "Consigue 1.000 XP en total.",
+      "name": "Aprendiz"
+    },
+    "xp_10000": {
+      "description": "Consigue 10.000 XP en total.",
+      "name": "Oficial"
+    },
+    "xp_100000": {
+      "description": "Consigue 100.000 XP en total.",
+      "name": "Maestro"
+    },
+    "xp_1000000": {
+      "description": "Consigue 1.000.000 XP en total. Una hazaña casi mítica.",
+      "name": "Leyenda"
+    },
+    "xp_50000": {
+      "description": "Consigue 50.000 XP en total.",
+      "name": "Erudito"
+    },
+    "xp_500000": {
+      "description": "Consigue 500.000 XP en total.",
+      "name": "Gran maestro"
+    },
+    "hours_10": {
+      "name": "Primeras diez horas",
+      "description": "Registra 10 horas de inmersión en total."
+    },
+    "hours_25": {
+      "name": "Cuarto de centenar",
+      "description": "Registra 25 horas de inmersión en total."
+    },
+    "hours_50": {
+      "name": "Medio centenar",
+      "description": "Registra 50 horas de inmersión en total."
+    },
+    "hours_250": {
+      "name": "Doscientas cincuenta horas",
+      "description": "Registra 250 horas de inmersión en total."
+    },
+    "hours_750": {
+      "name": "Club de las 750 horas",
+      "description": "Registra 750 horas de inmersión en total."
+    },
+    "logs_5": {
+      "name": "Cinco registros",
+      "description": "Crea 5 registros de inmersión."
+    },
+    "logs_25": {
+      "name": "Bitácora en marcha",
+      "description": "Crea 25 registros de inmersión."
+    },
+    "logs_250": {
+      "name": "Cronista de inmersión",
+      "description": "Crea 250 registros de inmersión."
+    },
+    "xp_5000": {
+      "name": "Cinco mil XP",
+      "description": "Consigue 5.000 XP en total."
+    },
+    "xp_25000": {
+      "name": "Reserva de XP",
+      "description": "Consigue 25.000 XP en total."
+    },
+    "achievements_10": {
+      "name": "Coleccionista de logros",
+      "description": "Desbloquea 10 logros."
+    },
+    "achievements_25": {
+      "name": "Vitrina de logros",
+      "description": "Desbloquea 25 logros."
+    },
+    "anime_episodes_12": {
+      "name": "Doce episodios",
+      "description": "Registra 12 episodios de anime."
+    },
+    "anime_episodes_50": {
+      "name": "Temporada completa",
+      "description": "Registra 50 episodios de anime."
+    },
+    "anime_episodes_100": {
+      "name": "Créditos iniciales",
+      "description": "Registra 100 episodios de anime."
+    },
+    "manga_hours_10": {
+      "name": "Viñeta a viñeta",
+      "description": "Registra 10 horas de manga."
+    },
+    "manga_hours_50": {
+      "name": "Maratón de manga",
+      "description": "Registra 50 horas de manga."
+    },
+    "light_novel_hours_10": {
+      "name": "Nuevo volumen",
+      "description": "Registra 10 horas de novelas ligeras."
+    },
+    "light_novel_hours_50": {
+      "name": "Biblioteca de novelas ligeras",
+      "description": "Registra 50 horas de novelas ligeras."
+    },
+    "reading_hours_10": {
+      "name": "Pasapáginas",
+      "description": "Registra 10 horas de lectura libre."
+    },
+    "reading_hours_50": {
+      "name": "Pila de páginas",
+      "description": "Registra 50 horas de lectura libre."
+    },
+    "vn_hours_10": {
+      "name": "Primera ruta",
+      "description": "Registra 10 horas de novelas visuales."
+    },
+    "vn_hours_100": {
+      "name": "Coleccionista de rutas",
+      "description": "Registra 100 horas de novelas visuales."
+    },
+    "audio_hours_10": {
+      "name": "Oído japonés",
+      "description": "Registra 10 horas de contenido de audio."
+    },
+    "audio_hours_100": {
+      "name": "Oyente fiel",
+      "description": "Registra 100 horas de contenido de audio."
+    },
+    "video_hours_10": {
+      "name": "Un rato de vídeo",
+      "description": "Registra 10 horas de vídeo."
+    },
+    "video_hours_50": {
+      "name": "Horas de pantalla",
+      "description": "Registra 50 horas de vídeo."
+    },
+    "game_hours_10": {
+      "name": "Pulsa start",
+      "description": "Registra 10 horas de videojuegos."
+    },
+    "game_hours_50": {
+      "name": "¿Continuar?",
+      "description": "Registra 50 horas de videojuegos."
+    },
+    "movie_hours_10": {
+      "name": "Doble función",
+      "description": "Registra 10 horas de películas."
+    },
+    "movie_hours_50": {
+      "name": "Aficionado al cine",
+      "description": "Registra 50 horas de películas."
+    },
+    "tv_hours_10": {
+      "name": "Maratón de series",
+      "description": "Registra 10 horas de series."
+    },
+    "reading_level_5": {
+      "name": "Despegue lector",
+      "description": "Alcanza el nivel 5 de lectura."
+    },
+    "reading_level_10": {
+      "name": "Ritmo lector",
+      "description": "Alcanza el nivel 10 de lectura."
+    },
+    "reading_level_25": {
+      "name": "Especialista en lectura",
+      "description": "Alcanza el nivel 25 de lectura."
+    },
+    "listening_level_5": {
+      "name": "Despegue auditivo",
+      "description": "Alcanza el nivel 5 de escucha."
+    },
+    "listening_level_10": {
+      "name": "Ritmo auditivo",
+      "description": "Alcanza el nivel 10 de escucha."
+    },
+    "listening_level_25": {
+      "name": "Especialista en escucha",
+      "description": "Alcanza el nivel 25 de escucha."
+    },
+    "titles_5": {
+      "name": "Cinco títulos",
+      "description": "Registra 5 títulos distintos."
+    },
+    "titles_10": {
+      "name": "Diez títulos",
+      "description": "Registra 10 títulos distintos."
+    },
+    "titles_25": {
+      "name": "Estantería de 25",
+      "description": "Registra 25 títulos distintos."
+    },
+    "titles_50": {
+      "name": "Cincuenta títulos",
+      "description": "Registra 50 títulos distintos."
+    },
+    "media_types_3_week": {
+      "name": "Explorador de tres medios",
+      "description": "Registra 3 tipos de medio distintos en una semana."
+    },
+    "media_types_4_week": {
+      "name": "Cuatro formatos",
+      "description": "Registra 4 tipos de medio distintos en una semana."
+    },
+    "streak_14": {
+      "name": "Dos semanas firmes",
+      "description": "Mantén una racha de inmersión de 14 días."
+    },
+    "streak_60": {
+      "name": "Dos meses firmes",
+      "description": "Mantén una racha de inmersión de 60 días."
+    },
+    "streak_180": {
+      "name": "Hábito de medio año",
+      "description": "Mantén una racha de inmersión de 180 días."
+    },
+    "week_5h": {
+      "name": "Semana de cinco horas",
+      "description": "Registra 5 horas de inmersión en una semana."
+    },
+    "week_10h": {
+      "name": "Semana de diez horas",
+      "description": "Registra 10 horas de inmersión en una semana."
+    },
+    "week_16h": {
+      "name": "Semana de dieciséis horas",
+      "description": "Registra 16 horas de inmersión en una semana."
+    },
+    "day_2h": {
+      "name": "Día de dos horas",
+      "description": "Registra 2 horas de inmersión en un día."
+    },
+    "day_4h": {
+      "name": "Cuatro horas de enfoque",
+      "description": "Registra 4 horas de inmersión en un día."
+    },
+    "week_1h_7days": {
+      "name": "Una hora al día",
+      "description": "Registra al menos 1 hora al día durante 7 días consecutivos."
+    },
+    "first_club": {
+      "name": "Primer club",
+      "description": "Únete a un club de inmersión."
+    },
+    "completed_media_1": {
+      "name": "Créditos finales",
+      "description": "Completa tu primer título registrado."
+    },
+    "completed_media_5": {
+      "name": "Cinco obras terminadas",
+      "description": "Completa 5 títulos registrados."
+    },
+    "completed_media_10": {
+      "name": "Diez obras terminadas",
+      "description": "Completa 10 títulos registrados."
+    },
+    "club_challenge_1": {
+      "name": "Reto aceptado",
+      "description": "Completa un reto individual de un club."
+    },
+    "reading_listening_level_10": {
+      "name": "Habilidades equilibradas",
+      "description": "Alcanza el nivel 10 tanto en lectura como en escucha."
+    },
+    "reading_listening_days_7": {
+      "name": "Dos caras del japonés",
+      "description": "Registra lectura y escucha el mismo día en 7 días distintos."
+    }
+  },
+  "rarity": {
+    "common": "Común",
+    "uncommon": "Poco común",
+    "rare": "Rara",
+    "epic": "Épica",
+    "legendary": "Legendaria",
+    "secret": "Secreta"
+  },
+  "reveal": {
+    "unlocked": "¡Logro desbloqueado!",
+    "next": "Siguiente ({{current}}/{{total}})",
+    "done": "¡Genial!",
+    "skipAll": "Saltar todo"
+  },
+  "screen": {
+    "titleOwn": "Logros",
+    "titleOther": "Logros de {{username}}",
+    "documentTitleOwn": "Mis logros | NihongoTracker",
+    "documentTitleOther": "Logros de {{username}} | NihongoTracker",
+    "subtitle": "Consulta qué has conseguido y cuál puede ser tu próximo logro.",
+    "loadError": "No se pudieron cargar los logros.",
+    "stats": {
+      "earned": "Conseguidos",
+      "total": "Total",
+      "points": "Puntos",
+      "completion": "Progreso"
+    },
+    "searchPlaceholder": "Buscar logros...",
+    "clearSearch": "Limpiar la búsqueda",
+    "categoryLabel": "Categoría: {{value}}",
+    "statusLabel": "Estado: {{value}}",
+    "sortLabel": "Orden: {{value}}",
+    "status": {
+      "all": "Todos",
+      "earned": "Conseguidos",
+      "locked": "Bloqueados"
+    },
+    "sort": {
+      "order": "Predeterminado",
+      "rarity": "Rareza",
+      "earned": "Conseguidos primero",
+      "orderLong": "Orden predeterminado",
+      "rarityLong": "Por rareza",
+      "earnedLong": "Conseguidos primero"
+    },
+    "grouped": "Agrupados",
+    "ungrouped": "Sin agrupar",
+    "groupTitle": "Agrupar por rareza",
+    "ungroupTitle": "Dejar de agrupar por rareza",
+    "noMatches": "Ningún logro coincide con tus filtros.",
+    "earnedOfTotal": "{{earned}}/{{total}} conseguidos",
+    "attribution": "Iconos de logros por <icons>game-icons.net</icons> con licencia <license>CC BY 3.0</license>."
+  },
+  "secretHint": "Cumple una condición secreta para revelar este logro.",
+  "secretName": "Logro secreto",
+  "showcase": {
+    "title": "Destacados",
+    "edit": "Editar",
+    "empty": "Aún no has fijado ningún logro.",
+    "pin": "+ Fijar logros",
+    "select": "Elige hasta 5 para destacar ({{selected}}/5)"
+  }
+}

@@ -1,0 +1,1240 @@
+import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
+import { Types } from 'mongoose';
+import User from '../models/user.model.js';
+import { apiError } from '../i18n/errorCodes.js';
+import Log from '../models/log.model.js';
+import { IUser , IMediaDocument } from '../types.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { deleteFile } from '../services/uploadFile.js';
+import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
+import { recalculateStreaksForUser } from '../services/streaks.js';
+import {
+  getIgdbDumpSyncStatus as getIgdbDumpSyncStatusService,
+  startIgdbDumpSync,
+} from '../services/igdbDumpSync.js';
+import {
+  getVndbDumpSyncStatus as getVndbDumpSyncStatusService,
+  startVndbDumpSync,
+} from '../services/vndbDumpSync.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
+import { MediaBase } from '../models/media.model.js';
+
+import { backfillRankHistory } from '../services/rankSnapshot.service.js';
+import { backfillRankAchievements } from '../services/achievements/cronAchievements.service.js';
+import {
+  startJitenDifficultyBackfill,
+  getJitenBackfillState,
+} from '../services/jiten.js';
+import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import {
+  getActivityBackfillState,
+  startActivityBackfill,
+} from '../services/activityBackfill.service.js';
+
+export async function getAdminStats(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const [totalUsers, totalLogs] = await Promise.all([
+      User.countDocuments(),
+      Log.countDocuments(),
+    ]);
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const activeUsers = await Log.distinct('user', {
+      createdAt: { $gte: thirtyDaysAgo },
+    }).then((userIds) => userIds.length);
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const newUsersThisWeek = await User.countDocuments({
+      createdAt: { $gte: oneWeekAgo },
+    });
+
+    const [totalUserXpAgg, totalMinutesAgg] = await Promise.all([
+      User.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalXp: { $sum: '$stats.userXp' },
+          },
+        },
+      ]),
+      Log.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalMinutes: { $sum: { $ifNull: ['$time', 0] } },
+          },
+        },
+      ]),
+    ]);
+
+    const dbStats = await User.db.db?.stats();
+    const dbDataSizeBytes = dbStats?.dataSize || 0;
+    const dbStorageSizeBytes = dbStats?.storageSize || 0;
+    const dbIndexSizeBytes = dbStats?.indexSize || 0;
+    const dbTotalSizeBytes = dbStorageSizeBytes + dbIndexSizeBytes;
+
+    const topUsers = await User.find()
+      .sort({ 'stats.userXp': -1 })
+      .limit(10)
+      .select('username stats.userXp')
+      .lean();
+
+    const topUsersWithLogs = await Promise.all(
+      topUsers.map(async (user) => {
+        const [logsCount, minutesAgg] = await Promise.all([
+          Log.countDocuments({ user: user._id }),
+          Log.aggregate([
+            { $match: { user: user._id } },
+            {
+              $group: {
+                _id: null,
+                totalMinutes: { $sum: { $ifNull: ['$time', 0] } },
+              },
+            },
+          ]),
+        ]);
+        const totalMinutes = minutesAgg[0]?.totalMinutes || 0;
+        return {
+          username: user.username,
+          totalXp: user.stats?.userXp || 0,
+          totalHours: totalMinutes / 60,
+          logsCount,
+        };
+      })
+    );
+
+    const adminStats = {
+      totalUsers,
+      totalLogs,
+      activeUsers,
+      newUsersThisWeek,
+      totalXp: totalUserXpAgg[0]?.totalXp || 0,
+      totalHours: (totalMinutesAgg[0]?.totalMinutes || 0) / 60,
+      topUsers: topUsersWithLogs.slice(0, 5),
+      systemStats: {
+        memoryUsage: process.memoryUsage().heapTotal
+          ? (process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) *
+            100
+          : 0,
+        diskUsage: dbTotalSizeBytes,
+        databaseSizeBytes: dbTotalSizeBytes,
+        databaseDataSizeBytes: dbDataSizeBytes,
+        databaseStorageSizeBytes: dbStorageSizeBytes,
+        databaseIndexSizeBytes: dbIndexSizeBytes,
+        uptime: process.uptime() / (24 * 60 * 60), // Convert seconds to days
+      },
+    };
+
+    res.json(adminStats);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getAdminUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
+    const search = (req.query.search as string) || '';
+    const skip = (page - 1) * limit;
+
+    // Build search query
+    const searchQuery = search
+      ? { username: { $regex: search, $options: 'i' } }
+      : {};
+
+    const [users, total] = await Promise.all([
+      User.find(searchQuery)
+        .select('username roles createdAt stats.userXp')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(searchQuery),
+    ]);
+
+    // Get last activity for each user
+    const usersWithActivity = await Promise.all(
+      users.map(async (user) => {
+        const [lastLog, minutesAgg] = await Promise.all([
+          Log.findOne({ user: user._id })
+            .sort({ createdAt: -1 })
+            .select({ createdAt: 1 })
+            .lean(),
+          Log.aggregate([
+            { $match: { user: user._id } },
+            {
+              $group: {
+                _id: null,
+                totalMinutes: { $sum: { $ifNull: ['$time', 0] } },
+              },
+            },
+          ]),
+        ]);
+        const totalMinutes = minutesAgg[0]?.totalMinutes || 0;
+        const userHours = totalMinutes / 60;
+
+        return {
+          ...user,
+          stats: { userXp: user.stats?.userXp || 0, userHours },
+          lastActivity: lastLog?.createdAt || null,
+        };
+      })
+    );
+
+    res.json({
+      users: usersWithActivity,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getAdminBannedUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = Math.max(1, Number.parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, Number.parseInt(req.query.limit as string, 10) || 50)
+    );
+    const type = (req.query.type as string) || 'all';
+
+    if (!['all', 'ranking', 'site'].includes(type)) {
+      throw apiError('common.validationError', 400, 'Invalid ban filter');
+    }
+
+    let moderationQuery: Record<string, unknown>;
+    if (type === 'ranking') {
+      moderationQuery = { 'moderation.rankingBanned': true };
+    } else if (type === 'site') {
+      moderationQuery = { 'moderation.banned': true };
+    } else {
+      moderationQuery = {
+        $or: [
+          { 'moderation.rankingBanned': true },
+          { 'moderation.banned': true },
+        ],
+      };
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(moderationQuery)
+        .select(
+          'username roles moderation.rankingBanned moderation.banned moderation.banReason moderation.updatedAt moderation.updatedByUsername'
+        )
+        .sort({ 'moderation.updatedAt': -1, username: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(moderationQuery),
+    ]);
+
+    return res.status(200).json({
+      users: users.map((user) => ({
+        _id: user._id,
+        username: user.username,
+        roles: user.roles,
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      type,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function deleteUserById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    // Delete user's files from Firebase before deleting user
+    if (user.avatar) {
+      await deleteFile(user.avatar);
+    }
+    if (user.banner) {
+      await deleteFile(user.banner);
+    }
+
+    // Delete the user and their logs
+    await User.findByIdAndDelete(req.params.id);
+    await Log.deleteMany({ user: req.params.id });
+
+    return res.sendStatus(204);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateUserById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { username, password, clubs, stats, titles, roles, avatar, banner } =
+    req.body as IUser;
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        avatar,
+        banner,
+        username,
+        password,
+        clubs,
+        stats,
+        titles,
+        roles,
+      },
+      { new: true }
+    );
+    if (!updatedUser) throw apiError('user.notFound', 404, 'User not found');
+    return res.json(updatedUser);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function resetUserPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { newPassword } = req.body as { newPassword?: string };
+    if (!newPassword || newPassword.length < 6) {
+      throw apiError('admin.passwordTooShort', 400, 'Password must be at least 6 characters');
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    // Hash explicitly to avoid relying on pre-save for findByIdAndUpdate
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+    return res.status(200).json({ message: 'Password updated' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function searchAdminLogs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = parseInt((req.query.page as string) || '1', 10);
+    const limit = Math.min(parseInt((req.query.limit as string) || '20', 10), 100);
+    const skip = (page - 1) * limit;
+    const search = (req.query.search as string) || '';
+    const type = (req.query.type as string) || '';
+    const username = (req.query.username as string) || '';
+    const start = req.query.start
+      ? new Date(req.query.start as string)
+      : undefined;
+    const end = req.query.end ? new Date(req.query.end as string) : undefined;
+
+    const matchStage: Record<string, unknown> = {};
+    if (type) matchStage.type = type;
+    if (start || end) {
+      matchStage.date = {
+        ...(start ? { $gte: start } : {}),
+        ...(end ? { $lte: end } : {}),
+      };
+    }
+    if (search) {
+      matchStage.$or = [
+        { description: { $regex: search, $options: 'i' } },
+        { mediaTitle: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // If username provided, resolve to user _id first
+    let userIdFilter: any = null;
+    if (username) {
+      const u = await User.findOne({ username }).select('_id').lean();
+      if (!u) {
+        return res.json({ logs: [], total: 0, page, totalPages: 0 });
+      }
+      userIdFilter = u._id;
+      matchStage.user = userIdFilter;
+    }
+
+    const pipeline: any[] = [
+      { $match: matchStage },
+      { $sort: { date: -1 } },
+      {
+        $facet: {
+          items: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'userDoc',
+              },
+            },
+            { $unwind: { path: '$userDoc', preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                _id: 1,
+                user: 1,
+                username: '$userDoc.username',
+                type: 1,
+                description: 1,
+                episodes: 1,
+                pages: 1,
+                chars: 1,
+                time: 1,
+                xp: 1,
+                date: 1,
+                mediaTitle: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          count: [{ $count: 'total' }],
+        },
+      },
+      {
+        $project: {
+          items: 1,
+          total: { $ifNull: [{ $arrayElemAt: ['$count.total', 0] }, 0] },
+        },
+      },
+    ];
+
+    const agg = await Log.aggregate(pipeline);
+    const items = agg[0]?.items || [];
+    const total = agg[0]?.total || 0;
+    return res.json({
+      logs: items,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function markLogsWithoutStatusToInProgress(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Find distinct user/media/type combos from logs where mediaId exists.
+    // Use the summed log quantity to decide whether the media is completed.
+    const immersionTypes = [
+      'anime',
+      'manga',
+      'light-novel',
+      'vn',
+      'game',
+      'video',
+      'movie',
+      'tv show',
+      'book',
+    ];
+
+    const combos = await Log.aggregate<any>([
+      {
+        $match: {
+          mediaId: { $exists: true, $nin: [null, ''] },
+          type: { $in: immersionTypes },
+        },
+      },
+      {
+        $group: {
+          _id: { user: '$user', mediaId: '$mediaId', type: '$type' },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'usermediastatuses',
+          let: { userId: '$_id.user', mediaId: '$_id.mediaId', t: '$_id.type' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $eq: ['$mediaId', '$$mediaId'] },
+                    { $eq: ['$type', '$$t'] },
+                  ],
+                },
+              },
+            },
+            { $project: { status: 1 } },
+          ],
+          as: 'statusDocs',
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $eq: [{ $size: '$statusDocs' }, 0] },
+              { $eq: [{ $arrayElemAt: ['$statusDocs.status', 0] }, null] },
+            ],
+          },
+        },
+      },
+    ]).allowDiskUse(true);
+
+    const mediaIds = [
+      ...new Set(combos.map((combo) => String(combo._id.mediaId))),
+    ];
+    const mediaDocs = await MediaBase.find({ contentId: { $in: mediaIds } })
+      .select('contentId type episodes characters')
+      .lean();
+    const mediaById = new Map(
+      mediaDocs.map((media) => [media.contentId, media])
+    );
+
+    let created = 0;
+    let updated = 0;
+    let completed = 0;
+    let inProgress = 0;
+
+    for (const c of combos) {
+      const userId = c._id.user;
+      const mediaId = String(c._id.mediaId);
+      const type = String(c._id.type).toLowerCase();
+      const media = mediaById.get(mediaId);
+
+      const statusToSet = (() => {
+        if (type === 'anime' || type === 'tv show') {
+          const totalEpisodes = Number(media?.episodes);
+          if (!Number.isFinite(totalEpisodes) || totalEpisodes <= 0) {
+            return 'in_progress' as const;
+          }
+          return Number(c.totalEpisodes || 0) >= totalEpisodes
+            ? ('completed' as const)
+            : ('in_progress' as const);
+        }
+
+        if (type === 'vn' || type === 'manga' || type === 'light-novel') {
+          const totalCharacters = Number(
+            (media as (IMediaDocument & { characters?: number }) | undefined)
+              ?.characters
+          );
+          if (!Number.isFinite(totalCharacters) || totalCharacters <= 0) {
+            return 'in_progress' as const;
+          }
+          return Number(c.totalChars || 0) >= totalCharacters
+            ? ('completed' as const)
+            : ('in_progress' as const);
+        }
+
+        return 'in_progress' as const;
+      })();
+
+      const existing = await UserMediaStatus.findOne({
+        user: userId,
+        mediaId,
+        type,
+      }).lean();
+      if (!existing) {
+        try {
+          await UserMediaStatus.create({
+            user: userId,
+            mediaId,
+            type,
+            status: statusToSet,
+            completed: statusToSet === 'completed',
+            completedAt: statusToSet === 'completed' ? new Date() : null,
+            autoCompleteSuppressed: true,
+          });
+          created += 1;
+          if (statusToSet === 'completed') completed += 1;
+          else inProgress += 1;
+        } catch (err) {
+          // ignore duplicate key races
+        }
+      } else if (
+        existing &&
+        (existing.status === null || existing.status === undefined)
+      ) {
+        await UserMediaStatus.updateOne(
+          { _id: existing._id },
+          {
+            $set: {
+              status: statusToSet,
+              completed: statusToSet === 'completed',
+              completedAt: statusToSet === 'completed' ? new Date() : null,
+              autoCompleteSuppressed: true,
+            },
+          }
+        );
+        updated += 1;
+        if (statusToSet === 'completed') completed += 1;
+        else inProgress += 1;
+      }
+    }
+
+    return res.json({
+      created,
+      updated,
+      completed,
+      inProgress,
+      totalAffected: combos.length,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Admin: manually grant or revoke a patreon tier for a user
+export async function adminSetPatreonStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { tier, days } = req.body as {
+      tier: 'donator' | 'enthusiast' | 'consumer' | null;
+      days?: number;
+    };
+
+    const user = await User.findById(req.params.id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    if (!tier) {
+      // Remove patreon status
+      user.patreon = {
+        ...user.patreon,
+        tier: null,
+        isActive: false,
+        manualTierExpiry: undefined,
+        memberSince: undefined,
+        lastChecked: new Date(),
+      };
+    } else {
+      const expiry =
+        days && days > 0
+          ? new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+          : undefined;
+      user.patreon = {
+        ...user.patreon,
+        tier,
+        isActive: true,
+        manualTierExpiry: expiry,
+        memberSince: user.patreon?.memberSince ?? new Date(),
+        lastChecked: new Date(),
+      };
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: tier
+        ? `Patreon tier "${tier}" granted${
+            days ? ` for ${days} day(s)` : ' indefinitely'
+          }`
+        : 'Patreon status removed',
+      patreon: {
+        tier: user.patreon?.tier,
+        isActive: user.patreon?.isActive,
+        manualTierExpiry: user.patreon?.manualTierExpiry,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Admin: sync Patreon membership for all linked users
+export async function syncPatreonMembers(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Only users who completed OAuth (have a patreonId + tokens stored)
+    const users = await User.find({
+      'patreon.patreonId': { $exists: true, $ne: null },
+    })
+      .select('_id username')
+      .lean();
+
+    let checked = 0;
+    let updated = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      const result = await checkPatreonMembershipForUser(user._id.toString());
+      if (result === null) {
+        failed += 1;
+      } else {
+        checked += 1;
+        if (result.updated) updated += 1;
+      }
+    }
+
+    return res.status(200).json({
+      message: `Patreon sync complete: ${checked} checked, ${updated} updated, ${failed} skipped (no token)`,
+      checked,
+      updated,
+      failed,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getUserModerationByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select('username moderation roles')
+      .lean();
+
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    const moderationHistory = [...(user.moderation?.history || [])].sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime()
+    );
+
+    return res.status(200).json({
+      username: user.username,
+      roles: user.roles,
+      moderation: {
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedBy: user.moderation?.updatedBy ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+        history: moderationHistory,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateUserModerationByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { rankingBanned, banned, banReason } = req.body as {
+      rankingBanned?: boolean;
+      banned?: boolean;
+      banReason?: string;
+    };
+
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    const hasRankingBanned = typeof rankingBanned === 'boolean';
+    const hasBanned = typeof banned === 'boolean';
+    const hasReason = typeof banReason === 'string';
+
+    if (!hasRankingBanned && !hasBanned && !hasReason) {
+      throw apiError(
+        'admin.moderationFieldRequired',
+        400,
+        'At least one moderation field must be provided'
+      );
+    }
+
+    const currentRankingBanned = user.moderation?.rankingBanned ?? false;
+    const currentBanned = user.moderation?.banned ?? false;
+    const currentReason = user.moderation?.banReason?.trim() || '';
+
+    const nextRankingBanned = hasRankingBanned
+      ? Boolean(rankingBanned)
+      : currentRankingBanned;
+    const nextBanned = hasBanned ? Boolean(banned) : currentBanned;
+    const nextReason = hasReason ? banReason!.trim() : currentReason;
+
+    const now = new Date();
+    const updatedBy = res.locals.user?._id;
+    const updatedByUsername = res.locals.user?.username || 'system';
+
+    const moderationHistory = [...(user.moderation?.history || [])];
+
+    if (hasRankingBanned && currentRankingBanned !== nextRankingBanned) {
+      moderationHistory.push({
+        field: 'rankingBanned',
+        previousValue: currentRankingBanned,
+        newValue: nextRankingBanned,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      });
+    }
+
+    if (hasBanned && currentBanned !== nextBanned) {
+      moderationHistory.push({
+        field: 'banned',
+        previousValue: currentBanned,
+        newValue: nextBanned,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      });
+    }
+
+    if (hasReason && currentReason !== nextReason) {
+      moderationHistory.push({
+        field: 'banReason',
+        previousValue: currentReason,
+        newValue: nextReason,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      });
+    }
+
+    const MAX_HISTORY_ENTRIES = 100;
+    const trimmedHistory = moderationHistory.slice(-MAX_HISTORY_ENTRIES);
+
+    user.moderation = {
+      rankingBanned: nextRankingBanned,
+      banned: nextBanned,
+      banReason: nextReason,
+      updatedAt: now,
+      updatedBy,
+      updatedByUsername,
+      history: trimmedHistory,
+    };
+
+    await user.save();
+
+    const sortedHistory = [...(user.moderation?.history || [])].sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime()
+    );
+
+    return res.status(200).json({
+      message: 'Moderation settings updated',
+      moderation: {
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedBy: user.moderation?.updatedBy ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+        history: sortedHistory,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function recalculateUserStreakByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select(
+        '_id username stats.currentStreak stats.longestStreak stats.lastStreakDate'
+      )
+      .lean();
+
+    if (!user) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    await recalculateStreaksForUser(user._id);
+
+    const updatedUser = await User.findById(user._id)
+      .select(
+        'username stats.currentStreak stats.longestStreak stats.lastStreakDate'
+      )
+      .lean();
+
+    if (!updatedUser) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    return res.status(200).json({
+      message: `Recalculated streak for ${updatedUser.username}`,
+      username: updatedUser.username,
+      streaks: {
+        currentStreak: updatedUser.stats?.currentStreak ?? 0,
+        longestStreak: updatedUser.stats?.longestStreak ?? 0,
+        lastStreakDate: updatedUser.stats?.lastStreakDate ?? null,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get paid users statistics
+export async function getPatronStats(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Count users by tier
+    const [donatorCount, enthusiastCount, consumerCount] = await Promise.all([
+      User.countDocuments({ 'patreon.tier': 'donator' }),
+      User.countDocuments({ 'patreon.tier': 'enthusiast' }),
+      User.countDocuments({ 'patreon.tier': 'consumer' }),
+    ]);
+
+    const totalPaidUsers = donatorCount + enthusiastCount + consumerCount;
+
+    // Get all paid users
+    const paidUsers = await User.find({
+      'patreon.tier': { $in: ['donator', 'enthusiast', 'consumer'] },
+    })
+      .select(
+        'username patreon.tier patreon.memberSince patreon.lastChecked stats.userXp createdAt'
+      )
+      .sort({ 'stats.userXp': -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total: totalPaidUsers,
+        byTier: {
+          donator: donatorCount,
+          enthusiast: enthusiastCount,
+          consumer: consumerCount,
+        },
+        users: paidUsers,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerIgdbDumpSync(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const forceFromBody = Boolean((req.body as { force?: boolean })?.force);
+    const forceQuery = String(req.query.force || '')
+      .trim()
+      .toLowerCase();
+    const forceFromQuery = ['1', 'true', 'yes', 'on'].includes(forceQuery);
+
+    const result = await startIgdbDumpSync('manual', {
+      force: forceFromBody || forceFromQuery,
+    });
+
+    return res.status(result.started ? 202 : 200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getIgdbDumpSyncStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const status = await getIgdbDumpSyncStatusService();
+    return res.status(200).json(status);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerVndbDumpSync(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const forceFromBody = Boolean((req.body as { force?: boolean })?.force);
+    const forceQuery = String(req.query.force || '')
+      .trim()
+      .toLowerCase();
+    const forceFromQuery = ['1', 'true', 'yes', 'on'].includes(forceQuery);
+
+    const result = await startVndbDumpSync('manual', {
+      force: forceFromBody || forceFromQuery,
+    });
+
+    return res.status(result.started ? 202 : 200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getVndbDumpSyncStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const status = await getVndbDumpSyncStatusService();
+    return res.status(200).json(status);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function backfillRankingHistory(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await backfillRankHistory();
+    return res.status(200).json({
+      message: `Backfilled ${result.snapshots} rank snapshots across ${result.weeks} weeks.`,
+      ...result,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function backfillWeeklyRankAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await backfillRankAchievements();
+    return res.status(200).json({
+      message: `Replayed ${result.weeks} weeks and granted ${result.granted} rank achievements.`,
+      ...result,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerActivityBackfill(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = startActivityBackfill();
+    return res.status(result.started ? 202 : 200).json({
+      message: result.started
+        ? 'Activity feed backfill started.'
+        : 'Activity feed backfill is already running.',
+      ...result.state,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getActivityBackfillStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    return res.status(200).json(getActivityBackfillState());
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerJitenDifficultyBackfill(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // `?force=true` re-tags media that already have a difficulty, for when the
+    // stored value's scale or source changes.
+    const force = req.query.force === 'true';
+    const state = startJitenDifficultyBackfill(force);
+    const alreadyRunning = state.processed > 0 || state.total > 0;
+    return res.status(alreadyRunning ? 200 : 202).json({
+      message: alreadyRunning
+        ? 'Jiten difficulty backfill already running.'
+        : 'Jiten difficulty backfill started.',
+      ...state,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getJitenDifficultyBackfillStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    return res.status(200).json(getJitenBackfillState());
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// PATCH /api/admin/media/:id — admin/mod edits a media document's fields.
+// Uses findById so the correct discriminator is hydrated and type-specific
+// fields (episodes, volumes, platforms, …) can be set.
+export async function adminUpdateMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      throw apiError('admin.invalidMediaId', 400, 'Invalid media id');
+    }
+
+    const media = await MediaBase.findById(id);
+    if (!media) throw apiError('admin.mediaNotFound', 404, 'Media not found');
+
+    const body = req.body as Partial<IMediaDocument>;
+
+    // Title (merge with existing so partial updates keep other fields).
+    if (body.title && typeof body.title === 'object') {
+      const native =
+        typeof body.title.contentTitleNative === 'string'
+          ? body.title.contentTitleNative.trim()
+          : media.title.contentTitleNative;
+      if (!native) throw apiError('admin.nativeTitleRequired', 400, 'Native title cannot be empty');
+      media.title = {
+        contentTitleNative: native,
+        contentTitleRomaji:
+          typeof body.title.contentTitleRomaji === 'string'
+            ? body.title.contentTitleRomaji.trim() || null
+            : media.title.contentTitleRomaji,
+        contentTitleEnglish:
+          typeof body.title.contentTitleEnglish === 'string'
+            ? body.title.contentTitleEnglish.trim() || null
+            : media.title.contentTitleEnglish,
+      } as typeof media.title;
+    }
+
+    if (typeof body.coverImage === 'string')
+      media.coverImage = body.coverImage.trim() || undefined;
+    if (typeof body.contentImage === 'string')
+      media.contentImage = body.contentImage.trim() || undefined;
+    if (typeof body.isAdult === 'boolean') media.isAdult = body.isAdult;
+    if (Array.isArray(body.genres))
+      media.genres = body.genres.map((g) => String(g).trim()).filter(Boolean);
+    if (Array.isArray(body.synonyms))
+      media.synonyms = body.synonyms
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    if (Array.isArray(body.description)) media.description = body.description;
+
+    // Type-specific numeric fields. Assigned dynamically; only ones present in
+    // the hydrated discriminator's schema are persisted by Mongoose.
+    const numericFields: (keyof IMediaDocument)[] = [
+      'episodes',
+      'episodeDuration',
+      'chapters',
+      'volumes',
+      'characters',
+      'seasons',
+      'runtime',
+      'pageCount',
+    ];
+    const mediaRecord = media as unknown as Record<string, unknown>;
+    for (const field of numericFields) {
+      if (body[field] === null) {
+        mediaRecord[field] = null;
+      } else if (body[field] !== undefined) {
+        const value = Number(body[field]);
+        if (Number.isNaN(value)) {
+          throw apiError(
+            'admin.fieldMustBeNumber',
+            400,
+            `${field} must be a number`,
+            { field }
+          );
+        }
+        mediaRecord[field] = value;
+      }
+    }
+
+    if (Array.isArray(body.platforms)) {
+      mediaRecord.platforms = body.platforms
+        .map((p) => String(p).trim())
+        .filter(Boolean);
+    }
+
+    await media.save();
+
+    // Keep the search index in sync with the edited document.
+    try {
+      await addMediaToIndex({
+        _id: media._id,
+        contentId: media.contentId,
+        title: media.title,
+        contentImage: media.contentImage,
+        coverImage: media.coverImage,
+        isAdult: media.isAdult,
+        isAdultImage: media.isAdultImage,
+        synonyms: media.synonyms,
+        type: media.type,
+      });
+    } catch (indexError) {
+      console.warn('Failed to re-index edited media:', indexError);
+    }
+
+    return res
+      .status(200)
+      .json({ message: 'Media updated', media: media.toObject() });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

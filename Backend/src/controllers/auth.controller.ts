@@ -1,0 +1,463 @@
+import { Request, Response, NextFunction } from 'express';
+import { FilterQuery } from 'mongoose';
+import User from '../models/user.model.js';
+import generateToken from '../libs/jwt.js';
+import {
+  ILogin,
+  IRegister,
+  IUser,
+  SUPPORTED_LANGUAGES,
+  SupportedLanguage,
+} from '../types.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
+import {
+  sendPasswordResetEmail,
+  sendPasswordResetSuccessEmail,
+  sendVerificationEmail,
+} from '../mailtrap/emails.js';
+import { indexUser } from '../services/meilisearch/userIndex.js';
+import { getLiveCurrentStreak } from '../services/streaks.js';
+import { serializeAuthenticatedUser } from '../services/authenticatedUser.js';
+
+const isValidTimezone = (timezone?: string): boolean => {
+  if (!timezone) {
+    return false;
+  }
+
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch (_error) {
+    return false;
+  }
+};
+
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const {
+    username,
+    email,
+    password,
+    passwordConfirmation,
+    timezone,
+    language,
+  }: IRegister = req.body;
+  const trimmedEmail = email?.trim();
+  const normalizedEmail = trimmedEmail?.length
+    ? trimmedEmail.toLowerCase()
+    : undefined;
+  const trimmedTimezone = timezone?.trim();
+  const normalizedTimezone = isValidTimezone(trimmedTimezone)
+    ? trimmedTimezone
+    : undefined;
+  const trimmedLanguage = language?.trim();
+  const normalizedLanguage = SUPPORTED_LANGUAGES.includes(
+    trimmedLanguage as SupportedLanguage
+  )
+    ? (trimmedLanguage as SupportedLanguage)
+    : undefined;
+  try {
+    const uniqueConditions: FilterQuery<IUser>[] = [{ username }];
+    if (normalizedEmail) {
+      uniqueConditions.push({ email: { $exists: true, $eq: normalizedEmail } });
+    }
+
+    const queryConditions: FilterQuery<IUser> =
+      uniqueConditions.length > 1
+        ? { $or: uniqueConditions }
+        : uniqueConditions[0];
+
+    const userExists = await User.findOne(queryConditions).collation({
+      locale: 'en',
+      strength: 2,
+    });
+
+    if (userExists) {
+      throw apiError(
+        'auth.userExists',
+        400,
+        'An user with that username or email already exists!'
+      );
+    }
+
+    if (password !== passwordConfirmation) {
+      throw apiError('auth.passwordMismatch', 400, 'Passwords do not match!');
+    }
+
+    const verificationToken = normalizedEmail
+      ? Math.floor(100000 + Math.random() * 900000).toString()
+      : undefined;
+
+    const user = await User.create({
+      username,
+      password,
+      ...(normalizedEmail && { email: normalizedEmail }),
+      verified: false,
+      verificationToken,
+      verificationTokenExpiry: normalizedEmail
+        ? new Date(Date.now() + 15 * 60 * 1000)
+        : undefined,
+      ...((normalizedTimezone || normalizedLanguage) && {
+        settings: {
+          ...(normalizedTimezone && { timezone: normalizedTimezone }),
+          ...(normalizedLanguage && { language: normalizedLanguage }),
+        },
+      }),
+    });
+
+    if (!user) throw apiError('auth.invalidUserData', 400, 'Invalid user data');
+
+    // Index new user in Meilisearch
+    indexUser(user);
+
+    generateToken(res, user._id.toString());
+
+    if (normalizedEmail && user.verificationToken)
+      await sendVerificationEmail(
+        normalizedEmail,
+        user.verificationToken,
+        user.settings?.language
+      );
+
+    return res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      about: user.about,
+      stats: user.stats,
+      avatar: user.avatar,
+      banner: user.banner,
+      titles: user.titles,
+      roles: user.roles,
+      patreon: user.patreon,
+      settings: user.settings,
+      customization: user.customization ?? {},
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function login(req: Request, res: Response, next: NextFunction) {
+  const { login: loginValue, password }: ILogin = req.body;
+  try {
+    if (!loginValue || !password)
+      throw apiError(
+        'auth.credentialsRequired',
+        400,
+        'Please provide username and password'
+      );
+
+    const user = await User.findOne({
+      $or: [{ username: loginValue }, { email: { $exists: true, $eq: loginValue } }],
+    })
+      .collation({
+        locale: 'en',
+        strength: 2,
+      })
+      .select('+password');
+
+    if (user && (await user.matchPassword(password))) {
+      if (user.moderation?.banned) {
+        throw apiError(
+          'auth.banned',
+          403,
+          user.moderation?.banReason || 'Your account has been banned'
+        );
+      }
+
+      const tz = user.settings?.timezone || 'UTC';
+      const liveCurrentStreak = getLiveCurrentStreak(
+        user.stats?.currentStreak ?? 0,
+        user.stats?.lastStreakDate ?? null,
+        tz
+      );
+      generateToken(res, user._id.toString());
+      return res.status(200).json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        about: user.about,
+        discordId: user.discordId ?? '',
+        stats: {
+          ...user.stats,
+          currentStreak: liveCurrentStreak,
+        },
+        avatar: user.avatar,
+        banner: user.banner,
+        titles: user.titles,
+        roles: user.roles,
+        settings: user.settings,
+        patreon: user.patreon,
+        moderation: user.moderation,
+        customization: user.customization ?? {},
+      });
+    }
+    throw apiError(
+      'auth.invalidCredentials',
+      401,
+      'Incorrect login or password'
+    );
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function logout(_req: Request, res: Response) {
+  res.clearCookie('jwt', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.status(200).json({ message: 'User logged out' });
+}
+
+export async function verifyToken(_req: Request, res: Response) {
+  res.status(200).json({
+    valid: true,
+    user: serializeAuthenticatedUser(res.locals.user),
+  });
+}
+
+export async function verifyEmail(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { token } = req.body;
+  try {
+    if (!token) {
+      throw apiError('auth.tokenRequired', 400, 'Token is required');
+    }
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpiry: { $gt: new Date() },
+    });
+    if (!user) {
+      throw apiError(
+        'auth.invalidVerificationToken',
+        400,
+        'Invalid or expired token'
+      );
+    }
+    if (user.verified) {
+      throw apiError(
+        'auth.emailAlreadyVerified',
+        400,
+        'Email is already verified'
+      );
+    }
+    user.verified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
+    await user.save();
+    res.status(200).json({
+      message: 'Email verified successfully!',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        verified: user.verified,
+        about: user.about,
+        stats: user.stats,
+        avatar: user.avatar,
+        banner: user.banner,
+        titles: user.titles,
+        roles: user.roles,
+        settings: user.settings,
+        discordId: user.discordId ?? '',
+        patreon: user.patreon,
+        customization: user.customization ?? {},
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      throw apiError('auth.emailRequired', 400, 'Email is required');
+    }
+    const user = await User.findOne({
+      email: { $exists: true, $eq: email },
+    }).collation({
+      locale: 'en',
+      strength: 2,
+    });
+    if (user) {
+      user.resetPasswordToken = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+      user.resetPasswordTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
+      await user.save();
+
+      const baseUrl =
+        process.env.FRONTEND_URL ||
+        process.env.PROD_DOMAIN ||
+        'http://localhost:5173';
+      await sendPasswordResetEmail(
+        email,
+        `${baseUrl}/reset-password/${user.resetPasswordToken}`,
+        user.settings?.language
+      );
+    }
+
+    res.status(200).json({
+      message: 'If an account exists for this email, a reset link was sent',
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function resetPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { token } = req.params;
+  const { password, passwordConfirmation } = req.body;
+
+  try {
+    if (!token) {
+      throw apiError('auth.tokenRequired', 400, 'Token is required');
+    }
+    if (!password || !passwordConfirmation) {
+      throw apiError(
+        'auth.passwordConfirmationRequired',
+        400,
+        'Password and password confirmation are required'
+      );
+    }
+    if (password !== passwordConfirmation) {
+      throw apiError('auth.passwordMismatch', 400, 'Passwords do not match');
+    }
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordTokenExpiry: { $gt: new Date() },
+    });
+    if (!user) {
+      throw apiError('auth.invalidResetToken', 400, 'Invalid or expired token');
+    }
+    if (!user.email)
+      throw apiError('auth.noEmailSet', 400, 'User does not have an email set');
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpiry = undefined;
+    await user.save();
+    sendPasswordResetSuccessEmail(user.email, user.settings?.language);
+    res.status(200).json({ message: 'Password has been reset successfully!' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function resendVerificationEmail(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const {user} = res.locals;
+
+    if (!user) {
+      throw apiError('auth.notAuthenticated', 401, 'User not authenticated');
+    }
+
+    if (!user.email) {
+      throw apiError('auth.noEmailSet', 400, 'User does not have an email set');
+    }
+
+    if (user.verified) {
+      throw apiError(
+        'auth.emailAlreadyVerified',
+        400,
+        'Email is already verified'
+      );
+    }
+
+    // Check if email was sent within the last 60 seconds
+    if (user.lastVerificationEmailSent) {
+      const timeSinceLastEmail =
+        Date.now() - user.lastVerificationEmailSent.getTime();
+      const cooldownPeriod = 60 * 1000; // 60 seconds in milliseconds
+
+      if (timeSinceLastEmail < cooldownPeriod) {
+        const remainingTime = Math.ceil(
+          (cooldownPeriod - timeSinceLastEmail) / 1000
+        );
+        throw apiError(
+          'auth.resendCooldown',
+          429,
+          `Please wait ${remainingTime} seconds before requesting another email`,
+          { seconds: remainingTime }
+        );
+      }
+    }
+
+    // Generate new verification token
+    const crypto = await import('crypto');
+    user.verificationToken = crypto.randomBytes(32).toString('hex');
+    user.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    user.lastVerificationEmailSent = new Date();
+
+    await user.save();
+
+    // Send verification email
+    await sendVerificationEmail(
+      user.email,
+      user.verificationToken,
+      user.settings?.language
+    );
+
+    res.status(200).json({
+      message: 'Verification email sent successfully',
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Public stats endpoint for homepage/register page
+export async function getPublicStats(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const Log = (await import('../models/log.model.js')).default;
+
+    const [totalUsers, totalLogs, totalXpAgg] = await Promise.all([
+      User.countDocuments(),
+      Log.countDocuments(),
+      User.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalXp: { $sum: '$stats.userXp' },
+          },
+        },
+      ]),
+    ]);
+
+    res.status(200).json({
+      totalUsers,
+      totalLogs,
+      totalXp: totalXpAgg[0]?.totalXp || 0,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

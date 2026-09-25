@@ -1,0 +1,79 @@
+{
+  "activity": {
+    "achievement": "desbloqueó un logro",
+    "clubJoined": "se unió a un club",
+    "clubMilestone": "ayudó al club a alcanzar {{count}} miembros",
+    "challengeCompleted": "completó el reto",
+    "challengeJoined": "se unió al reto",
+    "challengeStarted": "creó el reto",
+    "generic": "compartió una actualización",
+    "goalCompleted": "completó la meta cooperativa",
+    "goalProgress": "avanzó la meta cooperativa",
+    "immersionLog": "registró una sesión de inmersión",
+    "listened": "escuchó",
+    "played": "jugó a",
+    "read": "leyó",
+    "watched": "vio",
+    "notable": "Destacada",
+    "notableSession": "completó una sesión de inmersión destacada",
+    "readMore": "Ver más",
+    "review": "publicó una reseña",
+    "showLess": "Ver menos"
+  },
+  "comments": {
+    "add": "Añadir un comentario",
+    "cancel": "Cancelar",
+    "count": "{{count}}/1000",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "edited": "Editado",
+    "empty": "Todavía no hay comentarios.",
+    "loadError": "No se pudieron cargar los comentarios.",
+    "like": "Me gusta esta respuesta",
+    "hideReplies": "Ocultar respuestas",
+    "jumpToParent": "Ir al comentario respondido",
+    "moreActions": "Más acciones del comentario",
+    "placeholder": "Escribe una respuesta...",
+    "reply": "Responder",
+    "replyingTo": "Respondiendo a @{{username}}",
+    "replyingToComment": "Respondiendo a @{{username}}: {{content}}",
+    "readGuidelines": "Lee las normas del sitio antes de publicar",
+    "post": "Publicar",
+    "save": "Guardar",
+    "show": "Mostrar comentarios",
+    "showReplies_one": "Ver {{count}} respuesta",
+    "showReplies_other": "Ver {{count}} respuestas",
+    "unlike": "Ya no me gusta esta respuesta"
+  },
+  "feed": {
+    "empty": {
+      "clubs": "Todavía no hay actividad de tus clubes.",
+      "following": "Todavía no hay actividad de las personas que sigues.",
+      "followingHint": "Sigue a otros estudiantes desde sus perfiles para crear tu feed.",
+      "global": "Todavía no hay actividad pública."
+    },
+    "loadError": "No se pudo cargar el feed de actividad.",
+    "loadMore": "Cargar más",
+    "retry": "Intentar de nuevo",
+    "scopes": {
+      "clubs": "Clubes",
+      "following": "Siguiendo",
+      "global": "Global"
+    },
+    "subtitle": "Consulta el progreso y los logros recientes de la comunidad.",
+    "title": "Actividad"
+  },
+  "metrics": {
+    "characters_one": "{{count}} carácter",
+    "characters_other": "{{count}} caracteres",
+    "episodes_one": "{{count}} episodio",
+    "episodes_other": "{{count}} episodios",
+    "minutes_one": "{{count}} minuto",
+    "minutes_other": "{{count}} minutos",
+    "pages_one": "{{count}} página",
+    "pages_other": "{{count}} páginas"
+  },
+  "reactions": {
+    "like": "Me gusta"
+  }
+}

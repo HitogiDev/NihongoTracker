@@ -1,0 +1,180 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactCrop, {
+  PixelCrop,
+  PercentCrop,
+  convertToPixelCrop,
+} from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import { useTranslation } from 'react-i18next';
+
+type ImageCropResult = {
+  crop: PixelCrop;
+  image: HTMLImageElement;
+};
+
+type ImageCropDialogProps = {
+  title: string;
+  imageSrc: string;
+  isOpen: boolean;
+  aspect: number;
+  modalBoxClassName?: string;
+  onClose: () => void;
+  onApply: (result: ImageCropResult) => void | Promise<void>;
+  onCancel?: () => void;
+  getInitialCrop?: (image: HTMLImageElement) => PercentCrop;
+  circular?: boolean;
+  minWidth?: number;
+  minHeight?: number;
+  keepSelection?: boolean;
+  ruleOfThirds?: boolean;
+};
+
+const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
+  ({
+    title,
+    imageSrc,
+    isOpen,
+    aspect,
+    modalBoxClassName = 'max-w-4xl',
+    onClose,
+    onApply,
+    onCancel,
+    getInitialCrop,
+    circular,
+    minWidth,
+    minHeight,
+    keepSelection,
+    ruleOfThirds,
+  }) => {
+    const { t } = useTranslation('common');
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    const [crop, setCrop] = useState<PercentCrop>();
+    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+
+    const applyInitialCrop = useCallback(
+      (image: HTMLImageElement) => {
+        imgRef.current = image;
+        if (!getInitialCrop) {
+          return;
+        }
+
+        const initialCrop = getInitialCrop(image);
+        setCrop(initialCrop);
+        if (initialCrop.width && initialCrop.height) {
+          setCompletedCrop(
+            convertToPixelCrop(
+              initialCrop,
+              image.naturalWidth,
+              image.naturalHeight
+            )
+          );
+        }
+      },
+      [getInitialCrop]
+    );
+
+    useEffect(() => {
+      if (!isOpen) {
+        setCrop(undefined);
+        setCompletedCrop(undefined);
+        return;
+      }
+
+      // `data:` URLs can finish decoding before this effect runs, so onLoad may
+      // already have set the initial crop — clearing it here would leave the
+      // dialog with no selection at all. Re-apply it instead of wiping it.
+      const image = imgRef.current;
+      if (image?.complete && image.naturalWidth && image.src === imageSrc) {
+        applyInitialCrop(image);
+      } else {
+        setCrop(undefined);
+        setCompletedCrop(undefined);
+      }
+    }, [imageSrc, isOpen, applyInitialCrop]);
+
+    const handleImageLoad = useCallback(
+      (event: React.SyntheticEvent<HTMLImageElement>) => {
+        applyInitialCrop(event.currentTarget);
+      },
+      [applyInitialCrop]
+    );
+
+    useEffect(() => {
+      if (imgRef.current && crop?.width && crop?.height) {
+        setCompletedCrop(
+          convertToPixelCrop(
+            crop,
+            imgRef.current.naturalWidth,
+            imgRef.current.naturalHeight
+          )
+        );
+      }
+    }, [crop]);
+
+    const handleApply = useCallback(async () => {
+      if (!imgRef.current || !completedCrop?.width || !completedCrop?.height) {
+        return;
+      }
+
+      await Promise.resolve(
+        onApply({ crop: completedCrop, image: imgRef.current })
+      );
+      onClose();
+    }, [completedCrop, onApply, onClose]);
+
+    const handleCancel = useCallback(() => {
+      if (onCancel) {
+        onCancel();
+      } else {
+        onClose();
+      }
+    }, [onCancel, onClose]);
+
+    if (!isOpen) {
+      return null;
+    }
+
+    return (
+      <dialog className="modal modal-bottom sm:modal-middle modal-open">
+        <div className={`modal-box ${modalBoxClassName}`}>
+          <h3 className="font-bold text-lg mb-4">{title}</h3>
+          <div className="flex justify-center">
+            <ReactCrop
+              // react-image-crop's stylesheet sets `max-height: inherit` on the
+              // image with higher specificity than any utility class, so the
+              // size cap has to live on the wrapper and be inherited down.
+              className="max-h-[60vh] max-w-full"
+              crop={crop}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
+              aspect={aspect}
+              minWidth={minWidth}
+              minHeight={minHeight}
+              keepSelection={keepSelection}
+              ruleOfThirds={ruleOfThirds}
+              circularCrop={circular}
+            >
+              <img src={imageSrc} alt={title} onLoad={handleImageLoad} />
+            </ReactCrop>
+          </div>
+          <div className="modal-action">
+            <button
+              className="btn btn-primary"
+              onClick={handleApply}
+              disabled={!completedCrop?.width || !completedCrop?.height}
+            >
+              {t('imageCrop.apply')}
+            </button>
+            <button className="btn btn-outline" onClick={handleCancel}>
+              {t('cancel')}
+            </button>
+          </div>
+        </div>
+      </dialog>
+    );
+  }
+);
+
+ImageCropDialog.displayName = 'ImageCropDialog';
+
+export type { ImageCropDialogProps, ImageCropResult };
+export default ImageCropDialog;

@@ -1,0 +1,85 @@
+{
+  "allMediaTypes": "Todos los tipos de contenido",
+  "allTypes": "Todos los tipos",
+  "avatarAlt": "Avatar de {{username}}",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "errors": {
+    "generic": "Ha ocurrido un error"
+  },
+  "language": {
+    "saveError": "No se pudo guardar tu preferencia de idioma"
+  },
+  "mediaTypeGroups": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Libro",
+    "game": "Videojuego",
+    "manga": "Manga",
+    "movie": "Película",
+    "other": "Otros",
+    "light-novel": "Novela Ligera",
+    "reading": "Lectura",
+    "tvShow": "Programa Televisivo",
+    "video": "Video",
+    "vn": "Novela Visual"
+  },
+  "mediaTypes": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Libro",
+    "game": "Videojuego",
+    "manga": "Manga",
+    "movie": "Película",
+    "other": "Otro",
+    "light-novel": "Novela Ligera",
+    "reading": "Lectura",
+    "tvShow": "Programa Televisivo",
+    "video": "Video",
+    "vn": "Novela Visual"
+  },
+  "mediaTypesPlural": {
+    "anime": "anime",
+    "book": "libros",
+    "game": "juegos",
+    "manga": "manga",
+    "movie": "películas",
+    "light-novel": "novelas ligeras",
+    "reading": "lecturas",
+    "tvShow": "series",
+    "video": "vídeos",
+    "vn": "novelas visuales"
+  },
+  "notFound": {
+    "description": "¡Vaya! La página que buscas no existe.",
+    "hint": "Ya que estamos, ¡vete a hacer un poco de inmersión!",
+    "title": "404 - Página no encontrada"
+  },
+  "patreonTiers": {
+    "consumer": "Consumidor",
+    "donator": "Donante",
+    "enthusiast": "Entusiasta"
+  },
+  "save": "Guardar",
+  "time": {
+    "justNow": "Justo ahora"
+  },
+  "unknown": "Desconocido",
+  "viewProfile": "Ver el perfil de {{username}}",
+  "imageCrop": {
+    "apply": "Aplicar recorte"
+  },
+  "levelUp": {
+    "title": "¡Enhorabuena! ¡Has subido de nivel!"
+  },
+  "charts": {
+    "noData": "No hay datos para el periodo seleccionado."
+  },
+  "routeError": {
+    "updatingTitle": "Actualizando la aplicación...",
+    "updatingBody": "Se ha desplegado una versión nueva. Recargando para sincronizar los recursos.",
+    "reload": "Recargar ahora",
+    "title": "Error inesperado de la aplicación",
+    "generic": "Algo ha fallado al cargar esta página."
+  }
+}
