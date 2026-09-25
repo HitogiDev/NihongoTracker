@@ -52,6 +52,37 @@ const FavoriteEntrySchema = new Schema<IFavoriteEntry>(
 const SettingsSchema = new Schema<IUserSettings>(
   {
     blurAdultContent: { type: Boolean, default: true },
+    customThemes: {
+      type: [
+        new Schema(
+          {
+            id: { type: String, required: true },
+            name: { type: String, required: true, maxlength: 40 },
+            background: { type: String, required: true },
+            foreground: { type: String, required: true },
+            primary: { type: String, required: true },
+            secondary: { type: String, required: true },
+            accent: { type: String, required: true },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+    profileThemeId: { type: String, default: null },
+    customTheme: {
+      type: new Schema(
+        {
+          background: { type: String, required: true },
+          foreground: { type: String, required: true },
+          primary: { type: String, required: true },
+          secondary: { type: String, required: true },
+          accent: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
     hideRankingFeatures: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },

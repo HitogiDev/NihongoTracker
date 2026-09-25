@@ -38,15 +38,21 @@ import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
 import { hasAvatarFrame } from '../utils/customization';
 import UserAvatar from './UserAvatar';
+import { applyAppTheme } from '../utils/appTheme';
 import { useTranslation } from 'react-i18next';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
-type ThemeMode = 'dark' | 'light' | 'system';
+type ThemeMode = 'dark' | 'light' | 'system' | 'custom';
 
 const THEME_CYCLE: ThemeMode[] = ['dark', 'light', 'system'];
 
 const normalizeThemeMode = (theme: string | null | undefined): ThemeMode => {
-  if (theme === 'dark' || theme === 'light' || theme === 'system') {
+  if (
+    theme === 'dark' ||
+    theme === 'light' ||
+    theme === 'system' ||
+    theme === 'custom'
+  ) {
     return theme;
   }
 
@@ -136,7 +142,7 @@ function Header() {
       if (themeMode === 'system') {
         document.documentElement.setAttribute(
           'data-theme',
-          resolveThemeForDocument('system') ? 'dark' : 'light'
+          resolveThemeForDocument('system') ? 'dark' : 'light',
         );
       }
     };
@@ -151,10 +157,8 @@ function Header() {
   function toggleTheme() {
     const currentIndex = THEME_CYCLE.indexOf(themeMode);
     const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
-    const resolvedTheme = resolveThemeForDocument(nextTheme) ? 'dark' : 'light';
-
     setThemeMode(nextTheme);
-    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    applyAppTheme(nextTheme);
     localStorage.setItem('theme', nextTheme);
     window.dispatchEvent(new CustomEvent('themeChange', { detail: nextTheme }));
   }
@@ -238,7 +242,8 @@ function Header() {
                     {t('links.stats')}
                   </Link>
                 </li>
-                {!hideRankingFeatures && <li>
+                {!hideRankingFeatures && (
+                  <li>
                   <Link
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
@@ -246,7 +251,8 @@ function Header() {
                     <BarChart className="w-4 h-4" />
                     {t('links.ranking')}
                   </Link>
-                </li>}
+                  </li>
+                )}
                 <li>
                   <Link
                     to="/clubs"
@@ -385,14 +391,16 @@ function Header() {
                   {t('links.stats')}
                 </Link>
               </li>
-              {!hideRankingFeatures && <li>
+              {!hideRankingFeatures && (
+                <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
                 >
                   {t('links.ranking')}
                 </Link>
-              </li>}
+                </li>
+              )}
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"

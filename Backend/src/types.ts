@@ -165,6 +165,15 @@ export interface IUserCustomization {
 
 export interface IUserSettings {
   blurAdultContent: boolean;
+  customThemes?: IUserCustomTheme[];
+  profileThemeId?: string | null;
+  customTheme?: {
+    background: string;
+    foreground: string;
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
   hideUnmatchedLogsAlert?: boolean;
   hideRankingFeatures?: boolean;
   timezone?: string;
@@ -178,6 +187,16 @@ export interface IUserSettings {
   lastSeenChangelogAt?: Date | null;
   socialPrivacy?: ISocialPrivacySettings;
   achievementShowcase?: string[];
+}
+
+export interface IUserCustomTheme {
+  id: string;
+  name: string;
+  background: string;
+  foreground: string;
+  primary: string;
+  secondary: string;
+  accent: string;
 }
 
 export interface IPatreonData {

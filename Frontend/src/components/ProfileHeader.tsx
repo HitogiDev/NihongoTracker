@@ -5,7 +5,7 @@ import {
   isPrivateProfileError,
 } from '../utils/apiError';
 import ShareStatsModal from './ShareStatsModal';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import {
   Handshake,
@@ -39,6 +39,7 @@ import { getAchievementName } from '../utils/achievementText';
 import BannerEffectOverlay from './BannerEffectOverlay';
 import { useUserDataStore } from '../store/userData';
 import Spinner from './ui/Spinner';
+import { applyAppTheme, getSelectedCustomTheme } from '../utils/appTheme';
 
 function PrivateProfileNotice({ username }: { username: string }) {
   const { t } = useTranslation('profile');
@@ -89,6 +90,27 @@ export default function ProfileHeader() {
   });
   const isPrivateProfile = isPrivateProfileError(userError);
 
+  useLayoutEffect(() => {
+    const profileTheme = isPrivateProfile ? undefined : user?.profileTheme;
+    if (!profileTheme) return;
+
+    const applyProfileTheme = () => applyAppTheme('custom', profileTheme);
+    applyProfileTheme();
+    window.addEventListener('themeChange', applyProfileTheme);
+
+    return () => {
+      window.removeEventListener('themeChange', applyProfileTheme);
+      const visitor = useUserDataStore.getState().user;
+      applyAppTheme(
+        localStorage.getItem('theme') || 'system',
+        visitor?.roles?.includes('admin') ||
+          (visitor?.patreon?.isActive && visitor.patreon.tier === 'consumer')
+          ? getSelectedCustomTheme(visitor.settings)
+          : undefined,
+      );
+    };
+  }, [isPrivateProfile, user?.profileTheme, currentUser]);
+
   useEffect(() => {
     if (!userError || isPrivateProfile) return;
 
@@ -133,12 +155,13 @@ export default function ProfileHeader() {
   }
 
   return (
-    // The owner's accent is set here, on the wrapper around the header *and*
-    // the profile <Outlet>, so every child component inside the profile picks
-    // it up through DaisyUI's color variables — and nothing outside does.
+    // The owner's profile accent stays scoped here when no full profile theme
+    // is selected. A full theme is applied to the document for this route.
     <div
       className="flex flex-col justify-center bg-base-200 text-base-content"
-      style={getProfileAccentStyle(customization)}
+      style={user?.profileTheme
+        ? undefined
+        : getProfileAccentStyle(customization)}
     >
       <div
         className={`relative h-96 w-full bg-cover bg-center bg-no-repeat ${

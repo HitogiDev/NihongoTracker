@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
+import api from '../api/axiosConfig';
+import type { ICustomTheme, ISavedCustomTheme } from '../types';
 import { useUserDataStore } from '../store/userData';
+import {
+  applyAppTheme,
+  DEFAULT_CUSTOM_THEME,
+  getSavedCustomThemes,
+} from '../utils/appTheme';
+import Field from './ui/Field';
 
-const defaultTheme = 'system';
 const freeThemes = ['system', 'light', 'dark'];
-
 const patreonThemes = [
   'winter',
   'cupcake',
@@ -23,223 +32,348 @@ const patreonThemes = [
   'sunset',
   'abyss',
 ];
-
-const themes = [...freeThemes, ...patreonThemes];
-
-const normalizeTheme = (theme: string | null | undefined) => {
-  if (!theme) {
-    return defaultTheme;
-  }
-
-  return theme;
-};
-
-const resolveTheme = (theme: string) => {
-  if (theme === 'system') {
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    ) {
-      return 'dark';
-    }
-
-    return 'light';
-  }
-
-  return theme;
-};
-
-// Global theme management to prevent conflicts
-let globalTheme: string | null = null;
-
-// Initialize theme immediately (before React renders)
-const getInitialTheme = () => {
-  if (typeof window !== 'undefined') {
-    // Check if we already have a global theme set
-    if (globalTheme) return globalTheme;
-
-    const saved = localStorage.getItem('theme');
-    const theme = normalizeTheme(saved);
-    globalTheme = theme;
-    return theme;
-  }
-  return defaultTheme;
-};
-
-// Set theme on document immediately
-const initialTheme = getInitialTheme();
-if (typeof document !== 'undefined') {
-  document.documentElement.setAttribute(
-    'data-theme',
-    resolveTheme(initialTheme)
-  );
-}
+const colorKeys = [
+  'background',
+  'foreground',
+  'primary',
+  'secondary',
+  'accent',
+] as const;
 
 export default function ThemeSwitcher() {
-  const { user } = useUserDataStore();
+  const { t } = useTranslation('settings');
+  const queryClient = useQueryClient();
+  const { user, setUser } = useUserDataStore();
   const hasPatreonAccess =
-    (user?.patreon?.isActive && user?.patreon?.tier) ||
+    !!(user?.patreon?.isActive && user.patreon.tier) ||
     user?.roles?.includes('admin');
+  const hasCustomAccess = !!(
+    user?.roles?.includes('admin') ||
+    (user?.patreon?.isActive && user.patreon.tier === 'consumer')
+  );
+  const savedThemes = useMemo(
+    () => getSavedCustomThemes(user?.settings),
+    [user?.settings],
+  );
+  const profileThemeId = user?.settings?.profileThemeId ?? null;
 
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return normalizeTheme(localStorage.getItem('theme'));
-    }
-    return defaultTheme;
-  });
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('theme') || 'system',
+  );
+  const [selectedId, setSelectedId] = useState(
+    () => localStorage.getItem('customThemeId') || '',
+  );
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [palette, setPalette] = useState<ICustomTheme>(DEFAULT_CUSTOM_THEME);
+  const [saving, setSaving] = useState(false);
 
-  // Track the theme when entering settings (for reverting on exit)
-  const [originalTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return normalizeTheme(localStorage.getItem('theme'));
-    }
-    return defaultTheme;
-  });
-
-  // Update theme and save to localStorage
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', resolveTheme(theme));
+    const selected =
+      savedThemes.find((item) => item.id === selectedId) ?? savedThemes[0];
+    applyAppTheme(theme, hasCustomAccess ? selected : undefined);
     localStorage.setItem('theme', theme);
-    globalTheme = theme; // Update global reference
-  }, [theme]);
+  }, [theme, selectedId, savedThemes, hasCustomAccess]);
 
-  // Keep system theme synced with OS preference changes
   useEffect(() => {
-    if (theme !== 'system') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const applySystemTheme = () => {
-      document.documentElement.setAttribute(
-        'data-theme',
-        resolveTheme('system')
-      );
-      window.dispatchEvent(
-        new CustomEvent('themeChange', { detail: 'system' })
-      );
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'theme') setTheme(event.newValue || 'system');
+      if (event.key === 'customThemeId') setSelectedId(event.newValue || '');
     };
-
-    mediaQuery.addEventListener('change', applySystemTheme);
-
-    return () => {
-      mediaQuery.removeEventListener('change', applySystemTheme);
-    };
-  }, [theme]);
-
-  // Revert to original theme on unmount if user selected premium theme without access
-  useEffect(() => {
-    return () => {
-      if (!hasPatreonAccess && !freeThemes.includes(theme)) {
-        // Revert to original theme if it was a free theme, otherwise default to system
-        const revertTheme = freeThemes.includes(originalTheme)
-          ? originalTheme
-          : defaultTheme;
-        document.documentElement.setAttribute(
-          'data-theme',
-          resolveTheme(revertTheme)
-        );
-        localStorage.setItem('theme', revertTheme);
-        globalTheme = revertTheme;
-      }
-    };
-  }, [hasPatreonAccess, theme, originalTheme]);
-
-  // Sync theme between tabs and components
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'theme' && e.newValue && e.newValue !== theme) {
-        const nextTheme = normalizeTheme(e.newValue);
-        setTheme(nextTheme);
-        document.documentElement.setAttribute(
-          'data-theme',
-          resolveTheme(nextTheme)
-        );
-        globalTheme = nextTheme;
-      }
-    };
-
-    // Also listen for custom theme events
-    const onThemeChange = (e: CustomEvent) => {
-      const nextTheme = normalizeTheme(e.detail as string | null | undefined);
-
-      if (nextTheme !== theme) {
-        setTheme(nextTheme);
-        globalTheme = nextTheme;
-      }
-    };
-
+    const onThemeChange = (event: CustomEvent<string>) =>
+      setTheme(event.detail);
     window.addEventListener('storage', onStorage);
     window.addEventListener('themeChange', onThemeChange as EventListener);
-
     return () => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('themeChange', onThemeChange as EventListener);
     };
+  }, []);
+
+  useEffect(() => {
+    if (theme !== 'system') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => applyAppTheme('system');
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
   }, [theme]);
 
-  const handleThemeChange = (newTheme: string) => {
-    const nextTheme = normalizeTheme(newTheme);
-    setTheme(nextTheme);
-    globalTheme = nextTheme;
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: nextTheme }));
-  };
+  function chooseTheme(next: string, id?: string) {
+    if (id) {
+      localStorage.setItem('customThemeId', id);
+      setSelectedId(id);
+      applyAppTheme(
+        'custom',
+        savedThemes.find((item) => item.id === id),
+      );
+    } else {
+      applyAppTheme(next);
+    }
+    setTheme(next);
+    localStorage.setItem('theme', next);
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: next }));
+  }
+
+  async function persistThemes(
+    nextThemes: ISavedCustomTheme[],
+    nextProfileId: string | null,
+  ) {
+    setSaving(true);
+    try {
+      const { data } = await api.put<{
+        themes: ISavedCustomTheme[];
+        profileThemeId: string | null;
+      }>('users/me/custom-themes', {
+        themes: nextThemes,
+        profileThemeId: nextProfileId,
+      });
+      if (user) {
+        setUser({
+          ...user,
+          settings: {
+            ...user.settings,
+            blurAdultContent: user.settings?.blurAdultContent ?? true,
+            customTheme: undefined,
+            customThemes: data.themes,
+            profileThemeId: data.profileThemeId,
+          },
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['user', user.username],
+        });
+      }
+      toast.success(t('preferences.customTheme.saved'));
+      return true;
+    } catch {
+      toast.error(t('preferences.customTheme.failed'));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveTheme() {
+    const trimmed = name.trim();
+    if (
+      !trimmed ||
+      trimmed.length > 40 ||
+      savedThemes.some(
+        (item) =>
+          item.id !== editingId &&
+          item.name.toLowerCase() === trimmed.toLowerCase(),
+      )
+    ) {
+      toast.error(t('preferences.customTheme.invalidName'));
+      return;
+    }
+    if (!editingId && savedThemes.length >= 10) return;
+    const id = editingId ?? crypto.randomUUID();
+    const entry = { id, name: trimmed, ...palette };
+    const nextThemes = editingId
+      ? savedThemes.map((item) => (item.id === editingId ? entry : item))
+      : [...savedThemes, entry];
+    if (await persistThemes(nextThemes, profileThemeId)) {
+      setEditingId(null);
+      setName('');
+      setPalette(DEFAULT_CUSTOM_THEME);
+      chooseTheme('custom', id);
+    }
+  }
+
+  async function deleteTheme(id: string) {
+    const nextThemes = savedThemes.filter((item) => item.id !== id);
+    if (
+      await persistThemes(
+        nextThemes,
+        profileThemeId === id ? null : profileThemeId,
+      )
+    ) {
+      if (editingId === id) setEditingId(null);
+      if (theme === 'custom' && selectedId === id) {
+        if (nextThemes[0]) chooseTheme('custom', nextThemes[0].id);
+        else chooseTheme('system');
+      }
+    }
+  }
 
   return (
-    <div className="dropdown w-full">
-      <div tabIndex={0} role="button" className="btn w-full">
-        Tema: {theme.charAt(0).toUpperCase() + theme.slice(1)}
-        <svg
-          width="12px"
-          height="12px"
-          className="inline-block h-2 w-2 fill-current opacity-60"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 2048 2048"
+    <div className="w-full space-y-4">
+      <div className="dropdown w-full">
+        <div tabIndex={0} role="button" className="btn w-full">
+          {t('preferences.theme')}:{' '}
+          {theme === 'custom'
+            ? ((
+                savedThemes.find((item) => item.id === selectedId) ??
+                savedThemes[0]
+              )?.name ?? 'Custom')
+            : theme.charAt(0).toUpperCase() + theme.slice(1)}
+        </div>
+        <ul
+          tabIndex={0}
+          className="dropdown-content surface-raised z-50 w-56 max-h-72 overflow-y-auto p-2"
         >
-          <path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path>
-        </svg>
+          {[...freeThemes, ...patreonThemes].map((item) => {
+            const locked = !hasPatreonAccess && patreonThemes.includes(item);
+            return (
+              <li key={item}>
+                <button
+                  type="button"
+                  className="w-full rounded-field p-2 text-left hover:bg-base-200 disabled:opacity-50"
+                  disabled={locked}
+                  onClick={() => chooseTheme(item)}
+                >
+                  {item}
+                </button>
+              </li>
+            );
+          })}
+          {hasCustomAccess &&
+            savedThemes.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className="w-full rounded-field p-2 text-left hover:bg-base-200"
+                  onClick={() => chooseTheme('custom', item.id)}
+                >
+                  {item.name}
+                </button>
+              </li>
+            ))}
+        </ul>
       </div>
-      <ul
-        tabIndex={0}
-        className="dropdown-content surface-raised z-50 w-52 p-2 overflow-y-auto max-h-72"
-      >
-        {themes.map((t) => {
-          const isLocked = !hasPatreonAccess && patreonThemes.includes(t);
-          return (
-            <li key={t}>
-              <label
-                className={`flex items-center gap-2 cursor-pointer p-2 hover:bg-base-200 rounded ${isLocked ? 'opacity-50' : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="theme-controller"
-                  className="theme-controller"
-                  value={t}
-                  checked={theme === t}
-                  onChange={() => handleThemeChange(t)}
-                  disabled={isLocked}
-                />
-                <span className="capitalize flex-1">{t}</span>
-                {isLocked && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-warning"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+
+      {hasCustomAccess && (
+        <div className="surface-muted space-y-4 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold">
+              {t('preferences.customTheme.title')}
+            </h3>
+            <span className="text-sm text-base-content/60">
+              {savedThemes.length}/10
+            </span>
+          </div>
+          {savedThemes.length > 0 && (
+            <ul className="space-y-2">
+              {savedThemes.map((item) => (
+                <li
+                  key={item.id}
+                  className="surface flex flex-wrap items-center gap-2 p-2"
+                >
+                  <span className="min-w-24 flex-1 font-medium">
+                    {item.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => chooseTheme('custom', item.id)}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                    {t('preferences.customTheme.use')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      setEditingId(item.id);
+                      setName(item.name);
+                      setPalette(item);
+                    }}
+                  >
+                    {t('preferences.customTheme.edit')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={saving}
+                    onClick={() =>
+                      void persistThemes(
+                        savedThemes,
+                        profileThemeId === item.id ? null : item.id,
+                      )
+                    }
+                  >
+                    {profileThemeId === item.id
+                      ? t('preferences.customTheme.removeProfile')
+                      : t('preferences.customTheme.showProfile')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-error btn-outline btn-sm"
+                    disabled={saving}
+                    onClick={() => void deleteTheme(item.id)}
+                  >
+                    {t('preferences.customTheme.delete')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {(editingId || savedThemes.length < 10) && (
+            <div className="space-y-3">
+              <Field label={t('preferences.customTheme.name')} required>
+                {(id) => (
+                  <input
+                    id={id}
+                    className="input w-full"
+                    maxLength={40}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                  />
                 )}
-              </label>
-            </li>
-          );
-        })}
-      </ul>
+              </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {colorKeys.map((key) => (
+                  <Field key={key} label={t(`preferences.customTheme.${key}`)}>
+                    {(id) => (
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={id}
+                          type="color"
+                          className="h-10 w-12 cursor-pointer"
+                          value={palette[key]}
+                          onChange={(event) =>
+                            setPalette((previous) => ({
+                              ...previous,
+                              [key]: event.target.value,
+                            }))
+                          }
+                        />
+                        <span className="font-mono text-sm">
+                          {palette[key]}
+                        </span>
+                      </div>
+                    )}
+                  </Field>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={saving || !name.trim()}
+                  onClick={() => void saveTheme()}
+                >
+                  {saving
+                    ? t('preferences.customTheme.saving')
+                    : t('preferences.customTheme.save')}
+                </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setEditingId(null);
+                      setName('');
+                      setPalette(DEFAULT_CUSTOM_THEME);
+                    }}
+                  >
+                    {t('preferences.customTheme.cancel')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ILoginResponse } from '../types';
+import { applyAppTheme, getSelectedCustomTheme } from '../utils/appTheme';
 
 const FREE_THEMES = new Set(['light', 'dark', 'system']);
 const FREE_TEXTHOOKER_THEMES = new Set(['', 'light', 'dark', 'system']);
@@ -30,10 +31,12 @@ const resetThemesForLoggedOutUser = () => {
     currentTheme && FREE_THEMES.has(currentTheme) ? currentTheme : 'system';
 
   localStorage.setItem('theme', nextTheme);
+  localStorage.removeItem('customThemeId');
   document.documentElement.setAttribute(
     'data-theme',
-    resolveThemeForDocument(nextTheme)
+    resolveThemeForDocument(nextTheme),
   );
+  applyAppTheme(nextTheme);
   window.dispatchEvent(new CustomEvent('themeChange', { detail: nextTheme }));
 
   const currentTextHookerTheme = localStorage.getItem('texthooker_theme');
@@ -54,7 +57,7 @@ type userDataState = {
 
 function mergeUserState(
   currentUser: ILoginResponse | null,
-  incomingUser: ILoginResponse
+  incomingUser: ILoginResponse,
 ): ILoginResponse {
   if (!currentUser) {
     return incomingUser;
@@ -86,15 +89,24 @@ export const useUserDataStore = create(
         // Preserve current theme when setting user data
         const currentTheme = localStorage.getItem('theme') || 'system';
         set((state) => ({ user: mergeUserState(state.user, user) }));
+        const currentUser = useUserDataStore.getState().user;
+        const hasAccess = currentUser?.roles?.includes('admin') ||
+          (currentUser?.patreon?.isActive && currentUser.patreon.tier === 'consumer');
+        const nextTheme =
+          currentTheme === 'custom' &&
+          (!hasAccess || !getSelectedCustomTheme(currentUser?.settings))
+            ? 'system'
+            : currentTheme;
+        if (nextTheme !== currentTheme)
+          localStorage.setItem('theme', nextTheme);
 
         // Restore theme if it was changed during user update
         if (typeof document !== 'undefined') {
-          const resolvedTheme = resolveThemeForDocument(currentTheme);
-          const documentTheme =
-            document.documentElement.getAttribute('data-theme');
-
-          if (documentTheme !== resolvedTheme) {
-            document.documentElement.setAttribute('data-theme', resolvedTheme);
+          applyAppTheme(nextTheme, getSelectedCustomTheme(currentUser?.settings));
+          if (nextTheme !== currentTheme) {
+            window.dispatchEvent(
+              new CustomEvent('themeChange', { detail: nextTheme }),
+            );
           }
         }
       },
@@ -114,7 +126,7 @@ export const useUserDataStore = create(
 
           const isProtectedRoute = protectedRoutes.some(
             (route) =>
-              currentPath === route || currentPath.startsWith(route + '/')
+              currentPath === route || currentPath.startsWith(route + '/'),
           );
 
           if (isProtectedRoute && currentPath !== '/login') {
@@ -125,6 +137,6 @@ export const useUserDataStore = create(
     }),
     {
       name: 'userData',
-    }
-  )
+    },
+  ),
 );
