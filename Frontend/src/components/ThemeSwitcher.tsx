@@ -7,6 +7,8 @@ import type { ICustomTheme, ISavedCustomTheme } from '../types';
 import { useUserDataStore } from '../store/userData';
 import {
   applyAppTheme,
+  canManageCustomThemes,
+  canShowProfileTheme,
   DEFAULT_CUSTOM_THEME,
   getSavedCustomThemes,
 } from '../utils/appTheme';
@@ -47,15 +49,15 @@ export default function ThemeSwitcher() {
   const hasPatreonAccess =
     !!(user?.patreon?.isActive && user.patreon.tier) ||
     user?.roles?.includes('admin');
-  const hasCustomAccess = !!(
-    user?.roles?.includes('admin') ||
-    (user?.patreon?.isActive && user.patreon.tier === 'consumer')
-  );
+  const hasCustomAccess = canManageCustomThemes(user);
+  const hasProfileThemeAccess = canShowProfileTheme(user);
   const savedThemes = useMemo(
     () => getSavedCustomThemes(user?.settings),
     [user?.settings],
   );
-  const profileThemeId = user?.settings?.profileThemeId ?? null;
+  const profileThemeId = hasProfileThemeAccess
+    ? (user?.settings?.profileThemeId ?? null)
+    : null;
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || 'system',
@@ -280,21 +282,23 @@ export default function ThemeSwitcher() {
                   >
                     {t('preferences.customTheme.edit')}
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    disabled={saving}
-                    onClick={() =>
-                      void persistThemes(
-                        savedThemes,
-                        profileThemeId === item.id ? null : item.id,
-                      )
-                    }
-                  >
-                    {profileThemeId === item.id
-                      ? t('preferences.customTheme.removeProfile')
-                      : t('preferences.customTheme.showProfile')}
-                  </button>
+                  {hasProfileThemeAccess && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={saving}
+                      onClick={() =>
+                        void persistThemes(
+                          savedThemes,
+                          profileThemeId === item.id ? null : item.id,
+                        )
+                      }
+                    >
+                      {profileThemeId === item.id
+                        ? t('preferences.customTheme.removeProfile')
+                        : t('preferences.customTheme.showProfile')}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-error btn-outline btn-sm"

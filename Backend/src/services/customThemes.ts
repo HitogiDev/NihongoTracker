@@ -1,4 +1,28 @@
-import type { IUserCustomTheme, IUserSettings } from '../types.js';
+import type { IPatreonData, IUserCustomTheme, IUserSettings } from '../types.js';
+
+function hasActiveTier(patreon?: IPatreonData): boolean {
+  return Boolean(
+    patreon?.isActive &&
+    (!patreon.manualTierExpiry || patreon.manualTierExpiry > new Date()),
+  );
+}
+
+export function canManageCustomThemes(
+  patreon?: IPatreonData,
+  isAdmin = false,
+): boolean {
+  return isAdmin || Boolean(
+    hasActiveTier(patreon) &&
+    (patreon?.tier === 'enthusiast' || patreon?.tier === 'consumer'),
+  );
+}
+
+export function canShowProfileTheme(
+  patreon?: IPatreonData,
+  isAdmin = false,
+): boolean {
+  return isAdmin || Boolean(hasActiveTier(patreon) && patreon?.tier === 'consumer');
+}
 
 const COLOR_KEYS = [
   'background',

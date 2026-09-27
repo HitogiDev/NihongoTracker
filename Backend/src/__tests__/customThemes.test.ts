@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canManageCustomThemes,
+  canShowProfileTheme,
   getPublicProfileTheme,
   getSavedCustomThemes,
   parseCustomThemes,
@@ -16,6 +18,28 @@ const theme = {
 };
 
 describe('custom themes', () => {
+  it('allows Enthusiasts to save themes and Consumers to display one publicly', () => {
+    const enthusiast = { tier: 'enthusiast' as const, isActive: true };
+    const consumer = { tier: 'consumer' as const, isActive: true };
+
+    expect(canManageCustomThemes(enthusiast)).toBe(true);
+    expect(canShowProfileTheme(enthusiast)).toBe(false);
+    expect(canManageCustomThemes(consumer)).toBe(true);
+    expect(canShowProfileTheme(consumer)).toBe(true);
+    expect(canManageCustomThemes({ ...consumer, isActive: false })).toBe(false);
+    expect(canShowProfileTheme({ ...consumer, isActive: false })).toBe(false);
+    expect(canManageCustomThemes({
+      ...consumer,
+      manualTierExpiry: new Date(0),
+    })).toBe(false);
+    expect(canShowProfileTheme({
+      ...consumer,
+      manualTierExpiry: new Date(0),
+    })).toBe(false);
+    expect(canManageCustomThemes(undefined, true)).toBe(true);
+    expect(canShowProfileTheme(undefined, true)).toBe(true);
+  });
+
   it('accepts up to ten named themes and rejects duplicates or invalid colors', () => {
     expect(parseCustomThemes([theme])).toEqual([theme]);
     expect(

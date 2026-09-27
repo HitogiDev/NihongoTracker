@@ -39,7 +39,11 @@ import { getAchievementName } from '../utils/achievementText';
 import BannerEffectOverlay from './BannerEffectOverlay';
 import { useUserDataStore } from '../store/userData';
 import Spinner from './ui/Spinner';
-import { applyAppTheme, getSelectedCustomTheme } from '../utils/appTheme';
+import {
+  applyAppTheme,
+  canManageCustomThemes,
+  getSelectedCustomTheme,
+} from '../utils/appTheme';
 
 function PrivateProfileNotice({ username }: { username: string }) {
   const { t } = useTranslation('profile');
@@ -103,9 +107,8 @@ export default function ProfileHeader() {
       const visitor = useUserDataStore.getState().user;
       applyAppTheme(
         localStorage.getItem('theme') || 'system',
-        visitor?.roles?.includes('admin') ||
-          (visitor?.patreon?.isActive && visitor.patreon.tier === 'consumer')
-          ? getSelectedCustomTheme(visitor.settings)
+        canManageCustomThemes(visitor)
+          ? getSelectedCustomTheme(visitor?.settings)
           : undefined,
       );
     };

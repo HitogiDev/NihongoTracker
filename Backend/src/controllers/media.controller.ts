@@ -594,8 +594,51 @@ export async function searchMedia(
     }
 
     const media = await searchDocuments(type, title, { limit, offset });
+    const hits = media.hits;
 
-    return res.status(200).json(media.hits);
+    // Meilisearch is synced when an index is empty, so metadata later enriched
+    // in MongoDB can leave stale episode durations in search results. The log
+    // forms use this value to calculate time, so return the current stored
+    // duration for anime and TV results.
+    if (type === 'anime' || type === 'tv_show') {
+      const contentIds = hits
+        .map((hit) => 'contentId' in hit && typeof hit.contentId === 'string'
+          ? hit.contentId
+          : undefined)
+        .filter((contentId: string | undefined): contentId is string =>
+          Boolean(contentId)
+        );
+      const mediaType = type === 'tv_show' ? 'tv show' : type;
+      const storedMedia = await MediaBase.find({
+        type: mediaType,
+        contentId: { $in: contentIds },
+      })
+        .select('contentId episodes episodeDuration')
+        .lean();
+      const storedMediaById = new Map(
+        storedMedia.map((item) => [item.contentId, item])
+      );
+
+      return res.status(200).json(
+        hits.map((hit) => {
+          const contentId = 'contentId' in hit && typeof hit.contentId === 'string'
+            ? hit.contentId
+            : undefined;
+          const currentMedia = contentId
+            ? storedMediaById.get(contentId)
+            : undefined;
+          if (!currentMedia) return hit;
+
+          return {
+            ...hit,
+            episodes: currentMedia.episodes ?? hit.episodes,
+            episodeDuration: currentMedia.episodeDuration ?? undefined,
+          };
+        })
+      );
+    }
+
+    return res.status(200).json(hits);
   } catch (error) {
     return next(error as customError);
   }

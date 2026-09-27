@@ -16,6 +16,8 @@ import {
   createImmersionForecast,
   deleteImmersionForecast,
   getImmersionForecasts,
+  getImmersionForecastTargetAvailability,
+  previewImmersionForecast,
   updateImmersionForecast,
 } from '../controllers/immersionForecast.controller.js';
 
@@ -24,6 +26,8 @@ const router = Router();
 router.use(protect);
 
 router.get('/forecasts', getImmersionForecasts);
+router.get('/forecasts/target-availability', getImmersionForecastTargetAvailability);
+router.post('/forecasts/preview', previewImmersionForecast);
 router.post('/forecasts', createImmersionForecast);
 router.patch('/forecasts/:forecastId', updateImmersionForecast);
 router.delete('/forecasts/:forecastId', deleteImmersionForecast);

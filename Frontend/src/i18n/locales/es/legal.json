@@ -1067,7 +1067,7 @@
       "themes": {
         "badge": "Temas premium",
         "title": "Haz que NihongoTracker sea más tuyo",
-        "subtitle": "Los niveles para mecenas desbloquean temas adicionales. Estos son algunos de los estilos que puedes elegir.",
+        "subtitle": "Los niveles para mecenas desbloquean temas adicionales. Enthusiast y Consumer también pueden crear y guardar hasta 10 temas propios. Consumer puede mostrar uno en su perfil público.",
         "carouselLabel": "Previsualización de temas",
         "previous": "Tema anterior",
         "next": "Tema siguiente",
@@ -1130,6 +1130,7 @@
             "Texto personalizado en la insignia de mecenas del perfil",
             "Marcos de avatar animados y efectos ambientales en la cabecera",
             "Efecto de nombre con brillo animado y color de acento propio",
+            "Crea, guarda y usa hasta 10 temas personalizados",
             "Amplía el máximo de etiquetas por log a 15",
             "Amplía el máximo de miembros por club a 250"
           ]
@@ -1140,7 +1141,7 @@
             "Marco de avatar Aura exclusivo",
             "Color personalizado en la insignia de mecenas (arcoíris incluido)",
             "Insignia de mecenas en todo el sitio",
-            "Crea y guarda hasta 10 temas personalizados y muestra uno en tu perfil",
+            "Muestra uno de tus temas personalizados en tu perfil público",
             "Amplía el máximo de etiquetas por log a 25",
             "Amplía el máximo de miembros por club a 1000"
           ]

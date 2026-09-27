@@ -146,7 +146,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - TanStack Query owns server state; API calls belong in `src/api/*.ts`.
 - `axiosConfig.ts` enables credentials and sends 401 handling to the Zustand user store.
 - `store/userData.ts` owns persisted user/auth state under the `userData` localStorage key. Theme values are intentionally preserved separately and premium themes fall back safely on logout.
-- Active Consumer patrons and admins can save up to 10 named palettes in `settings.customThemes` through `PUT /api/users/me/custom-themes`. `settings.profileThemeId` exposes one selected palette on public profile responses. `ProfileHeader` temporarily applies it to the document so the header, profile, and footer share it, then restores the visitor's theme on exit. The local `theme` selection is `custom` with a separate `customThemeId`; `utils/appTheme.ts` applies the selected colors and clears overrides when switching themes or logging out. The legacy `settings.customTheme` palette is read as a named theme until the next save.
+- Active Enthusiast/Consumer patrons and admins can save and use up to 10 named palettes in `settings.customThemes` through `PUT /api/users/me/custom-themes`. Only active Consumer patrons and admins can select `settings.profileThemeId` to expose one palette on public profile responses. `ProfileHeader` temporarily applies it to the document so the header, profile, and footer share it, then restores the visitor's theme on exit. The local `theme` selection is `custom` with a separate `customThemeId`; `utils/appTheme.ts` applies the selected colors and clears overrides when switching themes or logging out. The legacy `settings.customTheme` palette is read as a named theme until the next save.
 - `App.tsx` maps paths to document titles and implements scroll restoration. Add titles there for new top-level routes.
 
 ## Frontend UI conventions
@@ -180,10 +180,11 @@ Do not use removed v4 classes: `input-bordered`, `select-bordered`, `textarea-bo
 - Do not move radius token definitions into individual daisyUI theme blocks; `:root, [data-theme]` pins consistent geometry across themes.
 - Modals use `<dialog className="modal modal-bottom sm:modal-middle">`. Do not tint `modal-backdrop`.
 - New form controls use `<Field>`. Use `focus:input-primary`; set textarea height with `rows`.
+- Use daisyUI `select` controls for dropdowns, with semantic classes such as `select w-full`.
 - The navbar is absolute and 80 px high. Use `pt-20`/`HEADER_OFFSET` when a child container supplies normal vertical padding, and `pt-28`/`HEADER_OFFSET_CONTENT` when content begins directly below the offset.
 - Use daisyUI semantic colors. Media colors live only in `constants/mediaColors.ts`; chart colors come from `useThemeColors()`.
 - Use `lucide-react` icons sized by Tailwind classes, not the numeric `size` prop.
-- Date fields use `react-day-picker` with the `rdp-themed` Create Log appearance. Reuse `components/ui/DatePickerInput.tsx`; do not add native `<input type="date">` controls.
+- Date fields accept direct `YYYY-MM-DD` text entry and retain the `react-day-picker` calendar with the `rdp-themed` Create Log appearance. Reuse `components/ui/DatePickerInput.tsx` for all date inputs; do not add native `<input type="date">` controls or calendar-only replacements.
 - Never interpolate Tailwind class fragments. Map variants to complete literal class strings so Tailwind v4 can detect them.
 
 ## Maintaining this guidance

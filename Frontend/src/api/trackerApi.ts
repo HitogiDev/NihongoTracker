@@ -739,10 +739,26 @@ export async function getImmersionForecastsFn() {
   return data;
 }
 
+export async function getImmersionForecastTargetAvailabilityFn(
+  mediaId: string,
+  mediaType: IMediaDocument['type']
+) {
+  const { data } = await api.get<{
+    hasReliableTarget: boolean;
+    target: { metric: IImmersionForecast['metric']; total: number } | null;
+  }>(
+    'goals/forecasts/target-availability',
+    { params: { mediaId, mediaType } }
+  );
+  return data;
+}
+
 export async function createImmersionForecastFn(payload: {
   mediaId: string;
   mediaType: IMediaDocument['type'];
   targetDate: string;
+  metric?: IImmersionForecast['metric'];
+  targetTotal?: number;
 }) {
   const { data } = await api.post<IImmersionForecast>(
     'goals/forecasts',
@@ -751,13 +767,32 @@ export async function createImmersionForecastFn(payload: {
   return data;
 }
 
+export async function previewImmersionForecastFn(payload: {
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  targetDate: string;
+  metric?: IImmersionForecast['metric'];
+  targetTotal?: number;
+}) {
+  const { data } = await api.post<{
+    remaining: number;
+    estimatedMinutes: number | null;
+    availableMinutes: number;
+  }>('goals/forecasts/preview', payload);
+  return data;
+}
+
 export async function updateImmersionForecastFn(
   forecastId: string,
-  targetDate: string
+  payload: {
+    targetDate: string;
+    metric: IImmersionForecast['metric'];
+    targetTotal: number;
+  }
 ) {
   const { data } = await api.patch<IImmersionForecast>(
     `goals/forecasts/${forecastId}`,
-    { targetDate }
+    payload
   );
   return data;
 }

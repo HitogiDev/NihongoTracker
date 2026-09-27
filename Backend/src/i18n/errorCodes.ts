@@ -174,6 +174,7 @@ export const ERROR_CODES = [
   'goal.startBeforeTarget',
   'forecast.tierRequired',
   'forecast.invalidDate',
+  'forecast.invalidManualTarget',
   'forecast.mediaNotMeasurable',
   'forecast.alreadyExists',
   'forecast.notFound',

@@ -101,6 +101,7 @@
     "typeAndTargetRequired": "Hacen falta un tipo y un objetivo"
   },
   "forecast": {
+    "invalidManualTarget": "Introduce un total de finalización y una métrica válidos",
     "alreadyComplete": "Este medio ya está completado",
     "alreadyExists": "Ya tienes un pronóstico para este medio",
     "invalidDate": "Elige una fecha posterior a hoy",

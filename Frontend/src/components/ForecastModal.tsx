@@ -1,18 +1,18 @@
-import { createPortal } from 'react-dom';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/style.css';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   createImmersionForecastFn,
+  getImmersionForecastTargetAvailabilityFn,
   multiSearchMediaFn,
+  previewImmersionForecastFn,
   updateImmersionForecastFn,
 } from '../api/trackerApi';
 import {
   IImmersionForecast,
+  ImmersionForecastMetric,
   IMediaDocument,
   SearchResultType,
 } from '../types';
@@ -22,6 +22,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import Modal from './ui/Modal';
 import Field from './ui/Field';
 import Button from './ui/Button';
+import DatePickerInput from './ui/DatePickerInput';
 import RowButton from './ui/RowButton';
 import { buttonClass } from './ui/buttons';
 
@@ -36,31 +37,6 @@ function tomorrow(): string {
   return date.toISOString().slice(0, 10);
 }
 
-function parseDateInput(value: string): Date {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatDateInput(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function DayPickerChevron({
-  orientation,
-}: {
-  orientation?: 'left' | 'right' | 'up' | 'down';
-}) {
-  const iconClass = 'w-4 h-4 text-base-content/60';
-  return orientation === 'left' ? (
-    <ChevronLeft className={iconClass} />
-  ) : (
-    <ChevronRight className={iconClass} />
-  );
-}
-
 function displayTitle(media: Pick<IMediaDocument, 'title'>): string {
   return (
     media.title.contentTitleNative ||
@@ -70,21 +46,26 @@ function displayTitle(media: Pick<IMediaDocument, 'title'>): string {
   );
 }
 
-const CALENDAR_WIDTH = 288;
-const CALENDAR_HEIGHT = 304;
+function metricsForMedia(type: IMediaDocument['type']): ImmersionForecastMetric[] {
+  if (type === 'anime' || type === 'tv show') return ['episodes'];
+  if (type === 'movie') return ['minutes'];
+  if (type === 'manga' || type === 'light-novel') {
+    return ['volumes', 'pages', 'chars'];
+  }
+  if (type === 'book') return ['pages', 'chars'];
+  return ['chars', 'minutes'];
+}
 
-function getCalendarPosition(button: HTMLButtonElement) {
-  const bounds = button.getBoundingClientRect();
-  const gap = 4;
-  const top =
-    bounds.top >= CALENDAR_HEIGHT + gap
-      ? bounds.top - CALENDAR_HEIGHT - gap
-      : bounds.bottom + gap;
-  const left = Math.min(
-    Math.max(8, bounds.right - CALENDAR_WIDTH),
-    window.innerWidth - CALENDAR_WIDTH - 8
-  );
-  return { top, left };
+function defaultMetric(type: IMediaDocument['type']): ImmersionForecastMetric {
+  return metricsForMedia(type)[0];
+}
+
+function mediaTypeTranslationKey(type: IMediaDocument['type']): string {
+  return type === 'tv show' ? 'common:mediaTypes.tvShow' : `common:mediaTypes.${type}`;
+}
+
+function formatForecastDuration(minutes: number): string {
+  return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }
 
 export default function ForecastModal({
@@ -105,12 +86,19 @@ export default function ForecastModal({
   const [results, setResults] = useState<SearchResultType[]>([]);
   const [selected, setSelected] = useState<InitialMedia | null>(null);
   const [targetDate, setTargetDate] = useState(tomorrow());
+  const [targetMetric, setTargetMetric] = useState<ImmersionForecastMetric>(
+    initialMedia ? defaultMetric(initialMedia.type) : 'chars'
+  );
+  const [manualTotal, setManualTotal] = useState('');
+  const [resolvedTarget, setResolvedTarget] = useState<{
+    metric: ImmersionForecastMetric;
+    total: number;
+  } | null | undefined>(undefined);
+  const [paceWarning, setPaceWarning] = useState<{
+    estimatedMinutes: number;
+    availableMinutes: number;
+  } | null>(null);
   const [searching, setSearching] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
-  const [calendarPortalHost, setCalendarPortalHost] =
-    useState<HTMLDialogElement | null>(null);
-  const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const debouncedQuery = useDebounce(query, 300);
   const tier = user?.patreon?.tier;
   const canManage = Boolean(
@@ -124,36 +112,44 @@ export default function ForecastModal({
     setSelected(initialMedia ?? null);
     setQuery('');
     setResults([]);
-    setIsCalendarOpen(false);
     setTargetDate(forecast?.targetDate.slice(0, 10) ?? tomorrow());
+    setTargetMetric(
+      forecast?.metric ?? (initialMedia ? defaultMetric(initialMedia.type) : 'chars')
+    );
+    setManualTotal(forecast ? String(forecast.targetTotal) : '');
+    setResolvedTarget(undefined);
   }, [forecast, initialMedia, open]);
 
-  useLayoutEffect(() => {
-    if (!isCalendarOpen || !calendarButtonRef.current) return;
-    const updatePosition = () => {
-      if (calendarButtonRef.current) {
-        setCalendarPosition(getCalendarPosition(calendarButtonRef.current));
-      }
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [isCalendarOpen]);
-
-  useLayoutEffect(() => {
-    if (!isCalendarOpen) {
-      setCalendarPortalHost(null);
+  useEffect(() => {
+    if (!open || !selected || forecast) {
+      setResolvedTarget(undefined);
       return;
     }
-    const activeDialog = Array.from(
-      document.querySelectorAll<HTMLDialogElement>('dialog')
-    ).find((dialog) => dialog.open);
-    setCalendarPortalHost(activeDialog ?? null);
-  }, [isCalendarOpen]);
+    let active = true;
+    setResolvedTarget(undefined);
+    getImmersionForecastTargetAvailabilityFn(
+      selected.contentId,
+      selected.type
+    )
+      .then(({ target }) => {
+        if (active) {
+          setResolvedTarget(target);
+          if (target) setTargetMetric(target.metric);
+        }
+      })
+      .catch(() => {
+        if (active) setResolvedTarget(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [forecast, open, selected]);
+
+  const requiresManualTotal =
+    resolvedTarget === null ||
+    (resolvedTarget !== undefined &&
+      resolvedTarget !== null &&
+      targetMetric !== resolvedTarget.metric);
 
   useEffect(() => {
     if (!open || selected || debouncedQuery.trim().length < 2) {
@@ -180,13 +176,19 @@ export default function ForecastModal({
   const mutation = useMutation({
     mutationFn: () => {
       if (forecast) {
-        return updateImmersionForecastFn(forecast._id, targetDate);
+        return updateImmersionForecastFn(forecast._id, {
+          targetDate,
+          metric: targetMetric,
+          targetTotal: Number(manualTotal),
+        });
       }
       if (!selected) throw new Error(t('forecast.selectRequired'));
       return createImmersionForecastFn({
         mediaId: selected.contentId,
         mediaType: selected.type,
         targetDate,
+        metric: targetMetric,
+        targetTotal: manualTotal.trim() ? Number(manualTotal) : undefined,
       });
     },
     onSuccess: () => {
@@ -195,20 +197,74 @@ export default function ForecastModal({
     },
   });
 
+  const previewMutation = useMutation({
+    mutationFn: previewImmersionForecastFn,
+    onSuccess: (preview) => {
+      if (
+        preview.estimatedMinutes !== null &&
+        preview.estimatedMinutes > preview.availableMinutes
+      ) {
+        setPaceWarning({
+          estimatedMinutes: preview.estimatedMinutes,
+          availableMinutes: preview.availableMinutes,
+        });
+      } else {
+        mutation.mutate();
+      }
+    },
+  });
+
+  const checkPaceAndSubmit = () => {
+    const mediaId = forecast?.mediaId ?? selected?.contentId;
+    const mediaType = forecast?.mediaType ?? selected?.type;
+    if (!mediaId || !mediaType) return;
+    setPaceWarning(null);
+    previewMutation.mutate({
+      mediaId,
+      mediaType,
+      targetDate,
+      metric: targetMetric,
+      targetTotal: manualTotal.trim() ? Number(manualTotal) : undefined,
+    });
+  };
+
   const actions = canManage ? (
-    <>
-      <Button appearance="ghost" onClick={onClose}>
-        {t('modal.cancel')}
-      </Button>
-      <Button
-        variant="primary"
-        loading={mutation.isPending}
-        disabled={(!forecast && !selected) || !targetDate}
-        onClick={() => mutation.mutate()}
-      >
-        {forecast ? t('modal.saveChanges') : t('forecast.create')}
-      </Button>
-    </>
+    paceWarning ? (
+      <>
+        <Button appearance="ghost" onClick={() => setPaceWarning(null)}>
+          {t('forecast.cancelAndEdit')}
+        </Button>
+        <Button
+          variant="primary"
+          loading={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {forecast ? t('forecast.saveAnyway') : t('forecast.createAnyway')}
+        </Button>
+      </>
+    ) : (
+      <>
+        <Button appearance="ghost" onClick={onClose}>
+          {t('modal.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          loading={mutation.isPending || previewMutation.isPending}
+          disabled={
+            (!forecast && !selected) ||
+            !targetDate ||
+            (!forecast && resolvedTarget === undefined) ||
+            (!forecast && requiresManualTotal && !manualTotal.trim()) ||
+            (Boolean(forecast) && !manualTotal.trim()) ||
+            (manualTotal.trim() !== '' &&
+              (!Number.isFinite(Number(manualTotal)) || Number(manualTotal) <= 0))
+          }
+          onClick={checkPaceAndSubmit}
+        >
+          {forecast ? t('modal.saveChanges') : t('forecast.create')}
+        </Button>
+      </>
+    )
   ) : undefined;
   return (
     <Modal
@@ -260,7 +316,12 @@ export default function ForecastModal({
                 results.map((media) => (
                   <RowButton
                     key={`${media.type}:${media.contentId}`}
-                    onClick={() => setSelected(media)}
+                    onClick={() => {
+                      setSelected(media);
+                      setTargetMetric(defaultMetric(media.type));
+                      setManualTotal('');
+                      setPaceWarning(null);
+                    }}
                   >
                     {media.contentImage ? (
                       <img
@@ -276,7 +337,7 @@ export default function ForecastModal({
                         {displayTitle(media)}
                       </span>
                       <span className="block text-xs opacity-60">
-                        {media.type}
+                        {t(mediaTypeTranslationKey(media.type))}
                       </span>
                     </span>
                   </RowButton>
@@ -303,7 +364,9 @@ export default function ForecastModal({
                   {selected ? displayTitle(selected) : forecast?.mediaTitle}
                 </p>
                 <p className="text-xs text-base-content/60">
-                  {selected?.type || forecast?.mediaType}
+                  {selected
+                    ? t(mediaTypeTranslationKey(selected.type))
+                    : forecast && t(mediaTypeTranslationKey(forecast.mediaType))}
                 </p>
               </div>
               {!initialMedia && !forecast && (
@@ -315,52 +378,110 @@ export default function ForecastModal({
           )}
 
           {(selected || forecast) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field
+                label={t('forecast.completionMetric')}
+                required={Boolean(forecast) || requiresManualTotal}
+              >
+                {(id) => (
+                  <select
+                    id={id}
+                    className="select w-full"
+                    value={targetMetric}
+                    disabled={!forecast && resolvedTarget === undefined}
+                    required={Boolean(forecast) || requiresManualTotal}
+                    onChange={(event) => {
+                      setTargetMetric(
+                        event.target.value as ImmersionForecastMetric
+                      );
+                      setPaceWarning(null);
+                    }}
+                  >
+                    {metricsForMedia(
+                      selected?.type ?? forecast!.mediaType
+                    ).map((metric) => (
+                      <option key={metric} value={metric}>
+                        {t(`forecast.units.${metric}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field
+                label={t('forecast.completionTotal')}
+                required={Boolean(forecast) || requiresManualTotal}
+              >
+                {(id) => (
+                  <input
+                    id={id}
+                    className="input w-full"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={manualTotal}
+                    required={Boolean(forecast) || requiresManualTotal}
+                    onChange={(event) => {
+                      setManualTotal(event.target.value);
+                      setPaceWarning(null);
+                    }}
+                    placeholder={t('forecast.completionTotalPlaceholder')}
+                  />
+                )}
+              </Field>
+            </div>
+          )}
+
+          {!forecast && selected && (
+            <p className="text-sm text-base-content/60" role="status">
+              {resolvedTarget === undefined
+                ? t('forecast.checkingMetadata')
+                : resolvedTarget
+                  ? t('forecast.metadataTotal', {
+                      total: resolvedTarget.total.toLocaleString(),
+                      unit: t(`forecast.units.${resolvedTarget.metric}`),
+                    })
+                  : t('forecast.metadataMissing')}
+            </p>
+          )}
+
+          {(selected || forecast) && (
             <Field label={t('forecast.targetDate')} required>
               {(id) => (
-                <>
-                  <button
-                    id={id}
-                    ref={calendarButtonRef}
-                    type="button"
-                    className="input focus:input-primary w-full flex items-center justify-between cursor-pointer"
-                    aria-expanded={isCalendarOpen}
-                    aria-label={t('forecast.targetDate')}
-                    onClick={() => setIsCalendarOpen((openState) => !openState)}
-                  >
-                    <span>{parseDateInput(targetDate).toLocaleDateString()}</span>
-                    <Calendar className="w-4 h-4" />
-                  </button>
-                  {isCalendarOpen &&
-                    createPortal(
-                      <div
-                        className="card card-sm surface-raised fixed z-[2000] w-72 p-2"
-                        style={calendarPosition}
-                      >
-                        <DayPicker
-                          className="rdp-themed"
-                          mode="single"
-                          selected={parseDateInput(targetDate)}
-                          onSelect={(date) => {
-                            setTargetDate(
-                              formatDateInput(date || parseDateInput(targetDate))
-                            );
-                            setIsCalendarOpen(false);
-                            calendarButtonRef.current?.focus();
-                          }}
-                          disabled={{ before: parseDateInput(tomorrow()) }}
-                          components={{ Chevron: DayPickerChevron }}
-                        />
-                      </div>,
-                      calendarPortalHost ?? document.body
-                    )}
-                </>
+                <DatePickerInput
+                  id={id}
+                  value={targetDate}
+                  onChange={(value) => {
+                    setTargetDate(value);
+                    setPaceWarning(null);
+                  }}
+                  min={tomorrow()}
+                  required
+                  ariaLabel={t('forecast.targetDate')}
+                  className="focus:input-primary"
+                />
               )}
             </Field>
+          )}
+
+          {paceWarning && (
+            <div role="alert" className="alert alert-warning">
+              <span>
+                {t('forecast.paceWarning', {
+                  estimated: formatForecastDuration(paceWarning.estimatedMinutes),
+                  available: formatForecastDuration(paceWarning.availableMinutes),
+                })}
+              </span>
+            </div>
           )}
 
           {mutation.isError && (
             <div role="alert" className="alert alert-error">
               <span>{getApiErrorMessage(mutation.error)}</span>
+            </div>
+          )}
+          {previewMutation.isError && (
+            <div role="alert" className="alert alert-error">
+              <span>{getApiErrorMessage(previewMutation.error)}</span>
             </div>
           )}
         </div>
