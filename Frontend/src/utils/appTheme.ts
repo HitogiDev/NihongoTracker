@@ -9,6 +9,23 @@ export const DEFAULT_CUSTOM_THEME: ICustomTheme = {
   accent: '#00cdb7',
 };
 
+type ThemeAccessUser = Pick<IUser, 'patreon' | 'roles'> | null;
+
+export function canManageCustomThemes(user?: ThemeAccessUser): boolean {
+  return Boolean(
+    user?.roles?.includes('admin') ||
+    (user?.patreon?.isActive &&
+      (user.patreon.tier === 'enthusiast' || user.patreon.tier === 'consumer')),
+  );
+}
+
+export function canShowProfileTheme(user?: ThemeAccessUser): boolean {
+  return Boolean(
+    user?.roles?.includes('admin') ||
+    (user?.patreon?.isActive && user.patreon.tier === 'consumer'),
+  );
+}
+
 export function getSavedCustomThemes(
   settings?: IUser['settings'],
 ): ISavedCustomTheme[] {

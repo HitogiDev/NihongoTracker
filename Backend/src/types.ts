@@ -1147,13 +1147,15 @@ export interface ILongTermGoalProgress {
 export type ImmersionForecastMetric =
   | 'chars'
   | 'pages'
+  | 'volumes'
   | 'episodes'
   | 'minutes';
 
 export type ImmersionForecastTargetSource =
   | 'media'
   | 'jiten'
-  | 'google_books';
+  | 'google_books'
+  | 'manual';
 
 export type ImmersionForecastStatus =
   | 'on_track'
@@ -1172,6 +1174,7 @@ export interface IImmersionForecast extends Document {
   startingProgress: number;
   targetDate: Date;
   timezone: string;
+  planStartedAt?: Date;
   mediaTitle: string;
   mediaImage?: string;
   episodeDuration?: number;

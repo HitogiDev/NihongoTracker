@@ -36,7 +36,12 @@ import {
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
-import { getPublicProfileTheme, parseCustomThemes } from '../services/customThemes.js';
+import {
+  canManageCustomThemes,
+  canShowProfileTheme,
+  getPublicProfileTheme,
+  parseCustomThemes,
+} from '../services/customThemes.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import {
   cropAnimatedGifBuffer,
@@ -1290,12 +1295,11 @@ export async function updateCustomThemes(
   try {
     const user = await User.findById(res.locals.user._id);
     if (!user) throw apiError('user.notFound', 404, 'User not found');
-    if (!hasAdminRole(user) &&
-      (!user.patreon?.isActive || user.patreon.tier !== 'consumer')) {
+    if (!canManageCustomThemes(user.patreon, hasAdminRole(user))) {
       throw apiError(
         'customization.locked',
         403,
-        'An active Consumer tier is required',
+        'An active Enthusiast or Consumer tier is required',
       );
     }
     const themes = parseCustomThemes(req.body?.themes);
@@ -1306,6 +1310,13 @@ export async function updateCustomThemes(
         'customization.invalidValue',
         400,
         'Choose up to 10 named themes and a valid profile theme',
+      );
+    }
+    if (profileThemeId !== null && !canShowProfileTheme(user.patreon, hasAdminRole(user))) {
+      throw apiError(
+        'customization.locked',
+        403,
+        'An active Consumer tier is required to show a theme on your profile',
       );
     }
     user.set('settings.customThemes', themes);
@@ -1397,10 +1408,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     // Sanitized on read so an expired supporter stops rendering paid effects
     // without needing a migration or a background job.
     customization: visibleCustomization,
-    profileTheme: hasAdminRole(userFound) ||
-      (userFound.patreon?.isActive &&
-        userFound.patreon.tier === 'consumer' &&
-        (!userFound.patreon.manualTierExpiry || userFound.patreon.manualTierExpiry > new Date()))
+    profileTheme: canShowProfileTheme(userFound.patreon, hasAdminRole(userFound))
       ? getPublicProfileTheme(userFound.settings)
       : undefined,
     // Resolved server-side because hours/chars/log counts are not on the user

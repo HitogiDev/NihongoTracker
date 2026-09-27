@@ -1271,6 +1271,7 @@ export interface ILongTermGoalsResponse {
 export type ImmersionForecastMetric =
   | 'chars'
   | 'pages'
+  | 'volumes'
   | 'episodes'
   | 'minutes';
 
@@ -1298,10 +1299,11 @@ export interface IImmersionForecast {
   mediaType: IMediaDocument['type'];
   metric: ImmersionForecastMetric;
   targetTotal: number;
-  targetSource: 'media' | 'jiten' | 'google_books';
+  targetSource: 'media' | 'jiten' | 'google_books' | 'manual';
   startingProgress: number;
   targetDate: string;
   timezone: string;
+  planStartedAt?: string;
   mediaTitle: string;
   mediaImage?: string;
   episodeDuration?: number;

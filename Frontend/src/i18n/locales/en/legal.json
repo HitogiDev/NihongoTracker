@@ -1067,7 +1067,7 @@
       "themes": {
         "badge": "Premium themes",
         "title": "Make NihongoTracker feel like yours",
-        "subtitle": "Supporter tiers unlock extra themes. Here are a few of the looks you can choose from.",
+        "subtitle": "Supporter tiers unlock extra themes. Enthusiast and Consumer members can also create and save up to 10 custom themes. Consumer members can display one on their public profile.",
         "carouselLabel": "Theme previews",
         "previous": "Previous theme",
         "next": "Next theme",
@@ -1130,6 +1130,7 @@
             "Custom text in the profile donator badge",
             "Animated avatar frames and ambient banner effects",
             "Shimmer name effect and a profile accent color of your own",
+            "Create, save, and use up to 10 custom themes",
             "Increase maximum log tags to 15",
             "Increase maximum club members to 250"
           ]
@@ -1140,7 +1141,7 @@
             "Exclusive Aura avatar frame",
             "Custom donator badge color (rainbow included)",
             "Site-wide donator badge",
-            "Create and save up to 10 custom themes, and show one on your profile",
+            "Show one of your custom themes on your public profile",
             "Increase the maximum log tags to 25",
             "Increase maximum club members to 1000"
           ]

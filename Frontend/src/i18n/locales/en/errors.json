@@ -101,6 +101,7 @@
     "typeAndTargetRequired": "A type and a target are required"
   },
   "forecast": {
+    "invalidManualTarget": "Enter a valid completion total and metric",
     "alreadyComplete": "This media is already complete",
     "alreadyExists": "You already have a forecast for this media",
     "invalidDate": "Choose a date after today",

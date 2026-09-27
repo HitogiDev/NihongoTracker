@@ -34,15 +34,22 @@ export function mediaTitle(media: IMediaDocument): string {
   );
 }
 
+export async function getForecastMedia(
+  mediaId: string,
+  mediaType: IMediaDocument['type']
+): Promise<IMediaDocument | null> {
+  if (mediaType === 'video') return null;
+  return (await MediaBase.findOne({ contentId: mediaId, type: mediaType }).lean()) as
+    | IMediaDocument
+    | null;
+}
+
 export async function resolveForecastTarget(
   mediaId: string,
   mediaType: IMediaDocument['type']
 ): Promise<{ media: IMediaDocument; target: TargetDefinition } | null> {
-  const media = (await MediaBase.findOne({
-    contentId: mediaId,
-    type: mediaType,
-  }).lean()) as IMediaDocument | null;
-  if (!media || mediaType === 'video') return null;
+  const media = await getForecastMedia(mediaId, mediaType);
+  if (!media) return null;
 
   if (mediaType === 'anime' || mediaType === 'tv show') {
     const total = positive(media.episodes);
@@ -110,10 +117,15 @@ export async function getForecastProgressTotal(
   const fieldByMetric: Record<ImmersionForecastMetric, string> = {
     chars: '$chars',
     pages: '$pages',
+    volumes: '$volume',
     episodes: '$episodes',
     minutes: '$time',
   };
   const field = fieldByMetric[metric];
+  const accumulator =
+    metric === 'volumes'
+      ? { $max: field }
+      : { $sum: { $ifNull: [field, 0] } };
   const result = await Log.aggregate([
     {
       $match: {
@@ -123,7 +135,7 @@ export async function getForecastProgressTotal(
         date: { $lte: now },
       },
     },
-    { $group: { _id: null, total: { $sum: { $ifNull: [field, 0] } } } },
+    { $group: { _id: null, total: accumulator } },
   ]);
   return Math.max(0, Number(result[0]?.total ?? 0));
 }
@@ -149,8 +161,13 @@ function inclusiveDays(from: string, through: string): number {
   return Math.max(0, dayNumber(through) - dayNumber(from) + 1);
 }
 
+type EstimateContext = Pick<
+  IImmersionForecast,
+  'user' | 'mediaId' | 'mediaType' | 'metric'
+> & { episodeDuration?: number };
+
 async function estimateMinutes(
-  forecast: IImmersionForecast,
+  forecast: EstimateContext,
   remaining: number
 ): Promise<number | null> {
   if (remaining <= 0) return 0;
@@ -168,6 +185,25 @@ async function estimateMinutes(
     return speed ? Math.ceil((remaining / speed) * 60) : null;
   }
 
+  if (forecast.metric === 'volumes') {
+    const volumeLogs = await Log.aggregate([
+      {
+        $match: {
+          user: forecast.user,
+          type: forecast.mediaType,
+          mediaId: forecast.mediaId,
+          volume: { $gt: 0 },
+          time: { $gt: 0 },
+        },
+      },
+      { $group: { _id: '$volume', minutes: { $sum: '$time' } } },
+    ]);
+    const minutesPerVolume = medianOf(
+      volumeLogs.map((log) => Number(log.minutes))
+    );
+    return minutesPerVolume ? Math.ceil(remaining * minutesPerVolume) : null;
+  }
+
   const pageLogs = await Log.find({
     user: forecast.user,
     type: forecast.mediaType,
@@ -182,6 +218,50 @@ async function estimateMinutes(
     pageLogs.map((log) => ((log.pages as number) / (log.time as number)) * 60)
   );
   return pagesPerHour ? Math.ceil((remaining / pagesPerHour) * 60) : null;
+}
+
+export async function previewImmersionForecastEffort({
+  user,
+  mediaId,
+  mediaType,
+  metric,
+  targetTotal,
+  episodeDuration,
+  targetDate,
+  timezone,
+  now = new Date(),
+}: EstimateContext & {
+  targetTotal: number;
+  targetDate: Date;
+  timezone: string;
+  now?: Date;
+}): Promise<{
+  remaining: number;
+  estimatedMinutes: number | null;
+  availableMinutes: number;
+}> {
+  const currentProgress = await getForecastProgressTotal(
+    user,
+    mediaId,
+    mediaType,
+    metric,
+    now
+  );
+  const remaining = Math.max(0, targetTotal - currentProgress);
+  const estimatedMinutes = await estimateMinutes(
+    { user, mediaId, mediaType, metric, episodeDuration },
+    remaining
+  );
+  const daysUntilTarget = Math.max(
+    0,
+    dayNumber(targetDate.toISOString().slice(0, 10)) -
+      dayNumber(dateKey(now, timezone))
+  );
+  return {
+    remaining,
+    estimatedMinutes,
+    availableMinutes: daysUntilTarget * 24 * 60,
+  };
 }
 
 export async function calculateImmersionForecast(
@@ -201,7 +281,7 @@ export async function calculateImmersionForecast(
     targetTotal: forecast.targetTotal,
     startingProgress: forecast.startingProgress,
     currentProgress,
-    createdAt: forecast.createdAt,
+    createdAt: forecast.planStartedAt ?? forecast.createdAt,
     targetDate: forecast.targetDate,
     timezone: forecast.timezone,
     now,

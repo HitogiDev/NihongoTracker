@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ILoginResponse } from '../types';
-import { applyAppTheme, getSelectedCustomTheme } from '../utils/appTheme';
+import {
+  applyAppTheme,
+  canManageCustomThemes,
+  getSelectedCustomTheme,
+} from '../utils/appTheme';
 
 const FREE_THEMES = new Set(['light', 'dark', 'system']);
 const FREE_TEXTHOOKER_THEMES = new Set(['', 'light', 'dark', 'system']);
@@ -90,8 +94,7 @@ export const useUserDataStore = create(
         const currentTheme = localStorage.getItem('theme') || 'system';
         set((state) => ({ user: mergeUserState(state.user, user) }));
         const currentUser = useUserDataStore.getState().user;
-        const hasAccess = currentUser?.roles?.includes('admin') ||
-          (currentUser?.patreon?.isActive && currentUser.patreon.tier === 'consumer');
+        const hasAccess = canManageCustomThemes(currentUser);
         const nextTheme =
           currentTheme === 'custom' &&
           (!hasAccess || !getSelectedCustomTheme(currentUser?.settings))

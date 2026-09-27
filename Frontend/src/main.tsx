@@ -18,7 +18,12 @@ import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { setupChunkLoadRecoveryListeners } from './utils/chunkRecovery';
 import queryClient from './queryClient.ts';
-import { applyAppTheme, getSelectedCustomTheme, isCustomTheme } from './utils/appTheme';
+import {
+  applyAppTheme,
+  canManageCustomThemes,
+  getSelectedCustomTheme,
+  isCustomTheme,
+} from './utils/appTheme';
 import type { ICustomTheme } from './types';
 
 function resolveInitialTheme() {
@@ -45,7 +50,7 @@ if (typeof document !== 'undefined') {
     try {
       const savedUser = JSON.parse(localStorage.getItem('userData') || '{}')
         ?.state?.user;
-      if (savedUser?.patreon?.isActive && savedUser.patreon.tier === 'consumer') {
+      if (canManageCustomThemes(savedUser)) {
         palette = getSelectedCustomTheme(savedUser.settings);
       }
     } catch {
