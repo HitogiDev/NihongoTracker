@@ -60,8 +60,20 @@ function defaultMetric(type: IMediaDocument['type']): ImmersionForecastMetric {
   return metricsForMedia(type)[0];
 }
 
-function mediaTypeTranslationKey(type: IMediaDocument['type']): string {
-  return type === 'tv show' ? 'common:mediaTypes.tvShow' : `common:mediaTypes.${type}`;
+const MEDIA_TYPE_TRANSLATION_KEYS = {
+  anime: 'mediaTypes.anime',
+  manga: 'mediaTypes.manga',
+  'light-novel': 'mediaTypes.light-novel',
+  vn: 'mediaTypes.vn',
+  game: 'mediaTypes.game',
+  video: 'mediaTypes.video',
+  movie: 'mediaTypes.movie',
+  'tv show': 'mediaTypes.tvShow',
+  book: 'mediaTypes.book',
+} as const satisfies Record<IMediaDocument['type'], string>;
+
+function mediaTypeTranslationKey(type: IMediaDocument['type']) {
+  return MEDIA_TYPE_TRANSLATION_KEYS[type];
 }
 
 function formatForecastDuration(minutes: number): string {
@@ -80,6 +92,7 @@ export default function ForecastModal({
   forecast?: IImmersionForecast;
 }) {
   const { t } = useTranslation('goals');
+  const { t: tCommon } = useTranslation('common');
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
@@ -337,7 +350,7 @@ export default function ForecastModal({
                         {displayTitle(media)}
                       </span>
                       <span className="block text-xs opacity-60">
-                        {t(mediaTypeTranslationKey(media.type))}
+                        {tCommon(mediaTypeTranslationKey(media.type))}
                       </span>
                     </span>
                   </RowButton>
@@ -365,8 +378,8 @@ export default function ForecastModal({
                 </p>
                 <p className="text-xs text-base-content/60">
                   {selected
-                    ? t(mediaTypeTranslationKey(selected.type))
-                    : forecast && t(mediaTypeTranslationKey(forecast.mediaType))}
+                    ? tCommon(mediaTypeTranslationKey(selected.type))
+                    : forecast && tCommon(mediaTypeTranslationKey(forecast.mediaType))}
                 </p>
               </div>
               {!initialMedia && !forecast && (
