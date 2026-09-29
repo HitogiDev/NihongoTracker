@@ -1,6 +1,7 @@
 import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import Field from '../components/ui/Field';
+import LinkifiedText from '../components/ui/LinkifiedText';
 import DatePickerInput from '../components/ui/DatePickerInput';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1134,7 +1135,7 @@ function ClubDetailScreen() {
                       {t('detail.about')}
                     </h2>
                     <p className="text-base-content/80 whitespace-pre-wrap text-sm">
-                      {club.description}
+                      <LinkifiedText text={club.description} />
                     </p>
                   </div>
                 </div>
@@ -1148,7 +1149,7 @@ function ClubDetailScreen() {
                       {t('detail.rules')}
                     </h2>
                     <p className="text-base-content/80 whitespace-pre-wrap text-sm">
-                      {club.rules}
+                      <LinkifiedText text={club.rules} />
                     </p>
                   </div>
                 </div>
