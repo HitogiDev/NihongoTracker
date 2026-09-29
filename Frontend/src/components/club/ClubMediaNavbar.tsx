@@ -33,9 +33,9 @@ function ClubMediaNavbar({
   };
 
   return (
-    <div className="navbar min-h-12 bg-base-100">
-      <div className="mx-auto">
-        <ul className="menu menu-horizontal gap-5">
+    <div className="navbar min-h-12 w-full min-w-0 overflow-x-auto bg-base-100">
+      <div className="mx-auto min-w-max md:min-w-0">
+        <ul className="menu menu-horizontal flex-nowrap gap-2 px-2 md:gap-5">
           <li>
             <Link to={buildUnified()}>
               <Info className="mr-1 w-4 h-4" />

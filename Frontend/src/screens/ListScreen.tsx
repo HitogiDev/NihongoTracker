@@ -793,7 +793,7 @@ function ListScreen() {
                 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center sm:justify-between">
                   {/* Filter and Sort Dropdowns */}
                   <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 min-w-0">
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
                       <div
                         tabIndex={0}
                         role="button"
@@ -813,7 +813,7 @@ function ListScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content p-3 surface-raised w-64 z-50 mt-1"
+                        className="immersion-filter-menu dropdown-content p-3 surface-raised w-full sm:w-64 z-50 mt-1"
                       >
                         <div className="flex gap-2 pb-3">
                           <button
@@ -832,7 +832,7 @@ function ListScreen() {
                           </button>
                         </div>
                         <div className="divider my-1"></div>
-                        <div className="flex flex-col gap-1 max-h-[60vh] overflow-y-auto pr-1">
+                        <div className="immersion-filter-options flex flex-col gap-1 max-h-[60vh] overflow-y-auto pr-1">
                           {MEDIA_TYPES.map((type) => {
                             const selected = selectedTypes.includes(type);
                             const color = getMediaTypeColor(type);
@@ -885,7 +885,7 @@ function ListScreen() {
                       </div>
                     </div>
 
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
                       <div
                         tabIndex={0}
                         role="button"
@@ -954,7 +954,7 @@ function ListScreen() {
                       </ul>
                     </div>
 
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
                       <div
                         tabIndex={0}
                         role="button"
@@ -1668,172 +1668,161 @@ function MediaListItem({
       className="card surface hover:shadow-lg transition-all duration-200 cursor-pointer"
       onClick={handleCardClick}
     >
-      <div className="card-body p-4">
-        <div className="flex gap-4">
-          {/* Thumbnail */}
-          <div className="w-16 h-20 flex-shrink-0 rounded-lg overflow-hidden">
-            {media.contentImage || media.coverImage ? (
-              <img
-                src={media.contentImage || media.coverImage}
-                alt={media.title.contentTitleNative}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div
-                className={`w-full h-full ${config.bg} flex items-center justify-center`}
-              >
-                <TypeIcon className={`w-6 h-6 ${config.color} opacity-50`} />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start gap-2 mb-1">
-                  <h3 className="font-bold text-lg leading-tight">
-                    {media.title.contentTitleNative}
-                  </h3>
-                  {statusCfg && (
-                    <span
-                      className={`badge ${statusCfg.badgeClass} badge-sm gap-1 shrink-0`}
-                    >
-                      <statusCfg.icon className="w-3 h-3" />{' '}
-                      {t(statusCfg.labelKey)}
-                    </span>
-                  )}
-                </div>
-
-                {media.title.contentTitleEnglish && (
-                  <p className="text-sm text-base-content/60 mb-2">
-                    {media.title.contentTitleEnglish}
-                  </p>
-                )}
-
-                {media.title.contentTitleRomaji && (
-                  <p className="text-xs text-base-content/50 mb-2">
-                    {media.title.contentTitleRomaji}
-                  </p>
-                )}
-
-                {descriptionText && (
-                  <p
-                    className="text-sm text-base-content/70 line-clamp-2"
-                    title={descriptionText}
-                  >
-                    {descriptionText}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                {/* Type Badge */}
+      <div className="card-body p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
+            {/* Thumbnail */}
+            <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-16">
+              {media.contentImage || media.coverImage ? (
+                <img
+                  src={media.contentImage || media.coverImage}
+                  alt={media.title.contentTitleNative}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
                 <div
-                  className={`badge gap-1 ${config.bg} ${config.color} border-0`}
+                  className={`flex h-full w-full items-center justify-center ${config.bg}`}
                 >
-                  <TypeIcon className="w-3 h-3" />
-                  {mediaTypeLabel(media.type)}
+                  <TypeIcon className={`h-6 w-6 ${config.color} opacity-50`} />
                 </div>
+              )}
+            </div>
 
-                {/* {media.isAdult && (
-                  <div className="badge badge-error badge-sm">18+</div>
-                )} */}
-
-                {isOwnProfile && (
-                  <div
-                    className="flex flex-col gap-1 items-end"
-                    onClick={(e) => e.stopPropagation()}
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <h3 className="min-w-0 break-words text-base font-bold leading-tight sm:text-lg">
+                  {media.title.contentTitleNative}
+                </h3>
+                {statusCfg && (
+                  <span
+                    className={`badge ${statusCfg.badgeClass} badge-sm shrink-0 gap-1`}
                   >
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-xs gap-1 w-36 justify-center"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLogMedia(media);
-                      }}
-                      title={t('list.quickLog')}
-                    >
-                      <Plus className="w-3 h-3" /> {t('header.log')}
-                    </button>
-                    {/* Status dropdown */}
-                    <div className="dropdown dropdown-end">
-                      <button
-                        type="button"
-                        tabIndex={0}
-                        disabled={isToggling}
-                        className={`btn btn-xs w-36 justify-between gap-1 ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-outline'}`}
-                      >
-                        {isToggling ? (
-                          <span className="loading loading-spinner loading-xs" />
-                        ) : statusCfg ? (
-                          <>
-                            <statusCfg.icon className="w-3 h-3" />{' '}
-                            {t(statusCfg.labelKey)}
-                          </>
-                        ) : (
-                          <>
-                            <Circle className="w-3 h-3" /> {t('list.setStatus')}
-                          </>
-                        )}
-                        <ChevronDown className="w-3 h-3 ml-auto" />
-                      </button>
-                      <ul
-                        tabIndex={0}
-                        className="dropdown-content z-50 menu p-1 surface-raised w-36 text-sm"
-                      >
-                        {(
-                          Object.entries(STATUS_CONFIG) as [
-                            keyof typeof STATUS_CONFIG,
-                            (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
-                          ][]
-                        ).map(([key, cfg]) => (
-                          <li key={key}>
-                            <button
-                              className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
-                              onClick={() => onSetStatus(media, key)}
-                            >
-                              <cfg.icon className="w-3 h-3" />
-                              {t(cfg.labelKey)}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs text-error gap-1 w-36 justify-center"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveMedia(media);
-                      }}
-                      title={t('header.removeFromList')}
-                    >
-                      <Trash2 className="w-3 h-3" /> {t('header.remove')}
-                    </button>
-                  </div>
+                    <statusCfg.icon className="h-3 w-3" />{' '}
+                    {t(statusCfg.labelKey)}
+                  </span>
                 )}
-
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {media.episodes ? (
-                    <span className="badge badge-ghost badge-sm">
-                      {media.episodes} episodes
-                    </span>
-                  ) : null}
-                  {media.chapters ? (
-                    <span className="badge badge-ghost badge-sm">
-                      {media.chapters} chapters
-                    </span>
-                  ) : null}
-                  {media.volumes ? (
-                    <span className="badge badge-ghost badge-sm">
-                      {media.volumes} volumes
-                    </span>
-                  ) : null}
-                </div>
               </div>
+
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <span
+                  className={`badge badge-sm gap-1 border-0 ${config.bg} ${config.color}`}
+                >
+                  <TypeIcon className="h-3 w-3" />
+                  {mediaTypeLabel(media.type)}
+                </span>
+                {media.episodes ? (
+                  <span className="badge badge-ghost badge-sm">
+                    {media.episodes} episodes
+                  </span>
+                ) : null}
+                {media.chapters ? (
+                  <span className="badge badge-ghost badge-sm">
+                    {media.chapters} chapters
+                  </span>
+                ) : null}
+                {media.volumes ? (
+                  <span className="badge badge-ghost badge-sm">
+                    {media.volumes} volumes
+                  </span>
+                ) : null}
+              </div>
+
+              {media.title.contentTitleEnglish && (
+                <p className="mb-2 break-words text-sm text-base-content/60">
+                  {media.title.contentTitleEnglish}
+                </p>
+              )}
+
+              {media.title.contentTitleRomaji && (
+                <p className="mb-2 break-words text-xs text-base-content/50">
+                  {media.title.contentTitleRomaji}
+                </p>
+              )}
+
+              {descriptionText && (
+                <p
+                  className="line-clamp-2 break-words text-sm text-base-content/70"
+                  title={descriptionText}
+                >
+                  {descriptionText}
+                </p>
+              )}
             </div>
           </div>
+
+          {isOwnProfile && (
+            <div
+              className="grid w-full grid-cols-2 gap-2 sm:w-36 sm:flex-shrink-0 sm:flex sm:flex-col sm:items-end sm:gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="btn btn-primary btn-sm w-full justify-center gap-1 sm:btn-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogMedia(media);
+                }}
+                title={t('list.quickLog')}
+              >
+                <Plus className="h-3 w-3" /> {t('header.log')}
+              </button>
+              <div className="dropdown dropdown-end w-full sm:w-36">
+                <button
+                  type="button"
+                  tabIndex={0}
+                  disabled={isToggling}
+                  className={`btn btn-sm w-full justify-between gap-1 sm:btn-xs ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-outline'}`}
+                >
+                  {isToggling ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : statusCfg ? (
+                    <>
+                      <statusCfg.icon className="h-3 w-3" />{' '}
+                      {t(statusCfg.labelKey)}
+                    </>
+                  ) : (
+                    <>
+                      <Circle className="h-3 w-3" /> {t('list.setStatus')}
+                    </>
+                  )}
+                  <ChevronDown className="ml-auto h-3 w-3" />
+                </button>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu surface-raised z-50 w-full p-1 text-sm sm:w-36"
+                >
+                  {(
+                    Object.entries(STATUS_CONFIG) as [
+                      keyof typeof STATUS_CONFIG,
+                      (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
+                    ][]
+                  ).map(([key, cfg]) => (
+                    <li key={key}>
+                      <button
+                        className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
+                        onClick={() => onSetStatus(media, key)}
+                      >
+                        <cfg.icon className="h-3 w-3" />
+                        {t(cfg.labelKey)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm col-span-2 w-full justify-center gap-1 text-error sm:btn-xs sm:col-span-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveMedia(media);
+                }}
+                title={t('header.removeFromList')}
+              >
+                <Trash2 className="h-3 w-3" /> {t('header.remove')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

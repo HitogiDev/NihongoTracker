@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
+import MobileBottomNav from './components/MobileBottomNav';
+import { useUserDataStore } from './store/userData';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -284,17 +286,20 @@ function ScrollToTop() {
 }
 
 function App() {
+  const user = useUserDataStore((state) => state.user);
+
   return (
-    <>
+    <div className={user ? 'app-shell mobile-nav-shell' : 'app-shell'}>
       <TitleManager />
       <ScrollToTop />
       <Header />
       <ToastContainer autoClose={2000} position="bottom-right" />
-      <main className="flex-1 bg-base-200">
+      <main className="min-w-0 flex-1 bg-base-200">
         <Outlet />
       </main>
       <Footer />
-    </>
+      <MobileBottomNav />
+    </div>
   );
 }
 

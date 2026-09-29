@@ -2385,8 +2385,8 @@ function TextHooker() {
   }
 
   const listContainerClasses = vertical
-    ? 'pt-20 px-4 flex flex-row overflow-x-auto overflow-y-hidden h-screen items-start pb-6'
-    : 'pt-20 px-4 flex flex-col overflow-y-auto h-screen pb-6';
+    ? 'th-session-content flex flex-row overflow-x-auto overflow-y-hidden items-start px-4'
+    : 'th-session-content flex flex-col overflow-y-auto px-4';
 
   const inviteLink = (() => {
     if (typeof window === 'undefined' || !roomId) return '';
@@ -2486,7 +2486,7 @@ function TextHooker() {
   return (
     <div
       data-theme={effectiveHookerTheme}
-      className="bg-base-300 min-h-screen th-root"
+      className="bg-base-300 min-h-dvh th-root"
     >
       {customCss.trim() && <style>{customCss}</style>}
       <ToastContainer autoClose={2000} position="bottom-right" />

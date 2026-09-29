@@ -1,6 +1,7 @@
 {
   "a11y": {
     "notifications": "Notificaciones",
+    "primaryNavigation": "Navegación principal",
     "search": "Buscar",
     "themeToggle": "Tema: {{mode}}. Pulsa para alternar oscuro, claro y sistema.",
     "userMenu": "Menú de {{username}}"
@@ -28,6 +29,11 @@
   },
   "language": {
     "switcherLabel": "Cambiar idioma"
+  },
+  "mobileNavigation": {
+    "home": "Inicio",
+    "log": "Registrar",
+    "profile": "Perfil"
   },
   "links": {
     "admin": "Administración",

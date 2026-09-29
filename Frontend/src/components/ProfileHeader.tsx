@@ -183,8 +183,8 @@ export default function ProfileHeader() {
         {/* z-[1] ties with the particle overlay, and later siblings win: the
             avatar and name stay above the ambient effect. */}
         <div className="relative z-[1] flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
-            <div className="mb-2 sm:mb-0">
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-end sm:gap-4 min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
+            <div>
               {isLoadingUser ? (
                 <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
               ) : (
@@ -215,7 +215,7 @@ export default function ProfileHeader() {
                 </div>
               )}
             </div>
-            <div className="py-22px px-25px w-full sm:w-auto text-center sm:text-left">
+            <div className="py-2 sm:py-22px px-25px w-full sm:w-auto text-center sm:text-left">
               <div className="flex flex-col items-center gap-2 flex-wrap sm:flex-row sm:items-center sm:gap-3">
                 <h1
                   className={`text-xl font-bold inline-block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] ${nameEffect.className}`}

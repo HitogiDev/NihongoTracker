@@ -223,6 +223,56 @@ html, body {
   min-height: 100%;
 }
 
+.app-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mobile-bottom-dock {
+  position: fixed;
+  z-index: 40;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: calc(4rem + env(safe-area-inset-bottom));
+  padding: 0.25rem 0 max(0.25rem, env(safe-area-inset-bottom));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  border-top: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+  background-color: color-mix(in oklab, var(--color-base-100) 96%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.mobile-nav-shell {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+
+.th-root {
+  min-height: 100dvh;
+}
+
+.th-session-content {
+  height: 100dvh;
+  padding-top: max(5rem, calc(4rem + env(safe-area-inset-top)));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+.th-root .th-topbar {
+  top: max(0.25rem, env(safe-area-inset-top));
+  right: max(0.25rem, env(safe-area-inset-right));
+}
+
+.th-root .th-settings-panel {
+  top: max(4rem, calc(3.5rem + env(safe-area-inset-top)));
+  right: max(0.75rem, env(safe-area-inset-right));
+  max-height: calc(100dvh - 5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
 /* Ensure smooth scroll behavior and proper reset */
 html {
   scroll-behavior: auto; /* Override smooth scrolling for instant resets */
@@ -240,6 +290,72 @@ html {
     max-width: calc(100vw - 2rem);
     word-wrap: break-word;
     white-space: pre-wrap;
+  }
+
+  .Toastify__toast-container--bottom-right {
+    right: 0.75rem;
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    width: auto;
+  }
+
+  .modal-box {
+    width: calc(100vw - 1rem);
+    max-width: none;
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
+
+  .modal-bottom .modal-box {
+    margin: 0 0.5rem 0.5rem;
+  }
+
+  .mobile-bottom-dock .dock-label {
+    font-size: 0.7rem;
+  }
+
+  .btn:not(.btn-xs) {
+    min-height: 2.75rem;
+  }
+
+  .site-navbar .btn {
+    min-width: 2.75rem;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select {
+    min-height: 2.75rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .navbar .menu-horizontal > li > a {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .immersion-filter-menu {
+    max-height: calc(100dvh - 10rem);
+    overflow-y: auto;
+  }
+
+  .immersion-filter-options {
+    max-height: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-nav-shell {
+    padding-bottom: 0;
   }
 }
 

@@ -32,19 +32,19 @@ function ProfileNavbar({
     }
     return location.pathname === path;
   };
+  const tabClass = (path: string) =>
+    isActive(path)
+      ? 'active bg-primary text-primary-content flex min-h-11 items-center justify-center whitespace-nowrap'
+      : 'flex min-h-11 items-center justify-center whitespace-nowrap';
 
   return (
-    <div className="navbar min-h-12 bg-base-100">
-      <div className="mx-auto">
-        <ul className="menu menu-horizontal gap-5">
+    <div className="navbar min-h-12 w-full min-w-0 overflow-x-auto bg-base-100">
+      <div className="mx-auto min-w-max md:min-w-0">
+        <ul className="menu menu-horizontal flex-nowrap gap-2 px-2 md:gap-5">
           <li>
             <Link
               to={`/user/${username}/`}
-              className={
-                isActive(`/user/${username}/`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
+              className={tabClass(`/user/${username}/`)}
             >
               {t('tabs.overview')}
             </Link>
@@ -52,11 +52,7 @@ function ProfileNavbar({
           <li>
             <Link
               to={`/user/${username}/activity`}
-              className={
-                isActive(`/user/${username}/activity`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
+              className={tabClass(`/user/${username}/activity`)}
             >
               {t('tabs.activity')}
             </Link>
@@ -65,11 +61,7 @@ function ProfileNavbar({
             <li>
               <Link
                 to={`/user/${username}/stats`}
-                className={
-                  isActive(`/user/${username}/stats`)
-                    ? 'active bg-primary text-primary-content'
-                    : ''
-                }
+                className={tabClass(`/user/${username}/stats`)}
               >
                 {t('tabs.stats')}
               </Link>
@@ -79,11 +71,7 @@ function ProfileNavbar({
             <li>
               <Link
                 to={`/user/${username}/list`}
-                className={
-                  isActive(`/user/${username}/list`)
-                    ? 'active bg-primary text-primary-content'
-                    : ''
-                }
+                className={tabClass(`/user/${username}/list`)}
               >
                 {t('tabs.immersionList')}
               </Link>
@@ -92,11 +80,7 @@ function ProfileNavbar({
           <li>
             <Link
               to={`/user/${username}/lists`}
-              className={
-                isActive(`/user/${username}/lists`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
+              className={tabClass(`/user/${username}/lists`)}
             >
               {t('tabs.lists')}
             </Link>
@@ -104,11 +88,7 @@ function ProfileNavbar({
           <li>
             <Link
               to={`/user/${username}/goals`}
-              className={
-                isActive(`/user/${username}/goals`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
+              className={tabClass(`/user/${username}/goals`)}
             >
               {t('tabs.goals')}
             </Link>
@@ -116,11 +96,7 @@ function ProfileNavbar({
           <li>
             <Link
               to={`/user/${username}/achievements`}
-              className={
-                isActive(`/user/${username}/achievements`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
+              className={tabClass(`/user/${username}/achievements`)}
             >
               {t('tabs.achievements')}
             </Link>
@@ -129,11 +105,7 @@ function ProfileNavbar({
             <li>
               <Link
                 to={`/user/${username}/moderation`}
-                className={
-                  isActive(`/user/${username}/moderation`)
-                    ? 'active bg-primary text-primary-content'
-                    : ''
-                }
+                className={tabClass(`/user/${username}/moderation`)}
               >
                 {t('tabs.moderation')}
               </Link>
