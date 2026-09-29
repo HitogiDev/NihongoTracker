@@ -1,6 +1,7 @@
 {
   "a11y": {
     "notifications": "Notifications",
+    "primaryNavigation": "Primary navigation",
     "search": "Search",
     "themeToggle": "Theme: {{mode}}. Click to cycle dark, light, system.",
     "userMenu": "{{username}} menu"
@@ -28,6 +29,11 @@
   },
   "language": {
     "switcherLabel": "Change language"
+  },
+  "mobileNavigation": {
+    "home": "Home",
+    "log": "Log",
+    "profile": "Profile"
   },
   "links": {
     "admin": "Admin",

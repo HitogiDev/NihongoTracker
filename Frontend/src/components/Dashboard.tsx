@@ -440,7 +440,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-6 md:pb-8 space-y-6 md:space-y-8">
       <GettingStartedModal
         open={onboardingOpen}
         onClose={() => setOnboardingOpen(false)}
@@ -467,17 +467,17 @@ function Dashboard() {
           <p className="text-sm uppercase tracking-wide text-primary font-semibold">
             {t('dashboard.welcomeBack')}
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-base-content">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-base-content">
             {user.username}
           </h1>
           <p className="text-base-content/70 mt-1">{t(greetingKey)}</p>
         </div>
         <div
-          className={
+          className={`hidden md:grid ${
             hideRankingFeatures
-              ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto'
-              : 'grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto'
-          }
+              ? 'grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto'
+              : 'grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto'
+          }`}
         >
           <Link to="/log" className="btn btn-primary btn-lg">
             <Plus className="w-5 h-5" />
@@ -561,14 +561,14 @@ function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-8">
           <div className="card surface">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
                 {t('dashboard.immersion.title')}
               </h2>
               <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} -mt-1 mb-4`}>
                 {t('dashboard.immersion.subtitle')}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-3">
                 {[
                   {
                     label: t('dashboard.stats.reading'),
@@ -591,12 +591,12 @@ function Dashboard() {
                 ].map((stat) => (
                   <div
                     key={stat.label}
-                    className="p-4 rounded-2xl bg-base-200/60 border border-base-300"
+                    className="min-w-0 rounded-box border border-base-300 bg-base-200/60 p-3 sm:p-4"
                   >
-                    <p className="text-sm uppercase tracking-wide text-base-content/70">
+                    <p className="break-words text-xs uppercase leading-tight tracking-wide text-base-content/70 sm:text-sm">
                       {stat.label}
                     </p>
-                    <p className={`text-3xl font-bold mt-2 ${stat.accent}`}>
+                    <p className={`mt-2 text-2xl font-bold sm:text-3xl ${stat.accent}`}>
                       {stat.value}
                     </p>
                     <p

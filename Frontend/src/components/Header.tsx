@@ -492,30 +492,34 @@ function Header() {
             </span>
           </button>
 
-          <>
-            {/* Móvil */}
-            <Link
-              to="/notifications"
-              className="btn btn-ghost btn-sm sm:btn-md btn-circle md:hidden relative"
-              aria-label={t('a11y.notifications')}
-            >
-              <Bell className="w-4 h-4" />
-              {totalCount > 0 && (
-                <span className="badge badge-primary absolute -top-1 -right-1">
-                  {formatBadgeCount(totalCount)}
-                </span>
-              )}
-            </Link>
+          {user && (
+            <>
+              <Link
+                to="/notifications"
+                className="btn btn-ghost btn-sm sm:btn-md btn-circle md:hidden relative"
+                aria-label={t('a11y.notifications')}
+              >
+                <Bell className="w-4 h-4" />
+                {totalCount > 0 && (
+                  <span className="badge badge-primary absolute -top-1 -right-1">
+                    {formatBadgeCount(totalCount)}
+                  </span>
+                )}
+              </Link>
 
-            {/* Desktop */}
-            <div className="hidden md:block">
-              <NotificationBell />
-            </div>
-          </>
+              {/* Desktop */}
+              <div className="hidden md:block">
+                <NotificationBell />
+              </div>
+            </>
+          )}
 
           {user ? (
             <>
-              <Link className="btn btn-primary btn-sm sm:btn-md" to="/log">
+              <Link
+                className="btn btn-primary btn-sm sm:btn-md hidden md:inline-flex"
+                to="/log"
+              >
                 <span className="hidden sm:inline">
                   {t('actions.createLog')}
                 </span>
@@ -603,7 +607,9 @@ function Header() {
             </>
           ) : (
             <>
-              <LanguageSwitcher />
+              <div className="hidden sm:block">
+                <LanguageSwitcher />
+              </div>
               <button
                 className="btn btn-ghost btn-sm sm:btn-md btn-circle"
                 onClick={toggleTheme}
