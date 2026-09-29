@@ -20,6 +20,7 @@ import {
 import { numberWithCommas } from '../utils/utils';
 import { effectiveLogMinutes } from '../utils/immersionTime';
 import LogCard from '../components/LogCard';
+import { BulkLogToolbar, SelectableLogRow } from '../components/BulkLogEdit';
 import { useState, useEffect, useRef } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
@@ -101,6 +102,7 @@ function MediaDetails() {
   const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
+  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
@@ -790,6 +792,7 @@ function MediaDetails() {
 
   const visibleLogs = filteredLogs.slice(0, visibleLogsCount);
   const hasMoreLogs = filteredLogs.length > visibleLogsCount;
+  const canBulkEditLogs = isOwnProfile || Boolean(currentUser?.roles?.includes('admin'));
   const mediaReviews = mediaReviewsData?.reviews || [];
   const userReview = mediaReviews.find(
     (review) => review.user._id === currentUser?._id
@@ -2549,8 +2552,30 @@ function MediaDetails() {
                 {logsArray.length > 0 ? (
                   filteredLogs.length > 0 ? (
                     <div className="space-y-3">
+                      {canBulkEditLogs && (
+                        <BulkLogToolbar
+                          shownIds={visibleLogs.map((log) => log._id)}
+                          loadAllIds={async () => filteredLogs.map((log) => log._id)}
+                          selectedIds={selectedLogIds}
+                          setSelectedIds={setSelectedLogIds}
+                          ownerUsername={username}
+                          scopeKey={JSON.stringify([username, mediaDocument?.contentId,
+                            mediaDocument?.type, searchTerm, dateFilter,
+                            customStartDate?.toISOString(), customEndDate?.toISOString(),
+                            sortBy, sortDirection])}
+                        />
+                      )}
                       {visibleLogs.map((log) => (
-                        <LogCard key={log._id} log={log} user={username} />
+                        canBulkEditLogs ? (
+                          <SelectableLogRow
+                            key={log._id}
+                            ids={[log._id]}
+                            selectedIds={selectedLogIds}
+                            setSelectedIds={setSelectedLogIds}
+                          >
+                            <LogCard log={log} user={username} />
+                          </SelectableLogRow>
+                        ) : <LogCard key={log._id} log={log} user={username} />
                       ))}
                       {hasMoreLogs && (
                         <div className="text-center pt-6">

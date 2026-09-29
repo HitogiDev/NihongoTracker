@@ -216,6 +216,16 @@ export const updateLogFn = async (id: string, data: IUpdateLogRequest) => {
   return response.data;
 };
 
+export async function updateLogsBulkFn(ids: string[], updates: IUpdateLogRequest) {
+  const { data } = await api.patch<{ updatedCount: number }>('logs/bulk', { ids, updates });
+  return data;
+}
+
+export async function adminUpdateLogsBulkFn(ids: string[], updates: IUpdateLogRequest) {
+  const { data } = await api.patch<{ updatedCount: number }>('admin/logs/bulk', { ids, updates });
+  return data;
+}
+
 export async function searchMediaFn(params: {
   type: string;
   search: string;

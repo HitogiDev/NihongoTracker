@@ -87,6 +87,51 @@ function categoryLevelFor(
   return continuousLevel(categoryXp ?? 0);
 }
 
+/** Calculate an edit using the original log's XP snapshot. */
+export async function calculateEditedLogXp(
+  existing: ILog,
+  body: Partial<ILog>,
+  owner: IUser | undefined
+) {
+  const type = body.type || existing.type;
+  const mediaId = body.mediaId ?? existing.mediaId;
+  const existingUsesV3 = existing.xpBreakdown?.version === XP_FORMULA_VERSION;
+  const sameMedia = (mediaId ?? null) === (existing.mediaId ?? null);
+  const difficulty = existingUsesV3 && sameMedia
+    ? (existing.xpBreakdown?.difficulty ?? null)
+    : mediaId
+      ? ((await difficultiesByContentId([mediaId])).get(mediaId) ?? null)
+      : null;
+  const sameCategory = getLogCategory(existing.type) === getLogCategory(type);
+  const storedComfort = existingUsesV3 && sameCategory
+    ? (existing.xpBreakdown?.comfortAt ?? null)
+    : null;
+  const consumedDifficulty = storedComfort === null
+    ? await makeConsumedDifficultyResolver(owner?._id)(getLogCategory(type))
+    : null;
+
+  const { xp, breakdown } = computeXp(
+    {
+      type,
+      time: body.time ?? existing.time,
+      chars: body.chars ?? existing.chars,
+      pages: body.pages ?? existing.pages,
+      episodes: body.episodes ?? existing.episodes,
+    },
+    {
+      personalSpeedCph: await makeSpeedResolver(owner?._id)(type),
+      difficulty,
+      categoryLevel:
+        (existingUsesV3 && sameCategory
+          ? existing.xpBreakdown?.categoryLevelAt
+          : undefined) ?? categoryLevelFor(type, owner),
+      consumedDifficulty,
+      comfortAt: storedComfort,
+    }
+  );
+  return { xp, xpBreakdown: breakdown };
+}
+
 export async function calculateXp(
   req: Request<ParamsDictionary, any, ILog | IImportLogs>,
   res: Response,
@@ -154,21 +199,19 @@ export async function calculateXp(
       owner = (await User.findById(existing.user)) ?? undefined;
     }
 
-    const type = body.type || existing?.type;
+    if (existing) {
+      Object.assign(body, await calculateEditedLogXp(existing, body, owner));
+      return next();
+    }
+
+    const type = body.type;
     if (!type) throw apiError('log.typeNotFound', 400, 'Log type not found');
 
     const personalSpeedCph = await makeSpeedResolver(owner?._id)(type);
 
-    const mediaId = body.mediaId ?? existing?.mediaId;
-    const existingUsesV3 =
-      existing?.xpBreakdown?.version === XP_FORMULA_VERSION;
-    const sameMedia = Boolean(
-      existing && (mediaId ?? null) === (existing.mediaId ?? null)
-    );
+    const mediaId = body.mediaId;
     let difficulty: number | null = null;
-    if (existingUsesV3 && sameMedia) {
-      difficulty = existing?.xpBreakdown?.difficulty ?? null;
-    } else if (mediaId) {
+    if (mediaId) {
       difficulty =
         (await difficultiesByContentId([mediaId])).get(mediaId) ?? null;
     }
@@ -177,7 +220,7 @@ export async function calculateXp(
     // live so the bonus applies immediately instead of only after the media
     // page has been visited. cacheMediaJitenDifficulty also persists it for
     // future logs and the consumed-difficulty signal.
-    if (difficulty === null && mediaId && !req.params.id) {
+    if (difficulty === null && mediaId) {
       const nativeTitle = (
         req.body as { mediaData?: { contentTitleNative?: string } }
       ).mediaData?.contentTitleNative;
@@ -185,39 +228,23 @@ export async function calculateXp(
       difficulty = normalizeJitenDifficulty(native);
     }
 
-    // Edits reuse the comfort snapshotted at creation; fresh logs compute it
-    // from the owner's level + recently consumed difficulty.
-    const sameCategory =
-      existing && getLogCategory(existing.type) === getLogCategory(type);
-    const storedComfort =
-      existingUsesV3 && sameCategory
-        ? (existing?.xpBreakdown?.comfortAt ?? null)
-        : null;
-    const consumedDifficulty =
-      storedComfort === null
-        ? await makeConsumedDifficultyResolver(owner?._id)(
-            getLogCategory(type)
-          )
-        : null;
+    const consumedDifficulty = await makeConsumedDifficultyResolver(owner?._id)(
+      getLogCategory(type)
+    );
 
     const { xp, breakdown } = computeXp(
       {
         type,
-        time: body.time ?? existing?.time,
-        chars: body.chars ?? existing?.chars,
-        pages: body.pages ?? existing?.pages,
-        episodes: body.episodes ?? existing?.episodes,
+        time: body.time,
+        chars: body.chars,
+        pages: body.pages,
+        episodes: body.episodes,
       },
       {
         personalSpeedCph,
         difficulty,
-        categoryLevel:
-          (existingUsesV3 && sameCategory
-            ? existing?.xpBreakdown?.categoryLevelAt
-            : undefined) ??
-          categoryLevelFor(type, owner),
+        categoryLevel: categoryLevelFor(type, owner),
         consumedDifficulty,
-        comfortAt: storedComfort,
       }
     );
 
