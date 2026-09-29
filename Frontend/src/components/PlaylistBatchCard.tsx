@@ -10,6 +10,7 @@ import {
   ListVideo,
   X,
   Trash2,
+  Pencil,
   CheckSquare,
   Square,
   AlertTriangle,
@@ -22,6 +23,7 @@ import { AxiosError } from 'axios';
 import { deleteLogsBulkFn, adminDeleteLogsBulkFn } from '../api/trackerApi';
 import { useUserDataStore } from '../store/userData';
 import LogCard from './LogCard';
+import { BulkLogEditDialog } from './BulkLogEdit';
 import { MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
 
 const PAGE_SIZE = 10;
@@ -41,6 +43,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contentReady, setContentReady] = useState(false);
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   // How many logs are currently rendered in the modal list
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -407,16 +410,21 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 </button>
 
                 {selectedLogIds.size > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-error btn-sm gap-1.5"
-                    onClick={handleBulkDelete}
-                    disabled={loadingBulkDelete}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete {selectedLogIds.size}{' '}
-                    {selectedLogIds.size === 1 ? 'log' : 'logs'}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => setBulkEditOpen(true)}>
+                      <Pencil className="w-4 h-4" />{t('bulk.edit')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-error btn-sm gap-1.5"
+                      onClick={handleBulkDelete}
+                      disabled={loadingBulkDelete}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete {selectedLogIds.size}{' '}
+                      {selectedLogIds.size === 1 ? 'log' : 'logs'}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -537,6 +545,14 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
         {/* Backdrop */}
         <div className="modal-backdrop" onClick={closeModal} />
       </dialog>
+
+      <BulkLogEditDialog
+        open={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        selectedIds={selectedLogIds}
+        ownerUsername={user}
+        onUpdated={() => setSelectedLogIds(new Set())}
+      />
 
       {/* ── Bulk Delete Confirmation Modal ─────────────────────────────────────── */}
       <dialog

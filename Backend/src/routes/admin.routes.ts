@@ -31,6 +31,7 @@ import {
 import {
   adminDeleteLog,
   adminDeleteLogsBulk,
+  adminUpdateLogsBulk,
   recalculateStreaks,
   recalculateXp,
   adminUpdateLog,
@@ -80,6 +81,13 @@ router.delete(
   protect,
   checkPermission(userRoles.admin),
   adminDeleteLogsBulk
+);
+
+router.patch(
+  '/logs/bulk',
+  protect,
+  checkPermission(userRoles.admin),
+  adminUpdateLogsBulk
 );
 
 router.post(

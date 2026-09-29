@@ -1,6 +1,7 @@
 import { Link, useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import PlaylistBatchCard from '../components/PlaylistBatchCard';
+import { BulkLogToolbar, SelectableLogRow } from '../components/BulkLogEdit';
 import ProgressBar from '../components/ProgressBar';
 import ProfileStatsBand from '../components/ProfileStatsBand';
 import ImmersionGoals from '../components/ImmersionGoals';
@@ -146,6 +147,9 @@ function ProfileScreen() {
   const showAboutPreview = shouldCollapseAbout && !showFullAbout;
   const aboutPreviewHeight = 224;
   const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
+  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
+  const canBulkEditLogs = Boolean(loggedUser?.username && username && loggedUser.username === username) ||
+    Boolean(loggedUser?.roles?.includes('admin'));
   const [visibleActivityCount, setVisibleActivityCount] = useState(limit);
 
   const feedKindOptions: Array<{
@@ -1412,9 +1416,34 @@ function ProfileScreen() {
             ) : feedKind === 'logs' ? (
               // Show ONLY logs (original log card rendering)
               <>
+                {canBulkEditLogs && (
+                  <BulkLogToolbar
+                    shownIds={displayedLogs.map((log) => log._id)}
+                    loadAllIds={async () => {
+                      const all = await getUserLogsFn(username as string, {
+                        limit: 0,
+                        page: 1,
+                        search: searchTerm,
+                        type: filterType !== 'all' ? filterType : undefined,
+                        start: dateRange?.startDate?.toISOString(),
+                        end: dateRange?.endDate?.toISOString(),
+                        sortBy: backendSortBy,
+                        sortDirection: backendSortDirection,
+                      });
+                      return all.filter((log) => showUnknownDates || !log.unknownDate)
+                        .map((log) => log._id);
+                    }}
+                    selectedIds={selectedLogIds}
+                    setSelectedIds={setSelectedLogIds}
+                    ownerUsername={username}
+                    scopeKey={JSON.stringify([username, searchTerm, filterType, dateFilter,
+                      customStartDate?.toISOString(), customEndDate?.toISOString(),
+                      showUnknownDates, backendSortBy, backendSortDirection])}
+                  />
+                )}
                 {logs?.pages ? (
-                  groupedLogs.map((entry) =>
-                    entry.isPlaylistGroup ? (
+                  groupedLogs.map((entry) => {
+                    const card = entry.isPlaylistGroup ? (
                       <PlaylistBatchCard
                         key={entry.key}
                         logs={entry.logs}
@@ -1426,8 +1455,18 @@ function ProfileScreen() {
                         log={entry.logs[0]}
                         user={username}
                       />
-                    )
-                  )
+                    );
+                    return canBulkEditLogs ? (
+                      <SelectableLogRow
+                        key={entry.key}
+                        ids={entry.logs.map((log) => log._id)}
+                        selectedIds={selectedLogIds}
+                        setSelectedIds={setSelectedLogIds}
+                      >
+                        {card}
+                      </SelectableLogRow>
+                    ) : card;
+                  })
                 ) : (
                   <div className="card w-full surface p-4">
                     <p className="text-center">{t('feed.noLogs')}</p>

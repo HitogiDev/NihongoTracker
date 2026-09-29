@@ -8,6 +8,7 @@ import {
   deleteLog,
   deleteLogsBulk,
   updateLog,
+  updateLogsBulk,
   importLogs,
   assignMedia,
   dismissMatchLogs,
@@ -81,6 +82,7 @@ router.post('/sync-manabe-ids', protect, syncManabeIds);
 
 // Bulk delete — must be registered BEFORE /:id to avoid route conflict
 router.delete('/bulk', protect, deleteLogsBulk);
+router.patch('/bulk', protect, updateLogsBulk);
 
 router.get('/:id', optionalProtect, getLog);
 

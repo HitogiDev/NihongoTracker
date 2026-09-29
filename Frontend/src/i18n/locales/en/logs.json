@@ -185,6 +185,25 @@
     "volume": "Volume",
     "volumePlaceholder": "Volume number"
   },
+  "bulk": {
+    "apply_one": "Update {{count}} log",
+    "apply_other": "Update {{count}} logs",
+    "chooseField": "Choose at least one field to update",
+    "clear": "Clear selection",
+    "edit": "Edit selection",
+    "invalidValue": "Check the selected field values",
+    "onlyChecked": "Only checked fields will change. The same value will be applied to every selected log.",
+    "selectAll": "Select all results",
+    "selectEntry": "Select log",
+    "selectShown": "Select shown results",
+    "selected_one": "{{count}} log selected",
+    "selected_other": "{{count}} logs selected",
+    "selecting": "Selecting...",
+    "title_one": "Edit {{count}} log",
+    "title_other": "Edit {{count}} logs",
+    "updated_one": "Updated {{count}} log",
+    "updated_other": "Updated {{count}} logs"
+  },
   "matcher": {
     "assignError": "Error assigning media",
     "assignSuccess": "Media assigned successfully",

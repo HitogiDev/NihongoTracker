@@ -42,6 +42,7 @@ import {
   deleteActivitiesBySource,
 } from '../services/activity.service.js';
 import { recordLogActivity } from '../services/activityEvents.service.js';
+import { bulkEditLogs } from '../services/bulkEditLogs.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
 import {
@@ -1497,6 +1498,34 @@ export async function adminDeleteLog(
     ]);
 
     return res.sendStatus(204);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateLogsBulk(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { ids, updates } = req.body as { ids?: unknown; updates?: unknown };
+    const updatedCount = await bulkEditLogs(ids, updates, res.locals.user.id);
+    return res.status(200).json({ updatedCount });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function adminUpdateLogsBulk(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { ids, updates } = req.body as { ids?: unknown; updates?: unknown };
+    const updatedCount = await bulkEditLogs(ids, updates);
+    return res.status(200).json({ updatedCount });
   } catch (error) {
     return next(error as customError);
   }
