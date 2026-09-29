@@ -18,6 +18,7 @@ import { IClubResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { useTranslation } from 'react-i18next';
 import Field from '../components/ui/Field';
+import LinkifiedText from '../components/ui/LinkifiedText';
 
 function ClubsScreen() {
   const { t } = useTranslation('clubs');
@@ -474,7 +475,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
         {/* Description */}
         {club.description && (
           <p className="text-sm text-base-content/70 line-clamp-2 mb-3">
-            {club.description}
+            <LinkifiedText text={club.description} />
           </p>
         )}
 

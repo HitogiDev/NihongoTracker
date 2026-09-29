@@ -47,6 +47,7 @@ import MediaReviewCard from '../components/MediaReviewCard';
 import ReviewRatingSummary from '../components/ReviewRatingSummary';
 import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
 import { useTranslation } from 'react-i18next';
+import LinkifiedText from '../components/ui/LinkifiedText';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -1624,7 +1625,7 @@ function MediaDetails() {
                   <h3 className="card-title text-lg">Club: {clubData.name}</h3>
                   {clubData.description && (
                     <p className="text-sm text-base-content/70 mb-2">
-                      {clubData.description}
+                      <LinkifiedText text={clubData.description} />
                     </p>
                   )}
                   {clubMediaStatsData?.total && (
