@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
+import { AlertTriangle, Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import type { ILog, IUpdateLogRequest } from '../types';
@@ -16,6 +16,7 @@ import Field from './ui/Field';
 import TagSelector from './TagSelector';
 
 type EditableField = 'description' | 'type' | 'date' | 'time' | 'episodes' | 'volume' | 'pages' | 'chars' | 'tags';
+type BulkEditRequest = { ids: string[]; updates: IUpdateLogRequest };
 
 export function BulkLogEditDialog({
   open,
@@ -35,6 +36,8 @@ export function BulkLogEditDialog({
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const confirmRef = useRef<HTMLDialogElement>(null);
+  const [pendingRequest, setPendingRequest] = useState<BulkEditRequest | null>(null);
   const [enabled, setEnabled] = useState<Set<EditableField>>(new Set());
   const [description, setDescription] = useState('');
   const [type, setType] = useState<ILog['type']>('anime');
@@ -64,9 +67,14 @@ export function BulkLogEditDialog({
     if (dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
   }, [open]);
 
+  useEffect(() => {
+    if (pendingRequest && confirmRef.current && !confirmRef.current.open) {
+      confirmRef.current.showModal();
+    }
+  }, [pendingRequest]);
+
   const mutation = useMutation({
-    mutationFn: (updates: IUpdateLogRequest) => {
-      const ids = Array.from(selectedIds);
+    mutationFn: ({ ids, updates }: BulkEditRequest) => {
       const isAdminEdit = user?.roles?.includes('admin') && ownerUsername !== user.username;
       return isAdminEdit
         ? adminUpdateLogsBulkFn(ids, updates)
@@ -75,10 +83,14 @@ export function BulkLogEditDialog({
     onSuccess: (result) => {
       void queryClient.invalidateQueries();
       toast.success(t('bulk.updated', { count: result.updatedCount }));
+      setPendingRequest(null);
       onUpdated();
       onClose();
     },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
+    onError: (error) => {
+      setPendingRequest(null);
+      toast.error(getApiErrorMessage(error));
+    },
   });
 
   const toggle = (field: EditableField) => {
@@ -140,10 +152,13 @@ export function BulkLogEditDialog({
       updates[field] = value;
     }
     if (enabled.has('tags')) updates.tags = tags;
-    mutation.mutate(updates);
+    const request = { ids: Array.from(selectedIds), updates };
+    if (request.ids.length > 10) setPendingRequest(request);
+    else mutation.mutate(request);
   };
 
   return open ? (
+    <>
     <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle" onCancel={onClose}>
       <div className="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold">{t('bulk.title', { count: selectedIds.size })}</h3>
@@ -168,6 +183,64 @@ export function BulkLogEditDialog({
       </div>
       <form method="dialog" className="modal-backdrop"><button aria-label={t('common.a11y.closeModal')} onClick={onClose}>close</button></form>
     </dialog>
+    {pendingRequest && (
+      <dialog
+        ref={confirmRef}
+        className="modal modal-bottom sm:modal-middle"
+        aria-labelledby="bulk-log-confirm-title"
+        aria-describedby="bulk-log-confirm-description"
+        onCancel={(event) => {
+          if (mutation.isPending) event.preventDefault();
+          else setPendingRequest(null);
+        }}
+      >
+        <div className="modal-box max-w-md">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-warning/15 p-3 text-warning shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 id="bulk-log-confirm-title" className="text-lg font-bold">
+                {t('bulk.confirmTitle', { count: pendingRequest.ids.length })}
+              </h3>
+              <p id="bulk-log-confirm-description" className="mt-2 text-sm text-base-content/70">
+                {t('bulk.confirmBody', { count: pendingRequest.ids.length })}
+              </p>
+            </div>
+          </div>
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={mutation.isPending}
+              onClick={() => setPendingRequest(null)}
+            >
+              {t('common:cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-warning"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(pendingRequest)}
+            >
+              {mutation.isPending
+                ? t('edit.updating')
+                : t('bulk.confirmApply', { count: pendingRequest.ids.length })}
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button
+            aria-label={t('common.a11y.closeModal')}
+            disabled={mutation.isPending}
+            onClick={() => setPendingRequest(null)}
+          >
+            close
+          </button>
+        </form>
+      </dialog>
+    )}
+    </>
   ) : null;
 }
 
@@ -210,14 +283,56 @@ export function BulkLogToolbar({
   };
 
   return (
-    <div className="surface-muted p-3 flex flex-wrap items-center gap-2">
-      <button type="button" className="btn btn-outline btn-sm" disabled={!shownIds.length} onClick={() => setSelectedIds(new Set(shownIds))}>{t('bulk.selectShown')}</button>
-      <button type="button" className="btn btn-outline btn-sm" disabled={loadingAll} onClick={() => void selectAll()}>{loadingAll ? t('bulk.selecting') : t('bulk.selectAll')}</button>
-      <button type="button" className="btn btn-ghost btn-sm" disabled={!selectedIds.size} onClick={() => setSelectedIds(new Set())}>{t('bulk.clear')}</button>
-      <span className="text-sm text-base-content/70">{t('bulk.selected', { count: selectedIds.size })}</span>
-      <button type="button" className="btn btn-primary btn-sm sm:ml-auto" disabled={!selectedIds.size} onClick={() => setEditing(true)}><Pencil className="w-4 h-4" />{t('bulk.edit')}</button>
+    <>
+      {selectedIds.size > 0 && (
+        <div className="surface-muted space-y-4 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">{t('bulk.selectionTitle')}</p>
+              <p className="text-sm text-base-content/70">
+                {t('bulk.selected', { count: selectedIds.size })}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              {t('bulk.clear')}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={!shownIds.length}
+                onClick={() => setSelectedIds(new Set(shownIds))}
+              >
+                {t('bulk.selectShown')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={loadingAll}
+                onClick={() => void selectAll()}
+              >
+                {loadingAll ? t('bulk.selecting') : t('bulk.selectAll')}
+              </button>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => setEditing(true)}
+            >
+              <Pencil className="w-4 h-4" />
+              {t('bulk.edit')}
+            </button>
+          </div>
+        </div>
+      )}
       <BulkLogEditDialog open={editing} onClose={() => setEditing(false)} selectedIds={selectedIds} ownerUsername={ownerUsername} onUpdated={() => setSelectedIds(new Set())} />
-    </div>
+    </>
   );
 }
 
