@@ -47,6 +47,7 @@ import {
 } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import Field from './ui/Field';
 import {
   ActivityFeedScope,
   getActivityFeedFn,
@@ -66,17 +67,31 @@ const ACTIVITY_SCOPES: Array<{
   { value: 'global', icon: Globe2 },
 ];
 
-const RECENT_MEDIA_PANEL_LIMIT = 4;
+const RECENT_MEDIA_LIMIT_STORAGE_KEY = 'dashboard:recentMediaLimit';
+const DEFAULT_RECENT_MEDIA_LIMIT = 4;
+const MAX_RECENT_MEDIA_LIMIT = 12;
 const DASHBOARD_CARD_EYEBROW_CLASS =
   'text-[11px] uppercase tracking-[0.2em] text-base-content/60';
 const DASHBOARD_CARD_TITLE_CLASS =
   'card-title text-xl font-semibold leading-snug text-base-content';
 const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/65';
 
-function getRecentMediaRailLimit(width: number) {
-  if (width >= 1024) return 7;
-  if (width >= 640) return 6;
-  return 4;
+function getStoredRecentMediaLimit() {
+  try {
+    const storedLimit = Number(
+      window.localStorage.getItem(RECENT_MEDIA_LIMIT_STORAGE_KEY)
+    );
+    if (
+      Number.isInteger(storedLimit) &&
+      storedLimit >= 1 &&
+      storedLimit <= MAX_RECENT_MEDIA_LIMIT
+    ) {
+      return storedLimit;
+    }
+  } catch {
+    // Storage can be unavailable in private browsing modes.
+  }
+  return DEFAULT_RECENT_MEDIA_LIMIT;
 }
 
 function Dashboard() {
@@ -119,6 +134,9 @@ function Dashboard() {
     title: string;
   } | null>(null);
   const [manageHiddenOpen, setManageHiddenOpen] = useState(false);
+  const [recentMediaLimit, setRecentMediaLimit] = useState(
+    getStoredRecentMediaLimit
+  );
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   useEffect(() => {
@@ -308,8 +326,20 @@ function Dashboard() {
 
   const recentMediaPanelHighlights = recentMediaHighlights.slice(
     0,
-    RECENT_MEDIA_PANEL_LIMIT
+    recentMediaLimit
   );
+
+  function handleRecentMediaLimitChange(nextLimit: number) {
+    setRecentMediaLimit(nextLimit);
+    try {
+      window.localStorage.setItem(
+        RECENT_MEDIA_LIMIT_STORAGE_KEY,
+        String(nextLimit)
+      );
+    } catch {
+      // Keep the setting for this session if storage is unavailable.
+    }
+  }
 
   if (!user) {
     return null;
@@ -455,6 +485,8 @@ function Dashboard() {
       <ManageHiddenMedia
         open={manageHiddenOpen}
         onClose={() => setManageHiddenOpen(false)}
+        recentMediaLimit={recentMediaLimit}
+        onRecentMediaLimitChange={handleRecentMediaLimitChange}
         onUnhidden={() => {
           queryClient.invalidateQueries({
             queryKey: ['recentLogs', username],
@@ -502,6 +534,7 @@ function Dashboard() {
       <div className="xl:hidden">
         <RecentMediaRail
           allLogs={recentMediaHighlights}
+          limit={recentMediaLimit}
           onQuickLog={handleQuickLogOpen}
           onRemove={handleRemoveMedia}
           onManage={() => setManageHiddenOpen(true)}
@@ -841,6 +874,7 @@ function RecentMediaPanel({
 
 type RecentMediaRailProps = {
   allLogs: RecentMediaLog[];
+  limit: number;
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
   onManage: () => void;
@@ -848,6 +882,7 @@ type RecentMediaRailProps = {
 
 function RecentMediaRail({
   allLogs,
+  limit,
   onQuickLog,
   onRemove,
   onManage,
@@ -855,9 +890,6 @@ function RecentMediaRail({
   const { t } = useTranslation('home');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
-  const [limit, setLimit] = useState(() =>
-    getRecentMediaRailLimit(window.innerWidth)
-  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -866,13 +898,12 @@ function RecentMediaRail({
         const needsScroll = el.scrollWidth > el.clientWidth + 4;
         setShowSwipeHint(needsScroll);
       }
-      setLimit(getRecentMediaRailLimit(window.innerWidth));
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [allLogs]);
+  }, [allLogs, limit]);
 
   const logs = allLogs.slice(0, limit);
 
@@ -1126,12 +1157,16 @@ const hiddenMediaTypeLabelKey: Record<
 type ManageHiddenMediaProps = {
   open: boolean;
   onClose: () => void;
+  recentMediaLimit: number;
+  onRecentMediaLimitChange: (limit: number) => void;
   onUnhidden?: () => void;
 };
 
 function ManageHiddenMedia({
   open,
   onClose,
+  recentMediaLimit,
+  onRecentMediaLimitChange,
   onUnhidden,
 }: ManageHiddenMediaProps) {
   const { t } = useTranslation('home');
@@ -1162,6 +1197,27 @@ function ManageHiddenMedia({
       <p className="text-sm text-base-content/70 -mt-2 mb-4">
         {t('dashboard.manageHiddenDescription')}
       </p>
+      <Field
+        label={t('dashboard.quickLogCardCount')}
+        hint={t('dashboard.quickLogCardCountHint')}
+        className="mb-4"
+      >
+        <select
+          className="select w-full"
+          value={recentMediaLimit}
+          onChange={(event) =>
+            onRecentMediaLimitChange(Number(event.target.value))
+          }
+        >
+          {Array.from({ length: MAX_RECENT_MEDIA_LIMIT }, (_, index) =>
+            index + 1
+          ).map((count) => (
+            <option key={count} value={count}>
+              {t('dashboard.quickLogCardCountOption', { count })}
+            </option>
+          ))}
+        </select>
+      </Field>
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
