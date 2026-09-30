@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import {
   LogOut,
@@ -14,6 +14,7 @@ import {
   House,
   Star,
   Menu,
+  X,
   Heart,
   FileText,
   Search,
@@ -78,6 +79,8 @@ function Header() {
   const { user, logout } = useUserDataStore();
   const hideRankingFeatures = useHideRankingFeatures();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const navigationDialogRef = useRef<HTMLDialogElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
@@ -120,9 +123,20 @@ function Header() {
     },
   });
 
-  function logoutHandler(e: React.MouseEvent<HTMLAnchorElement>) {
+  function logoutHandler(e: React.MouseEvent<HTMLElement>) {
     e.preventDefault();
+    navigationDialogRef.current?.close();
     mutate();
+  }
+
+  useEffect(() => {
+    navigationDialogRef.current?.close();
+  }, [pathname]);
+
+  function closeNavigationOnLinkClick(e: React.MouseEvent<HTMLUListElement>) {
+    if ((e.target as HTMLElement).closest('a')) {
+      navigationDialogRef.current?.close();
+    }
   }
 
   // Ctrl+K / Cmd+K shortcut
@@ -186,20 +200,41 @@ function Header() {
     <div className="relative">
       <div className="site-navbar navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
         <div className="navbar-start flex-1 w-auto">
-          <div className="dropdown">
-            <div
-              tabIndex={0}
-              role="button"
+          <>
+            <button
+              type="button"
+              aria-label={t('a11y.primaryNavigation')}
+              aria-haspopup="dialog"
+              onClick={() => navigationDialogRef.current?.showModal()}
               className={`btn btn-ghost ${
                 user ? 'min-[1450px]:hidden' : 'xl:hidden'
               }`}
             >
               <Menu className="h-6 w-6" />
-            </div>
+            </button>
+            <dialog
+              ref={navigationDialogRef}
+              className="modal modal-start p-0"
+              aria-labelledby="site-navigation-title"
+            >
+              <div className="modal-box flex h-dvh max-h-dvh w-[min(22rem,90vw)] max-w-none flex-col rounded-box bg-base-100 p-0 text-base-content shadow-lg">
+                <div className="flex items-center justify-between border-b border-base-300 px-4 py-3">
+                  <h2 id="site-navigation-title" className="text-lg font-semibold">
+                    {t('sections.navigation')}
+                  </h2>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm btn-square"
+                    aria-label={t('common:close')}
+                    onClick={() => navigationDialogRef.current?.close()}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
             {user ? (
               <ul
-                tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 surface-raised text-base-content w-72 max-h-96 overflow-y-auto"
+                className="menu min-h-0 w-full flex-1 overflow-y-auto p-4"
+                onClick={closeNavigationOnLinkClick}
               >
                 {isAdmin && (
                   <>
@@ -327,19 +362,20 @@ function Header() {
                   </Link>
                 </li>
                 <li>
-                  <a
+                  <button
+                    type="button"
                     onClick={logoutHandler}
                     className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
                   >
                     <LogOut className="text-lg w-4 h-4" />
                     {t('links.logout')}
-                  </a>
+                  </button>
                 </li>
               </ul>
             ) : (
               <ul
-                tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 surface-raised text-base-content w-72"
+                className="menu min-h-0 w-full flex-1 overflow-y-auto p-4"
+                onClick={closeNavigationOnLinkClick}
               >
                 <li>
                   <Link
@@ -371,7 +407,14 @@ function Header() {
                 <LanguageMenuItem />
               </ul>
             )}
-          </div>
+              </div>
+              <form method="dialog" className="modal-backdrop">
+                <button aria-label={t('common:close')}>
+                  {t('common:close')}
+                </button>
+              </form>
+            </dialog>
+          </>
           <Link className="btn btn-ghost text-xl hidden sm:flex" to="/">
             NihongoTracker
           </Link>
@@ -380,9 +423,9 @@ function Header() {
           </Link>
         </div>
         {user ? (
-          <div className="hidden min-[1450px]:inline-flex flex-none justify-center">
+          <div className="hidden xl:inline-flex flex-none justify-center">
             {/* <QuickLog /> */}
-            <ul className="inline-flex flex-row gap-3 min-[1600px]:gap-6">
+            <ul className="inline-flex flex-row gap-1 min-[1450px]:gap-3 min-[1600px]:gap-6">
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
@@ -392,7 +435,7 @@ function Header() {
                 </Link>
               </li>
               {!hideRankingFeatures && (
-                <li>
+                <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
@@ -401,7 +444,7 @@ function Header() {
                 </Link>
                 </li>
               )}
-              <li>
+              <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/clubs"
@@ -409,7 +452,7 @@ function Header() {
                   {t('links.clubs')}
                 </Link>
               </li>
-              <li>
+              <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/lists"
@@ -433,7 +476,7 @@ function Header() {
                   {t('links.immersionList')}
                 </Link>
               </li>
-              <li>
+              <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/texthooker"
@@ -594,13 +637,14 @@ function Header() {
                     </Link>
                   </li>
                   <li>
-                    <a
+                    <button
+                      type="button"
                       onClick={logoutHandler}
                       className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
                     >
                       <LogOut className="w-4 h-4" />
                       {t('links.logout')}
-                    </a>
+                    </button>
                   </li>
                 </ul>
               </div>

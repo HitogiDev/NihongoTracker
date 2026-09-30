@@ -34,6 +34,8 @@ import {
   Globe2,
   Users,
   UsersRound,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -57,6 +59,7 @@ import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 import GettingStartedModal from './GettingStartedModal';
 
 type DashboardActivityScope = Exclude<ActivityFeedScope, 'user'>;
+type DashboardLayout = 'classic' | 'compact';
 
 const ACTIVITY_SCOPES: Array<{
   value: DashboardActivityScope;
@@ -68,7 +71,10 @@ const ACTIVITY_SCOPES: Array<{
 ];
 
 const RECENT_MEDIA_LIMIT_STORAGE_KEY = 'dashboard:recentMediaLimit';
+const COMPACT_MEDIA_LIMIT_STORAGE_KEY = 'dashboard:compactMediaLimit';
+const DASHBOARD_LAYOUT_STORAGE_KEY = 'dashboard:layout';
 const DEFAULT_RECENT_MEDIA_LIMIT = 4;
+const DEFAULT_COMPACT_MEDIA_LIMIT = 7;
 const MAX_RECENT_MEDIA_LIMIT = 12;
 const DASHBOARD_CARD_EYEBROW_CLASS =
   'text-[11px] uppercase tracking-[0.2em] text-base-content/60';
@@ -76,11 +82,9 @@ const DASHBOARD_CARD_TITLE_CLASS =
   'card-title text-xl font-semibold leading-snug text-base-content';
 const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/65';
 
-function getStoredRecentMediaLimit() {
+function getStoredRecentMediaLimit(storageKey: string, defaultLimit: number) {
   try {
-    const storedLimit = Number(
-      window.localStorage.getItem(RECENT_MEDIA_LIMIT_STORAGE_KEY)
-    );
+    const storedLimit = Number(window.localStorage.getItem(storageKey));
     if (
       Number.isInteger(storedLimit) &&
       storedLimit >= 1 &&
@@ -91,7 +95,18 @@ function getStoredRecentMediaLimit() {
   } catch {
     // Storage can be unavailable in private browsing modes.
   }
-  return DEFAULT_RECENT_MEDIA_LIMIT;
+  return defaultLimit;
+}
+
+function getStoredDashboardLayout(): DashboardLayout {
+  try {
+    return window.localStorage.getItem(DASHBOARD_LAYOUT_STORAGE_KEY) ===
+      'compact'
+      ? 'compact'
+      : 'classic';
+  } catch {
+    return 'classic';
+  }
 }
 
 function Dashboard() {
@@ -134,8 +149,20 @@ function Dashboard() {
     title: string;
   } | null>(null);
   const [manageHiddenOpen, setManageHiddenOpen] = useState(false);
-  const [recentMediaLimit, setRecentMediaLimit] = useState(
-    getStoredRecentMediaLimit
+  const [recentMediaLimit, setRecentMediaLimit] = useState(() =>
+    getStoredRecentMediaLimit(
+      RECENT_MEDIA_LIMIT_STORAGE_KEY,
+      DEFAULT_RECENT_MEDIA_LIMIT
+    )
+  );
+  const [compactMediaLimit, setCompactMediaLimit] = useState(() =>
+    getStoredRecentMediaLimit(
+      COMPACT_MEDIA_LIMIT_STORAGE_KEY,
+      DEFAULT_COMPACT_MEDIA_LIMIT
+    )
+  );
+  const [dashboardLayout, setDashboardLayout] = useState<DashboardLayout>(
+    getStoredDashboardLayout
   );
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
@@ -328,16 +355,36 @@ function Dashboard() {
     0,
     recentMediaLimit
   );
+  const compactMediaHighlights = recentMediaHighlights.slice(
+    0,
+    compactMediaLimit
+  );
 
   function handleRecentMediaLimitChange(nextLimit: number) {
-    setRecentMediaLimit(nextLimit);
+    const compact = dashboardLayout === 'compact';
+    if (compact) {
+      setCompactMediaLimit(nextLimit);
+    } else {
+      setRecentMediaLimit(nextLimit);
+    }
     try {
       window.localStorage.setItem(
-        RECENT_MEDIA_LIMIT_STORAGE_KEY,
+        compact
+          ? COMPACT_MEDIA_LIMIT_STORAGE_KEY
+          : RECENT_MEDIA_LIMIT_STORAGE_KEY,
         String(nextLimit)
       );
     } catch {
       // Keep the setting for this session if storage is unavailable.
+    }
+  }
+
+  function handleDashboardLayoutChange(nextLayout: DashboardLayout) {
+    setDashboardLayout(nextLayout);
+    try {
+      window.localStorage.setItem(DASHBOARD_LAYOUT_STORAGE_KEY, nextLayout);
+    } catch {
+      // Keep the chosen layout for this session if storage is unavailable.
     }
   }
 
@@ -485,7 +532,9 @@ function Dashboard() {
       <ManageHiddenMedia
         open={manageHiddenOpen}
         onClose={() => setManageHiddenOpen(false)}
-        recentMediaLimit={recentMediaLimit}
+        recentMediaLimit={
+          dashboardLayout === 'compact' ? compactMediaLimit : recentMediaLimit
+        }
         onRecentMediaLimitChange={handleRecentMediaLimitChange}
         onUnhidden={() => {
           queryClient.invalidateQueries({
@@ -503,6 +552,30 @@ function Dashboard() {
             {user.username}
           </h1>
           <p className="text-base-content/70 mt-1">{t(greetingKey)}</p>
+          <div
+            className="join mt-3"
+            role="group"
+            aria-label={t('dashboard.layout.label')}
+          >
+            <button
+              type="button"
+              className={`join-item btn btn-sm ${dashboardLayout === 'classic' ? 'btn-primary' : 'btn-outline'}`}
+              aria-pressed={dashboardLayout === 'classic'}
+              onClick={() => handleDashboardLayoutChange('classic')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              {t('dashboard.layout.classic')}
+            </button>
+            <button
+              type="button"
+              className={`join-item btn btn-sm ${dashboardLayout === 'compact' ? 'btn-primary' : 'btn-outline'}`}
+              aria-pressed={dashboardLayout === 'compact'}
+              onClick={() => handleDashboardLayoutChange('compact')}
+            >
+              <List className="h-4 w-4" />
+              {t('dashboard.layout.compact')}
+            </button>
+          </div>
         </div>
         <div
           className={`hidden md:grid ${
@@ -531,6 +604,122 @@ function Dashboard() {
         </div>
       </div>
 
+      {dashboardLayout === 'compact' && (
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+          <div className="card surface min-w-0">
+            <div className="card-body gap-4 p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className={DASHBOARD_CARD_EYEBROW_CLASS}>
+                  {t('dashboard.recentMedia')}
+                </h2>
+                <Button
+                  appearance="outline"
+                  size="sm"
+                  onClick={() => setManageHiddenOpen(true)}
+                >
+                  <Settings2 className="h-4 w-4" />
+                  {t('dashboard.manage')}
+                </Button>
+              </div>
+              {compactMediaHighlights.length === 0 ? (
+                <p className="py-12 text-center text-sm text-base-content/70">
+                  {t('dashboard.recentEmpty')}
+                </p>
+              ) : (
+                <div className="overflow-x-auto pb-1">
+                  <div className="flex w-max gap-3">
+                    {compactMediaHighlights.map((log) => (
+                      <RecentMediaRailTile
+                        key={`${log._id}-compact`}
+                        log={log}
+                        blurAdultContent={user.settings?.blurAdultContent ?? false}
+                        onQuickLog={handleQuickLogOpen}
+                        onRemove={handleRemoveMedia}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 lg:grid-cols-1">
+            <div
+              className={
+                hideRankingFeatures
+                  ? 'surface-muted col-span-2 flex items-center gap-2 bg-secondary/10 px-3 py-2 sm:col-span-6 lg:col-span-1'
+                  : 'surface-muted flex items-center gap-2 bg-secondary/10 px-3 py-2 sm:col-span-3 lg:col-span-1'
+              }
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-field bg-secondary text-secondary-content">
+                <Flame className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase text-secondary">
+                  {t('dashboard.streak.label')}
+                </p>
+                <p className="truncate text-sm font-bold">
+                  {t('dashboard.streak.days', { count: streak })}
+                </p>
+              </div>
+            </div>
+            {!hideRankingFeatures && (
+              <Link
+                to="/ranking"
+                className="surface-muted flex items-center gap-2 bg-primary/10 px-3 py-2 hover:bg-primary/15 sm:col-span-3 lg:col-span-1"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-field bg-primary text-primary-content">
+                  <Trophy className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold uppercase text-primary">
+                    {t('dashboard.monthlyRanking')}
+                  </p>
+                  <p className="text-sm font-bold">
+                    #{monthlyRanking?.position ?? '-'} /{' '}
+                    {monthlyRanking?.totalUsers ?? '-'}
+                  </p>
+                </div>
+              </Link>
+            )}
+            {([
+              ['reading', 'text-primary'],
+              ['listening', 'text-secondary'],
+              ['total', 'text-base-content'],
+            ] as const).map(([key, accent]) => {
+              const change = immersionStats.changes[key];
+              return (
+                <div
+                  key={key}
+                  className="surface-muted col-span-2 flex min-w-0 items-center justify-between gap-2 px-3 py-2 lg:col-span-1"
+                >
+                  <span className="truncate text-[11px] font-semibold uppercase text-base-content/65">
+                    {t(`dashboard.stats.${key}`)}
+                  </span>
+                  <span className={`shrink-0 text-sm font-bold ${accent}`}>
+                    {immersionStats.currentMonth[key]}h
+                  </span>
+                  <span
+                    className={`shrink-0 text-xs ${change > 0 ? 'text-success' : change < 0 ? 'text-error' : 'text-base-content/60'}`}
+                    aria-label={
+                      change === 0
+                        ? t('dashboard.stats.noChange')
+                        : t('dashboard.stats.change', {
+                            percent: Math.abs(change),
+                          })
+                    }
+                  >
+                    {change > 0 ? '+' : change < 0 ? '−' : ''}
+                    {Math.abs(change)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {dashboardLayout === 'classic' && (
+        <>
       <div className="xl:hidden">
         <RecentMediaRail
           allLogs={recentMediaHighlights}
@@ -548,7 +737,7 @@ function Dashboard() {
             : 'grid grid-cols-1 md:grid-cols-2 gap-4'
         }
       >
-        <div className="card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-sm">
+        <div className="card surface-muted bg-secondary/10 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-secondary text-secondary-content">
@@ -569,7 +758,7 @@ function Dashboard() {
           </div>
         </div>
         {!hideRankingFeatures && (
-          <div className="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
+          <div className="card surface-muted bg-primary/10 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-primary text-primary-content">
@@ -591,8 +780,18 @@ function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2 space-y-8">
+        </>
+      )}
+
+      <div
+        className={
+          dashboardLayout === 'compact'
+            ? 'grid min-w-0 grid-cols-1 gap-5'
+            : 'grid grid-cols-1 gap-8 xl:grid-cols-3'
+        }
+      >
+        <div className={dashboardLayout === 'compact' ? 'min-w-0 space-y-5' : 'space-y-8 xl:col-span-2'}>
+          {dashboardLayout === 'classic' && (
           <div className="card surface">
             <div className="card-body p-4 sm:p-6">
               <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
@@ -658,6 +857,7 @@ function Dashboard() {
               </div>
             </div>
           </div>
+          )}
 
           <div className="card surface">
             <div className="card-body space-y-4">
@@ -744,7 +944,7 @@ function Dashboard() {
         </div>
 
         <div className="space-y-8">
-          <div className="hidden xl:block">
+          {dashboardLayout === 'classic' && <div className="hidden xl:block">
             <RecentMediaPanel
               logs={recentMediaPanelHighlights}
               user={user}
@@ -752,7 +952,7 @@ function Dashboard() {
               onRemove={handleRemoveMedia}
               onManage={() => setManageHiddenOpen(true)}
             />
-          </div>
+          </div>}
 
           {!hideRankingFeatures && <ClubRanking username={user.username} />}
         </div>
@@ -952,6 +1152,7 @@ function RecentMediaRail({
                 <RecentMediaRailTile
                   key={`${log._id}-rail`}
                   log={log}
+                  blurAdultContent
                   onQuickLog={onQuickLog}
                   onRemove={onRemove}
                 />
@@ -966,12 +1167,14 @@ function RecentMediaRail({
 
 type RecentMediaRailTileProps = {
   log: RecentMediaLog;
+  blurAdultContent: boolean;
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
 };
 
 function RecentMediaRailTile({
   log,
+  blurAdultContent,
   onQuickLog,
   onRemove,
 }: RecentMediaRailTileProps) {
@@ -1016,7 +1219,7 @@ function RecentMediaRailTile({
           src={image}
           alt={title}
           className={`w-full h-full object-cover ${
-            isAdult ? 'blur-sm scale-110' : ''
+            isAdult && blurAdultContent ? 'blur-sm scale-110' : ''
           }`}
         />
       ) : (

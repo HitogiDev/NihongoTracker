@@ -88,6 +88,11 @@
     "title": "¿Listo para empezar?"
   },
   "dashboard": {
+    "layout": {
+      "label": "Diseño del panel",
+      "classic": "Clásico",
+      "compact": "Compacto"
+    },
     "greetings": {
       "immersion": "¡Vamos a hacer algo de inmersión!",
       "track": "¡Toca loguear tu progreso!",
