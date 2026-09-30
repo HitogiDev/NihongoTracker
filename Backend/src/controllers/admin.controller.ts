@@ -25,6 +25,7 @@ import { backfillRankAchievements } from '../services/achievements/cronAchieveme
 import {
   startJitenDifficultyBackfill,
   getJitenBackfillState,
+  fetchJitenDeckDetail,
 } from '../services/jiten.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
 import {
@@ -1142,6 +1143,26 @@ export async function adminUpdateMedia(
     if (!media) throw apiError('admin.mediaNotFound', 404, 'Media not found');
 
     const body = req.body as Partial<IMediaDocument>;
+
+    if (body.jitenDeckId === null) {
+      media.jitenDeckId = null;
+      media.jitenDifficulty = null;
+      media.jitenSyncedAt = null;
+    } else if (body.jitenDeckId !== undefined) {
+      const deckId = Number(body.jitenDeckId);
+      if (!Number.isSafeInteger(deckId) || deckId <= 0) {
+        throw apiError('admin.fieldMustBeNumber', 400, 'jitenDeckId must be a positive integer', {
+          field: 'jitenDeckId',
+        });
+      }
+      const jiten = await fetchJitenDeckDetail(deckId);
+      if (!jiten) {
+        throw apiError('admin.mediaNotFound', 404, 'Jiten deck not found');
+      }
+      media.jitenDeckId = deckId;
+      media.jitenDifficulty = jiten.data.mainDeck.difficultyRaw;
+      media.jitenSyncedAt = new Date();
+    }
 
     // Title (merge with existing so partial updates keep other fields).
     if (body.title && typeof body.title === 'object') {

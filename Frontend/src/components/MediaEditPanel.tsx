@@ -32,6 +32,7 @@ type EditState = IMediaDocument & {
   _descEng: string;
   _descJpn: string;
   _descSpa: string;
+  _jitenDeckIdText: string;
 };
 
 function descFor(media: IMediaDocument, language: 'eng' | 'jpn' | 'spa') {
@@ -49,6 +50,7 @@ function toEditState(media: IMediaDocument): EditState {
     _descEng: descFor(media, 'eng'),
     _descJpn: descFor(media, 'jpn'),
     _descSpa: descFor(media, 'spa'),
+    _jitenDeckIdText: media.jitenDeckId ? String(media.jitenDeckId) : '',
   };
 }
 
@@ -124,6 +126,28 @@ export default function MediaEditPanel() {
 
   function save() {
     if (!edit?._id) return;
+    const jitenSupported = [
+      'anime',
+      'manga',
+      'light-novel',
+      'vn',
+      'movie',
+      'book',
+    ].includes(edit.type);
+    const rawJitenDeck = edit._jitenDeckIdText.trim();
+    const deckIdText =
+      rawJitenDeck.match(/(?:^|\/)(\d+)(?:\/detail)?(?:[/?#].*)?$/)?.[1] ??
+      rawJitenDeck;
+    const jitenDeckId = rawJitenDeck ? Number(deckIdText) : null;
+    if (
+      jitenSupported &&
+      jitenDeckId !== null &&
+      (!Number.isSafeInteger(jitenDeckId) || jitenDeckId <= 0)
+    ) {
+      toast.error('Enter a valid Jiten deck ID or URL.');
+      return;
+    }
+
     const payload: Partial<IMediaDocument> = {
       title: {
         contentTitleNative: edit.title.contentTitleNative,
@@ -148,6 +172,7 @@ export default function MediaEditPanel() {
           language,
         })),
     };
+    if (jitenSupported) payload.jitenDeckId = jitenDeckId;
 
     // Only include type-relevant numeric/array fields.
     const t = edit.type;
@@ -368,6 +393,29 @@ export default function MediaEditPanel() {
                 numberField('Characters', 'characters')}
               {edit.type === 'movie' && numberField('Runtime (min)', 'runtime')}
               {edit.type === 'book' && numberField('Pages', 'pageCount')}
+
+              {['anime', 'manga', 'light-novel', 'vn', 'movie', 'book'].includes(
+                edit.type
+              ) && (
+                <Field
+                  label="Jiten deck ID or URL"
+                  hint="Leave empty to use automatic matching."
+                  className="md:col-span-2"
+                >
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={edit._jitenDeckIdText}
+                    onChange={(e) =>
+                      setEdit({
+                        ...edit,
+                        _jitenDeckIdText: e.target.value,
+                      })
+                    }
+                    placeholder="https://jiten.moe/decks/media/123/detail"
+                  />
+                </Field>
+              )}
 
               {edit.type === 'game' && (
                 <Field

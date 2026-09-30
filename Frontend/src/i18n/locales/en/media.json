@@ -1,4 +1,16 @@
 {
+  "jitenLink": {
+    "deckId": "Jiten deck ID or URL",
+    "edit": "Change Jiten deck",
+    "hint": "Paste the Jiten deck URL or enter its numeric ID.",
+    "invalidId": "Enter a valid Jiten deck ID or URL.",
+    "link": "Link Jiten deck",
+    "remove": "Remove link",
+    "save": "Save link",
+    "saveFailed": "Could not save the Jiten deck link. Check that the deck exists.",
+    "saved": "Jiten deck link updated.",
+    "title": "Link a Jiten deck"
+  },
   "activity": {
     "a11y": {
       "clearDate": "Clear date filter",

@@ -1060,6 +1060,7 @@ export interface IMediaDocument {
   isAdult: boolean;
   isAdultImage?: boolean;
   jitenDifficulty?: number | null;
+  jitenDeckId?: number | null;
   lastLogDate?: string;
   /** Number of the requesting user's logs for this media (immersion list only). */
   logCount?: number;

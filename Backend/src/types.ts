@@ -680,6 +680,8 @@ export interface IMediaDocument {
   /** Native Jiten difficulty (0-6 scale), lazily cached from the Jiten API. */
   jitenDifficulty?: number | null;
   jitenSyncedAt?: Date | null;
+  /** Manually selected Jiten deck, when automatic matching is incorrect. */
+  jitenDeckId?: number | null;
   lastLogDate?: Date;
   /** Number of the requesting user's logs for this media (immersion list only). */
   logCount?: number;

@@ -201,7 +201,8 @@ export async function getMedia(
     const jitenResponse = await fetchJitenDetail(
       normalizedMediaType,
       contentId,
-      media?.title?.contentTitleNative
+      media?.title?.contentTitleNative,
+      media?.jitenDeckId
     );
 
     // Lazily cache the Jiten difficulty on the media doc so the XP engine can
