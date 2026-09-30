@@ -43,6 +43,7 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
     isAdultImage: { type: Boolean, default: false },
     jitenDifficulty: { type: Number, default: null },
     jitenSyncedAt: { type: Date, default: null },
+    jitenDeckId: { type: Number, default: null },
   },
   { discriminatorKey: 'type', collection: 'media' }
 );

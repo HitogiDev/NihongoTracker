@@ -16,6 +16,7 @@ import {
   toggleMediaReviewLikeFn,
   deleteMediaReviewFn,
   updateMediaCompletionStatusFn,
+  adminUpdateMediaFn,
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import { effectiveLogMinutes } from '../utils/immersionTime';
@@ -40,9 +41,13 @@ import {
   BarChart3,
   MessageSquareText,
   Pencil,
+  Link2,
 } from 'lucide-react';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import EditReviewModal from '../components/EditReviewModal';
+import Modal from '../components/ui/Modal';
+import Field from '../components/ui/Field';
+import Button from '../components/ui/Button';
 import MediaReviewCard from '../components/MediaReviewCard';
 import ReviewRatingSummary from '../components/ReviewRatingSummary';
 import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
@@ -103,6 +108,8 @@ function MediaDetails() {
   const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
+  const [jitenLinkModalOpen, setJitenLinkModalOpen] = useState(false);
+  const [jitenDeckInput, setJitenDeckInput] = useState('');
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<
@@ -124,6 +131,33 @@ function MediaDetails() {
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const autoCompletionTriggerRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
+
+  const jitenLinkMutation = useMutation({
+    mutationFn: (jitenDeckId: number | null) => {
+      if (!mediaDocument?._id) throw new Error('Media record is not available');
+      return adminUpdateMediaFn(String(mediaDocument._id), { jitenDeckId });
+    },
+    onSuccess: async () => {
+      toast.success(t('jitenLink.saved'));
+      setJitenLinkModalOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: ['media', mediaDocument?.contentId, mediaDocument?.type],
+      });
+    },
+    onError: () => toast.error(t('jitenLink.saveFailed')),
+  });
+
+  function saveJitenDeckLink() {
+    const raw = jitenDeckInput.trim();
+    const deckIdText =
+      raw.match(/(?:^|\/)(\d+)(?:\/detail)?(?:[/?#].*)?$/)?.[1] ?? raw;
+    const deckId = Number(deckIdText);
+    if (!Number.isSafeInteger(deckId) || deckId <= 0) {
+      toast.error(t('jitenLink.invalidId'));
+      return;
+    }
+    jitenLinkMutation.mutate(deckId);
+  }
 
   useEffect(() => {
     if (dateFilter !== 'custom') {
@@ -794,6 +828,14 @@ function MediaDetails() {
   const visibleLogs = filteredLogs.slice(0, visibleLogsCount);
   const hasMoreLogs = filteredLogs.length > visibleLogsCount;
   const canBulkEditLogs = isOwnProfile || Boolean(currentUser?.roles?.includes('admin'));
+  const canManageJitenLink =
+    currentUser?.roles === 'admin' || currentUser?.roles === 'mod';
+  const supportsJitenLink = Boolean(
+    mediaDocument &&
+      ['anime', 'manga', 'light-novel', 'vn', 'movie', 'book'].includes(
+        mediaDocument.type
+      )
+  );
   const mediaReviews = mediaReviewsData?.reviews || [];
   const userReview = mediaReviews.find(
     (review) => review.user._id === currentUser?._id
@@ -1607,6 +1649,26 @@ function MediaDetails() {
                           </svg>
                           Jiten
                         </a>
+                      )}
+                      {canManageJitenLink && supportsJitenLink && (
+                        <Button
+                          appearance="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => {
+                            setJitenDeckInput(
+                              mediaDocument?.jitenDeckId
+                                ? String(mediaDocument.jitenDeckId)
+                                : ''
+                            );
+                            setJitenLinkModalOpen(true);
+                          }}
+                        >
+                          <Link2 className="w-4 h-4" />
+                          {mediaDocument?.jitenDeckId
+                            ? t('jitenLink.edit')
+                            : t('jitenLink.link')}
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -2710,6 +2772,55 @@ function MediaDetails() {
           />
         </dialog>
       )}
+
+      <Modal
+        open={jitenLinkModalOpen}
+        onClose={() => setJitenLinkModalOpen(false)}
+        title={t('jitenLink.title')}
+        actions={
+          <>
+            {mediaDocument?.jitenDeckId && (
+              <Button
+                variant="error"
+                appearance="outline"
+                loading={jitenLinkMutation.isPending}
+                onClick={() => jitenLinkMutation.mutate(null)}
+              >
+                {t('jitenLink.remove')}
+              </Button>
+            )}
+            <Button
+              appearance="ghost"
+              onClick={() => setJitenLinkModalOpen(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              loading={jitenLinkMutation.isPending}
+              onClick={saveJitenDeckLink}
+            >
+              {t('jitenLink.save')}
+            </Button>
+          </>
+        }
+      >
+        <Field
+          label={t('jitenLink.deckId')}
+          hint={t('jitenLink.hint')}
+        >
+          {(id) => (
+            <input
+              id={id}
+              className="input w-full"
+              value={jitenDeckInput}
+              onChange={(event) => setJitenDeckInput(event.target.value)}
+              placeholder="https://jiten.moe/decks/media/123/detail"
+              autoFocus
+            />
+          )}
+        </Field>
+      </Modal>
     </div>
   );
 }

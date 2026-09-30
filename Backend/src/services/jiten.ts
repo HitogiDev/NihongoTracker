@@ -14,6 +14,7 @@ export const JitenLinkTypeByMediaType: Record<string, number> = {
   vn: 2, // VNDB
   anime: 4, // AniList
   manga: 4, // AniList
+  'light-novel': 4, // AniList
   reading: 4, // AniList
   movie: 4, // AniList
   book: 6, // GoogleBooks
@@ -156,7 +157,8 @@ async function findJitenBookDeckIdByTitle(
 export async function fetchJitenDetail(
   type: string,
   contentId: string,
-  title?: string | null
+  title?: string | null,
+  manualDeckId?: number | null
 ): Promise<IJitenResponse | null> {
   const jitenURL = process.env.JITEN_API_URL;
   if (!jitenURL) return null;
@@ -166,6 +168,9 @@ export async function fetchJitenDetail(
   if (!linkType) return null;
 
   try {
+    if (manualDeckId != null) {
+      return await fetchJitenDeckDetail(manualDeckId);
+    }
     // Jiten links books by their raw Google Books volume id; our book
     // contentId is namespaced as `gbooks-<volumeId>`, so strip the prefix.
     const jitenLinkId =
@@ -204,6 +209,30 @@ export async function fetchJitenDetail(
   return null;
 }
 
+/** Fetch and validate a specific Jiten deck. */
+export async function fetchJitenDeckDetail(
+  deckId: number
+): Promise<IJitenResponse | null> {
+  const jitenURL = process.env.JITEN_API_URL;
+  if (!jitenURL || !Number.isSafeInteger(deckId) || deckId <= 0) return null;
+
+  try {
+    const detail = await axios.get(
+      `${jitenURL}/media-deck/${deckId}/detail`,
+      { validateStatus: (status) => status === 200 || status === 404 }
+    );
+    if (
+      detail.status === 200 &&
+      detail.data?.data?.mainDeck?.deckId === deckId
+    ) {
+      return detail.data as IJitenResponse;
+    }
+  } catch (err) {
+    console.warn('Jiten deck lookup failed:', (err as Error)?.message ?? err);
+  }
+  return null;
+}
+
 /**
  * Native Jiten difficulty for a media item, or null when unmatched. Nominally
  * a 0-5 scale, but user adjustments can push it slightly past 5 — the XP
@@ -222,9 +251,10 @@ export async function fetchJitenDetail(
 export async function fetchJitenDifficulty(
   type: string,
   contentId: string,
-  title?: string | null
+  title?: string | null,
+  manualDeckId?: number | null
 ): Promise<number | null> {
-  const detail = await fetchJitenDetail(type, contentId, title);
+  const detail = await fetchJitenDetail(type, contentId, title, manualDeckId);
   const difficulty = detail?.data?.mainDeck?.difficultyRaw;
   return typeof difficulty === 'number' && difficulty >= 0 ? difficulty : null;
 }
@@ -420,9 +450,10 @@ const BACKFILL_BATCH_SIZE = 500;
 async function runJitenDifficultyBackfill(force: boolean): Promise<void> {
   const linkableTypes = Object.keys(JitenLinkTypeByMediaType);
   const filter = force
-    ? { type: { $in: linkableTypes } }
+    ? { type: { $in: linkableTypes }, jitenDeckId: null }
     : {
         type: { $in: linkableTypes },
+        jitenDeckId: null,
         $or: [
           { jitenDifficulty: null },
           { jitenDifficulty: { $exists: false } },
@@ -524,13 +555,18 @@ export async function cacheMediaJitenDifficulty(
 ): Promise<number | null> {
   try {
     const media = await MediaBase.findOne({ contentId, type })
-      .select('jitenDifficulty')
+      .select('jitenDifficulty jitenDeckId')
       .lean();
     if (media && media.jitenDifficulty != null) {
       return media.jitenDifficulty;
     }
 
-    const difficulty = await fetchJitenDifficulty(type, contentId, title);
+    const difficulty = await fetchJitenDifficulty(
+      type,
+      contentId,
+      title,
+      media?.jitenDeckId
+    );
     if (difficulty === null) return null;
 
     await MediaBase.updateOne(
