@@ -1199,24 +1199,29 @@ function ManageHiddenMedia({
       </p>
       <Field
         label={t('dashboard.quickLogCardCount')}
+        aside={t('dashboard.quickLogCardCountOption', {
+          count: recentMediaLimit,
+        })}
         hint={t('dashboard.quickLogCardCountHint')}
         className="mb-4"
       >
-        <select
-          className="select w-full"
-          value={recentMediaLimit}
-          onChange={(event) =>
-            onRecentMediaLimitChange(Number(event.target.value))
-          }
-        >
-          {Array.from({ length: MAX_RECENT_MEDIA_LIMIT }, (_, index) =>
-            index + 1
-          ).map((count) => (
-            <option key={count} value={count}>
-              {t('dashboard.quickLogCardCountOption', { count })}
-            </option>
-          ))}
-        </select>
+        {(id) => (
+          <input
+            id={id}
+            type="range"
+            min={1}
+            max={MAX_RECENT_MEDIA_LIMIT}
+            step={1}
+            className="range range-primary w-full"
+            value={recentMediaLimit}
+            aria-valuetext={t('dashboard.quickLogCardCountOption', {
+              count: recentMediaLimit,
+            })}
+            onChange={(event) =>
+              onRecentMediaLimitChange(Number(event.target.value))
+            }
+          />
+        )}
       </Field>
       {isLoading ? (
         <div className="space-y-2">
