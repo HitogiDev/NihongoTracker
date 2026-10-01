@@ -1319,6 +1319,15 @@ export async function getPatreonStatusFn(): Promise<{
   return data;
 }
 
+export async function recheckPatreonMembershipFn(): Promise<{
+  tier: string | null;
+  isActive: boolean;
+  updated: boolean;
+}> {
+  const { data } = await api.post('patreon/membership/recheck');
+  return data;
+}
+
 export async function initiatePatreonOAuthFn(): Promise<{
   authUrl: string;
   message: string;

@@ -191,7 +191,9 @@
     "invalidBadgeColor": "El color de la insignia debe ser un color hex válido, \"rainbow\", \"primary\" o \"secondary\"",
     "invalidBadgeTextColor": "El color del texto de la insignia debe ser un color hex válido, \"primary-content\" o \"secondary-content\"",
     "invalidBadgeVisibility": "La visibilidad de la insignia debe ser un valor booleano",
+    "membershipCheckFailed": "No se pudo comprobar la membresía de Patreon. Inténtalo de nuevo o vuelve a conectar Patreon.",
     "notConfigured": "El OAuth de Patreon no está configurado en este servidor",
+    "notLinked": "Vincula una cuenta de Patreon antes de comprobar su membresía",
     "oauthNotConfigured": "OAuth no está configurado correctamente en este servidor",
     "useOauthFlow": "Usa el flujo de OAuth para vincular tu cuenta de Patreon"
   },

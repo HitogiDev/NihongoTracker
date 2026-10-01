@@ -18,6 +18,7 @@ import {
   exportLogsCSVFn,
   updateUserFn,
   getPatreonStatusFn,
+  recheckPatreonMembershipFn,
   unlinkPatreonAccountFn,
   updateCustomBadgeTextFn,
   updateBadgeColorsFn,
@@ -242,7 +243,7 @@ const getContrastColor = (value: string | null): string => {
 const isPresetBackground = (value: string | null | undefined): boolean => {
   return value
     ? PRESET_BADGE_BACKGROUNDS.includes(
-        value as (typeof PRESET_BADGE_BACKGROUNDS)[number]
+        value as (typeof PRESET_BADGE_BACKGROUNDS)[number],
       )
     : false;
 };
@@ -250,7 +251,7 @@ const isPresetBackground = (value: string | null | undefined): boolean => {
 const isPresetTextColor = (value: string | null | undefined): boolean => {
   return value
     ? PRESET_BADGE_TEXT_COLORS.includes(
-        value as (typeof PRESET_BADGE_TEXT_COLORS)[number]
+        value as (typeof PRESET_BADGE_TEXT_COLORS)[number],
       )
     : false;
 };
@@ -259,7 +260,7 @@ type AboutEditorProps = {
   aboutRef: React.MutableRefObject<string>;
   maxLength: number;
   onSelectionChange?: (
-    selection: { start: number; end: number } | null
+    selection: { start: number; end: number } | null,
   ) => void;
   initialValue?: string; // Used to trigger re-sync when user data changes
   onSave?: () => void;
@@ -284,7 +285,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
       isSaving,
       onPreviewChange,
     },
-    ref
+    ref,
   ) {
     const { t } = useTranslation('settings');
     const [length, setLength] = useState(aboutRef.current.length);
@@ -357,7 +358,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
           textarea.setSelectionRange(startPos, endPos);
         });
       },
-      [value, maxLength, aboutRef, onPreviewChange, t]
+      [value, maxLength, aboutRef, onPreviewChange, t],
     );
 
     useImperativeHandle(
@@ -367,7 +368,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         getTextarea: () => textareaRef.current,
         needsLineBreak,
       }),
-      [insertSnippet, needsLineBreak]
+      [insertSnippet, needsLineBreak],
     );
 
     return (
@@ -431,7 +432,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         )}
       </>
     );
-  }
+  },
 );
 
 type SettingsTab =
@@ -466,7 +467,7 @@ function SettingsScreen() {
   const { user, setUser } = useUserDataStore();
   const detectedTimezone = getUserTimezone();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
-    searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile'
+    searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile',
   );
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
@@ -474,7 +475,7 @@ function SettingsScreen() {
   const [apiKeys, setApiKeys] = useState<IApiKey[]>([]);
   const [apiKeyName, setApiKeyName] = useState('');
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<ICreatedApiKey | null>(
-    null
+    null,
   );
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [username, setUsername] = useState(user?.username || '');
@@ -485,33 +486,33 @@ function SettingsScreen() {
     'edit' | 'preview' | 'split'
   >('split');
   const [customBadgeText, setCustomBadgeText] = useState(
-    user?.patreon?.customBadgeText || ''
+    user?.patreon?.customBadgeText || '',
   );
   const [hideBadge, setHideBadge] = useState(user?.patreon?.hideBadge ?? false);
   const [badgeColor, setBadgeColor] = useState<string>(
-    user?.patreon?.badgeColor || DEFAULT_BADGE_COLOR
+    user?.patreon?.badgeColor || DEFAULT_BADGE_COLOR,
   );
   const [badgeTextColor, setBadgeTextColor] = useState<string>(
-    user?.patreon?.badgeTextColor || DEFAULT_BADGE_TEXT_COLOR
+    user?.patreon?.badgeTextColor || DEFAULT_BADGE_TEXT_COLOR,
   );
   const [pendingBadgeColor, setPendingBadgeColor] = useState<string | null>(
-    null
+    null,
   );
   const [pendingBadgeTextColor, setPendingBadgeTextColor] = useState<
     string | null
   >(null);
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [blurAdult, setBlurAdult] = useState(
-    user?.settings?.blurAdultContent || false
+    user?.settings?.blurAdultContent || false,
   );
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
-    user?.settings?.hideUnmatchedLogsAlert || false
+    user?.settings?.hideUnmatchedLogsAlert || false,
   );
   const [hideRankingFeatures, setHideRankingFeatures] = useState(
-    user?.settings?.hideRankingFeatures || false
+    user?.settings?.hideRankingFeatures || false,
   );
   const [timezone, setTimezone] = useState(
-    user?.settings?.timezone || detectedTimezone
+    user?.settings?.timezone || detectedTimezone,
   );
   const [isInitialized, setIsInitialized] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string>('');
@@ -712,14 +713,14 @@ function SettingsScreen() {
         void queryClient.invalidateQueries({
           predicate: (query) => {
             return [
-            'user',
-            'ranking',
-            'ranking-medium',
-            'rankingSummary',
-            'rankingHistory',
-            'clubMemberRankings',
-            'clubMediaRankings',
-            'notifications',
+              'user',
+              'ranking',
+              'ranking-medium',
+              'rankingSummary',
+              'rankingHistory',
+              'clubMemberRankings',
+              'clubMediaRankings',
+              'notifications',
             ].includes(query.queryKey[0] as string);
           },
         });
@@ -727,7 +728,7 @@ function SettingsScreen() {
       onError: (error) => {
         if (error instanceof AxiosError) {
           toast.error(
-            `Failed to save preference: ${error.response?.data.message}`
+            `Failed to save preference: ${error.response?.data.message}`,
           );
         } else {
           toast.error(t('toast.preferenceSaveFailed'));
@@ -786,19 +787,19 @@ function SettingsScreen() {
 
       updatePreferences(formData);
     },
-    [updatePreferences]
+    [updatePreferences],
   );
 
   // Use refs to track timeouts for debouncing
   const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
   const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
   const hideRankingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
 
   // Initialize state from user data once
@@ -883,7 +884,7 @@ function SettingsScreen() {
       hideUnmatchedTimeoutRef.current = setTimeout(() => {
         debouncedUpdatePreferences(
           'hideUnmatchedLogsAlert',
-          hideUnmatchedAlert
+          hideUnmatchedAlert,
         );
       }, 500);
     }
@@ -955,7 +956,7 @@ function SettingsScreen() {
     mutationFn: importLogFileFn,
     onSuccess: (data) => {
       const logImportInput = document.getElementById(
-        'logFileImport'
+        'logFileImport',
       ) as HTMLInputElement;
       if (logImportInput) {
         logImportInput.value = '';
@@ -1041,7 +1042,7 @@ function SettingsScreen() {
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(
-          error.response?.data.message || t('toast.apiKeyCreateFailed')
+          error.response?.data.message || t('toast.apiKeyCreateFailed'),
         );
       } else {
         toast.error(t('toast.apiKeyCreateFailed'));
@@ -1058,7 +1059,7 @@ function SettingsScreen() {
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(
-          error.response?.data.message || t('toast.apiKeyRevokeFailed')
+          error.response?.data.message || t('toast.apiKeyRevokeFailed'),
         );
       } else {
         toast.error(t('toast.apiKeyRevokeFailed'));
@@ -1102,6 +1103,23 @@ function SettingsScreen() {
     },
   });
 
+  const {
+    mutate: recheckPatreonMembership,
+    isPending: isRecheckingPatreon,
+  } = useMutation({
+    mutationFn: recheckPatreonMembershipFn,
+    onSuccess: async (result) => {
+      await fetchPatreonStatus();
+      if (result.isActive) {
+        toast.success(t('patreon.membershipRechecked'));
+      } else {
+        toast.info(t('patreon.errors.noActiveMembership'));
+      }
+      void queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
   // ── AniList integration ──
   const { data: anilistStatus, refetch: refetchAnilistStatus } = useQuery({
     queryKey: ['anilist', 'status'],
@@ -1113,7 +1131,7 @@ function SettingsScreen() {
   // only fall back to a local string when the failure carries no code.
   function reportAnilistError(
     error: unknown,
-    fallbackKey: ParseKeys<'errors'>
+    fallbackKey: ParseKeys<'errors'>,
   ) {
     toast.error(getApiErrorMessage(error, fallbackKey));
   }
@@ -1155,7 +1173,7 @@ function SettingsScreen() {
           t('anilist.backfillDone', {
             count: result.created,
             scanned: result.scanned,
-          })
+          }),
         );
         invalidateAfterAnilistSync();
       },
@@ -1176,19 +1194,19 @@ function SettingsScreen() {
   // ── AniList exclusion list ──
   const excludedMedia = useMemo(
     () => anilistStatus?.excludedMedia ?? [],
-    [anilistStatus]
+    [anilistStatus],
   );
 
   function saveAnilistExclusions(
     next: IAnilistMediaExclusion[],
-    successMessage?: string
+    successMessage?: string,
   ) {
     const payload: IUpdateAnilistSettings = { excludedMedia: next };
     updateAnilistSettings(payload, {
       onSuccess: (updated) => {
         void queryClient.setQueryData<IAnilistStatus>(
           ['anilist', 'status'],
-          updated
+          updated,
         );
         if (successMessage) toast.success(successMessage);
       },
@@ -1214,7 +1232,7 @@ function SettingsScreen() {
     onSuccess: () => {
       (
         document.getElementById(
-          'anilist_unlink_modal'
+          'anilist_unlink_modal',
         ) as HTMLDialogElement | null
       )?.close();
       toast.success(t('anilist.unlinked'));
@@ -1319,7 +1337,11 @@ function SettingsScreen() {
     const message = params.get('message');
 
     if (patreonStatus === 'success') {
-      toast.success(`✅ ${t('toast.patreonLinked')}`);
+      if (message === 'no_active_membership') {
+        toast.info(t('patreon.errors.noActiveMembership'));
+      } else {
+        toast.success(t('toast.patreonLinked'));
+      }
       // Limpiar URL sin recargar la página
       window.history.replaceState({}, '', '/settings');
       // Recargar el estado de Patreon
@@ -1335,7 +1357,7 @@ function SettingsScreen() {
       } as const;
       const errorMessage = t(
         (message && errorKeys[message as keyof typeof errorKeys]) ||
-          'patreon.errors.linkFailed'
+          'patreon.errors.linkFailed',
       );
       toast.error(`❌ ${errorMessage}`);
       // Limpiar URL
@@ -1347,7 +1369,7 @@ function SettingsScreen() {
     if (anilistResult === 'success') {
       // No refetch needed: the OAuth redirect is a full page load, so the
       // status query is already fetching fresh data.
-      toast.success(`✅ ${t('anilist.linked')}`);
+      toast.success(`${t('anilist.linked')}`);
       setActiveTab('advanced');
       window.history.replaceState({}, '', '/settings');
     } else if (anilistResult === 'error') {
@@ -1363,8 +1385,8 @@ function SettingsScreen() {
         `❌ ${t(
           (message &&
             anilistErrorKeys[message as keyof typeof anilistErrorKeys]) ||
-            'anilist.errors.oauthFailed'
-        )}`
+            'anilist.errors.oauthFailed',
+        )}`,
       );
       setActiveTab('advanced');
       window.history.replaceState({}, '', '/settings');
@@ -1413,7 +1435,7 @@ function SettingsScreen() {
   async function handleFileImport(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const logImportInput = document.getElementById(
-      'logFileImport'
+      'logFileImport',
     ) as HTMLInputElement;
     if (!logImportInput.files || logImportInput.files.length === 0) {
       toast.error(t('toast.selectFile'));
@@ -1434,11 +1456,11 @@ function SettingsScreen() {
       }
       (
         document.getElementById(
-          'advanced_options_info_modal'
+          'advanced_options_info_modal',
         ) as HTMLDialogElement | null
       )?.showModal();
     },
-    []
+    [],
   );
 
   const closeAdvancedOptions = useCallback(() => {
@@ -1482,7 +1504,7 @@ function SettingsScreen() {
   const openBadgeColorModal = useCallback(() => {
     setPendingBadgeColor(badgeColor);
     const modal = document.getElementById(
-      'bg_color_modal'
+      'bg_color_modal',
     ) as HTMLDialogElement | null;
     modal?.showModal();
   }, [badgeColor]);
@@ -1490,7 +1512,7 @@ function SettingsScreen() {
   const openBadgeTextColorModal = useCallback(() => {
     setPendingBadgeTextColor(badgeTextColor);
     const modal = document.getElementById(
-      'text_color_modal'
+      'text_color_modal',
     ) as HTMLDialogElement | null;
     modal?.showModal();
   }, [badgeTextColor]);
@@ -1505,7 +1527,7 @@ function SettingsScreen() {
 
   const handleBadgeColorDone = useCallback(() => {
     const modal = document.getElementById(
-      'bg_color_modal'
+      'bg_color_modal',
     ) as HTMLDialogElement | null;
     const rawValue =
       pendingBadgeColor === null || pendingBadgeColor === ''
@@ -1523,7 +1545,7 @@ function SettingsScreen() {
 
   const handleBadgeTextDone = useCallback(() => {
     const modal = document.getElementById(
-      'text_color_modal'
+      'text_color_modal',
     ) as HTMLDialogElement | null;
     const rawValue =
       pendingBadgeTextColor === null || pendingBadgeTextColor === ''
@@ -1548,10 +1570,10 @@ function SettingsScreen() {
       editor.insertSnippet(
         prefix,
         '',
-        t('markdown.snippets.heading', { level })
+        t('markdown.snippets.heading', { level }),
       );
     },
-    [t]
+    [t],
   );
 
   const insertListItem = useCallback(
@@ -1562,7 +1584,7 @@ function SettingsScreen() {
       const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
       editor.insertSnippet(prefix, '', t('markdown.snippets.listItem'));
     },
-    [t]
+    [t],
   );
 
   const insertQuote = useCallback(() => {
@@ -1584,7 +1606,7 @@ function SettingsScreen() {
     aboutEditorRef.current?.insertSnippet(
       '**',
       '**',
-      t('markdown.snippets.bold')
+      t('markdown.snippets.bold'),
     );
   }, [t]);
 
@@ -1592,7 +1614,7 @@ function SettingsScreen() {
     aboutEditorRef.current?.insertSnippet(
       '*',
       '*',
-      t('markdown.snippets.italic')
+      t('markdown.snippets.italic'),
     );
   }, [t]);
 
@@ -1600,7 +1622,7 @@ function SettingsScreen() {
     aboutEditorRef.current?.insertSnippet(
       '`',
       '`',
-      t('markdown.snippets.inlineCode')
+      t('markdown.snippets.inlineCode'),
     );
   }, [t]);
 
@@ -1608,7 +1630,7 @@ function SettingsScreen() {
     aboutEditorRef.current?.insertSnippet(
       '[',
       '](https://example.com)',
-      t('markdown.snippets.link')
+      t('markdown.snippets.link'),
     );
   }, [t]);
 
@@ -1616,7 +1638,7 @@ function SettingsScreen() {
     aboutEditorRef.current?.insertSnippet(
       '||',
       '||',
-      t('markdown.snippets.spoiler')
+      t('markdown.snippets.spoiler'),
     );
   }, [t]);
 
@@ -1723,7 +1745,7 @@ function SettingsScreen() {
         y: (100 - heightPercent) / 2,
       };
     },
-    []
+    [],
   );
 
   const getInitialBannerCrop = useCallback(
@@ -1772,7 +1794,7 @@ function SettingsScreen() {
         y: cropY,
       };
     },
-    []
+    [],
   );
 
   const handleAvatarCropApply = useCallback(
@@ -1832,10 +1854,10 @@ function SettingsScreen() {
           }
         },
         'image/jpeg',
-        0.9
+        0.9,
       );
     },
-    [avatarFileName, avatarMimeType, avatarOriginalFileName]
+    [avatarFileName, avatarMimeType, avatarOriginalFileName],
   );
 
   const handleBannerCropApply = useCallback(
@@ -1895,10 +1917,10 @@ function SettingsScreen() {
           }
         },
         'image/jpeg',
-        0.9
+        0.9,
       );
     },
-    [bannerFileName, bannerMimeType, bannerOriginalFileName]
+    [bannerFileName, bannerMimeType, bannerOriginalFileName],
   );
 
   const handleAvatarCropClose = useCallback(() => {
@@ -2797,7 +2819,7 @@ function SettingsScreen() {
                           onChange={(e) => {
                             const emailValue = e.target.value;
                             setIsEmailChanged(
-                              emailValue !== (user?.email || '')
+                              emailValue !== (user?.email || ''),
                             );
                           }}
                         />
@@ -2956,7 +2978,7 @@ function SettingsScreen() {
                       onClick={() =>
                         (
                           document.getElementById(
-                            'clear_data_modal'
+                            'clear_data_modal',
                           ) as HTMLDialogElement
                         )?.showModal()
                       }
@@ -3193,6 +3215,22 @@ function SettingsScreen() {
                               )}
                             </div>
                           </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm w-full"
+                            onClick={() => recheckPatreonMembership()}
+                            disabled={isRecheckingPatreon}
+                          >
+                            {isRecheckingPatreon ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                {t('patreon.recheckMembership')}
+                              </>
+                            )}
+                          </button>
 
                           <button
                             type="button"
@@ -3679,9 +3717,9 @@ function SettingsScreen() {
                                       saveAnilistExclusions(
                                         excludedMedia.filter(
                                           (item) =>
-                                            item.anilistId !== ex.anilistId
+                                            item.anilistId !== ex.anilistId,
                                         ),
-                                        t('anilist.excludedRemoved')
+                                        t('anilist.excludedRemoved'),
                                       )
                                     }
                                   >
@@ -3710,7 +3748,7 @@ function SettingsScreen() {
                                 {anilistStatus.lastSyncedAt
                                   ? t('anilist.lastSyncedAt', {
                                       date: new Date(
-                                        anilistStatus.lastSyncedAt
+                                        anilistStatus.lastSyncedAt,
                                       ).toLocaleString(),
                                     })
                                   : t('anilist.neverSynced')}
@@ -3739,11 +3777,11 @@ function SettingsScreen() {
                               onClick={() => {
                                 setIncludeExistingAnilistMedia(
                                   anilistStatus.fullSyncIncludeExistingMedia ??
-                                    false
+                                    false,
                                 );
                                 (
                                   document.getElementById(
-                                    'anilist_backfill_modal'
+                                    'anilist_backfill_modal',
                                   ) as HTMLDialogElement | null
                                 )?.showModal();
                               }}
@@ -3755,7 +3793,10 @@ function SettingsScreen() {
                           </div>
                         </section>
 
-                        <div role="note" className="alert alert-info alert-soft">
+                        <div
+                          role="note"
+                          className="alert alert-info alert-soft"
+                        >
                           <Info className="size-5" />
                           <span>{t('anilist.animeOnlyNote')}</span>
                         </div>
@@ -3778,7 +3819,7 @@ function SettingsScreen() {
                           onClick={() =>
                             (
                               document.getElementById(
-                                'anilist_unlink_modal'
+                                'anilist_unlink_modal',
                               ) as HTMLDialogElement | null
                             )?.showModal()
                           }
@@ -3835,9 +3876,7 @@ function SettingsScreen() {
                           className="checkbox checkbox-primary mt-0.5 shrink-0"
                           checked={includeExistingAnilistMedia}
                           onChange={(event) =>
-                            setIncludeExistingAnilistMedia(
-                              event.target.checked
-                            )
+                            setIncludeExistingAnilistMedia(event.target.checked)
                           }
                         />
                         <span className="min-w-0">
@@ -3892,7 +3931,7 @@ function SettingsScreen() {
                         onClick={() =>
                           (
                             document.getElementById(
-                              'anilist_unlink_modal'
+                              'anilist_unlink_modal',
                             ) as HTMLDialogElement | null
                           )?.close()
                         }
@@ -3924,14 +3963,14 @@ function SettingsScreen() {
                   onSelect={(media) => {
                     if (
                       excludedMedia.some(
-                        (ex) => ex.anilistId === media.anilistId
+                        (ex) => ex.anilistId === media.anilistId,
                       )
                     ) {
                       return;
                     }
                     saveAnilistExclusions(
                       [...excludedMedia, media],
-                      t('anilist.excludedAdded')
+                      t('anilist.excludedAdded'),
                     );
                     setIsExclusionPickerOpen(false);
                   }}
@@ -4062,7 +4101,7 @@ function SettingsScreen() {
                                   document.getElementById(
                                     importType === 'other'
                                       ? 'other_csv_help_modal'
-                                      : 'kechimochi_csv_help_modal'
+                                      : 'kechimochi_csv_help_modal',
                                   ) as HTMLDialogElement
                                 ).showModal()
                               }
@@ -4193,12 +4232,12 @@ function SettingsScreen() {
                                   className="btn btn-ghost btn-sm shrink-0"
                                   onClick={() => {
                                     void navigator.clipboard.writeText(
-                                      newlyCreatedKey.key
+                                      newlyCreatedKey.key,
                                     );
                                     setCopiedKeyId('new');
                                     setTimeout(
                                       () => setCopiedKeyId(null),
-                                      2000
+                                      2000,
                                     );
                                   }}
                                 >
@@ -4248,14 +4287,14 @@ function SettingsScreen() {
                                   <p className="text-xs text-base-content/40 mt-0.5">
                                     Created{' '}
                                     {new Date(
-                                      key.createdAt
+                                      key.createdAt,
                                     ).toLocaleDateString()}
                                     {key.lastUsedAt && (
                                       <>
                                         {' '}
                                         · Last used{' '}
                                         {new Date(
-                                          key.lastUsedAt
+                                          key.lastUsedAt,
                                         ).toLocaleDateString()}
                                       </>
                                     )}
@@ -4264,7 +4303,7 @@ function SettingsScreen() {
                                         {' '}
                                         · Expires{' '}
                                         {new Date(
-                                          key.expiresAt
+                                          key.expiresAt,
                                         ).toLocaleDateString()}
                                       </>
                                     )}
@@ -4311,7 +4350,7 @@ function SettingsScreen() {
                                   type="text"
                                   className="input focus:input-primary transition-colors w-full pr-10"
                                   placeholder={t(
-                                    'advanced.discordIdPlaceholder'
+                                    'advanced.discordIdPlaceholder',
                                   )}
                                   value={discordId}
                                   onChange={(e) => setDiscordId(e.target.value)}
@@ -5005,14 +5044,14 @@ function ProfileLayoutEditor() {
   const { user, setUser } = useUserDataStore();
   const queryClient = useQueryClient();
   const [layout, setLayout] = useState<ProfileWidgetLayout[]>(() =>
-    resolveProfileLayout(user?.settings?.profileLayout)
+    resolveProfileLayout(user?.settings?.profileLayout),
   );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const { mutate: save, isPending } = useMutation({
@@ -5036,7 +5075,7 @@ function ProfileLayoutEditor() {
         toast.error(
           t('toast.layoutSaveFailedDetail', {
             message: error.response?.data?.message ?? '',
-          })
+          }),
         );
       } else {
         toast.error(t('toast.layoutSaveFailed'));
@@ -5060,7 +5099,7 @@ function ProfileLayoutEditor() {
 
   const toggleVisibility = (id: string) => {
     persist(
-      layout.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w))
+      layout.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w)),
     );
   };
 
@@ -5185,7 +5224,7 @@ function AnilistExclusionPickerModal({
 
   const hasQuery = debouncedQuery.trim().length >= 2;
   const visibleResults = results.filter(
-    (m) => !existingIds.has(Number(m.contentId))
+    (m) => !existingIds.has(Number(m.contentId)),
   );
 
   return (
@@ -5210,10 +5249,7 @@ function AnilistExclusionPickerModal({
           {isSearching && (
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
-          <button
-            className="btn btn-ghost btn-sm btn-circle"
-            onClick={onClose}
-          >
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>

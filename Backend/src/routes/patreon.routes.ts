@@ -9,6 +9,7 @@ import {
   updateBadgeVisibility,
   initiatePatreonOAuth,
   handlePatreonOAuthCallback,
+  recheckPatreonMembership,
 } from '../controllers/patreon.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,7 @@ const router = Router();
 
 // User routes (protected)
 router.get('/status', protect, getPatreonStatus);
+router.post('/membership/recheck', protect, recheckPatreonMembership);
 router.post('/link', protect, linkPatreonAccount);
 router.post('/unlink', protect, unlinkPatreonAccount);
 router.patch('/badge', protect, updateCustomBadgeText);

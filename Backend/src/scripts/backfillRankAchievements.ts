@@ -35,12 +35,12 @@ async function backfillRanks() {
   const result = await backfillRankAchievements({
     onWeek: ({ weekStart, index, total }) => {
       console.log(
-        `  Week ${index}/${total} — ${weekStart.toISOString().slice(0, 10)}`
+        `  Week ${index}/${total} — ${weekStart.toISOString().slice(0, 10)}`,
       );
     },
   });
 
-  console.log(`\n✅ Rank backfill complete`);
+  console.log(`\nRank backfill complete`);
   console.log(`   Weeks replayed: ${result.weeks}`);
   console.log(`   Achievements granted: ${result.granted}`);
 

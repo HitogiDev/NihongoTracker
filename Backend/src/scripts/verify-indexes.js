@@ -50,7 +50,7 @@ async function verifyIndexes() {
 
     if (!MONGODB_URI) {
       throw new Error(
-        'DATABASE_URL or MONGODB_URI environment variable is required'
+        'DATABASE_URL or MONGODB_URI environment variable is required',
       );
     }
 
@@ -67,8 +67,8 @@ async function verifyIndexes() {
     console.log(`📋 Found ${existingIndexes.length} existing indexes\n`);
 
     let allGood = true;
-    let missing = [];
-    let present = [];
+    const missing = [];
+    const present = [];
 
     // Check each required index
     for (const requiredIndex of REQUIRED_INDEXES) {
@@ -77,7 +77,7 @@ async function verifyIndexes() {
         present.push(requiredIndex.name);
       } else {
         console.log(
-          `❌ ${requiredIndex.name} - MISSING! ${requiredIndex.description}`
+          `❌ ${requiredIndex.name} - MISSING! ${requiredIndex.description}`,
         );
         missing.push(requiredIndex.name);
         allGood = false;
@@ -87,7 +87,7 @@ async function verifyIndexes() {
     // Check for unexpected indexes
     const expectedNames = new Set(REQUIRED_INDEXES.map((idx) => idx.name));
     const unexpected = existingIndexes.filter(
-      (idx) => !expectedNames.has(idx.name)
+      (idx) => !expectedNames.has(idx.name),
     );
 
     if (unexpected.length > 0) {
@@ -105,12 +105,12 @@ async function verifyIndexes() {
 
     if (allGood) {
       console.log(
-        '\n🎉 All required indexes are present! Database is optimized.'
+        '\n🎉 All required indexes are present! Database is optimized.',
       );
     } else {
       console.log('\n⚠️  Missing indexes detected! Run migration to fix:');
       console.log(
-        `   npm run migrate:indexes${NODE_ENV === 'production' ? ':prod' : ''}`
+        `   npm run migrate:indexes${NODE_ENV === 'production' ? ':prod' : ''}`,
       );
     }
 

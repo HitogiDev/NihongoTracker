@@ -218,6 +218,8 @@ export const ERROR_CODES = [
   'patreon.badgeTextTooLong',
   'patreon.oauthNotConfigured',
   'patreon.notConfigured',
+  'patreon.notLinked',
+  'patreon.membershipCheckFailed',
 
   // MediaRequest
   'mediaRequest.notFound',

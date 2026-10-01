@@ -191,7 +191,9 @@
     "invalidBadgeColor": "Badge color must be a valid hex color, \"rainbow\", \"primary\", or \"secondary\"",
     "invalidBadgeTextColor": "Badge text color must be a valid hex color, \"primary-content\", or \"secondary-content\"",
     "invalidBadgeVisibility": "Badge visibility must be a boolean value",
+    "membershipCheckFailed": "Could not check Patreon membership. Try again or reconnect Patreon.",
     "notConfigured": "Patreon OAuth is not configured on this server",
+    "notLinked": "Link a Patreon account before checking its membership",
     "oauthNotConfigured": "OAuth is not configured properly on this server",
     "useOauthFlow": "Please use the OAuth flow to link your Patreon account"
   },

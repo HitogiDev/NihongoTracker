@@ -4251,6 +4251,18 @@ const swaggerDocument = {
         },
       },
     },
+    '/patreon/membership/recheck': {
+      post: {
+        tags: ['Patreon'],
+        summary: 'Recheck Patreon membership for current user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Current Patreon membership status' },
+          400: { description: 'No Patreon account is linked' },
+          502: { description: 'Could not check Patreon membership' },
+        },
+      },
+    },
     '/patreon/link': {
       post: {
         tags: ['Patreon'],
