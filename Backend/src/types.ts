@@ -436,14 +436,14 @@ export interface IPatreonIncludedTier {
 export interface IPatreonIncludedMember {
   id: string;
   type: 'member';
-  attributes: {
+  attributes?: {
     patron_status: 'active_patron' | 'former_patron' | string | null;
     currently_entitled_amount_cents: number | null;
     pledge_relationship_start?: string | Date | null;
   };
   relationships?: {
-    campaign: {
-      data: {
+    campaign?: {
+      data?: {
         id: string;
         type: 'campaign';
       };
@@ -452,7 +452,7 @@ export interface IPatreonIncludedMember {
       };
     };
     currently_entitled_tiers?: {
-      data: Array<{
+      data?: Array<{
         id: string;
         type: 'tier';
       }>;

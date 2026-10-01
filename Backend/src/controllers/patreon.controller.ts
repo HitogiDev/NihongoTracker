@@ -553,6 +553,41 @@ export async function getPatreonStatus(
   }
 }
 
+export async function recheckPatreonMembership(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { user } = res.locals;
+
+    if (!user.patreon?.patreonId) {
+      return next(
+        apiError(
+          'patreon.notLinked',
+          400,
+          'Link a Patreon account before checking its membership'
+        )
+      );
+    }
+
+    const result = await checkPatreonMembershipForUser(user._id.toString());
+    if (!result) {
+      return next(
+        apiError(
+          'patreon.membershipCheckFailed',
+          502,
+          'Could not check Patreon membership. Try again or reconnect Patreon.'
+        )
+      );
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function initiatePatreonOAuth(
   req: Request,
   res: Response,
@@ -705,15 +740,14 @@ export async function handlePatreonOAuthCallback(
       ) || [];
 
     // Find active membership (if any)
-    const activeMembership = memberships.find(
-      (membership) =>
-        membership.attributes &&
-        membership.relationships &&
-        membership.relationships.campaign.data.id &&
-        membership.relationships.campaign.data.id ===
-          process.env.PATREON_CAMPAIGN_ID &&
-        membership.attributes.patron_status === 'active_patron'
-    );
+    const activeMembership = memberships.find((membership) => {
+      const campaignId = membership.relationships?.campaign?.data?.id;
+      return (
+        Boolean(campaignId) &&
+        campaignId === process.env.PATREON_CAMPAIGN_ID &&
+        membership.attributes?.patron_status === 'active_patron'
+      );
+    });
 
     // Para acceder a los tiers:
     const tiers =
@@ -722,13 +756,13 @@ export async function handlePatreonOAuthCallback(
 
     const campaignTier = tiers.find((tier) => (
         activeMembership &&
-        activeMembership.relationships?.currently_entitled_tiers?.data.some(
+        activeMembership.relationships?.currently_entitled_tiers?.data?.some(
           (entitledTier) => entitledTier.id === tier.id
         )
       ));
 
     const campaignTierTitle: string | undefined | null =
-      campaignTier?.attributes.title.toLowerCase();
+      campaignTier?.attributes?.title?.toLowerCase();
     let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
     if (
       campaignTierTitle?.includes('consumer') ||
@@ -784,7 +818,10 @@ export async function handlePatreonOAuthCallback(
     await user.save();
 
     // Redirect to frontend with success
-    res.redirect(`${frontendUrl}/settings?patreon=success`);
+    const membershipMessage = isActive ? '' : '&message=no_active_membership';
+    res.redirect(
+      `${frontendUrl}/settings?patreon=success${membershipMessage}`
+    );
   } catch (error: unknown) {
     const axiosError = axios.isAxiosError(error) ? error : undefined;
     const responseBody = axiosError?.response?.data;
@@ -927,25 +964,26 @@ export async function checkPatreonMembershipForUser(userId: string): Promise<{
         (item) => item.type === 'member'
       ) || [];
 
-    const activeMembership = memberships.find(
-      (m) =>
-        m.attributes &&
-        m.relationships?.campaign?.data?.id ===
-          process.env.PATREON_CAMPAIGN_ID &&
-        m.attributes.patron_status === 'active_patron'
-    );
+    const activeMembership = memberships.find((membership) => {
+      const campaignId = membership.relationships?.campaign?.data?.id;
+      return (
+        Boolean(campaignId) &&
+        campaignId === process.env.PATREON_CAMPAIGN_ID &&
+        membership.attributes?.patron_status === 'active_patron'
+      );
+    });
 
     const tiers =
       identityResponse.data.included?.filter((item) => item.type === 'tier') ||
       [];
 
     const campaignTier = tiers.find((t) =>
-      activeMembership?.relationships?.currently_entitled_tiers?.data.some(
+      activeMembership?.relationships?.currently_entitled_tiers?.data?.some(
         (et) => et.id === t.id
       )
     );
 
-    const titleLower = campaignTier?.attributes.title.toLowerCase() ?? '';
+    const titleLower = campaignTier?.attributes?.title?.toLowerCase() ?? '';
     let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
     if (
       titleLower.includes('consumer') ||
