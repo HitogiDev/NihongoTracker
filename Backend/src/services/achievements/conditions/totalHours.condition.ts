@@ -10,7 +10,7 @@ import {
  * and checks whether total hours >= threshold.
  *
  * Episode-only anime logs count as 24 min/episode, exactly as the profile
- * stats do — otherwise the achievement disagrees with the hours the user sees.
+ * stats do: otherwise the achievement disagrees with the hours the user sees.
  */
 export async function evaluateTotalHours(
   userId: Types.ObjectId,

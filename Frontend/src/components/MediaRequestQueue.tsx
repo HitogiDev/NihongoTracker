@@ -42,7 +42,7 @@ function StatusBadge({ status }: { status: MediaRequestStatus }) {
   );
 }
 
-/** `tv show` is the stored value; the translation key is camelCase. */
+/** `tv show` is the stored value. The translation key is camelCase. */
 function mediaTypeKey(type: string): ParseKeys<'admin'> {
   return `mediaRequest.types.${
     type === 'tv show' ? 'tvShow' : type

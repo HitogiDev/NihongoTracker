@@ -3,12 +3,8 @@ import { X } from 'lucide-react';
 import Button from './Button';
 
 /**
- * The app's dialog. Native <dialog> + showModal() so focus trapping, the top
- * layer, ESC and inertness come from the platform instead of being reinvented
- * per modal.
- *
- * daisyUI's default `modal-box` is already `width: 91.667%; max-width: 32rem`,
- * so `md` intentionally adds nothing — writing `max-w-lg` there is a no-op.
+ * Use native <dialog> behavior for focus, top-layer display, Escape, and inertness.
+ * daisyUI `modal-box` has a 32rem max width. Do not add `max-w-lg`. It changes nothing.
  */
 const MODAL_SIZE = {
   sm: 'max-w-sm',
@@ -52,9 +48,8 @@ function Modal({
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  // <dialog> fires `cancel` on ESC and then closes itself. Preventing the
-  // default and routing through onClose keeps React state the single source of
-  // truth instead of letting the DOM's `open` attribute drift out of sync.
+  // Prevent the native cancel event from closing the dialog.
+  // Route Escape through onClose so React state controls the open state.
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -89,8 +84,8 @@ function Modal({
         {actions && <div className="modal-action">{actions}</div>}
       </div>
       {dismissable && (
-        // No bg-black/* here: `.modal` already dims to oklch(0 0 0 / .4).
-        // Adding one stacks a second layer and darkens the page to ~0.7.
+        // Do not add a backdrop color. `.modal` already dims the page to 40%.
+        // A second layer would darken it further.
         <form method="dialog" className="modal-backdrop">
           <button type="button" onClick={onClose}>
             close

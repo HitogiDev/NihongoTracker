@@ -136,7 +136,7 @@ export async function deleteTag(req: Request, res: Response) {
 
     await tag.deleteOne();
 
-    // Note: We don't automatically remove this tag from logs
+    // Note: We do not automatically remove this tag from logs
     // The frontend should handle this or we could add a cleanup job
 
     res.json({ message: 'Tag deleted successfully' });

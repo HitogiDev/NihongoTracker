@@ -153,7 +153,6 @@ export default function TagSelector({
             );
           })}
 
-          {/* Quick Create Button */}
           <div
             className={tags.length >= maxTags ? 'tooltip' : ''}
             data-tip={
@@ -200,7 +199,6 @@ export default function TagSelector({
         )}
       </Field>
 
-      {/* Quick Create Tag Modal */}
       <dialog
         id="quick_create_tag_modal"
         className="modal modal-bottom sm:modal-middle"

@@ -27,7 +27,7 @@ function unescapePostgresCopy(value: string): string {
  * Column names are supplied from the corresponding .header file.
  * NULL values (\N in the file) are yielded as null.
  *
- * Uses readline for memory-efficient line-by-line processing —
+ * Uses readline for memory-efficient line-by-line processing:
  * files can be hundreds of MB.
  */
 export async function* streamTsvRows(
@@ -63,7 +63,7 @@ export async function* streamTsvRows(
  * VNDB stores release dates in `releases.released` as an integer YYYYMMDD,
  * where an unknown month or day component is 99, a fully unknown ("TBA") date
  * is 99999999, and the column default for "no date at all" is 0. Only the year
- * matters to us, so partial dates are fine — TBA, 0 and nonsense years are
+ * matters to us, so partial dates are fine: TBA, 0 and nonsense years are
  * dropped.
  */
 export function parseVndbReleaseYear(released: string | null): number | null {
@@ -73,7 +73,7 @@ export function parseVndbReleaseYear(released: string | null): number | null {
   if (!Number.isFinite(value)) return null;
 
   const year = Math.floor(value / 10000);
-  // 9999 is VNDB's TBA marker; anything outside a sane range is bad data
+  // 9999 is VNDB's TBA marker. Anything outside a sane range is bad data
   if (year < 1970 || year > 2200) return null;
 
   return year;

@@ -27,7 +27,7 @@ type NotificationListItem = {
   id: string;
   /** English text. Always present, and what the client shows when no key matches. */
   label: string;
-  /** Translation key for `label`; interpolation values live in `meta`. */
+  /** Translation key for `label`. Interpolation values live in `meta`. */
   labelKey?: string;
   /** Optional secondary line (stored notifications only). */
   body?: string;

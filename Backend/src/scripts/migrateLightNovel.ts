@@ -112,7 +112,7 @@ async function main() {
     );
   }
 
-  // (nested array element `mediaType` fields — need arrayFilters)
+  // (nested array element `mediaType` fields: need arrayFilters)
   const nestedTargets: Array<{
     collection: string;
     arrayPath: string;

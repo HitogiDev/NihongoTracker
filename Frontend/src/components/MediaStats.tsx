@@ -37,7 +37,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
     return null; // Don't show anything if there's an error or no stats
   }
 
-  // If no logs exist for this media, don't show stats
+  // If no logs exist for this media, do not show stats
   if (stats.total.logs === 0) {
     return (
       <div className="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
@@ -129,7 +129,6 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
         </div>
       </div>
 
-      {/* Total Progress */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         {relevantMetrics.map((metric) => {
           const value = getMetricValue(metric, 'total');
@@ -151,7 +150,6 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
         })}
       </div>
 
-      {/* Recent Activity Summary */}
       {(stats.thisWeek.logs > 0 || stats.thisMonth.logs > 0) && (
         <div className="border-t border-success/20 pt-2">
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -181,7 +179,6 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
         </div>
       )}
 
-      {/* Date Range */}
       {stats.total.firstLogDate && stats.total.lastLogDate && (
         <div className="border-t border-success/20 pt-2 mt-2">
           <div className="text-xs text-base-content/60 text-center">

@@ -6,7 +6,7 @@ import { IAchievement } from '../../../types.js';
  * Secret Keeper: the user has uncovered a number of secret achievements.
  *
  * The achievement doing the counting is itself secret, so it never counts
- * itself — otherwise unlocking it would inflate its own progress.
+ * itself: otherwise unlocking it would inflate its own progress.
  */
 export async function evaluateSecretAchievementCount(
   userId: Types.ObjectId,

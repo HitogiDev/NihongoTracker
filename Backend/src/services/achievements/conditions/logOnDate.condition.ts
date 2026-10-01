@@ -15,7 +15,7 @@ export async function evaluateLogOnDate(
 
   const log = await Log.findOne({
     user: userId,
-    // unknownDate logs have a placeholder date — they can't prove the user
+    // unknownDate logs have a placeholder date: they cannot prove the user
     // logged on a specific calendar day
     unknownDate: { $ne: true },
     $expr: {

@@ -7,9 +7,10 @@ import {
   getDailyGoalsFn,
   getLongTermGoalsFn,
   updateLongTermGoalFn,
-  deleteLongTermGoalFn,
+  deleteLongTermGoalFn
 } from '../api/trackerApi';
 import { ILongTermGoal } from '../types';
+import { goalMediaTypes, goalMediaTypeKey } from '../utils/goalMediaTypes';
 
 import {
   Trash,
@@ -25,11 +26,19 @@ import {
   TrendingUp,
   TrendingDown,
   CalendarClock,
-  Trophy,
+  Trophy
 } from 'lucide-react';
 
 import GoalsModal from './GoalsModal';
 import DatePickerInput from './ui/DatePickerInput';
+import Field from './ui/Field';
+import GoalPeriodPresets from './GoalPeriodPresets';
+import {
+  goalDateKey,
+  goalInputDate,
+  type GoalPeriod
+} from '../utils/goalPeriod';
+import { parseDateValue } from '../utils/dateInput';
 import { useUserDataStore } from '../store/userData';
 
 const goalTypeConfig = {
@@ -37,35 +46,45 @@ const goalTypeConfig = {
     labelKey: 'types.time',
     icon: Clock5,
     color: 'text-primary',
-    unit: 'min',
+    unit: 'min'
   },
   chars: {
     labelKey: 'types.chars',
     icon: BookOpen,
     color: 'text-secondary',
-    unit: 'chars',
+    unit: 'chars'
   },
   episodes: {
     labelKey: 'types.episodes',
     icon: Play,
     color: 'text-accent',
-    unit: 'ep',
+    unit: 'ep'
   },
   pages: {
     labelKey: 'types.pages',
     icon: FileText,
     color: 'text-info',
-    unit: 'pages',
-  },
+    unit: 'pages'
+  }
 };
 
 function ImmersionGoals({ username }: { username: string | undefined }) {
-  const { t } = useTranslation('goals');
+  const { t } = useTranslation(['goals', 'common']);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<ILongTermGoal | null>(null);
+  const [editPeriod, setEditPeriod] = useState<GoalPeriod>({
+    startDate: '',
+    targetDate: ''
+  });
+  const [editPeriodErrors, setEditPeriodErrors] = useState<
+    Record<string, string>
+  >({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<ILongTermGoal | null>(null);
   const { user: loggedInUser } = useUserDataStore();
+  const timeZone =
+    loggedInUser?.settings?.timezone ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
   const canManageGoals = Boolean(
     username && loggedInUser?.username === username
   );
@@ -75,7 +94,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   const { data: goalsData, isLoading } = useQuery({
     queryKey: [username, 'dailyGoals'],
     queryFn: () => getDailyGoalsFn(username),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: longTermGoalsData, isLoading: isLoadingLongTerm } = useQuery({
@@ -83,7 +102,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     queryFn: () => getLongTermGoalsFn(username),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes for dynamic updates
+    refetchInterval: 10 * 60 * 1000 // Refetch every 10 minutes for dynamic updates
   });
 
   // Delete mutation
@@ -91,14 +110,14 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     mutationFn: deleteLongTermGoalFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [username, 'longTermGoals'] });
-    },
+    }
   });
 
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({
       goalId,
-      goal,
+      goal
     }: {
       goalId: string;
       goal: Partial<ILongTermGoal>;
@@ -107,7 +126,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       queryClient.invalidateQueries({ queryKey: [username, 'longTermGoals'] });
       setIsEditModalOpen(false);
       setEditingGoal(null);
-    },
+    }
   });
 
   const handleDeleteGoal = (goalId: string | undefined) => {
@@ -122,12 +141,17 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     deleteMutation.mutate(goalToDelete._id, {
       onSuccess: () => {
         setGoalToDelete(null);
-      },
+      }
     });
   };
 
   const handleEditGoal = (goal: ILongTermGoal) => {
     setEditingGoal(goal);
+    setEditPeriod({
+      startDate: goalInputDate(goal.startDate),
+      targetDate: goalInputDate(goal.targetDate)
+    });
+    setEditPeriodErrors({});
     setIsEditModalOpen(true);
   };
 
@@ -186,20 +210,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     // Backend clamps remainingDays to a minimum of 0, so a past-due date
     // reports 0 days the same as an actual same-day deadline. Compare the
     // target date to today directly to distinguish "Due today!" from overdue.
-    const target = new Date(goal.targetDate);
-    const startOfTarget = new Date(
-      target.getFullYear(),
-      target.getMonth(),
-      target.getDate()
-    );
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-    if (!isCompleted && startOfTarget < startOfToday)
-      return t('widget.overdue');
+    const targetDay = goalInputDate(goal.targetDate);
+    const today = goalDateKey(new Date(), timeZone);
+    if (!isCompleted && targetDay < today) return t('widget.overdue');
 
     const days = goal.progress.remainingDays;
     if (days === 0) return t('widget.dueToday');
@@ -218,7 +231,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   };
 
   const activeGoals = goalsData?.goals.filter((goal) => goal.isActive) || [];
-  const dailyGoals = activeGoals.filter((goal) => (goal.cadence || 'daily') === 'daily');
+  const dailyGoals = activeGoals.filter(
+    (goal) => (goal.cadence || 'daily') === 'daily'
+  );
   const weeklyGoals = activeGoals.filter((goal) => goal.cadence === 'weekly');
   const activeLongTermGoals =
     longTermGoalsData?.goals.filter((goal) => goal.isActive) || [];
@@ -249,7 +264,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
             <h3 className="text-xl font-bold text-base-content">
               {t('widget.emptyTitle')}
             </h3>
-            <p className="text-base-content/70 mt-2 mb-5">{t('widget.emptyBody')}</p>
+            <p className="text-base-content/70 mt-2 mb-5">
+              {t('widget.emptyBody')}
+            </p>
             <div className="flex justify-center">
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -289,70 +306,86 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               )}
             </div>
 
-            {[{ cadence: 'daily' as const, goals: dailyGoals }, { cadence: 'weekly' as const, goals: weeklyGoals }].map(({ cadence, goals }) => goals.length > 0 && (
-            <div className="mb-6" key={cadence}>
-              <h3 className="text-lg font-semibold mb-3">
-                {t(cadence === 'weekly' ? 'widget.weeklyProgress' : 'widget.todayProgress')}
-              </h3>
-              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
-                {goals.map((goal) => {
-                  const progress = cadence === 'weekly' ? goalsData?.weeklyProgress : goalsData?.todayProgress;
-                  const current = progress?.[goal.type] || 0;
-                  const isCompleted = progress?.completed[goal.type];
-                  const percentage = getProgressPercentage(
-                    current,
-                    goal.target
-                  );
-                  const config = goalTypeConfig[goal.type];
-                  const Icon = config.icon;
+            {[
+              { cadence: 'daily' as const, goals: dailyGoals },
+              { cadence: 'weekly' as const, goals: weeklyGoals }
+            ].map(
+              ({ cadence, goals }) =>
+                goals.length > 0 && (
+                  <div className="mb-6" key={cadence}>
+                    <h3 className="text-lg font-semibold mb-3">
+                      {t(
+                        cadence === 'weekly'
+                          ? 'widget.weeklyProgress'
+                          : 'widget.todayProgress'
+                      )}
+                    </h3>
+                    <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+                      {goals.map((goal) => {
+                        const current =
+                          goalsData?.goalProgress?.[goal._id ?? ''] ?? 0;
+                        const isCompleted = current >= goal.target;
+                        const percentage = getProgressPercentage(
+                          current,
+                          goal.target
+                        );
+                        const config = goalTypeConfig[goal.type];
+                        const Icon = config.icon;
 
-                  return (
-                    <div
-                      key={goal._id}
-                      className={`rounded-lg bg-base-200 p-4 pr-16 relative ${
-                        isCompleted ? 'border-2 border-success' : ''
-                      }`}
-                    >
-                      <div className="absolute right-4 top-4 shrink-0">
-                        {isCompleted ? (
-                          <CircleCheck className="w-8 h-8 text-success" />
-                        ) : (
-                          <Icon className={`w-8 h-8 ${config.color}`} />
-                        )}
-                      </div>
-                      <div className="text-xs font-medium text-base-content/70">
-                        {t(config.labelKey as ParseKeys<'goals'>)}
-                      </div>
-                      <div
-                        className={`mt-1 text-lg font-bold tabular-nums leading-tight whitespace-nowrap ${
-                          isCompleted ? 'text-success' : config.color
-                        }`}
-                      >
-                        {formatProgress(current, goal.type)}
-                      </div>
-                      <div className="mt-1 text-sm text-base-content/70 break-words">
-                        of {formatProgress(goal.target, goal.type)}{' '}
-                        {goal.type !== 'time' ? config.unit : ''}
-                      </div>
-                      <div className="w-full bg-base-300 rounded-full h-2 mt-2">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            isCompleted ? 'bg-success' : 'bg-primary'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
+                        return (
+                          <div
+                            key={goal._id}
+                            className={`rounded-lg bg-base-200 p-4 pr-16 relative ${
+                              isCompleted ? 'border-2 border-success' : ''
+                            }`}
+                          >
+                            <div className="absolute right-4 top-4 shrink-0">
+                              {isCompleted ? (
+                                <CircleCheck className="w-8 h-8 text-success" />
+                              ) : (
+                                <Icon className={`w-8 h-8 ${config.color}`} />
+                              )}
+                            </div>
+                            <div className="text-xs font-medium text-base-content/70">
+                              {t(config.labelKey as ParseKeys<'goals'>)}
+                            </div>
+                            <div className="text-xs text-base-content/60">
+                              {goal.mediaType
+                                ? t(
+                                    `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
+                                  )
+                                : t('common:allMediaTypes')}
+                            </div>
+                            <div
+                              className={`mt-1 text-lg font-bold tabular-nums leading-tight whitespace-nowrap ${
+                                isCompleted ? 'text-success' : config.color
+                              }`}
+                            >
+                              {formatProgress(current, goal.type)}
+                            </div>
+                            <div className="mt-1 text-sm text-base-content/70 break-words">
+                              of {formatProgress(goal.target, goal.type)}{' '}
+                              {goal.type !== 'time' ? config.unit : ''}
+                            </div>
+                            <div className="w-full bg-base-300 rounded-full h-2 mt-2">
+                              <div
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  isCompleted ? 'bg-success' : 'bg-primary'
+                                }`}
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            ))}
+                  </div>
+                )
+            )}
           </div>
         </div>
       )}
 
-      {/* Long-term Goals Section */}
       {activeLongTermGoals.length > 0 && (
         <div className="mt-6 space-y-4">
           <div className="flex items-center justify-between gap-3 px-1">
@@ -450,7 +483,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     isCompleted ? 'border-2 border-success/30' : ''
                   }`}
                 >
-                  {/* Top accent bar */}
                   <div
                     className={`h-1 ${
                       isCompleted
@@ -462,7 +494,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   />
 
                   <div className="card-body p-4 sm:p-5 gap-4">
-                    {/* Header Row */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
@@ -487,6 +518,13 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             {goal.type !== 'time' ? ` ${config.unit}` : ''}{' '}
                             {t(config.labelKey as ParseKeys<'goals'>)} Goal
                           </h4>
+                          <div className="text-xs text-base-content/60">
+                            {goal.mediaType
+                              ? t(
+                                  `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
+                                )
+                              : t('common:allMediaTypes')}
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-base-content/60 mt-0.5">
                             <CalendarClock className="w-3 h-3 flex-shrink-0" />
                             <span>
@@ -497,6 +535,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
+                                  timeZone: 'UTC'
                                 }
                               )}
                             </span>
@@ -550,7 +589,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
                     {progress && (
                       <>
-                        {/* Overall Progress */}
                         <div className="space-y-2">
                           <div className="flex items-end justify-between">
                             <div>
@@ -589,7 +627,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             </div>
                           </div>
 
-                          {/* Overall progress bar */}
                           <div className="w-full bg-base-200 rounded-full h-2.5 overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-500 ease-out ${
@@ -604,7 +641,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           </div>
                         </div>
 
-                        {/* Timeframe card */}
                         <div className="bg-base-200/60 rounded-xl p-3 sm:p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <h5 className="text-sm font-semibold flex items-center gap-1.5">
@@ -640,7 +676,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             )}
                           </div>
 
-                          {/* Timeframe progress bar */}
                           <div className="relative">
                             <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden">
                               <div
@@ -654,7 +689,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                         : 'bg-error/70'
                                 }`}
                                 style={{
-                                  width: `${Math.min(timeframeProgressPercentage, 100)}%`,
+                                  width: `${Math.min(timeframeProgressPercentage, 100)}%`
                                 }}
                               />
                             </div>
@@ -678,7 +713,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           </div>
                         </div>
 
-                        {/* Footer stats row */}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-base-content/50">
                           <span className="tabular-nums">
                             <span className="font-medium text-base-content/70">
@@ -693,7 +727,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           <span className="text-base-content/20">·</span>
                           <span className="tabular-nums">
                             {t('widget.remainingDays', {
-                              count: progress.remainingDays,
+                              count: progress.remainingDays
                             })}
                           </span>
                           <span className="text-base-content/20">·</span>
@@ -739,7 +773,6 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
         />
       )}
 
-      {/* Edit Long-term Goal Modal */}
       {isEditModalOpen && editingGoal && (
         <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-md">
@@ -762,7 +795,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     type: t(
                       goalTypeConfig[editingGoal.type]
                         .labelKey as ParseKeys<'goals'>
-                    ).toLowerCase(),
+                    ).toLowerCase()
                   })}
                 </p>
               </div>
@@ -771,20 +804,38 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                const periodErrors: Record<string, string> = {};
+                if (
+                  !parseDateValue(editPeriod.targetDate) ||
+                  editPeriod.targetDate < goalDateKey(new Date(), timeZone)
+                ) {
+                  periodErrors.targetDate = t('validation.targetDateFuture');
+                }
+                if (
+                  !parseDateValue(editPeriod.startDate) ||
+                  editPeriod.startDate > editPeriod.targetDate
+                ) {
+                  periodErrors.startDate = t('validation.startBeforeTarget');
+                }
+                setEditPeriodErrors(periodErrors);
+                if (Object.keys(periodErrors).length > 0) return;
                 const formData = new FormData(e.currentTarget);
                 const updatedGoal = {
                   type: editingGoal.type,
+                  mediaType: (formData.get('mediaType') ||
+                    null) as ILongTermGoal['mediaType'],
                   totalTarget: Number(formData.get('totalTarget')),
-                  targetDate: formData.get('targetDate') as string,
+                  startDate: editPeriod.startDate,
+                  targetDate: editPeriod.targetDate,
                   displayTimeframe: formData.get('displayTimeframe') as
                     | 'daily'
                     | 'weekly'
                     | 'monthly',
-                  isActive: formData.get('isActive') === 'on',
+                  isActive: formData.get('isActive') === 'on'
                 };
                 updateMutation.mutate({
                   goalId: editingGoal._id!,
-                  goal: updatedGoal,
+                  goal: updatedGoal
                 });
               }}
               className="space-y-4"
@@ -808,6 +859,24 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
               <fieldset className="fieldset">
                 <legend className="fieldset-legend">
+                  {t('modal.mediaType')}
+                </legend>
+                <DropdownSelect
+                  name="mediaType"
+                  className="select w-full"
+                  defaultValue={editingGoal.mediaType ?? ''}
+                >
+                  <option value="">{t('common:allMediaTypes')}</option>
+                  {goalMediaTypes.map((mediaType) => (
+                    <option key={mediaType} value={mediaType}>
+                      {t(`common:mediaTypes.${goalMediaTypeKey(mediaType)}`)}
+                    </option>
+                  ))}
+                </DropdownSelect>
+              </fieldset>
+
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">
                   {t('modal.totalTarget')}
                 </legend>
                 <input
@@ -820,37 +889,71 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 />
               </fieldset>
 
-              <div className="grid grid-cols-2 gap-3">
-                <fieldset className="fieldset">
-                  <legend className="fieldset-legend">
-                    {t('modal.targetDate')}
-                  </legend>
-                  <DatePickerInput
-                    name="targetDate"
-                    defaultValue={
-                      new Date(editingGoal.targetDate)
-                        .toISOString()
-                        .split('T')[0]
-                    }
-                    required
-                  />
-                </fieldset>
+              <GoalPeriodPresets
+                timeZone={timeZone}
+                onSelect={(period) => {
+                  setEditPeriod(period);
+                  setEditPeriodErrors({});
+                }}
+              />
 
-                <fieldset className="fieldset">
-                  <legend className="fieldset-legend">
-                    {t('modal.displayProgressAs')}
-                  </legend>
-                  <DropdownSelect
-                    name="displayTimeframe"
-                    className="select w-full"
-                    defaultValue={editingGoal.displayTimeframe}
-                  >
-                    <option value="daily">{t('timeframes.daily')}</option>
-                    <option value="weekly">{t('timeframes.weekly')}</option>
-                    <option value="monthly">{t('timeframes.monthly')}</option>
-                  </DropdownSelect>
-                </fieldset>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field
+                  label={t('modal.startDate')}
+                  error={editPeriodErrors.startDate}
+                >
+                  {(id) => (
+                    <DatePickerInput
+                      id={id}
+                      name="startDate"
+                      value={editPeriod.startDate}
+                      className={
+                        editPeriodErrors.startDate ? 'input-error' : ''
+                      }
+                      onChange={(startDate) => {
+                        setEditPeriod((period) => ({ ...period, startDate }));
+                        setEditPeriodErrors({});
+                      }}
+                      required
+                    />
+                  )}
+                </Field>
+                <Field
+                  label={t('modal.targetDate')}
+                  error={editPeriodErrors.targetDate}
+                >
+                  {(id) => (
+                    <DatePickerInput
+                      id={id}
+                      name="targetDate"
+                      value={editPeriod.targetDate}
+                      className={
+                        editPeriodErrors.targetDate ? 'input-error' : ''
+                      }
+                      onChange={(targetDate) => {
+                        setEditPeriod((period) => ({ ...period, targetDate }));
+                        setEditPeriodErrors({});
+                      }}
+                      required
+                    />
+                  )}
+                </Field>
               </div>
+
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">
+                  {t('modal.displayProgressAs')}
+                </legend>
+                <DropdownSelect
+                  name="displayTimeframe"
+                  className="select w-full"
+                  defaultValue={editingGoal.displayTimeframe}
+                >
+                  <option value="daily">{t('timeframes.daily')}</option>
+                  <option value="weekly">{t('timeframes.weekly')}</option>
+                  <option value="monthly">{t('timeframes.monthly')}</option>
+                </DropdownSelect>
+              </fieldset>
 
               <div>
                 <label className="label cursor-pointer justify-start gap-3">
@@ -914,7 +1017,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 type: t(
                   goalTypeConfig[goalToDelete.type]
                     .labelKey as ParseKeys<'goals'>
-                ).toLowerCase(),
+                ).toLowerCase()
               })}
             </p>
             <div className="modal-action">

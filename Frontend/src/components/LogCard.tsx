@@ -54,7 +54,7 @@ import { MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
 
 /**
  * Module scope, so the label is a key into `common:mediaTypes` rather than
- * text — a literal here would never update on a language change. Colours come
+ * text: a literal here would never update on a language change. Colours come
  * from `constants/mediaColors`, which is also what the charts read, so a log
  * card and a chart segment can never disagree about what "anime" looks like.
  */
@@ -200,10 +200,8 @@ function LogCard({
   const buildEditState = (): EditLogFormState => ({
     description: description || '',
     type,
-    // Read the day and time in the user's timezone — the same frame streaks and
-    // the heatmap bucket by — so what the form shows is the day the log counts
-    // for, and editing it round-trips instead of silently rebuilding the
-    // original instant.
+    // Convert the saved date to the user's timezone. This matches streak and heatmap dates.
+    // The edit form then preserves the displayed date and original time.
     date: date ? getDayKeyInTimezone(date, timezone) : '',
     timeOfDay: date ? getTimeInTimezone(date, timezone) : '',
     episodes: episodes || 0,
@@ -215,7 +213,6 @@ function LogCard({
     tags: extractTagIds(log.tags),
   });
 
-  // Edit form state with all editable fields
   const [editData, setEditData] = useState<EditLogFormState>(() =>
     buildEditState()
   );
@@ -589,11 +586,9 @@ function LogCard({
         role="article"
         aria-label={`Log entry: ${logTitle}`}
       >
-        {/* Header with type indicator */}
         <div className={`h-1 w-full ${typeConfig.accentColor}`}></div>
 
         <div className="card-body p-4 space-y-3">
-          {/* Header Section */}
           <header className="flex justify-between gap-3">
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <div
@@ -624,7 +619,6 @@ function LogCard({
                   </h2>
                 )}
 
-                {/* Media English title */}
                 {media &&
                   typeof media === 'object' &&
                   media.title?.contentTitleEnglish && (
@@ -704,7 +698,6 @@ function LogCard({
             )}
           </header>
 
-          {/* Quantity Information with enhanced data */}
           {quantityInfo.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {quantityInfo.map((info, index) => (
@@ -727,7 +720,6 @@ function LogCard({
             </div>
           )}
 
-          {/* Tags */}
           {log.tags && log.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {log.tags.map((tag) => {
@@ -751,7 +743,6 @@ function LogCard({
             </div>
           )}
 
-          {/* Footer Section with enhanced information */}
           <footer className="flex justify-between items-center pt-2 border-t border-base-300">
             <div className="flex items-center gap-2">
               <div
@@ -791,7 +782,6 @@ function LogCard({
         </div>
       </article>
 
-      {/* Log Details Modal */}
       <dialog
         ref={detailsModalRef}
         className="modal modal-bottom sm:modal-middle"
@@ -819,7 +809,6 @@ function LogCard({
           </div>
 
           <div className="space-y-6">
-            {/* Media Information */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -906,7 +895,6 @@ function LogCard({
               </div>
             </div>
 
-            {/* Activity Statistics */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -990,7 +978,6 @@ function LogCard({
               </div>
             </div>
 
-            {/* Tags */}
             {log.tags && log.tags.length > 0 && (
               <div className="card surface-muted">
                 <div className="card-body p-4">
@@ -1035,7 +1022,6 @@ function LogCard({
               </div>
             )}
 
-            {/* Date and Time Information */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -1140,7 +1126,6 @@ function LogCard({
               </div>
             )}
 
-            {/* Technical Details */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -1204,7 +1189,6 @@ function LogCard({
         </form>
       </dialog>
 
-      {/* Enhanced Delete Confirmation Modal */}
       <dialog
         ref={deleteModalRef}
         className="modal modal-bottom sm:modal-middle"
@@ -1290,7 +1274,6 @@ function LogCard({
         </form>
       </dialog>
 
-      {/* Enhanced Edit Log Modal with validation */}
       <dialog ref={editModalRef} className="modal modal-bottom sm:modal-middle">
         <div className="modal-box max-w-2xl">
           <div className="flex justify-between items-center mb-6">
@@ -1313,7 +1296,6 @@ function LogCard({
           </div>
 
           <form onSubmit={handleEditSubmit} className="space-y-6">
-            {/* Show validation errors */}
             {Object.keys(editErrors).length > 0 && (
               <div className="alert alert-error">
                 <svg
@@ -1340,7 +1322,6 @@ function LogCard({
               </div>
             )}
 
-            {/* Basic Information Section */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4">
@@ -1372,7 +1353,7 @@ function LogCard({
                   <Field label={t('edit.type')}>
                     <DropdownSelect
                       className="select w-full"
-                      value={editData.type}
+                      value={editData.type === 'other' ? '' : editData.type}
                       onChange={(e) => {
                         const nextType = e.target.value as ILog['type'];
                         setEditData((prev) => ({
@@ -1398,6 +1379,11 @@ function LogCard({
                         }));
                       }}
                     >
+                      {editData.type === 'other' && (
+                        <option value="" disabled>
+                          {t('quick.selectType')}
+                        </option>
+                      )}
                       <option value="light-novel">
                         {t('common:mediaTypes.light-novel')}
                       </option>
@@ -1429,9 +1415,6 @@ function LogCard({
                       <option value="tv show">
                         {t('common:mediaTypes.tvShow')}
                       </option>
-                      <option value="other">
-                        {t('common:mediaTypes.other')}
-                      </option>
                     </DropdownSelect>
                   </Field>
 
@@ -1461,7 +1444,6 @@ function LogCard({
               </div>
             </div>
 
-            {/* Activity Details Section */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4">
@@ -1469,7 +1451,6 @@ function LogCard({
                 </h4>
 
                 <div className="space-y-4">
-                  {/* Time Section */}
                   <Field label={t('details.timeSpent')}>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1514,7 +1495,6 @@ function LogCard({
                     </div>
                   </Field>
 
-                  {/* Type-specific fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {editData.type === 'anime' && (
                       <Field label={t('details.episodes')}>
@@ -1603,7 +1583,6 @@ function LogCard({
               </div>
             </div>
 
-            {/* Tags Section */}
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
@@ -1623,13 +1602,14 @@ function LogCard({
               </div>
             </div>
 
-            {/* Form Actions */}
             <div className="modal-action flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="submit"
                 className="btn btn-primary w-full sm:w-auto order-2 sm:order-1"
                 disabled={
-                  loadingUpdateLog || Object.keys(editErrors).length > 0
+                  loadingUpdateLog ||
+                  editData.type === 'other' ||
+                  Object.keys(editErrors).length > 0
                 }
               >
                 {loadingUpdateLog ? (

@@ -160,7 +160,6 @@ function LoginScreen() {
 
   return (
     <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -168,7 +167,6 @@ function LoginScreen() {
 
       <div className="relative min-h-screen flex items-center justify-center p-4 lg:p-8">
         <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          {/* Left Side - Hero Content */}
           <div className="hidden lg:block space-y-8 p-8">
             <div className="space-y-6">
               <div className="inline-block">
@@ -210,7 +208,6 @@ function LoginScreen() {
               </p>
             </div>
 
-            {/* Features List */}
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 rounded-lg bg-base-100/50 backdrop-blur-sm border border-base-300/50 hover:border-primary/50 transition-all">
                 <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
@@ -294,7 +291,6 @@ function LoginScreen() {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-4">
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-primary">
@@ -323,7 +319,6 @@ function LoginScreen() {
             </div>
           </div>
 
-          {/* Right Side - Login Form */}
           <div className="flex justify-center lg:justify-end">
             <div
               ref={cardRef}
@@ -340,7 +335,6 @@ function LoginScreen() {
                   {t('login.form.subtitle')}
                 </p>
 
-                {/* Username/Email Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -391,7 +385,6 @@ function LoginScreen() {
                   </Field>
                 </div>
 
-                {/* Password Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -449,7 +442,6 @@ function LoginScreen() {
                   </Field>
                 </div>
 
-                {/* Submit Button */}
                 <div ref={addToRefs} className="mt-4 items-center">
                   <button
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
@@ -487,7 +479,6 @@ function LoginScreen() {
                   </button>
                 </div>
 
-                {/* Register Link */}
                 {/* <div ref={addToRefs} className="text-center">
                   <p className="text-sm text-base-content/70">
                     Don't have an account?{' '}

@@ -10,10 +10,10 @@ export interface CreateNotificationInput {
   /** User that caused it. Self-notifications are skipped automatically. */
   actor?: IdLike | null;
   type: NotificationType;
-  /** English text; always required so nothing regresses if a key is missing. */
+  /** English text. Always required so nothing regresses if a key is missing. */
   title: string;
   body?: string;
-  /** Translation keys; interpolation values travel in `meta`. */
+  /** Translation keys. Interpolation values travel in `meta`. */
   titleKey?: string;
   bodyKey?: string;
   /** Frontend route to open when the notification is clicked. */

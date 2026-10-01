@@ -17,7 +17,7 @@ function getBaseUrl() {
 /**
  * `language` is always the **recipient's** `settings.language`. Using the
  * request's Accept-Language would be wrong for any email triggered by someone
- * else's action; it is only equivalent during signup, where the two coincide.
+ * else's action. It is only equivalent during signup, where the two coincide.
  * Unset or unknown values fall back to English.
  */
 export async function sendVerificationEmail(

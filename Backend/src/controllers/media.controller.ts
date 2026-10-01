@@ -208,7 +208,7 @@ export async function getMedia(
     // Lazily cache the Jiten difficulty on the media doc so the XP engine can
     // apply the difficulty multiplier without live Jiten calls. Must stay on
     // the same field the backfill writes (`difficultyRaw`, see
-    // services/jiten.ts) — caching the rounded `difficulty` bucket here would
+    // services/jiten.ts): caching the rounded `difficulty` bucket here would
     // overwrite the precise value with a coarser one on every page view.
     if (media && jitenResponse?.data?.mainDeck) {
       const fetchedDifficulty = jitenResponse.data.mainDeck.difficultyRaw;
@@ -230,7 +230,7 @@ export async function getMedia(
     }
 
     // Backfill missing AniList metadata on existing records so details pages
-    // don't keep showing Unknown for fields like volumes/episodes.
+    // do not keep showing Unknown for fields like volumes/episodes.
     if (
       media &&
       (normalizedMediaType === 'anime' ||
@@ -242,7 +242,7 @@ export async function getMedia(
         normalizedMediaType === 'anime' &&
         (media.episodes == null ||
           media.episodeDuration == null ||
-          // Airing window was added later — fill it in for existing records
+          // Airing window was added later: fill it in for existing records
           media.airingStartDate == null);
       const needsMangaLikeFields =
         (normalizedMediaType === 'manga' ||
@@ -942,7 +942,7 @@ export async function toggleMediaReviewLike(
                 review.likes.length - 1 === 1 ? '' : 's'
               } liked your review`
             : `${liker?.username ?? 'Someone'} liked your review`,
-        // The client picks the plural form from `count`; no English
+        // The client picks the plural form from `count`. No English
         // pluralisation logic has to be mirrored per language.
         titleKey: 'review.liked',
         body: review.summary,

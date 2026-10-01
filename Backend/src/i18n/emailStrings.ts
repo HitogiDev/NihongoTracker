@@ -6,7 +6,7 @@ import { SUPPORTED_LANGUAGES, SupportedLanguage } from '../types.js';
  * Emails are the one place the backend *does* produce user-facing text: there
  * is no client to translate them. They always follow the **recipient's**
  * `settings.language`, never the `Accept-Language` of the request that
- * triggered them — someone else's action can send you an email.
+ * triggered them: someone else's action can send you an email.
  */
 interface EmailStrings {
   verification: {

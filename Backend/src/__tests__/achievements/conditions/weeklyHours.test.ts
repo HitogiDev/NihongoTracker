@@ -72,7 +72,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
   });
 
   it('window does NOT span more than 7 days (day 1 and day 8 are NOT in the same window)', async () => {
-    // 12h on day 1 and 12h on day 8 — window can't contain both (exactly 7 days apart)
+    // 12h on day 1 and 12h on day 8: window cannot contain both (exactly 7 days apart)
     vi.mocked(Log.aggregate).mockResolvedValue(
       makeDays([
         { date: BASE, minutes: 12 * 60 },
@@ -80,7 +80,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
       ])
     );
     const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
-    // Neither individual window has 24h — each only has 12h
+    // Neither individual window has 24h: each only has 12h
     expect(result.met).toBe(false);
     expect(result.progress).toBe(12);
   });
@@ -116,7 +116,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
   });
 
   it('handles logs with gaps between active days', async () => {
-    // Jan 1, Jan 15, Jan 30 — each 20h, but never two within the same 7-day window
+    // Jan 1, Jan 15, Jan 30: each 20h, but never two within the same 7-day window
     vi.mocked(Log.aggregate).mockResolvedValue(
       makeDays([
         { date: new Date('2024-01-01'), minutes: 20 * 60 },

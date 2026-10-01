@@ -57,7 +57,7 @@ export function resolveInitialLanguage(): SupportedLanguage {
       }
     }
   } catch {
-    // Corrupt blob — never let it break the entry chunk
+    // Corrupt blob: never let it break the entry chunk
   }
 
   try {

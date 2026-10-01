@@ -14,7 +14,7 @@ import { useDateFormatting } from '../../hooks/useDateFormatting';
 import { getAchievementIconSlug } from '../../utils/achievementIcon';
 
 /**
- * Secrets keep their vague public line on someone else's profile; the user who
+ * Secrets keep their vague public line on someone else's profile. The user who
  * unlocked one gets the version that spells the requirement out.
  */
 function describe(achievement: IAchievement): string {
@@ -186,7 +186,6 @@ export function AchievementDetailModal({
         </button>
 
         <div className="flex flex-col items-center text-center gap-4 py-2">
-          {/* Icon */}
           <div className="relative">
             <div
               className="w-24 h-24 rounded-2xl flex items-center justify-center border"
@@ -215,7 +214,6 @@ export function AchievementDetailModal({
             )}
           </div>
 
-          {/* Name + rarity */}
           <div className="space-y-2">
             <h2 className="text-2xl font-extrabold">
               {isSecret
@@ -225,7 +223,6 @@ export function AchievementDetailModal({
             <RarityBadge rarity={rarity} size="md" />
           </div>
 
-          {/* Description */}
           <p className="text-sm leading-relaxed text-base-content/70 max-w-xs">
             {isSecret
               ? getAchievementHint(achievement) || t('secretHint')
@@ -234,7 +231,6 @@ export function AchievementDetailModal({
 
           <div className="divider my-0" />
 
-          {/* Meta stats */}
           <div className="w-full grid grid-cols-3 gap-4 text-center">
             {achievement.points > 0 && (
               <div>
@@ -268,14 +264,12 @@ export function AchievementDetailModal({
             )}
           </div>
 
-          {/* Progress bar for locked achievements */}
           {!isEarned && !isSecret && (
             <AchievementProgress achievement={achievement} />
           )}
         </div>
       </div>
 
-      {/* Backdrop click to close */}
       <div className="modal-backdrop" onClick={onClose} />
     </dialog>
   );
@@ -352,7 +346,6 @@ export default function AchievementCard({
         } ${compact ? 'p-3' : 'p-5'}`}
       >
         <div className="flex items-start gap-3">
-          {/* Icon */}
           <div
             className="shrink-0 flex items-center justify-center rounded-lg"
             style={{
@@ -372,7 +365,6 @@ export default function AchievementCard({
             />
           </div>
 
-          {/* Text */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3
@@ -397,7 +389,6 @@ export default function AchievementCard({
               )}
             </div>
 
-            {/* Description / hint */}
             {!compact && (
               <p
                 className={`text-xs mt-1 line-clamp-2 ${
@@ -410,14 +401,12 @@ export default function AchievementCard({
               </p>
             )}
 
-            {/* Progress bar */}
             {!isEarned && !isSecret && (
               <div className="mt-2">
                 <AchievementProgress achievement={achievement} compact />
               </div>
             )}
 
-            {/* Meta row: rarity %, unlock date, points */}
             {!compact && (
               <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-base-content/50">
                 {achievement.rarityPercent !== undefined && (
@@ -441,7 +430,7 @@ export default function AchievementCard({
         </div>
       </div>
 
-      {/* Detail modal — rendered via portal so it escapes any overflow:hidden parent */}
+      {/* Detail modal: rendered via portal so it escapes any overflow:hidden parent */}
       {showDetail && (
         <AchievementDetailModal
           achievement={achievement}

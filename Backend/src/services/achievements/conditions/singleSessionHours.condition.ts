@@ -9,7 +9,7 @@ import {
  * 夢中 (Absorbed): a single logged session of `threshold` hours or more.
  *
  * One log entry is one session, so this is simply the user's longest single
- * log — unlike singleDayHours, which sums a whole day.
+ * log: unlike singleDayHours, which sums a whole day.
  */
 export async function evaluateSingleSessionHours(
   userId: Types.ObjectId,

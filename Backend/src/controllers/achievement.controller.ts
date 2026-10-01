@@ -18,8 +18,8 @@ import { IAchievement } from '../types.js';
  *
  * Earned secrets are visible on public profiles, so shipping `condition` would
  * hand every visitor the exact recipe (type + threshold) for a secret they
- * haven't found — the descriptions are deliberately vague for the same reason.
- * Non-secret achievements keep it; the UI needs `condition.threshold` to draw
+ * have not found: the descriptions are deliberately vague for the same reason.
+ * Non-secret achievements keep it. The UI needs `condition.threshold` to draw
  * progress bars.
  */
 function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T): T {
@@ -38,7 +38,7 @@ function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T):
  *
  * Secrets carry two descriptions in the client's i18n catalogue: a vague one
  * everyone sees, and a `fullDescription` that spells the requirement out. This
- * flag is what tells the UI it may show the second one — a visitor's view of
+ * flag is what tells the UI it may show the second one: a visitor's view of
  * someone else's profile never gets it, so the spoiler stays with the earner.
  */
 function ownSecretUnlock<T extends { isSecret?: boolean }>(
@@ -86,7 +86,7 @@ export async function getAchievements(
           ? Math.round((earnedCount / totalUsers) * 1000) / 10 // 1 decimal place
           : 0;
 
-      // For isHidden secret achievements — return only stub data
+      // For isHidden secret achievements: return only stub data
       if (a.isHidden) {
         return {
           _id: a._id,
@@ -100,7 +100,7 @@ export async function getAchievements(
         };
       }
 
-      // For non-hidden secret achievements — show hint but not name/description
+      // For non-hidden secret achievements: show hint but not name/description
       if (a.isSecret) {
         return {
           _id: a._id,
@@ -208,12 +208,12 @@ async function getUserAchievementsById(
       const rarityPercent =
         totalUsers > 0 ? Math.round((earnedCount / totalUsers) * 1000) / 10 : 0;
 
-      // Unearned secret — hide completely from non-owners
+      // Unearned secret: hide completely from non-owners
       if (a.isSecret && !isEarned && !isOwner) {
         return null;
       }
 
-      // isHidden unearned — stub only
+      // isHidden unearned: stub only
       if (a.isHidden && !isEarned) {
         return {
           _id: a._id,
@@ -228,7 +228,7 @@ async function getUserAchievementsById(
         };
       }
 
-      // Secret unearned (non-hidden) — show hint + icon slug only
+      // Secret unearned (non-hidden): show hint + icon slug only
       if (a.isSecret && !isEarned) {
         return {
           _id: a._id,
@@ -266,7 +266,7 @@ async function getUserAchievementsById(
 
 /**
  * GET /api/achievements/me/pending  (auth required)
- * Returns newly earned achievements that haven't been shown to the user yet,
+ * Returns newly earned achievements that have not been shown to the user yet,
  * then marks them as notified.
  */
 export async function getPendingAchievements(
@@ -293,7 +293,7 @@ export async function getPendingAchievements(
       return res.status(200).json([]);
     }
 
-    // Mark as notified — only the ones actually fetched, so unlocks that
+    // Mark as notified: only the ones actually fetched, so unlocks that
     // land between the find and this update are not silently swallowed
     await UserAchievement.updateMany(
       { _id: { $in: pending.map((ua) => ua._id) } },
@@ -692,12 +692,12 @@ export async function adminRevokeAchievement(
 /**
  * POST /api/achievements/admin/backfill-all  (admin)
  * Checks all achievement conditions for every user, grants any that are now
- * satisfied but weren't previously awarded, and revokes any the user no longer
- * qualifies for. Identical to `npm run backfill:achievements` — both call
+ * satisfied but were not previously awarded, and revokes any the user no longer
+ * qualifies for. Identical to `npm run backfill:achievements`: both call
  * backfillAchievementsForAllUsers.
  *
  * Pass { revoke: false } in the body to only grant.
- * This is a potentially long-running operation — it processes users sequentially.
+ * This is a potentially long-running operation: it processes users sequentially.
  */
 export async function adminBackfillAchievementsForAllUsers(
   req: Request,
@@ -759,7 +759,7 @@ export async function getAchievementFeed(
       .limit(limit * 3) // overfetch since populate match may filter some
       .lean();
 
-    // Filter out items where achievement didn't match (populate match returned null)
+    // Filter out items where achievement did not match (populate match returned null)
     const filtered = feed
       .filter((ua) => ua.achievement !== null)
       .slice(0, limit)

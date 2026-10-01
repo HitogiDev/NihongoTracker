@@ -57,7 +57,7 @@ function makeConsumedDifficultyResolver(userId?: unknown) {
 
 /**
  * Per-request cache of the personal reading speed, one per log type (each
- * medium reads at its own pace; the helper falls back to the category-wide
+ * medium reads at its own pace. The helper falls back to the category-wide
  * median when the type has too little history).
  */
 function makeSpeedResolver(userId?: unknown) {
@@ -179,9 +179,9 @@ export async function calculateXp(
     }
 
     const body = req.body as ILog;
-    // On updates (PATCH /:id) fill quantities the client didn't resend from
+    // On updates (PATCH /:id) fill quantities the client did not resend from
     // the stored log, and reuse the category level snapshotted at creation so
-    // editing old logs can't farm a different multiplier.
+    // editing old logs cannot farm a different multiplier.
     const existing = req.params.id
       ? await Log.findById(req.params.id)
       : null;
@@ -189,7 +189,7 @@ export async function calculateXp(
       throw apiError('log.notFoundSingle', 404, 'Log not found');
     }
 
-    // Speed/level must come from the log owner — admin edits run this
+    // Speed/level must come from the log owner: admin edits run this
     // middleware with the admin as res.locals.user.
     let owner = requester;
     if (

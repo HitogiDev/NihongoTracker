@@ -215,7 +215,6 @@ export default function ClubMediaInfo() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
-        {/* Period Toggle */}
         <div className="card surface">
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
@@ -255,10 +254,8 @@ export default function ClubMediaInfo() {
           </div>
         </div>
 
-        {/* Main Statistics */}
         {mediaStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Logs */}
             <div className="stat surface">
               <div className="stat-figure text-primary">
                 <Files className="w-8 h-8" />
@@ -272,7 +269,6 @@ export default function ClubMediaInfo() {
               </div>
             </div>
 
-            {/* Active Members */}
             <div className="stat surface">
               <div className="stat-figure text-secondary">
                 <Users className="w-8 h-8" />
@@ -288,7 +284,6 @@ export default function ClubMediaInfo() {
               </div>
             </div>
 
-            {/* Type-specific primary stat */}
             {typeSpecificStats && (
               <div className="stat surface">
                 <div className="stat-figure text-accent">
@@ -304,7 +299,6 @@ export default function ClubMediaInfo() {
               </div>
             )}
 
-            {/* Total XP */}
             <div className="stat surface">
               <div className="stat-figure text-warning">
                 <Star className="w-8 h-8" />
@@ -318,13 +312,11 @@ export default function ClubMediaInfo() {
           </div>
         )}
 
-        {/* Activity Overview */}
         {mediaStats && (
           <div className="card surface">
             <div className="card-body">
               <h3 className="card-title mb-4">{t('mediaInfo.yourActivity')}</h3>
 
-              {/* This Week Stats - Horizontal Layout */}
               <div className="mb-6">
                 <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
                   {t('mediaInfo.thisWeekTitle')}
@@ -483,7 +475,6 @@ export default function ClubMediaInfo() {
           </div>
         )}
 
-        {/* Data Visualization */}
         {mediaStats && (
           <div className="card surface">
             <div className="card-body">
@@ -679,7 +670,6 @@ export default function ClubMediaInfo() {
           </div>
         )}
 
-        {/* Activity Period Info */}
         {mediaStats && (
           <div className="card surface">
             <div className="card-body">

@@ -205,7 +205,6 @@ export default function CustomizationSettings() {
         </div>
       )}
 
-      {/* Live preview */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
@@ -289,7 +288,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Name effect */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
@@ -370,7 +368,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Avatar frame */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
@@ -402,7 +399,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Equipped title */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">{t('customization.title')}</h2>
@@ -435,7 +431,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Signature stat */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
@@ -458,7 +453,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Profile accent */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
@@ -577,7 +571,6 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      {/* Banner effect */}
       <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">

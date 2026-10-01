@@ -28,7 +28,7 @@ const publicMonthlyLogs = (monthStart: Date) => ({
 /**
  * After a log is saved, work out where the user now sits on the current
  * calendar-month XP leaderboard and which users this specific log pushed
- * them past. Returns null when the log can't move the needle (no XP gained
+ * them past. Returns null when the log cannot move the needle (no XP gained
  * or the user has no ranked XP this month).
  *
  * Matches the live ranking semantics (`getRanking` month filter): public,

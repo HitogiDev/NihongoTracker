@@ -17,9 +17,9 @@ export interface StatsCardOptions {
 }
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
-// Layout is authored in logical units (W×H); the canvas is rendered at SCALE× the
+// Layout is authored in logical units (W×H). The canvas is rendered at SCALE× the
 // pixel density (2× => 1280×1920 output) so the shareable PNG stays crisp. All
-// drawing below stays in logical coords — ctx.scale(SCALE) maps them to device px.
+// drawing below stays in logical coords: ctx.scale(SCALE) maps them to device px.
 const W = 640;
 const H = 960;
 const PAD = 40;

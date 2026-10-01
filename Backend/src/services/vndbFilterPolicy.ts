@@ -1,7 +1,7 @@
 /**
  * Maps VNDB's ISO 639-1 language codes to the ISO 639-2 codes used
  * in NihongoTracker's description.language field.
- * Returns null for languages we don't store descriptions for.
+ * Returns null for languages we do not store descriptions for.
  */
 export function mapLanguageCode(
   lang: string | null
@@ -26,12 +26,12 @@ export function mapLanguageCode(
  * URL format: https://t.vndb.org/cv/{last2digits}/{number}.jpg
  * Example: cv81576 → https://t.vndb.org/cv/76/81576.jpg
  *
- * Returns null if the imageId is absent or doesn't match the expected format.
+ * Returns null if the imageId is absent or does not match the expected format.
  */
 export function buildVndbImageUrl(imageId: string | null): string | null {
   if (!imageId) return null;
 
-  // Strip prefix — supports "cv", "sf", etc.
+  // Strip prefix: supports "cv", "sf", etc.
   const match = imageId.match(/^[a-z]+(\d+)$/);
   if (!match) return null;
 

@@ -1,10 +1,9 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 /**
- * A full-width clickable row: search results, option lists, accordion headers,
- * settings nav items. These are not `btn`s — a `btn` centres its content and
- * caps its height, which is wrong for a list row — but they still need one
- * shared hover/focus/radius treatment instead of ~20 hand-rolled ones.
+ * Use a full-width row for search results, options, accordion headers, and settings nav.
+ * The `btn` class centers content and limits height. That does not fit a list row.
+ * This component shares hover, focus, and radius styles across these rows.
  */
 interface RowButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {

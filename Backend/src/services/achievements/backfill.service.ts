@@ -61,7 +61,7 @@ export async function backfillAchievementsForAllUsers(
     const userId = user._id as Types.ObjectId;
 
     try {
-      // Revoke first: a stale unlock shouldn't survive just because the
+      // Revoke first: a stale unlock should not survive just because the
       // grant pass ran before it.
       const revoked = revoke ? await revokeUnearnedAchievements(userId) : [];
 
@@ -92,7 +92,7 @@ export async function backfillAchievementsForAllUsers(
     result.usersProcessed += 1;
   }
 
-  // Historical unlocks shouldn't pop the reveal modal on next login
+  // Historical unlocks should not pop the reveal modal on next login
   await UserAchievement.updateMany(
     { notified: false },
     { $set: { notified: true } }

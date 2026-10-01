@@ -97,7 +97,7 @@ describe('date-based conditions honour the user timezone', () => {
   });
 
   it('weeklyHours day keys are 24h apart regardless of DST', async () => {
-    // 2024-03-10 is a US DST transition day; a local-time window would make the
+    // 2024-03-10 is a US DST transition day. A local-time window would make the
     // gap 23h and pull an 8th day into the 7-day window.
     mockAggregate([
       { _id: '2024-03-08', totalMinutes: 12 * 60 },
@@ -105,7 +105,7 @@ describe('date-based conditions honour the user timezone', () => {
     ]);
     const result = await evaluateWeeklyHours(new Types.ObjectId(), 24, 'America/New_York');
 
-    // Exactly 7 days apart — must NOT be summed into one window
+    // Exactly 7 days apart: must NOT be summed into one window
     expect(result).toEqual({ met: false, progress: 12 });
   });
 });

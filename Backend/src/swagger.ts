@@ -1,6 +1,13 @@
 import swaggerUi from 'swagger-ui-express';
 import { Router } from 'express';
 import { protect } from './middlewares/authMiddleware.js';
+import { goalMediaTypes } from './services/goalMediaType.js';
+
+const goalMediaTypeSchema = {
+  type: 'string',
+  enum: goalMediaTypes,
+  nullable: true,
+};
 
 const swaggerDocument = {
   openapi: '3.0.3',
@@ -25,7 +32,7 @@ const swaggerDocument = {
     { name: 'Users', description: 'User profiles, rankings & settings' },
     { name: 'Logs', description: 'Immersion log CRUD, import & stats' },
     { name: 'Media', description: 'Media search, details & reviews' },
-    { name: 'Goals', description: 'Daily & long-term goals' },
+    { name: 'Goals', description: 'Daily and custom period goals' },
     { name: 'Clubs', description: 'Club management & media votings' },
     { name: 'Tags', description: 'User tag management' },
     { name: 'Changelogs', description: 'Application changelogs' },
@@ -435,6 +442,7 @@ const swaggerDocument = {
             type: 'string',
             enum: ['time', 'chars', 'episodes', 'pages'],
           },
+          mediaType: goalMediaTypeSchema,
           target: { type: 'number' },
           isActive: { type: 'boolean' },
         },
@@ -448,6 +456,7 @@ const swaggerDocument = {
             type: 'string',
             enum: ['time', 'chars', 'episodes', 'pages'],
           },
+          mediaType: goalMediaTypeSchema,
           totalTarget: { type: 'number' },
           targetDate: { type: 'string', format: 'date-time' },
           displayTimeframe: {
@@ -2840,6 +2849,7 @@ const swaggerDocument = {
                     type: 'string',
                     enum: ['time', 'chars', 'episodes', 'pages'],
                   },
+                  mediaType: goalMediaTypeSchema,
                   target: { type: 'number' },
                 },
               },
@@ -2870,6 +2880,7 @@ const swaggerDocument = {
               schema: {
                 type: 'object',
                 properties: {
+                  mediaType: goalMediaTypeSchema,
                   target: { type: 'number' },
                   isActive: { type: 'boolean' },
                 },
@@ -2901,7 +2912,7 @@ const swaggerDocument = {
     '/goals/long-term/{username}': {
       get: {
         tags: ['Goals'],
-        summary: 'Get long-term goals for a user',
+        summary: 'Get custom period goals for a user',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
@@ -2912,14 +2923,14 @@ const swaggerDocument = {
           },
         ],
         responses: {
-          200: { description: 'Long-term goals with progress' },
+          200: { description: 'Custom period goals with progress' },
         },
       },
     },
     '/goals/long-term': {
       post: {
         tags: ['Goals'],
-        summary: 'Create a long-term goal',
+        summary: 'Create a custom period goal',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         requestBody: {
           required: true,
@@ -2938,6 +2949,7 @@ const swaggerDocument = {
                     type: 'string',
                     enum: ['time', 'chars', 'episodes', 'pages'],
                   },
+                  mediaType: goalMediaTypeSchema,
                   totalTarget: { type: 'number' },
                   targetDate: { type: 'string', format: 'date-time' },
                   displayTimeframe: {
@@ -2957,7 +2969,7 @@ const swaggerDocument = {
     '/goals/long-term/{goalId}': {
       patch: {
         tags: ['Goals'],
-        summary: 'Update a long-term goal',
+        summary: 'Update a custom period goal',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
@@ -2973,6 +2985,7 @@ const swaggerDocument = {
               schema: {
                 type: 'object',
                 properties: {
+                  mediaType: goalMediaTypeSchema,
                   totalTarget: { type: 'number' },
                   targetDate: { type: 'string', format: 'date-time' },
                   displayTimeframe: { type: 'string' },
@@ -2988,7 +3001,7 @@ const swaggerDocument = {
       },
       delete: {
         tags: ['Goals'],
-        summary: 'Delete a long-term goal',
+        summary: 'Delete a custom period goal',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {

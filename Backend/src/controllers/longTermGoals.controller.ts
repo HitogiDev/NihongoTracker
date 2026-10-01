@@ -7,10 +7,12 @@ import { Anime } from '../models/media.model.js';
 import {
   ILongTermGoal,
   ILongTermGoalProgress,
-  IMediaDocument,
+  IMediaDocument
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
+import { isValidGoalMediaType } from '../services/goalMediaType.js';
+import { goalTodayKey, isGoalTargetDatePast } from '../services/goalPeriod.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -33,7 +35,7 @@ export async function getLongTermGoals(
 
     // Get user's long-term goals
     const goals = await LongTermGoal.find({ user: foundUser._id }).sort({
-      createdAt: -1,
+      createdAt: -1
     });
 
     // Calculate progress for each goal
@@ -42,7 +44,7 @@ export async function getLongTermGoals(
         const progress = await calculateLongTermGoalProgress(goal, foundUser);
         return {
           ...goal.toObject(),
-          progress,
+          progress
         };
       })
     );
@@ -66,11 +68,12 @@ export async function createLongTermGoal(
     const { user } = res.locals;
     const {
       type,
+      mediaType,
       totalTarget,
       targetDate,
       displayTimeframe,
       startDate,
-      isActive,
+      isActive
     } = req.body;
 
     if (!type || !totalTarget || !targetDate || !startDate) {
@@ -93,6 +96,9 @@ export async function createLongTermGoal(
     if (!validTypes.includes(type)) {
       throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
+    if (mediaType != null && !isValidGoalMediaType(mediaType)) {
+      throw apiError('goal.invalidType', 400, 'Invalid media type');
+    }
 
     const validTimeframes = ['daily', 'weekly', 'monthly'];
     if (displayTimeframe && !validTimeframes.includes(displayTimeframe)) {
@@ -102,30 +108,36 @@ export async function createLongTermGoal(
     const targetDateObj = new Date(targetDate);
     const startDateObj = new Date(startDate);
 
-    if (targetDateObj <= new Date()) {
+    if (
+      isGoalTargetDatePast(
+        targetDateObj,
+        user.settings?.timezone || FALLBACK_TIMEZONE
+      )
+    ) {
       throw apiError(
         'goal.targetInFuture',
         400,
-        'Target date must be in the future'
+        'Target date must be today or later'
       );
     }
 
-    if (startDateObj >= targetDateObj) {
+    if (startDateObj > targetDateObj) {
       throw apiError(
         'goal.startBeforeTarget',
         400,
-        'Start date must be before target date'
+        'Start date must be on or before target date'
       );
     }
 
     const newGoal = new LongTermGoal({
       user: user._id,
       type,
+      mediaType: mediaType ?? null,
       totalTarget,
       targetDate: targetDateObj,
       displayTimeframe: displayTimeframe || 'daily',
       startDate: startDateObj,
-      isActive: isActive !== undefined ? isActive : true,
+      isActive: isActive !== undefined ? isActive : true
     });
 
     const savedGoal = await newGoal.save();
@@ -135,7 +147,7 @@ export async function createLongTermGoal(
 
     return res.status(201).json({
       ...savedGoal.toObject(),
-      progress,
+      progress
     });
   } catch (error) {
     return next(error as customError);
@@ -152,16 +164,17 @@ export async function updateLongTermGoal(
     const { goalId } = req.params;
     const {
       type,
+      mediaType,
       totalTarget,
       targetDate,
       displayTimeframe,
       startDate,
-      isActive,
+      isActive
     } = req.body;
 
     const goal = await LongTermGoal.findOne({
       _id: goalId,
-      user: user._id,
+      user: user._id
     });
 
     if (!goal) {
@@ -180,6 +193,9 @@ export async function updateLongTermGoal(
     if (type && !['time', 'chars', 'episodes', 'pages'].includes(type)) {
       throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
+    if (mediaType != null && !isValidGoalMediaType(mediaType)) {
+      throw apiError('goal.invalidType', 400, 'Invalid media type');
+    }
 
     if (
       displayTimeframe &&
@@ -190,11 +206,16 @@ export async function updateLongTermGoal(
 
     if (targetDate) {
       const targetDateObj = new Date(targetDate);
-      if (targetDateObj <= new Date()) {
+      if (
+        isGoalTargetDatePast(
+          targetDateObj,
+          user.settings?.timezone || FALLBACK_TIMEZONE
+        )
+      ) {
         throw apiError(
           'goal.targetInFuture',
           400,
-          'Target date must be in the future'
+          'Target date must be today or later'
         );
       }
       goal.targetDate = targetDateObj;
@@ -202,20 +223,27 @@ export async function updateLongTermGoal(
 
     if (startDate) {
       const startDateObj = new Date(startDate);
-      if (
-        startDateObj >= (targetDate ? new Date(targetDate) : goal.targetDate)
-      ) {
+      if (startDateObj > goal.targetDate) {
         throw apiError(
           'goal.startBeforeTarget',
           400,
-          'Start date must be before target date'
+          'Start date must be on or before target date'
         );
       }
       goal.startDate = startDateObj;
     }
 
+    if (goal.startDate > goal.targetDate) {
+      throw apiError(
+        'goal.startBeforeTarget',
+        400,
+        'Start date must be on or before target date'
+      );
+    }
+
     // Update fields
     if (type) goal.type = type;
+    if (mediaType !== undefined) goal.mediaType = mediaType;
     if (totalTarget) goal.totalTarget = totalTarget;
     if (displayTimeframe) goal.displayTimeframe = displayTimeframe;
     if (isActive !== undefined) goal.isActive = isActive;
@@ -227,7 +255,7 @@ export async function updateLongTermGoal(
 
     return res.status(200).json({
       ...updatedGoal.toObject(),
-      progress,
+      progress
     });
   } catch (error) {
     return next(error as customError);
@@ -245,7 +273,7 @@ export async function deleteLongTermGoal(
 
     const goal = await LongTermGoal.findOneAndDelete({
       _id: goalId,
-      user: user._id,
+      user: user._id
     });
 
     if (!goal) {
@@ -268,18 +296,30 @@ async function calculateLongTermGoalProgress(
   const userTimezone = user.settings?.timezone || FALLBACK_TIMEZONE;
   const now = new Date();
 
-  // Calculate remaining days
+  // Dates represent whole calendar days in the goal owner's timezone.
   const targetDate = new Date(goal.targetDate);
-  const remainingMs = targetDate.getTime() - now.getTime();
+  const todayKey = goalTodayKey(userTimezone, now);
+  const targetKey = targetDate.toISOString().slice(0, 10);
+  const startKey = new Date(goal.startDate).toISOString().slice(0, 10);
+  const remainingMs =
+    targetDate.getTime() - Date.parse(`${todayKey}T00:00:00Z`);
   const remainingDays = Math.max(
     0,
-    Math.ceil(remainingMs / (1000 * 60 * 60 * 24))
+    Math.round(remainingMs / (1000 * 60 * 60 * 24))
   );
 
-  // Get all logs since goal start date
-  const logs = await Log.find({
+  // Fetch around the first calendar day, then compare each log in the user's timezone.
+  const candidateLogs = await Log.find({
     user: goal.user,
-    date: { $gte: goal.startDate, $lte: now },
+    date: {
+      $gte: new Date(new Date(goal.startDate).getTime() - 86_400_000),
+      $lte: now
+    },
+    ...(goal.mediaType ? { type: goal.mediaType } : {})
+  });
+  const logs = candidateLogs.filter((log) => {
+    const logDay = goalTodayKey(userTimezone, log.date);
+    return logDay >= startKey && logDay <= targetKey;
   });
 
   // Get anime media documents for episode duration calculation
@@ -366,16 +406,20 @@ async function calculateLongTermGoalProgress(
   let requiredPerTimeframe = 0;
   let timeframeName = '';
 
-  if (remainingDays > 0) {
+  if (targetKey >= todayKey) {
+    const remainingDaysInclusive = remainingDays + 1;
     if (goal.displayTimeframe === 'daily') {
-      requiredPerTimeframe = remainingTarget / remainingDays;
+      requiredPerTimeframe = remainingTarget / remainingDaysInclusive;
       timeframeName = 'today';
     } else if (goal.displayTimeframe === 'weekly') {
-      const remainingWeeks = Math.max(1, Math.ceil(remainingDays / 7));
+      const remainingWeeks = Math.max(1, Math.ceil(remainingDaysInclusive / 7));
       requiredPerTimeframe = remainingTarget / remainingWeeks;
       timeframeName = 'this week';
     } else if (goal.displayTimeframe === 'monthly') {
-      const remainingMonths = Math.max(1, Math.ceil(remainingDays / 30));
+      const remainingMonths = Math.max(
+        1,
+        Math.ceil(remainingDaysInclusive / 30)
+      );
       requiredPerTimeframe = remainingTarget / remainingMonths;
       timeframeName = 'this month';
     }
@@ -383,8 +427,17 @@ async function calculateLongTermGoalProgress(
 
   // Check if on track using linear pacing
   const startDate = new Date(goal.startDate);
-  const totalDurationMs = targetDate.getTime() - startDate.getTime();
-  const elapsedDurationMs = now.getTime() - startDate.getTime();
+  const totalDurationMs =
+    targetDate.getTime() + 86_400_000 - startDate.getTime();
+  const localClock = Date.UTC(
+    userNow.getFullYear(),
+    userNow.getMonth(),
+    userNow.getDate(),
+    userNow.getHours(),
+    userNow.getMinutes(),
+    userNow.getSeconds()
+  );
+  const elapsedDurationMs = localClock - startDate.getTime();
 
   const expectedProgress =
     totalDurationMs > 0
@@ -404,6 +457,6 @@ async function calculateLongTermGoalProgress(
     timeframeName,
     progressToday,
     progressThisWeek,
-    progressThisMonth,
+    progressThisMonth
   };
 }

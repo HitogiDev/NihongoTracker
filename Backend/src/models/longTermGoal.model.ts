@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { ILongTermGoal } from '../types.js';
+import { goalMediaTypes } from '../services/goalMediaType.js';
 
 const LongTermGoalSchema = new Schema<ILongTermGoal>(
   {
@@ -7,31 +8,28 @@ const LongTermGoalSchema = new Schema<ILongTermGoal>(
     type: {
       type: String,
       required: true,
-      enum: ['time', 'chars', 'episodes', 'pages'],
+      enum: ['time', 'chars', 'episodes', 'pages']
     },
+    mediaType: { type: String, enum: goalMediaTypes, default: null },
     totalTarget: { type: Number, required: true, min: 1 },
     targetDate: { type: Date, required: true },
     displayTimeframe: {
       type: String,
       required: true,
       enum: ['daily', 'weekly', 'monthly'],
-      default: 'daily',
+      default: 'daily'
     },
     startDate: { type: Date, required: true },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );
 
-// Ensure target date is in the future
+// Date ordering is always enforced. The controller checks whether the target
+// date is current or future in the user's timezone.
 LongTermGoalSchema.pre('save', function (next) {
-  if (this.targetDate <= new Date()) {
-    next(new Error('Target date must be in the future'));
-    return;
-  }
-
-  if (this.startDate >= this.targetDate) {
-    next(new Error('Start date must be before target date'));
+  if (this.startDate > this.targetDate) {
+    next(new Error('Start date must be on or before target date'));
     return;
   }
 

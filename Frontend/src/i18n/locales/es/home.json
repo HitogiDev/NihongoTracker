@@ -44,7 +44,6 @@
     "unit": "Unidad a calcular",
     "timeHint": "Si añades caracteres, limitan tiempos de lectura poco plausibles.",
     "charsHint": "Sin tiempo, los caracteres se convierten usando tu velocidad de lectura.",
-    "otherNoXp": "El tipo Otro no concede XP.",
     "fixedContext": "La estimación mantiene fijos nivel, historial y velocidad durante esta sesión.",
     "calculating": "Calculando XP",
     "calculationError": "No se pudo calcular. Revisa los valores introducidos.",
@@ -73,8 +72,7 @@
       "video": "Video",
       "movie": "Película",
       "tvShow": "Programa Televisivo",
-      "audio": "Audio",
-      "other": "Otro"
+      "audio": "Audio"
     }
   },
   "common": {
@@ -307,7 +305,7 @@
             "description": "Desbloquea hitos y celebra tu progreso"
           },
           "goals": {
-            "title": "Objetivos diarios y a largo plazo",
+            "title": "Objetivos diarios y de período personalizado",
             "description": "Fija metas para distintos tipos de contenido y periodos"
           },
           "progressIndicators": {
@@ -410,7 +408,7 @@
           },
           "goals": {
             "title": "Gestión de objetivos",
-            "description": "Configura y sigue objetivos diarios y a largo plazo"
+            "description": "Configura y sigue objetivos diarios y de período personalizado"
           },
           "export": {
             "title": "Exportación de datos",

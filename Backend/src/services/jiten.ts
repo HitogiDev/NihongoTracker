@@ -99,7 +99,7 @@ function normalizeTitleForMatch(title: string): string {
 
 /**
  * Fallback Jiten lookup for books whose deck has no GoogleBooks link (~40% of
- * Jiten's book decks are only linked via Bookmeter/Amazon, which we can't map
+ * Jiten's book decks are only linked via Bookmeter/Amazon, which we cannot map
  * from a Google Books volume id). Fuzzy-match the native title against Jiten's
  * search suggestions, restricted to book decks, and accept only an exact or
  * strong containment match to avoid pulling in an unrelated title.
@@ -171,7 +171,7 @@ export async function fetchJitenDetail(
     if (manualDeckId != null) {
       return await fetchJitenDeckDetail(manualDeckId);
     }
-    // Jiten links books by their raw Google Books volume id; our book
+    // Jiten links books by their raw Google Books volume id. Our book
     // contentId is namespaced as `gbooks-<volumeId>`, so strip the prefix.
     const jitenLinkId =
       normalizedType === 'book'
@@ -188,7 +188,7 @@ export async function fetchJitenDetail(
         ? byLink.data[0]
         : null;
 
-    // Books often aren't linked to Google Books on Jiten (only Bookmeter/
+    // Books often are not linked to Google Books on Jiten (only Bookmeter/
     // Amazon). Fall back to a fuzzy title match so those still resolve.
     if (deckId === null && normalizedType === 'book') {
       deckId = await findJitenBookDeckIdByTitle(jitenURL, title);
@@ -235,11 +235,11 @@ export async function fetchJitenDeckDetail(
 
 /**
  * Native Jiten difficulty for a media item, or null when unmatched. Nominally
- * a 0-5 scale, but user adjustments can push it slightly past 5 — the XP
- * engine clamps, so callers don't need to.
+ * a 0-5 scale, but user adjustments can push it slightly past 5: the XP
+ * engine clamps, so callers do not need to.
  *
- * We store `difficultyRaw` rather than the rounded `difficulty` bucket: it's a
- * float on the same scale (strictly more precise — the XP engine's
+ * We store `difficultyRaw` rather than the rounded `difficulty` bucket: it is a
+ * float on the same scale (strictly more precise: the XP engine's
  * `normalizeJitenDifficulty` is continuous anyway), it folds in Jiten's user
  * difficulty votes, and the bulk deck endpoint exposes it too, so the
  * on-demand path here and the backfill below agree on a single scale. Decks
@@ -279,14 +279,14 @@ interface IJitenBulkDeck {
 export interface IJitenDeckIndex {
   /** `${linkType}:${externalId}` → difficulty. */
   byLink: Map<string, number>;
-  /** Normalized book title → difficulty; ambiguous titles are dropped. */
+  /** Normalized book title → difficulty. Ambiguous titles are dropped. */
   byBookTitle: Map<string, number>;
   deckCount: number;
 }
 
 /**
  * Jiten's `links[].linkId` is its own internal row id, *not* the external
- * site's id — the id we key media on only appears in the link URL's last path
+ * site's id: the id we key media on only appears in the link URL's last path
  * segment (https://vndb.org/v55744, https://anilist.co/anime/11755,
  * https://www.google.co.jp/books/edition/<title>/QotNAQAAIAAJ).
  */
@@ -358,7 +358,7 @@ export async function fetchJitenDeckIndex(): Promise<IJitenDeckIndex | null> {
 }
 
 /**
- * Book title fallback against the local catalogue — the offline counterpart of
+ * Book title fallback against the local catalogue: the offline counterpart of
  * findJitenBookDeckIdByTitle. Containment matches must resolve to a single
  * difficulty: scanning every deck rather than 8 ranked suggestions makes a
  * coincidental substring hit far more likely, so ambiguity is dropped rather
@@ -399,7 +399,7 @@ function lookupJitenDifficulty(
   const linkType = JitenLinkTypeByMediaType[normalizedType] ?? null;
   if (!linkType) return null;
 
-  // Jiten links books by their raw Google Books volume id; our book contentId
+  // Jiten links books by their raw Google Books volume id. Our book contentId
   // is namespaced as `gbooks-<volumeId>`.
   const externalId =
     normalizedType === 'book' ? contentId.replace(/^gbooks-/, '') : contentId;
@@ -441,8 +441,8 @@ const BACKFILL_BATCH_SIZE = 500;
 
 /**
  * Background job: cache Jiten difficulty onto every linkable media doc by
- * joining against the bulk deck index. Idempotent — safe to re-run. By default
- * only media with no difficulty yet are touched; `force` re-tags everything,
+ * joining against the bulk deck index. Idempotent: safe to re-run. By default
+ * only media with no difficulty yet are touched. `force` re-tags everything,
  * which is what you want after the stored scale changes.
  *
  * Progress is exposed via getJitenBackfillState().
@@ -523,7 +523,7 @@ async function runJitenDifficultyBackfill(force: boolean): Promise<void> {
 }
 
 /**
- * Start the background Jiten difficulty backfill if one isn't already running.
+ * Start the background Jiten difficulty backfill if one is not already running.
  * Returns the current state immediately (the job runs detached).
  */
 export function startJitenDifficultyBackfill(force = false): IJitenBackfillState {
@@ -545,7 +545,7 @@ export function startJitenDifficultyBackfill(force = false): IJitenBackfillState
 }
 
 /**
- * Cache Jiten difficulty onto an existing media doc when it isn't set yet.
+ * Cache Jiten difficulty onto an existing media doc when it is not set yet.
  * Best-effort and non-throwing. Returns the native difficulty (0-5) if known.
  */
 export async function cacheMediaJitenDifficulty(

@@ -102,7 +102,7 @@ function toRGBA(color: string, alpha = 1): string {
 }
 
 /**
- * Fallbacks are only used before the first paint or outside a browser; the
+ * Fallbacks are only used before the first paint or outside a browser. The
  * real values come from the active daisyUI theme.
  */
 const FALLBACKS = {

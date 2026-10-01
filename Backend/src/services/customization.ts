@@ -25,7 +25,7 @@ import {
  * Two currencies buy customization here: merit (level, achievements) and money
  * (an active Patreon tier). Everything is decided in this module so
  * the controller never has to reason about tiers, and so the "what can I equip"
- * endpoint and the write validation can never drift apart — both read the same
+ * endpoint and the write validation can never drift apart: both read the same
  * `CustomizationCapabilities`.
  */
 
@@ -36,17 +36,17 @@ const FRAME_LEVEL_REQUIREMENTS: Partial<Record<AvatarFrame, number>> = {
   gold: 30,
 };
 
-/** Frames that animate — the paid-only ones. */
+/** Frames that animate: the paid-only ones. */
 const PREMIUM_PLUS_FRAMES: AvatarFrame[] = ['sakura', 'neon', 'rainbow'];
 
 /**
  * Frames reserved for the top tier alone. Unlike `PREMIUM_PLUS_FRAMES`, an
- * Enthusiast does not get these — they are the one cosmetic that separates
+ * Enthusiast does not get these: they are the one cosmetic that separates
  * Consumer from the tier below it.
  */
 const CONSUMER_ONLY_FRAMES: AvatarFrame[] = ['aura'];
 
-/** Gradient/glow need any active tier; shimmer animates, so it costs more. */
+/** Gradient/glow need any active tier. Shimmer animates, so it costs more. */
 const PREMIUM_PLUS_NAME_EFFECTS: NameEffect[] = ['shimmer'];
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -73,9 +73,9 @@ export interface CustomizationCapabilities {
   level: number;
   /** Any active Patreon tier. */
   isPremium: boolean;
-  /** Enthusiast or Consumer — the tiers that unlock animated cosmetics. */
+  /** Enthusiast or Consumer: the tiers that unlock animated cosmetics. */
   isPremiumPlus: boolean;
-  /** Consumer alone — the top tier's exclusive cosmetics. */
+  /** Consumer alone: the top tier's exclusive cosmetics. */
   isConsumer: boolean;
   /** Achievement `key`s the user has unlocked, usable as equippable titles. */
   unlockedTitleKeys: Set<string>;
@@ -115,7 +115,7 @@ export async function getCustomizationCapabilities(
 
 /**
  * Every achievement the user has unlocked, as title candidates. Secret
- * achievements are included on purpose — earning one is exactly the kind of
+ * achievements are included on purpose: earning one is exactly the kind of
  * thing people want to show off.
  */
 export async function getUnlockedTitles(
@@ -336,7 +336,7 @@ export async function resolveCustomizationUpdate(
     next.accentColor = color;
   }
 
-  // A custom accent with no color would render as the default anyway; asking
+  // A custom accent with no color would render as the default anyway. Asking
   // for one without the other is a client bug worth surfacing.
   if (next.profileAccent === 'custom' && !next.accentColor) {
     throw apiError(
@@ -505,7 +505,7 @@ const FULL_PAID_ACCESS = {
  * no longer owns, but it never writes them back, and hiding is not enough: the
  * owner's own settings page would still show a locked option selected, and
  * every read path added later would have to remember to sanitize. When a tier
- * actually goes away the downgrade gets persisted — see the `pre('save')` hook
+ * actually goes away the downgrade gets persisted: see the `pre('save')` hook
  * in `models/user.model.ts`, which is where this is called from.
  *
  * Both sides of the comparison go through the same sanitizer, once with full

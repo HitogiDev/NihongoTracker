@@ -3,7 +3,7 @@ import { ProfileWidgetId, ProfileWidgetLayout } from '../types';
 
 interface ProfileWidgetMeta {
   id: ProfileWidgetId;
-  /** Translation keys — this module is pure, callers render them with `t`. */
+  /** Translation keys: this module is pure, callers render them with `t`. */
   labelKey: ParseKeys<'settings'>;
   descriptionKey: ParseKeys<'settings'>;
   /** Only shown on the owner's own profile (never rendered for other visitors). */

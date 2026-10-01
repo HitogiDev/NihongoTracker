@@ -535,7 +535,7 @@ function MediaDetails() {
         : [];
 
     const totalXp = logsArray.reduce((acc, log) => acc + log.xp, 0);
-    // Episode-only anime logs carry no `time`; count them at 24 min/episode
+    // Episode-only anime logs carry no `time`. Count them at 24 min/episode
     // like every server-side total does.
     const totalTime = logsArray.reduce(
       (acc, log) => acc + effectiveLogMinutes(log),
@@ -1018,7 +1018,6 @@ function MediaDetails() {
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
-            {/* Left column skeleton - Media Details Card */}
             <div className="space-y-6 min-w-0">
               <div className="card surface">
                 <div className="card-body">
@@ -1057,7 +1056,6 @@ function MediaDetails() {
 
             {/* Right column skeleton - Progress Chart and Activity Logs */}
             <div className="space-y-6 min-w-0">
-              {/* Progress Chart skeleton */}
               <div className="card surface">
                 <div className="card-body">
                   <div className="skeleton h-6 w-40 mb-4"></div>
@@ -1065,7 +1063,6 @@ function MediaDetails() {
                 </div>
               </div>
 
-              {/* Activity Logs skeleton */}
               <div className="card surface">
                 <div className="card-body">
                   <div className="flex justify-between items-center mb-6">
@@ -1109,7 +1106,7 @@ function MediaDetails() {
     const useEfficient =
       comparisonData && comparisonData.user1 && comparisonData.user2;
 
-    // If we don't have comparison data and don't have my logs, don't show
+    // If we do not have comparison data and do not have my logs, do not show
     if (!useEfficient && myLogsArray.length === 0) return null;
 
     // Get stats from either efficient endpoint or calculated
@@ -2504,9 +2501,8 @@ function MediaDetails() {
                       </span>
                       <div className="dropdown dropdown-bottom flex-1 sm:flex-initial">
                         <div
-                          // Not a <button>, so `btn-disabled` is the right class
-                          // here — but on its own it only blocks pointer events,
-                          // so the tab stop and the ARIA state go with it.
+                          // This is a div, not a button. The class only blocks pointer events.
+                          // Keep tabIndex and ARIA state in sync with the disabled state.
                           tabIndex={customStartDate ? 0 : -1}
                           role="button"
                           aria-disabled={!customStartDate}

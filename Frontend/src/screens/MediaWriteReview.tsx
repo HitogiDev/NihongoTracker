@@ -157,7 +157,7 @@ function MediaWriteReview() {
       });
       toast.success(t('toast.reviewAdded'));
       bypassUnsavedPromptRef.current = true;
-      // Clear form first so the leave-page blocker doesn't trigger on navigate
+      // Clear form first so the leave-page blocker does not trigger on navigate
       setReviewForm({ summary: '', content: '', rating: undefined });
       navigate(reviewsPath);
     },

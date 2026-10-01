@@ -32,7 +32,7 @@ vi.mock('../../models/achievement.model.js', () => ({
   },
 }));
 
-// Notification delivery is a side effect of unlocking; keep it out of these tests.
+// Notification delivery is a side effect of unlocking. Keep it out of these tests.
 vi.mock('../../services/notifications.service.js', () => ({
   createNotification: vi.fn().mockResolvedValue(null),
 }));
@@ -234,7 +234,7 @@ describe('checkAchievements', () => {
     const result = await checkAchievements(userId, { trigger: 'log' });
 
     expect(result).toEqual([]);
-    // progress update is fire-and-forget (.exec().catch()), so we can't easily
+    // progress update is fire-and-forget (.exec().catch()), so we cannot easily
     // assert findOneAndUpdate here, but we assert it was NOT called with upsert
     const {calls} = vi.mocked(UserAchievement.findOneAndUpdate).mock;
       const upsertCall = calls.find((c) => (c[2] as { upsert?: boolean })?.upsert === true);

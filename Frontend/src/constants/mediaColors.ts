@@ -1,10 +1,8 @@
 /**
- * The one place a media type's colour is defined.
- *
- * Charts read the hex; UI chrome reads the Tailwind classes below. Both must
- * stay in step, which is why they live in the same file — the classes cannot be
- * derived from the hex at runtime because Tailwind v4 scans source text and
- * would never generate an assembled `text-[${hex}]`.
+ * Define each media type color in this file.
+ * Charts use the hex value. UI elements use the Tailwind classes.
+ * Keep both values aligned.
+ * Tailwind needs literal class names at build time. It cannot generate classes built at runtime.
  */
 export const MEDIA_TYPE_COLORS: Record<string, string> = {
   vn: '#3a70e4',
@@ -18,8 +16,8 @@ export const MEDIA_TYPE_COLORS: Record<string, string> = {
   movie: '#f77118',
   book: '#7c6cf0',
   audio: '#f2a15a',
-  // Grey, not the teal it used to be: "other" is the absence of a category,
-  // and the old #10b785 sat right next to `video`'s teal on a stacked chart.
+  // Use grey for "other" because it means no category.
+  // Teal looked too much like "video" on stacked charts.
   other: '#6b7280',
 };
 

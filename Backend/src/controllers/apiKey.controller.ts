@@ -13,7 +13,7 @@ function hashKey(raw: string): string {
  * POST /api/api-keys
  * Generate a new API key for the authenticated user.
  * Body: { name: string, expiresAt?: string (ISO date) }
- * Returns the raw key ONCE — it cannot be retrieved again.
+ * Returns the raw key ONCE: it cannot be retrieved again.
  */
 export async function generateApiKey(
   req: Request,
@@ -72,7 +72,7 @@ export async function generateApiKey(
 /**
  * GET /api/api-keys
  * List all API keys for the authenticated user.
- * Returns metadata only — never the raw key.
+ * Returns metadata only: never the raw key.
  */
 export async function listApiKeys(
   _req: Request,

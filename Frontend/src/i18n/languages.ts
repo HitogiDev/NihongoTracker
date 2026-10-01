@@ -1,6 +1,6 @@
 /**
  * UI languages the app ships translations for.
- * Mirrored in Backend/src/types.ts (`SUPPORTED_LANGUAGES`) — there is no shared
+ * Mirrored in Backend/src/types.ts (`SUPPORTED_LANGUAGES`): there is no shared
  * package in this monorepo, so both lists must be updated together.
  */
 export const SUPPORTED_LANGUAGES = ['en', 'es'] as const;

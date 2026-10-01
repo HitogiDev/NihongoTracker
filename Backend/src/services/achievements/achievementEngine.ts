@@ -60,7 +60,7 @@ const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
 
 /**
  * Evaluate a single achievement condition for a given user.
- * Returns { met, progress } — progress is the raw current value for progress bars.
+ * Returns { met, progress }: progress is the raw current value for progress bars.
  *
  * `timezone` decides where calendar days and clock hours fall for the date-based
  * conditions, so "10 hours in one day" or "logged between 0-6h" mean what the
@@ -218,7 +218,7 @@ export async function evaluateCondition(
       return evaluateLogDuringAiring(userId);
 
     case 'manualGrant':
-      // Manual grants are handled by the admin endpoint; never auto-evaluate
+      // Manual grants are handled by the admin endpoint. Never auto-evaluate
       return { met: false, progress: 0 };
 
     default:
@@ -228,7 +228,7 @@ export async function evaluateCondition(
 
 /**
  * Resolve the timezone the date-based conditions should be evaluated in.
- * Falls back to UTC when unset or invalid — an unknown zone would make
+ * Falls back to UTC when unset or invalid: an unknown zone would make
  * Mongo reject the whole aggregation.
  */
 export async function getAchievementTimezone(
@@ -362,7 +362,7 @@ export async function checkAchievements(
             .catch(() => {});
         }
       } catch (err) {
-        // Don't fail the whole check if one achievement errors
+        // Do not fail the whole check if one achievement errors
         console.error(
           `Achievement check failed for key="${achievement.key}":`,
           err
@@ -380,7 +380,7 @@ export async function checkAchievements(
 
 /**
  * Re-evaluate everything a user already owns and take back what they no longer
- * (or never legitimately) qualify for — e.g. unlocks earned under the old
+ * (or never legitimately) qualify for: e.g. unlocks earned under the old
  * UTC-based day boundaries, or off the back of logs with an unknown date.
  *
  * Deliberately conservative. Only unlocks whose condition the engine can
@@ -428,7 +428,7 @@ export async function revokeUnearnedAchievements(
 
       await UserAchievement.deleteOne({ _id: ua._id });
 
-      // Drop the "unlocked" notification too — it now points at nothing
+      // Drop the "unlocked" notification too: it now points at nothing
       await removeNotifications({
         recipient: userId,
         type: 'achievement_unlocked',
@@ -453,8 +453,8 @@ export async function revokeUnearnedAchievements(
  *
  * Every unlock writes a notification when it happens, because most of them are
  * discovered outside a request the client is watching (cron, imports). When the
- * reveal animation does play — inline after a log, or from the `/me/pending`
- * drain — that animation is the notification, so the row would only repeat it.
+ * reveal animation does play: inline after a log, or from the `/me/pending`
+ * drain: that animation is the notification, so the row would only repeat it.
  */
 export async function dismissAchievementNotifications(
   userId: Types.ObjectId,
@@ -487,7 +487,7 @@ export async function grantAchievement(
   if (existing) return false;
 
   const achievement = await Achievement.findById(achievementId)
-    // `key` is what the client translates the name from — without it the
+    // `key` is what the client translates the name from: without it the
     // notification renders its raw `{{name}}` placeholder.
     .select('key name description iconSlug')
     .lean();

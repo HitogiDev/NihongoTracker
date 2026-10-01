@@ -71,7 +71,7 @@ function ClubRanking({ username }: ClubRankingProps) {
     (ranking) => ranking.user.username === username
   );
 
-  // Don't render if user has no clubs
+  // Do not render if user has no clubs
   if (!userClubs || userClubs.length === 0) {
     return null;
   }

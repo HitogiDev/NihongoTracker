@@ -157,7 +157,6 @@ function LevelUpAnimation({
           </span>
         </div>
 
-        {/* XP progress in the new level */}
         <div ref={xpBlockRef} className="mt-4" style={{ opacity: 0 }}>
           <div className="mb-2 text-base sm:text-lg opacity-90">
             Progress in Lv.{finalLevel}

@@ -6,7 +6,7 @@ import { getStreakRuns } from './streakHistory.js';
  * had before it.
  *
  * `threshold` is the minimum length that comeback streak must reach, so a
- * couple of days after a single stray log day don't count.
+ * couple of days after a single stray log day do not count.
  * Progress is the length of the best comeback streak so far.
  */
 export async function evaluateStreakComeback(

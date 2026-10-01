@@ -122,7 +122,6 @@ export default function SuggestMediaModal({
   return (
     <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-bold text-xl">{t('suggest.title')}</h3>
@@ -139,7 +138,6 @@ export default function SuggestMediaModal({
           </button>
         </div>
 
-        {/* Voting Info */}
         <div className="card surface-muted p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
@@ -159,7 +157,6 @@ export default function SuggestMediaModal({
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {voting.mediaType === 'custom' ? (
             /* Custom Media Form */
@@ -273,7 +270,6 @@ export default function SuggestMediaModal({
                 </div>
               </div>
 
-              {/* Search Input */}
               <Field label={t('suggest.searchLabel')} className="relative">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
@@ -291,7 +287,6 @@ export default function SuggestMediaModal({
                 </div>
               </Field>
 
-              {/* Search Results */}
               {showResults && searchQuery.trim() && (
                 <div className="space-y-4">
                   {isSearching ? (

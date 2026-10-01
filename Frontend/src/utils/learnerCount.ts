@@ -5,7 +5,7 @@ import type { ParseKeys } from 'i18next';
  * immersion…", where the phrase is bucketed rather than an exact number.
  *
  * Returns a key instead of a sentence (see the rule in i18n/GLOSSARY.md): this
- * module is pure, and the wording — including how Spanish inflects it — belongs
+ * module is pure, and the wording: including how Spanish inflects it: belongs
  * in `auth.json`.
  */
 export function getLearnerCountKey(

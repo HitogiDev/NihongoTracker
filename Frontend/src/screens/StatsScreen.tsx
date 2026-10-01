@@ -129,7 +129,6 @@ const LOG_TYPES = [
   'movie',
   'tv show',
   'book',
-  'other',
 ];
 
 const CATEGORY_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
@@ -150,7 +149,7 @@ const PERIOD_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
   custom: 'period.custom',
 };
 
-// Log types are stored raw (`tv show`); `common:mediaTypes` keys are camelCase.
+// Log types are stored raw (`tv show`). `common:mediaTypes` keys are camelCase.
 const MEDIA_TYPE_KEYS: Record<string, string> = {
   'light-novel': 'common:mediaTypes.light-novel',
   reading: 'common:mediaTypes.reading',
@@ -473,7 +472,7 @@ function SortableGroup({
 function StatsScreen() {
   const { t } = useTranslation('stats');
   // `t` cannot be typed over a union of keys, and CATEGORY_OPTIONS is
-  // `as const`; the keys themselves are still checked in the array.
+  // `as const`. The keys themselves are still checked in the array.
   const tTab = t as (
     key: (typeof CATEGORY_OPTIONS)[number]['labelKey']
   ) => string;
@@ -639,7 +638,6 @@ function StatsScreen() {
 
     return (
       <div className="space-y-8">
-        {/* Edit Layout toolbar */}
         {isOwner && (
           <div className="flex items-center justify-between">
             {!editMode ? (
@@ -681,7 +679,6 @@ function StatsScreen() {
           </div>
         )}
 
-        {/* Outer DndContext — reorders GROUPS */}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -712,7 +709,7 @@ function StatsScreen() {
                       handleToggleGroup(group.id as StatsGroupId)
                     }
                   >
-                    {/* Inner DndContext — reorders CARDS within this group */}
+                    {/* Inner DndContext: reorders CARDS within this group */}
                     <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}
@@ -1218,10 +1215,8 @@ function StatsScreen() {
                           </span>
                           <div className="dropdown dropdown-bottom">
                             <div
-                              // Not a <button>, so `btn-disabled` is the right
-                              // class here — but on its own it only blocks
-                              // pointer events, so the tab stop and the ARIA
-                              // state go with it.
+                              // This is a div, not a button. The class only blocks pointer events.
+                              // Keep tabIndex and ARIA state in sync with the disabled state.
                               tabIndex={customStartDate ? 0 : -1}
                               role="button"
                               aria-disabled={!customStartDate}

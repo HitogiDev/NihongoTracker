@@ -22,7 +22,7 @@ export async function evaluateWeeklyHours(
     _id: string;
     totalMinutes: number;
   }>([
-    // unknownDate logs have a placeholder date — they don't belong to any real week
+    // unknownDate logs have a placeholder date: they do not belong to any real week
     {
       $match: {
         user: userId,
@@ -46,7 +46,7 @@ export async function evaluateWeeklyHours(
   if (dailyTotals.length === 0) return { met: false, progress: 0 };
 
   // Convert each bucket to a Date + minutes pair for the sliding window. Day keys
-  // are anchored at UTC midnight so every day is exactly 24h apart — using local
+  // are anchored at UTC midnight so every day is exactly 24h apart: using local
   // Date construction would make DST days 23h/25h and shift the window edge.
   const days = dailyTotals.map((d) => {
     const [y, m, day] = d._id.split('-').map(Number);

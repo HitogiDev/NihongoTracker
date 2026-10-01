@@ -1,24 +1,9 @@
 /**
- * Achievement Cron Service
- * Handles achievements that require periodic evaluation instead of per-log checking.
- *
- * Schedule:
- *   runDailyCronAchievements  — runs once per day (00:30 UTC)
- *   runWeeklyCronAchievements — runs every Sunday at 01:00 UTC, scoring the
- *                               Sunday→Saturday week that just closed
- *
- * Cron-based achievements covered:
- *   Daily:   Full Immersion (logged every day this month so far)
- *            Clockwork (same hour every day for 14 consecutive days)
- *            No Days Off (logged on Christmas + New Year + account anniversary)
- *   Weekly:  Weekend Warrior (every Sat+Sun for 4 consecutive weekends)
- *            Monday Motivation (10 consecutive Mondays)
- *            Top 10 / Podium / King / Consistent (weekly leaderboard snapshot)
- *
- * The jobs themselves are scheduled in UTC, but every per-user calendar question
- * ("which day is this log on", "was that a Saturday", "same hour each day") is
- * answered in that user's own timezone — see getUserDayKey. The weekly
- * leaderboard window stays UTC on purpose: it is a single global contest week.
+ * Run periodic checks for achievements that are not tied to a log.
+ * The daily job runs at 00:30 UTC.
+ * The weekly job runs at 01:00 UTC on Sunday, after the contest week ends.
+ * Daily date checks use each user's timezone.
+ * The leaderboard uses UTC because it is one global contest.
  */
 
 import { CronJob } from 'cron';
@@ -54,7 +39,7 @@ function dayKeyWeekday(dayKey: string): number {
 /**
  * Distinct day keys (in the user's timezone) the user logged on, within a UTC
  * range. The range is padded by a day on each side by callers so logs that fall
- * into the target local days from a neighbouring UTC day aren't missed.
+ * into the target local days from a neighbouring UTC day are not missed.
  */
 async function getLoggedDayKeys(
   userId: Types.ObjectId,
@@ -277,9 +262,8 @@ const MONDAY_LOOKBACK_WEEKS = 16;
  *
  * The lookback is deliberately longer than the 10 weeks required: this job runs
  * at 01:00 UTC on a Monday, so the current Monday is almost never logged yet. A
- * 10-week window would have demanded a log from a Monday that had barely begun,
- * making the achievement unobtainable — so scan further back and look for any
- * run of 10 consecutive Mondays inside the window.
+ * A 10-week window would demand a log on the current Monday, which has barely
+ * started. Scan further back for any run of 10 consecutive Mondays.
  */
 async function checkMondayMotivation(
   userId: Types.ObjectId,
@@ -349,7 +333,7 @@ async function checkNoDaysOff(
  * week, as [weekStart, weekEnd) in UTC.
  *
  * The job fires Monday 01:00 UTC, so the Sunday boundary nearest "now" is the
- * start of the week that just began — ranking that window would score ~25h of
+ * start of the week that just began: ranking that window would score ~25h of
  * logs instead of the week users actually competed in. Step back one week.
  */
 function lastCompletedWeek(): { weekStart: Date; weekEnd: Date } {
@@ -376,7 +360,7 @@ async function computeWeeklyLeaderboard(
       },
     },
     { $group: { _id: '$user', totalXp: { $sum: '$xp' } } },
-    // Ranking-banned users must not occupy a slot — leaving them in shifts every
+    // Ranking-banned users must not occupy a slot: leaving them in shifts every
     // legitimate user one position down and can push #11 out of the top 10.
     {
       $lookup: {
@@ -427,7 +411,7 @@ export async function runDailyCronAchievements(): Promise<void> {
         const prevMonthYear = localMonth === 1 ? localYear - 1 : localYear;
         const isLastDayOfMonth = localDay === daysInMonth(localYear, localMonth);
 
-        // 1. Full Immersion — check previous month (always) and current month if last day
+        // 1. Full Immersion: check previous month (always) and current month if last day
         const monthsToCheck = [{ year: prevMonthYear, month: prevMonth }];
         if (isLastDayOfMonth) {
           monthsToCheck.push({ year: localYear, month: localMonth });
@@ -440,7 +424,7 @@ export async function runDailyCronAchievements(): Promise<void> {
           }
         }
 
-        // 2. Clockwork — check last 14 days
+        // 2. Clockwork: check last 14 days
         if (await checkClockwork14Days(userId, timezone)) {
           if (await grantIfUnowned(userId, 'clockwork')) {
             granted += 1;
@@ -510,7 +494,7 @@ async function awardWeeklyRanks(
 }
 
 /**
- * Consistent — top 25 for 4 consecutive weeks. Scans the user's whole snapshot
+ * Consistent: top 25 for 4 consecutive weeks. Scans the user's whole snapshot
  * history rather than only the latest 4: the achievement records something the
  * user *did*, so a qualifying run stays earned even after they drop off.
  */
@@ -557,7 +541,7 @@ function sundayOfUtc(date: Date): Date {
  * the week that had just *started* rather than the week that had just ended),
  * so users who genuinely finished a week in the top 10 were never awarded.
  *
- * Idempotent — grants go through grantIfUnowned and snapshots are upserted, so
+ * Idempotent: grants go through grantIfUnowned and snapshots are upserted, so
  * this is safe to re-run and will not re-award anything already held.
  */
 export async function backfillRankAchievements(options?: {
@@ -572,7 +556,7 @@ export async function backfillRankAchievements(options?: {
   ]);
   if (!firstLog?.first) return { weeks: 0, granted: 0 };
 
-  // The in-progress week is not scored — only weeks that have fully closed.
+  // The in-progress week is not scored: only weeks that have fully closed.
   const { weekEnd: openWeekStart } = lastCompletedWeek();
 
   const MAX_WEEKS = 520; // ~10 years — bounds work and ignores mis-dated old logs
@@ -643,7 +627,7 @@ export async function runWeeklyCronAchievements(): Promise<void> {
           }
         }
 
-        // 3. Consistent — top 25 for 4 consecutive weeks
+        // 3. Consistent: top 25 for 4 consecutive weeks
         //    (rank_top10/podium/king were already granted by awardWeeklyRanks)
         if (await checkRankConsistent(userId)) {
           if (await grantIfUnowned(userId, 'rank_consistent')) {
@@ -685,7 +669,7 @@ export function initAchievementCronScheduler(): void {
     'UTC'
   );
 
-  // Weekly every Sunday at 01:00 UTC — one hour after the Sunday→Saturday week
+  // Weekly every Sunday at 01:00 UTC: one hour after the Sunday→Saturday week
   // closes, so the leaderboard result lands while it is still fresh.
   new CronJob(
     '0 1 * * 0',

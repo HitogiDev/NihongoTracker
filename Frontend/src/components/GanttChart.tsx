@@ -532,7 +532,6 @@ export default function GanttChart({
 
   return (
     <div className="relative select-none">
-      {/* ── Zoom controls ───────────────────────────────────────────────── */}
       {hasResults && (
         <div className="flex items-center justify-end gap-1 mb-2 pr-1">
           <span className="text-[10px] text-base-content/50 mr-1 select-none">
@@ -573,7 +572,7 @@ export default function GanttChart({
       )}
 
       {hasResults ? (
-        // No `overflow: hidden` on this wrapper — a non-visible overflow
+        // No `overflow: hidden` on this wrapper: a non-visible overflow
         // ancestor would become the sticky containing block and keep the date
         // header from sticking to the viewport.
         <div className="relative">
@@ -587,9 +586,8 @@ export default function GanttChart({
               pointerEvents: 'auto',
             }}
           >
-            {/* Header spacer — matches the height of the month header row */}
+            {/* Header spacer: matches the height of the month header row */}
             <div style={{ height: 38 }} className="border-b border-base-300" />
-            {/* Row labels */}
             <div style={{ position: 'relative', height: totalH }}>
               {filtered.map((item, rowIdx) => {
                 const rowColor = MEDIA_TYPE_COLORS[item.type] ?? '#888';
@@ -620,7 +618,6 @@ export default function GanttChart({
                       scheduleTooltipClose();
                     }}
                   >
-                    {/* Cover thumbnail */}
                     <div
                       className="flex-shrink-0 rounded overflow-hidden"
                       style={{
@@ -647,7 +644,6 @@ export default function GanttChart({
                       )}
                     </div>
 
-                    {/* Title + badges */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1">
                         <span
@@ -689,7 +685,7 @@ export default function GanttChart({
 
           {/* ── Timeline area: sticky header + horizontally-scrollable body ─ */}
           <div style={{ marginLeft: LABEL_WIDTH }}>
-            {/* Month/day header — sticky to the page; an `overflow-x-auto`
+            {/* Month/day header: sticky to the page. An `overflow-x-auto`
                 ancestor can't have a sticky child stick to the viewport (it
                 becomes the sticky containing block instead), so the header
                 lives outside the scrolling body and mirrors its scrollLeft. */}
@@ -738,7 +734,6 @@ export default function GanttChart({
               <div style={{ minWidth: totalW }}>
                 {/* ── Rows (bar area only, no labels) ──────────────────────── */}
                 <div style={{ position: 'relative', height: totalH }}>
-                  {/* Grid lines */}
                   <div className="absolute inset-0 pointer-events-none">
                     {columns.map((col, idx) => (
                       <div
@@ -756,7 +751,7 @@ export default function GanttChart({
                     ))}
                   </div>
 
-                  {/* Media rows — bar area only */}
+                  {/* Media rows: bar area only */}
                   {filtered.map((item, rowIdx) => {
                     const rowColor = MEDIA_TYPE_COLORS[item.type] ?? '#888';
                     const itemKey = `${item.type}:${item.mediaId}`;
@@ -799,12 +794,10 @@ export default function GanttChart({
                           scheduleTooltipClose();
                         }}
                       >
-                        {/* ── Bar area ──────────────────────────────────────── */}
                         <div
                           className="flex-1 relative h-full"
                           style={{ overflow: 'hidden' }}
                         >
-                          {/* Activity density shading per column */}
                           {columns.map((col, colIdx) => {
                             const count = density.get(col.key) ?? 0;
                             if (!count) return null;
@@ -829,7 +822,6 @@ export default function GanttChart({
                             );
                           })}
 
-                          {/* The main Gantt bar */}
                           <div
                             className="absolute flex items-center"
                             style={{
@@ -921,7 +913,6 @@ export default function GanttChart({
         </div>
       )}
 
-      {/* ── Tooltip ─────────────────────────────────────────────────────────── */}
       {tooltip && (
         <GanttTooltip
           item={tooltip.item}
@@ -990,7 +981,6 @@ function GanttTooltip({
           boxShadow: `0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px ${hexToRgba(color, 0.15)}`,
         }}
       >
-        {/* Header */}
         <div className="flex items-start gap-2 mb-2">
           {item.contentImage && (
             <img
@@ -1029,10 +1019,8 @@ function GanttTooltip({
           </div>
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-base-300 my-2" />
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
           <div className="flex items-center gap-1 text-base-content/70">
             <Clock className="w-3 h-3 flex-shrink-0" />
@@ -1054,7 +1042,6 @@ function GanttTooltip({
           </div>
         </div>
 
-        {/* Dates */}
         <div className="mt-2 text-[10px] text-base-content/50 space-y-0.5">
           <div>
             <span className="font-medium">{t('gantt.started')}</span>{' '}
@@ -1072,7 +1059,6 @@ function GanttTooltip({
           </div>
         </div>
 
-        {/* Navigate link */}
         <button
           className="pointer-events-auto mt-2 flex items-center gap-1 text-[10px] font-medium hover:underline"
           style={{ color }}

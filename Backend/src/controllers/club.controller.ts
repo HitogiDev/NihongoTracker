@@ -1059,7 +1059,7 @@ export async function kickClubMember(
       return res.status(400).json({ message: 'Use leave club to exit' });
     }
 
-    // Permission rules: leader can kick anyone except other leaders; moderators can kick members only
+    // Permission rules: leader can kick anyone except other leaders. Moderators can kick members only
     if (actor.role === 'moderator' && target.role !== 'member') {
       return res
         .status(403)
@@ -1173,7 +1173,7 @@ export async function addClubMedia(
         .json({ message: 'Only leaders and moderators can add media' });
     }
 
-    // Check if media exists in MediaBase and create it if it doesn't
+    // Check if media exists in MediaBase and create it if it does not
     let existingMedia = null;
     let createMedia = true;
 
@@ -1187,7 +1187,7 @@ export async function addClubMedia(
       }
     }
 
-    // Create media if it doesn't exist and we have media data
+    // Create media if it does not exist and we have media data
     if (createMedia && mediaId) {
       if (mediaType === 'video') {
         const channelInfo = await getYouTubeChannelInfo(mediaId);
@@ -1230,7 +1230,7 @@ export async function addClubMedia(
       }
     }
 
-    // If we still don't have media, try one more search
+    // If we still do not have media, try one more search
     if (!existingMedia && mediaId) {
       existingMedia = await MediaBase.findOne({
         contentId: mediaId,
@@ -2589,7 +2589,7 @@ export async function getClubMediaRankings(
       rank: index + 1,
     }));
 
-    // Include members who haven't logged yet
+    // Include members who have not logged yet
     const membersWithLogs = memberStats.map((stat: any) =>
       stat.user._id.toString()
     );

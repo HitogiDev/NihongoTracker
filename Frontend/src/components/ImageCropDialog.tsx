@@ -81,7 +81,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
       }
 
       // `data:` URLs can finish decoding before this effect runs, so onLoad may
-      // already have set the initial crop — clearing it here would leave the
+      // already have set the initial crop: clearing it here would leave the
       // dialog with no selection at all. Re-apply it instead of wiping it.
       const image = imgRef.current;
       if (image?.complete && image.naturalWidth && image.src === imageSrc) {

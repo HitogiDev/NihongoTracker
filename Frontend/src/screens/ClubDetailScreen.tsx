@@ -297,7 +297,7 @@ function ClubDetailScreen() {
     description: '',
     startDate: '',
     endDate: '',
-    // Add media data for creation if media doesn't exist
+    // Add media data for creation if media does not exist
     mediaData: undefined as Partial<IMediaDocument> | undefined,
   });
 
@@ -863,9 +863,7 @@ function ClubDetailScreen() {
 
   return (
     <div className="min-h-screen bg-base-200">
-      {/* Header with Banner */}
       <div className="relative">
-        {/* Banner */}
         <div className="h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
           {club.banner && (
             <img
@@ -877,10 +875,8 @@ function ClubDetailScreen() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
 
-        {/* Club Info Overlay */}
         <div className="bg-base-100 border-b border-base-300 relative">
           <div className="container mx-auto px-4">
-            {/* Club Avatar - Responsive positioning */}
             <div className="absolute left-1/2 transform -translate-x-1/2 -top-12 sm:left-4 sm:translate-x-0 sm:-top-16">
               <div className="avatar">
                 <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-base-100 p-1 shadow-sm">
@@ -899,7 +895,6 @@ function ClubDetailScreen() {
               </div>
             </div>
 
-            {/* Club Info Content */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-16 pb-4 sm:pt-4 sm:pb-4 sm:pl-40">
               {/* Club details - Centered on mobile, left-aligned on desktop */}
               <div className="flex flex-col items-center sm:items-start gap-3 text-center sm:text-left">
@@ -907,7 +902,6 @@ function ClubDetailScreen() {
                   <h1 className="text-xl sm:text-2xl font-bold">{club.name}</h1>
                 </div>
 
-                {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-base-content/70">
                   <div className="flex items-center gap-1">
                     <Users className="text-base w-4 h-4" />
@@ -938,7 +932,7 @@ function ClubDetailScreen() {
                     )}
                     <button
                       // The `disabled` attribute below already covers the
-                      // leader-with-members case; `btn-disabled` only sets
+                      // leader-with-members case. `btn-disabled` only sets
                       // pointer-events:none and leaves the button focusable.
                       className={`btn btn-sm ${
                         (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1
@@ -1015,9 +1009,7 @@ function ClubDetailScreen() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        {/* Tab Navigation */}
         <div role="tablist" className="tabs tabs-border mb-8 w-fit mx-auto">
           <button
             className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
@@ -1056,12 +1048,10 @@ function ClubDetailScreen() {
           </button>}
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Club Info (now contains Activity Feed and Voting) */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Media Voting Section */}
               <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
@@ -1125,9 +1115,7 @@ function ClubDetailScreen() {
               )}
             </div>
 
-            {/* Right Column - Sidebar: About, Rules, Tags */}
             <div className="space-y-6">
-              {/* About */}
               {club.description && (
                 <div className="card surface">
                   <div className="card-body">
@@ -1141,7 +1129,6 @@ function ClubDetailScreen() {
                 </div>
               )}
 
-              {/* Rules */}
               {club.rules && (
                 <div className="card surface">
                   <div className="card-body">
@@ -1159,7 +1146,6 @@ function ClubDetailScreen() {
                 <ClubIndividualObjectives clubId={club._id} />
               )}
 
-              {/* Tags */}
               {club.tags && club.tags.length > 0 && (
                 <div className="card surface">
                   <div className="card-body">
@@ -1256,7 +1242,6 @@ function ClubDetailScreen() {
           </dialog>
         )}
 
-        {/* Media Tab */}
         {activeTab === 'media' && (
           <div className="max-w-6xl mx-auto">
             <div className="card surface">
@@ -1302,7 +1287,6 @@ function ClubDetailScreen() {
                         key={media._id}
                         className="card surface hover:shadow-lg transition-all duration-200"
                       >
-                        {/* Media Image/Banner */}
                         <figure className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
                           {media.mediaDocument?.contentImage ||
                           media.mediaDocument?.coverImage ? (
@@ -1332,7 +1316,6 @@ function ClubDetailScreen() {
                             </div>
                           )}
 
-                          {/* Status Badge */}
                           <div className="absolute top-2 right-2">
                             <span
                               className={`badge ${
@@ -1345,7 +1328,6 @@ function ClubDetailScreen() {
                             </span>
                           </div>
 
-                          {/* Media Type Badge */}
                           <div className="absolute top-2 left-2">
                             <span className="badge badge-primary badge-sm capitalize">
                               {media.mediaType
@@ -1469,7 +1451,6 @@ function ClubDetailScreen() {
           </div>
         )}
 
-        {/* Members Tab */}
         {activeTab === 'members' && (
           <div className="max-w-4xl mx-auto">
             <div className="card surface">
@@ -1749,13 +1730,11 @@ function ClubDetailScreen() {
           </div>
         )}
 
-        {/* Rankings Tab */}
         {activeTab === 'rankings' && clubId && (
           <ClubRankingsTab clubId={clubId} clubName={club?.name} />
         )}
       </div>
 
-      {/* Add Media Modal */}
       {isAddMediaModalOpen && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -1782,7 +1761,6 @@ function ClubDetailScreen() {
               }}
               className="space-y-4"
             >
-              {/* Media Type */}
               <Field label={t('addMedia.mediaType')}>
                 <DropdownSelect
                   className="select w-full"
@@ -1809,7 +1787,6 @@ function ClubDetailScreen() {
                 </DropdownSelect>
               </Field>
 
-              {/* Title with Search */}
               <Field label={t('suggest.searchLabel')} className="relative">
                 <div className="relative">
                   <input
@@ -1828,7 +1805,6 @@ function ClubDetailScreen() {
                     <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
                   )}
 
-                  {/* Search Results - Positioned as absolute popup */}
                   {showResults && searchResults && searchResults.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mt-1">
                       <div className="card surface max-h-60 overflow-y-auto">
@@ -1881,7 +1857,6 @@ function ClubDetailScreen() {
                 </Field>
               </Field>
 
-              {/* Media ID (optional for external links) */}
               <Field label={t('addMedia.mediaId')}>
                 <input
                   type="text"
@@ -1894,7 +1869,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Description */}
               <Field label={t('common.description')}>
                 <textarea
                   className="textarea w-full"
@@ -1907,7 +1881,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Start Date */}
               <Field label={t('addMedia.startRequired')}>
                 <DatePickerInput
                   value={mediaForm.startDate}
@@ -1918,7 +1891,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* End Date */}
               <Field label={t('addMedia.endRequired')}>
                 <DatePickerInput
                   value={mediaForm.endDate}
@@ -1929,7 +1901,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Submit buttons */}
               <div className="modal-action">
                 <button
                   type="button"
@@ -1958,7 +1929,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Create Voting Wizard */}
       {club && (
         <CreateVotingWizard
           isOpen={isCreateVotingWizardOpen}
@@ -1967,7 +1937,6 @@ function ClubDetailScreen() {
         />
       )}
 
-      {/* Quick Log Modal */}
       {selectedMedia && (
         <QuickLog
           open={logModalOpen}
@@ -1993,7 +1962,6 @@ function ClubDetailScreen() {
         />
       )}
 
-      {/* Edit Club Modal */}
       {isEditClubModalOpen && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-2xl">
@@ -2050,7 +2018,6 @@ function ClubDetailScreen() {
               }}
               className="space-y-4"
             >
-              {/* Club Name */}
               <Field label={t('edit.nameRequired')}>
                 <input
                   type="text"
@@ -2064,9 +2031,7 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Avatar Upload */}
               <Field label={t('edit.avatar')}>
-                {/* Current/Preview Avatar - Centered */}
                 <div className="flex justify-center mb-4">
                   <div className="avatar">
                     <div className="w-24 h-24 rounded-full ring ring-base-300 ring-offset-2">
@@ -2091,7 +2056,6 @@ function ClubDetailScreen() {
                   </div>
                 </div>
 
-                {/* Upload/Remove buttons - Centered */}
                 <div className="flex flex-col items-center gap-2">
                   <label className="btn btn-outline btn-sm">
                     <Pencil className="text-base mr-1" />
@@ -2123,9 +2087,7 @@ function ClubDetailScreen() {
                 </div>
               </Field>
 
-              {/* Banner Upload */}
               <Field label={t('create.banner')}>
-                {/* Current/Preview Banner */}
                 <div className="mb-4">
                   <div className="w-full h-32 rounded-lg overflow-hidden border-2 border-dashed border-base-300 bg-base-50 flex items-center justify-center">
                     {editPreviews.banner ? (
@@ -2149,7 +2111,6 @@ function ClubDetailScreen() {
                   </div>
                 </div>
 
-                {/* Upload/Remove buttons - Centered */}
                 <div className="flex flex-col items-center gap-2">
                   <label className="btn btn-outline btn-sm">
                     <Pencil className="text-base mr-1" />
@@ -2181,7 +2142,6 @@ function ClubDetailScreen() {
                 </div>
               </Field>
 
-              {/* Description */}
               <Field label={t('common.description')}>
                 <textarea
                   className="textarea w-full"
@@ -2194,7 +2154,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Privacy */}
               <Field label={t('create.privacy')}>
                 <div className="flex gap-4">
                   <label className="label cursor-pointer">
@@ -2224,7 +2183,6 @@ function ClubDetailScreen() {
                 </div>
               </Field>
 
-              {/* Member Limit */}
               <Field label={t('create.memberLimit')}>
                 <input
                   type="number"
@@ -2258,7 +2216,6 @@ function ClubDetailScreen() {
                 </div>
               </Field>
 
-              {/* Rules */}
               <Field label={t('detail.rules')}>
                 <textarea
                   className="textarea w-full"
@@ -2271,7 +2228,6 @@ function ClubDetailScreen() {
                 />
               </Field>
 
-              {/* Tags */}
               <Field label={t('common.tags')}>
                 <input
                   type="text"
@@ -2291,7 +2247,6 @@ function ClubDetailScreen() {
                 </div>
               </Field>
 
-              {/* Submit buttons */}
               <div className="modal-action">
                 <button
                   type="button"
@@ -2317,7 +2272,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Club Goals Modal */}
       {isClubGoalsModalOpen && club && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-3xl">
@@ -2647,7 +2601,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Disband Club Confirmation Modal */}
       {isDisbandConfirmModalOpen && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -2680,7 +2633,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Leave Club Confirmation Modal */}
       {isLeaveConfirmModalOpen && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -2711,7 +2663,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Transfer Leadership Confirmation Modal */}
       {isTransferLeadershipModalOpen && selectedNewLeader && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -2760,7 +2711,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Kick Member Confirmation Modal */}
       {kickTarget && (
         <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -2797,7 +2747,6 @@ function ClubDetailScreen() {
         </div>
       )}
 
-      {/* Edit Club Media Modal */}
       {editingMedia && (
         <EditClubMediaModal
           isOpen={isEditMediaModalOpen}

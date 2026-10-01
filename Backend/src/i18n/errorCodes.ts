@@ -2,11 +2,11 @@ import { customError } from '../middlewares/errorMiddleware.js';
 
 /**
  * Catalogue of stable error identifiers sent to the client alongside the
- * English message. The client maps them to translated text; the backend never
+ * English message. The client maps them to translated text. The backend never
  * translates anything itself.
  *
  * Every code here must have a matching key in
- * `Frontend/src/i18n/locales/en/errors.json` — `__tests__/errors/errorCodes.test.ts`
+ * `Frontend/src/i18n/locales/en/errors.json`: `__tests__/errors/errorCodes.test.ts`
  * enforces that, since the two trees have no shared package.
  *
  * Keys are grouped by domain, and named after the *condition*, not the current

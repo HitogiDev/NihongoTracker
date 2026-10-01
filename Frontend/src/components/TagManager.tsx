@@ -209,7 +209,6 @@ export default function TagManager() {
           </div>
         )}
 
-        {/* Tags List */}
         <div className="space-y-2">
           {tags.length === 0 ? (
             <div className="text-center py-8 text-base-content/60">
@@ -283,7 +282,6 @@ export default function TagManager() {
         </div>
       </div>
 
-      {/* Create Tag Modal */}
       <dialog
         id="create_tag_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -369,7 +367,6 @@ export default function TagManager() {
         </form>
       </dialog>
 
-      {/* Edit Tag Modal */}
       <dialog
         id="edit_tag_modal"
         className="modal modal-bottom sm:modal-middle"

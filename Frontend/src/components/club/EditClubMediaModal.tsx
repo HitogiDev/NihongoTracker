@@ -158,7 +158,6 @@ export default function EditClubMediaModal({
               />
             </Field>
 
-            {/* Consumption Period */}
             <Field label={t('editMedia.start')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -192,7 +191,7 @@ export default function EditClubMediaModal({
                       }));
                       // Close dropdown by removing focus
                       (document.activeElement as HTMLElement)?.blur?.();
-                      // Reset end date if it's before the new start date
+                      // Reset end date if it is before the new start date
                       if (
                         mediaData.endDate &&
                         date &&

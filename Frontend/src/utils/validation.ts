@@ -2,7 +2,7 @@ import type { ParseKeys } from 'i18next';
 import { ILog } from '../types';
 
 /**
- * Validators return translation keys, not sentences — this module is pure and
+ * Validators return translation keys, not sentences: this module is pure and
  * has no access to the active language. Callers translate with
  * `useValidationText()`. An empty string still means "valid".
  */

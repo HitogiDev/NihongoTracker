@@ -12,7 +12,7 @@ export async function evaluateStreak(
   const user = await User.findById(userId).select('stats settings').lean();
   if (!user?.stats) return { met: false, progress: 0 };
 
-  // We check longestStreak so that past achievements aren't revoked if the streak breaks
+  // We check longestStreak so that past achievements are not revoked if the streak breaks
   const longestStreak = user.stats.longestStreak ?? 0;
   const currentStreak = user.stats.currentStreak ?? 0;
   const best = Math.max(longestStreak, currentStreak);

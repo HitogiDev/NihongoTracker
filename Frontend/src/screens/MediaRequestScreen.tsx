@@ -16,7 +16,7 @@ import type {
   MediaRequestType,
 } from '../types';
 
-/** Module scope: key names, never text — see the note in ListsDiscoverScreen. */
+/** Module scope: key names, never text: see the note in ListsDiscoverScreen. */
 const MEDIA_TYPES: {
   value: MediaRequestType;
   labelKey: ParseKeys<'admin'>;

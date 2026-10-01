@@ -245,9 +245,7 @@ function MediaResultRow({
         </div>
       )}
 
-      {/* Content */}
       <div className="relative z-10 flex items-center gap-3 w-full">
-        {/* Poster thumbnail */}
         <div className="w-9 h-12 rounded-md overflow-hidden flex-shrink-0 ring-1 ring-base-content/10">
           {media.contentImage ? (
             <img
@@ -263,7 +261,6 @@ function MediaResultRow({
           )}
         </div>
 
-        {/* Text */}
         <div className="flex-1 text-left min-w-0">
           <p className="font-semibold text-sm truncate leading-tight">
             {media.title.contentTitleNative ||
@@ -278,7 +275,6 @@ function MediaResultRow({
             )}
         </div>
 
-        {/* Type badge */}
         <span
           className={`badge badge-sm gap-1 flex-shrink-0 ${
             isActive ? 'badge-primary' : 'badge-ghost'
@@ -339,7 +335,6 @@ function UserResultRow({
         </div>
       )}
 
-      {/* Content */}
       <div className="relative z-10 flex items-center gap-3 w-full">
         <div className="avatar">
           <div className="w-9 h-9 rounded-full ring-1 ring-base-content/10">
@@ -465,7 +460,7 @@ function SearchModal({
                     seen.add(key);
                     return true;
                   });
-                  // Round-robin by type so light novels / VNs / etc. aren't
+                  // Round-robin by type so light novels / VNs / etc. are not
                   // crowded out of the top slice by anime & manga.
                   setMediaResults(interleaveByType(unique).slice(0, 15));
                 }
@@ -627,7 +622,6 @@ function SearchModal({
         className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
           <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
           <input
@@ -641,7 +635,6 @@ function SearchModal({
           {isSearching && (
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
-          {/* Media type filter */}
           <div className="dropdown dropdown-end flex-shrink-0">
             <div
               tabIndex={0}
@@ -690,7 +683,6 @@ function SearchModal({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex items-center gap-1 px-4 py-2 border-b border-base-content/10">
           {(
             [
@@ -712,7 +704,6 @@ function SearchModal({
           ))}
         </div>
 
-        {/* Results */}
         <div
           ref={resultsRef}
           className="max-h-[28rem] overflow-y-auto overscroll-contain"
@@ -779,7 +770,6 @@ function SearchModal({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-base-content/10 text-[11px] text-base-content/30">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">

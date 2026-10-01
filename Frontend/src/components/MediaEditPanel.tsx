@@ -61,7 +61,7 @@ function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
-// Parse a numeric input; empty string clears the field (null).
+// Parse a numeric input. Empty string clears the field (null).
 function numOrNull(value: string): number | null {
   const trimmed = value.trim();
   if (trimmed === '') return null;

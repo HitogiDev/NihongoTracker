@@ -4,15 +4,11 @@ import { MediaBase } from '../models/media.model.js';
 import { ILog, IXpBreakdown } from '../types.js';
 
 /**
- * XP engine (formula v3).
- *
- * Philosophy: time is the base currency — one immersion hour earns the same
- * base XP regardless of reading speed. Characters act as validation (cap
- * implausible time claims) and as a time estimator when time is missing,
- * converted through the user's own reading speed. A difficulty multiplier
- * (Jiten data, phase 2) grants a bounded bonus for content that is
- * challenging relative to the user's level in the log's category; it never
- * penalizes (floor 1.0) and its ceiling is the same at every level.
+ * Formula v3 uses immersion time as its base.
+ * Each hour earns the same base XP, regardless of reading speed.
+ * Characters validate time claims and estimate missing time from the user's reading speed.
+ * Jiten difficulty can add up to 30% when it exceeds category comfort.
+ * The formula never reduces XP.
  */
 
 export const XP_FORMULA_VERSION = 3;
@@ -28,8 +24,9 @@ export const MIN_PERSONAL_SPEED_CPH = 3000;
 export const MAX_PERSONAL_SPEED_CPH = 30000;
 /**
  * Validation floor: when a log carries both time and chars, credited time is
- * capped at chars / MIN_PLAUSIBLE_SPEED_CPH so "2 hours, 500 chars" claims
- * don't earn 2 hours of XP. Low enough not to punish genuinely slow readers.
+ * capped at chars / MIN_PLAUSIBLE_SPEED_CPH.
+ * This prevents a log with 500 characters and 2 hours from earning 2 hours of XP.
+ * The floor still allows genuinely slow readers.
  */
 export const MIN_PLAUSIBLE_SPEED_CPH = 800;
 
@@ -52,9 +49,8 @@ export const CHALLENGE_TARGET_GAP = 10;
 export const HISTORY_COMFORT_ADJUSTMENT_LIMIT = 5;
 
 /**
- * Consumed-difficulty signal: the hours-weighted median of difficulty recently
- * consumed in the category calibrates the level-based comfort point.
- * History is a small calibration, not a claim about comprehension.
+ * Recent difficulty, weighted by immersion hours, adjusts category comfort.
+ * This is a small calibration. It does not measure comprehension.
  */
 export const CONSUMED_DIFFICULTY_WINDOW_DAYS = 90;
 export const CONSUMED_DIFFICULTY_MIN_HOURS = 10;
@@ -93,9 +89,9 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Continuous (un-floored) level for a category XP total. Matches the curve in
- * services/calculateLevel.ts but without Math.floor, so the difficulty
- * multiplier decays smoothly instead of jumping at level-ups.
+ * Unrounded level value for a category XP total.
+ * This uses the curve in services/calculateLevel.ts without Math.floor.
+ * The difficulty multiplier then decays smoothly across level-ups.
  */
 export function continuousLevel(xp: number): number {
   if (!xp || xp <= 0) return 0;
@@ -184,7 +180,7 @@ function multiplierFromComfort(
  * Multiplier for content difficulty relative to the user's comfort point.
  * The max bonus is reached 10 normalized points (0.5 Jiten) above comfort,
  * or at difficulty 100 when comfort is above 90.
- * Content at or below comfort — or with no difficulty data — is neutral
+ * Content at or below comfort is neutral. Content with no difficulty data is also neutral.
  * (1.0): the bonus only rewards, never punishes.
  */
 export function difficultyMultiplier(
@@ -207,19 +203,19 @@ export interface IXpComputationInput {
 }
 
 export interface IXpComputationContext {
-  /** User's personal reading speed (chars/hour); null → fallback constant. */
+  /** User's personal reading speed (chars/hour). Null → fallback constant. */
   personalSpeedCph?: number | null;
-  /** Jiten difficulty of the media, normalized 0-100; null → neutral. */
+  /** Jiten difficulty of the media, normalized 0-100. Null → neutral. */
   difficulty?: number | null;
   /** Continuous level in the log's category at computation time. */
   categoryLevel?: number;
   /**
    * Hours-weighted median of the difficulty consumed recently in the category
-   * (0-100); null when there's not enough tagged history.
+   * (0-100). Null when there is not enough tagged history.
    */
   consumedDifficulty?: number | null;
   /**
-   * Fixed comfort point (0-100) — used when editing a log to reuse the
+   * Fixed comfort point (0-100): used when editing a log to reuse the
    * comfort snapshotted at creation instead of recomputing it.
    */
   comfortAt?: number | null;
@@ -255,8 +251,7 @@ function creditedMinutes(
   const { type } = input;
   const category = getLogCategory(type);
 
-  // 'other' intentionally earns 0 XP regardless of time — not every logged
-  // activity should be rewarded.
+  // The 'other' type earns 0 XP. It does not describe an immersion category.
   if (type === 'other') {
     return { minutes: 0, charsBacked: false };
   }
@@ -372,7 +367,7 @@ export function roughLogMinutes(input: IXpComputationInput): number {
 /**
  * Hours-weighted median of the Jiten difficulty (normalized 0-100) the user
  * consumed in the category within the recent window. Null when less than
- * CONSUMED_DIFFICULTY_MIN_HOURS of difficulty-tagged immersion exists —
+ * CONSUMED_DIFFICULTY_MIN_HOURS of difficulty-tagged immersion exists:
  * callers then fall back to the level-based comfort alone.
  */
 export async function getUserConsumedDifficulty(
@@ -441,7 +436,7 @@ export async function getUserConsumedDifficulty(
 const PERSONAL_SPEED_SAMPLE_SIZE = 50;
 /**
  * Minimum same-type samples before the type-specific speed is trusted over
- * the category-wide one — reading speed differs a lot between manga, novels,
+ * the category-wide one: reading speed differs a lot between manga, novels,
  * VNs and games, but a median over fewer samples than this is noise.
  */
 export const MIN_SPEED_SAMPLES = 5;
@@ -476,9 +471,9 @@ async function querySpeedSamples(
 /**
  * Median reading speed (chars/hour) over the user's recent logs that carry
  * both chars and time. Prefers logs of the given type (each medium reads at
- * its own pace); falls back to the whole reading category when there are
- * fewer than MIN_SPEED_SAMPLES same-type logs. Null when there's no usable
- * history at all — callers then use FALLBACK_READING_SPEED_CPH.
+ * its own pace). Falls back to the whole reading category when there are
+ * fewer than MIN_SPEED_SAMPLES same-type logs. Null when there is no usable
+ * history at all: callers then use FALLBACK_READING_SPEED_CPH.
  */
 export async function getUserReadingSpeedCph(
   userId: Types.ObjectId | string,

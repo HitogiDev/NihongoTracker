@@ -12,7 +12,7 @@ import type {
 /**
  * Presentation layer for profile cosmetics.
  *
- * The backend decides what a user may equip; this module only knows how each
+ * The backend decides what a user may equip. This module only knows how each
  * equipped value looks. Every visual lives in a hand-written CSS class (see
  * `index.css`) rather than a Tailwind utility, because the class names are
  * built at runtime and would otherwise be purged from the bundle.
@@ -115,7 +115,7 @@ export function resolveAccentColor(
  *
  * DaisyUI reads `--color-primary` (and friends) from the nearest ancestor that
  * defines them, so overriding the variables on the profile wrapper re-colors
- * every component inside — progress bars, badges, the heatmap — without
+ * every component inside: progress bars, badges, the heatmap: without
  * touching the visitor's own theme.
  */
 export function getProfileAccentStyle(
@@ -159,7 +159,7 @@ export function readableTextColor(color: string): string {
 }
 
 /**
- * Heatmap cell colors, darkest last. Index 0 is the "no activity" cell; the
+ * Heatmap cell colors, darkest last. Index 0 is the "no activity" cell. The
  * rest are the accent at rising strengths, so presets and custom colors share
  * one code path.
  */

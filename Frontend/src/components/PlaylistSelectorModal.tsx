@@ -101,7 +101,6 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
 
   return (
     <div className="bg-base-300 rounded-lg p-3 mt-2 space-y-3 border border-base-content/10">
-      {/* Description */}
       <Field label={t('playlist.description')}>
         <input
           type="text"
@@ -113,7 +112,6 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
         />
       </Field>
 
-      {/* Duration */}
       <Field label={t('playlist.durationMinutes')}>
         <input
           type="number"
@@ -126,7 +124,6 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
         />
       </Field>
 
-      {/* Date */}
       <Field label={t('playlist.date')}>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-1 cursor-pointer">
@@ -170,7 +167,6 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
         )}
       </Field>
 
-      {/* Save / cancel */}
       <div className="flex gap-2 justify-end">
         <button
           type="button"
@@ -259,7 +255,7 @@ export default function PlaylistSelectorModal({
     setEditingIndex(null);
   }, [playlistResult]);
 
-  // When global date changes, propagate to rows that haven't been individually edited
+  // When global date changes, propagate to rows that have not been individually edited
   // We track this simply: if a row's date equals the previous globalDate, update it
   const handleGlobalDateChange = useCallback(
     (newDate: Date) => {
@@ -313,7 +309,6 @@ export default function PlaylistSelectorModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="modal-box w-11/12 max-w-3xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
-        {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-base-content/10 gap-3 flex-shrink-0">
           <div className="min-w-0">
             <h2 className="text-lg font-bold truncate">
@@ -339,7 +334,6 @@ export default function PlaylistSelectorModal({
           </button>
         </div>
 
-        {/* Loading state */}
         {isFetching && (
           <div className="flex flex-col items-center justify-center flex-1 py-16 gap-4">
             <span className="loading loading-spinner loading-lg text-primary" />
@@ -349,10 +343,8 @@ export default function PlaylistSelectorModal({
           </div>
         )}
 
-        {/* Content */}
         {!isFetching && playlistResult && (
           <>
-            {/* Truncation warning */}
             {playlistResult.truncated && (
               <div className="alert alert-warning rounded-none border-x-0 border-t-0 py-2 px-5">
                 <span className="text-sm flex items-center gap-2">
@@ -363,9 +355,7 @@ export default function PlaylistSelectorModal({
               </div>
             )}
 
-            {/* Toolbar */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-base-content/10 flex-shrink-0 flex-wrap">
-              {/* Select all toggle */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -382,7 +372,6 @@ export default function PlaylistSelectorModal({
 
               <div className="flex-1" />
 
-              {/* Global date */}
               <div className="flex items-center gap-2 relative">
                 <span className="text-sm text-base-content/60">
                   {t('playlist.dateForAll')}
@@ -413,7 +402,6 @@ export default function PlaylistSelectorModal({
               </div>
             </div>
 
-            {/* Video list */}
             <div className="overflow-y-auto flex-1 divide-y divide-base-content/8">
               {rows.map((row, idx) => {
                 const { playlistVideo, selected, override } = row;
@@ -431,7 +419,6 @@ export default function PlaylistSelectorModal({
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Checkbox */}
                       <div className="pt-0.5">
                         <input
                           type="checkbox"
@@ -441,7 +428,6 @@ export default function PlaylistSelectorModal({
                         />
                       </div>
 
-                      {/* Thumbnail */}
                       {playlistVideo.video.contentImage ? (
                         <img
                           src={playlistVideo.video.contentImage}
@@ -456,7 +442,6 @@ export default function PlaylistSelectorModal({
                         </div>
                       )}
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-medium leading-snug line-clamp-2">
                           {override.description}
@@ -476,7 +461,6 @@ export default function PlaylistSelectorModal({
                         </div>
                       </div>
 
-                      {/* Edit button */}
                       <button
                         type="button"
                         className={`btn btn-ghost btn-sm btn-circle flex-shrink-0 mt-0.5 ${
@@ -493,7 +477,6 @@ export default function PlaylistSelectorModal({
                       </button>
                     </div>
 
-                    {/* Inline editor */}
                     {isEditing && (
                       <VideoEditor
                         override={override}
@@ -508,7 +491,6 @@ export default function PlaylistSelectorModal({
               })}
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-between gap-3 p-4 border-t border-base-content/10 flex-shrink-0">
               <button
                 type="button"
@@ -537,7 +519,6 @@ export default function PlaylistSelectorModal({
           </>
         )}
 
-        {/* Empty / error state */}
         {!isFetching && !playlistResult && (
           <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3 text-base-content/50">
             <p className="text-sm">{t('playlist.noData')}</p>

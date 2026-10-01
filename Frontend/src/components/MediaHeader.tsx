@@ -258,7 +258,7 @@ export default function MediaHeader() {
       },
     });
 
-  // Only fetched once the removal modal is opened — it tells the user how many
+  // Only fetched once the removal modal is opened: it tells the user how many
   // logs (and how much XP) removing this media would delete.
   const { data: removalStats, isLoading: isLoadingRemovalStats } =
     useQuery<IMediaStats>({
@@ -301,7 +301,7 @@ export default function MediaHeader() {
               : prev
         );
 
-        // Logs were deleted, so XP/streaks/stats change too — refresh broadly
+        // Logs were deleted, so XP/streaks/stats change too: refresh broadly
         void queryClient.invalidateQueries({
           predicate: (query) =>
             Array.isArray(query.queryKey) &&

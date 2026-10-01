@@ -213,7 +213,6 @@ export default function ShareStatsModal({
           </button>
         </div>
 
-        {/* Range selector */}
         <div className="join mb-3 w-full">
           {RANGE_OPTIONS.map((opt) => (
             <button
@@ -255,7 +254,6 @@ export default function ShareStatsModal({
           </div>
         )}
 
-        {/* Preview */}
         <div className="relative flex items-center justify-center surface-muted p-3 min-h-[320px]">
           {mode === 'custom' && !customReady ? (
             <p className="text-sm text-base-content/60">
@@ -277,7 +275,6 @@ export default function ShareStatsModal({
           )}
         </div>
 
-        {/* Actions */}
         <div className="modal-action">
           <button
             type="button"

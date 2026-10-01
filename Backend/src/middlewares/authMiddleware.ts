@@ -78,7 +78,7 @@ async function authenticateRequest(
         return null;
       }
 
-      // Update lastUsedAt (fire-and-forget, don't block the request)
+      // Update lastUsedAt (fire-and-forget, do not block the request)
       ApiKey.updateOne({ _id: apiKey._id }, { lastUsedAt: new Date() }).exec();
 
       return user;

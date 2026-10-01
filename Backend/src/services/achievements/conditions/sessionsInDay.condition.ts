@@ -12,7 +12,7 @@ export async function evaluateSessionsInDay(
   timezone = 'UTC'
 ): Promise<{ met: boolean; progress: number }> {
   const result = await Log.aggregate([
-    // unknownDate logs have a placeholder date — they don't belong to any real day
+    // unknownDate logs have a placeholder date: they do not belong to any real day
     { $match: { user: userId, unknownDate: { $ne: true } } },
     {
       $group: {

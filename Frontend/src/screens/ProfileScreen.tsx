@@ -114,7 +114,6 @@ function ProfileScreen() {
     | 'tv show'
     | 'book'
     | 'audio'
-    | 'other'
   >('all');
   const [achievementCategory, setAchievementCategory] = useState<
     'all' | AchievementCategory
@@ -213,7 +212,7 @@ function ProfileScreen() {
     sortDirection,
   ]);
 
-  // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
+  // Sort options differ by feed kind: reset to a value valid for the newly selected kind.
   // "all" supports every field (items missing it sort to the end), so it never needs a reset.
   useEffect(() => {
     const logOnlyFields = [
@@ -275,8 +274,9 @@ function ProfileScreen() {
     | 'game'
     | 'video'
     | 'movie'
-    | 'audio'
-    | 'other' => {
+    | 'tv show'
+    | 'book'
+    | 'audio' => {
     return [
       'anime',
       'manga',
@@ -286,8 +286,9 @@ function ProfileScreen() {
       'game',
       'video',
       'movie',
+      'tv show',
+      'book',
       'audio',
-      'other',
     ].includes(value);
   };
 
@@ -538,9 +539,9 @@ function ProfileScreen() {
     sortDirection,
   ]);
 
-  // Unified feed (achievements + log groups). Sorting by a field only one
-  // kind has (e.g. XP on logs, Rarity on achievements) pushes the other
-  // kind's items — which lack that field — to the end, in chronological order.
+  // Do not sort by a field that only one type has, such as XP or rarity.
+  // The other type lacks that field and would move to the end of the list.
+  // Sort both types by date to preserve chronological order.
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
     const logItems: UnifiedFeedItem[] = displayedLogs.map((log) => ({
       kind: 'log',
@@ -616,7 +617,7 @@ function ProfileScreen() {
   const isOwner = username === loggedUser?.username;
   const profileLayout = resolveProfileLayout(user?.profileLayout);
 
-  // Left-column widgets keyed by id — rendered in the order/visibility the
+  // Left-column widgets keyed by id: rendered in the order/visibility the
   // owner configured in Settings → Profile (see resolveProfileLayout).
   const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
     profileStats:
@@ -806,7 +807,6 @@ function ProfileScreen() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="card-title self-start">{username}'s Activity</h2>
-                {/* Kind filter */}
                 <div className="dropdown dropdown-end">
                   <div
                     tabIndex={0}
@@ -847,9 +847,7 @@ function ProfileScreen() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {/* Search Bar and Filter Dropdowns Row */}
                 <div className="flex flex-col lg:flex-row lg:flex-wrap gap-4">
-                  {/* Search Bar */}
                   <div className="flex-1 min-w-[180px] lg:max-w-md">
                     <label className="input flex items-center gap-2">
                       <Search className="w-5 h-5 opacity-70" />
@@ -863,7 +861,6 @@ function ProfileScreen() {
                     </label>
                   </div>
 
-                  {/* Filter Dropdowns */}
                   <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                     {/* Type Filter Dropdown (logs only) */}
                     {feedKind !== 'achievements' && (
@@ -926,10 +923,6 @@ function ProfileScreen() {
                             {
                               value: 'audio',
                               label: tCommon('mediaTypes.audio'),
-                            },
-                            {
-                              value: 'other',
-                              label: tCommon('mediaTypes.other'),
                             },
                           ].map((option) => (
                             <li key={option.value}>
@@ -995,7 +988,6 @@ function ProfileScreen() {
                       </div>
                     )}
 
-                    {/* Date Filter Dropdown */}
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
                       <div
                         tabIndex={0}
@@ -1066,7 +1058,6 @@ function ProfileScreen() {
                       </ul>
                     </div>
 
-                    {/* Combined Sort Filter Dropdown */}
                     <div className="dropdown dropdown-end flex-1 sm:flex-none">
                       <div
                         tabIndex={0}
@@ -1175,7 +1166,7 @@ function ProfileScreen() {
                             setCustomStartDate(date);
                             // Close dropdown by removing focus
                             (document.activeElement as HTMLElement)?.blur?.();
-                            // Reset end date if it's before the new start date
+                            // Reset end date if it is before the new start date
                             if (customEndDate && date && customEndDate < date) {
                               setCustomEndDate(undefined);
                             }
@@ -1190,9 +1181,8 @@ function ProfileScreen() {
 
                     <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
                       <div
-                        // Not a <button>, so `btn-disabled` is the right class
-                        // here — but on its own it only blocks pointer events,
-                        // so the tab stop and the ARIA state go with it.
+                        // This is a div, not a button. The class only blocks pointer events.
+                        // Keep tabIndex and ARIA state in sync with the disabled state.
                         tabIndex={customStartDate ? 0 : -1}
                         role="button"
                         aria-disabled={!customStartDate}
@@ -1245,7 +1235,6 @@ function ProfileScreen() {
                   </div>
                 )}
 
-                {/* Active Filters - Now below everything else */}
                 {(dateFilter !== 'all' ||
                   (feedKind !== 'achievements' && filterType !== 'all') ||
                   (feedKind !== 'logs' && achievementCategory !== 'all') ||
@@ -1494,7 +1483,7 @@ function ProfileScreen() {
                 </button>
               </>
             ) : (
-              // Show ALL — unified chronological mix
+              // Show ALL: unified chronological mix
               <>
                 {unifiedFeed.length === 0 ? (
                   <div className="card w-full surface p-4">
@@ -1513,7 +1502,7 @@ function ProfileScreen() {
                           />
                         );
                       }
-                      // Log — find group
+                      // Log: find group
                       const log = item.data;
                       const groupKey =
                         log.playlistBatchId?.trim() || `single:${log._id}`;

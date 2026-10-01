@@ -107,7 +107,7 @@ export async function searchAnilist(variables: {
 /**
  * AniList fuzzy dates can have null parts (e.g. a year with no known day).
  * Anything without at least a year is unusable. Start dates use the beginning
- * of the known period; inclusive end dates use its final millisecond.
+ * of the known period. Inclusive end dates use its final millisecond.
  */
 export function toFuzzyDate(
   date:

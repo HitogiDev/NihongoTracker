@@ -654,7 +654,6 @@ function AdminScreen() {
   return (
     <div className="min-h-screen bg-base-200 pt-20">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-base-content mb-2">
             Admin Dashboard
@@ -664,7 +663,6 @@ function AdminScreen() {
           </p>
         </div>
 
-        {/* Tabs */}
         <div role="tablist" className="tabs tabs-border mb-8">
           <button
             className={`tab ${selectedTab === 'overview' ? 'tab-active' : ''}`}
@@ -802,10 +800,8 @@ function AdminScreen() {
           </button>
         </div>
 
-        {/* Requests Tab */}
         {selectedTab === 'requests' && <MediaRequestQueue />}
 
-        {/* Media Tab */}
         {selectedTab === 'media' && <MediaEditPanel />}
 
         {selectedTab === 'bans' && (
@@ -931,7 +927,6 @@ function AdminScreen() {
           </section>
         )}
 
-        {/* Overview Tab */}
         {selectedTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1210,7 +1205,7 @@ function AdminScreen() {
                           <div className="flex items-center gap-3">
                             <div
                               // Gold/silver/bronze are the medal colours, not
-                              // brand colours — they must stay the same on
+                              // brand colours: they must stay the same on
                               // every theme, so raw palette values are correct
                               // here.
                               className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'}`}
@@ -1377,7 +1372,6 @@ function AdminScreen() {
           </div>
         )}
 
-        {/* Users Tab */}
         {selectedTab === 'users' && (
           <>
             <div className="space-y-6">
@@ -1802,7 +1796,6 @@ function AdminScreen() {
           </>
         )}
 
-        {/* Logs Tab */}
         {selectedTab === 'logs' && (
           <div className="space-y-6">
             <div className="card surface">
@@ -2148,7 +2141,6 @@ function AdminScreen() {
           </div>
         )}
 
-        {/* Changelogs Tab */}
         {selectedTab === 'changelogs' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -2329,7 +2321,6 @@ function AdminScreen() {
               </div>
             </div>
 
-            {/* Changelog Modal */}
             {changelogModalOpen && selectedChangelog && (
               <dialog className="modal modal-bottom sm:modal-middle" open>
                 <div className="modal-box max-w-3xl">
@@ -2604,7 +2595,6 @@ function AdminScreen() {
           </div>
         )}
 
-        {/* System Tab */}
         {selectedTab === 'system' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -3092,7 +3082,6 @@ function AdminScreen() {
                 </div>
               </div>
 
-              {/* VNDB Dump Sync Status */}
               <div className="card surface lg:col-span-2">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">

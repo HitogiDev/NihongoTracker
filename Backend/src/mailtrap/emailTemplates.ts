@@ -2,7 +2,7 @@ import { getEmailStrings, resolveEmailLanguage } from '../i18n/emailStrings.js';
 
 /**
  * Email bodies are built per language from `i18n/emailStrings.ts`. The markup
- * is shared; only the copy and the `<html lang>` change.
+ * is shared. Only the copy and the `<html lang>` change.
  */
 
 const BODY_STYLE =

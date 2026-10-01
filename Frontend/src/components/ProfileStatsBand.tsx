@@ -90,11 +90,11 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const hideRankingFeatures = useHideRankingFeatures();
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  // daisyUI tooltips are hover-only; touch devices need an explicit toggle.
+  // daisyUI tooltips are hover-only. Touch devices need an explicit toggle.
   const [totalTimeTipOpen, setTotalTimeTipOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
-    // Collapsed by default — only expanded if the user explicitly opened it before.
+    // Collapsed by default: only expanded if the user explicitly opened it before.
     return window.localStorage.getItem(SECTION_COLLAPSE_KEY) !== '0';
   });
   const [rankMode, setRankMode] = useState<RankMode>(() => {
@@ -226,7 +226,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   return (
     <div className="card w-full surface">
       <div className="card-body w-full p-4 sm:p-6 flex flex-col gap-3">
-        {/* Header row — always visible, toggles the whole section */}
+        {/* Header row: always visible, toggles the whole section */}
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -274,7 +274,6 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
           <>
              {!hideRankingFeatures && (
                <>
-             {/* Rankings */}
              <div className="flex flex-wrap items-end gap-x-10 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
@@ -398,7 +397,6 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                </>
              )}
 
-             {/* Totals */}
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">

@@ -26,7 +26,6 @@ function GoalsScreen() {
           </div>
         </div>
 
-        {/* Immersion Goals Section */}
         <div className="mb-8">
           <ImmersionGoals username={username} />
           {username === loggedInUser?.username && <ImmersionPlanner />}

@@ -384,7 +384,7 @@ export default function ProgressChart({
     }
   }
 
-  // Check if there's actual data (sum of all values > 0)
+  // Check if there is actual data (sum of all values > 0)
   const hasData: boolean = metricValues.some((value) => value > 0);
 
   function filterLogsByTimeframe(logs: ILog[], timeframe: string) {

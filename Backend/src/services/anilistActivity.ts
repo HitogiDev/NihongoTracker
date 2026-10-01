@@ -6,13 +6,13 @@
  */
 
 /**
- * Episodes covered by a list activity, or 0 when it isn't episode progress.
+ * Episodes covered by a list activity, or 0 when it is not episode progress.
  *
  * AniList phrases these as a status plus a progress string: "watched episode"
  * with "5", or "12 - 14" when several episodes were ticked off at once.
  * Status changes ("plans to watch", "completed", "dropped") carry no episode
  * count of their own and are not immersion. "rewatched episode" matches the
- * same substring as "watched episode", which is deliberate — a rewatch is
+ * same substring as "watched episode", which is deliberate: a rewatch is
  * still time spent listening.
  */
 export function parseEpisodeProgress(
@@ -25,14 +25,13 @@ export function parseEpisodeProgress(
 }
 
 /**
- * The inclusive episode range a list activity covers, or `null` when it isn't
+ * The inclusive episode range a list activity covers, or `null` when it is not
  * episode progress.
  *
- * AniList combines several consecutive progress updates for the same show into
- * one activity, replacing the originals with a brand-new activity id whose
- * progress spans the whole range ("1" and "2 - 3" become "1 - 3"). Keeping the
- * range — not just the count — is what lets the sync recognise the merged
- * activity as superseding the logs it absorbed instead of duplicating them.
+ * AniList combines progress updates for the same show into one activity.
+ * It assigns a new ID to the merged activity and combines the episode ranges.
+ * Keep the full range, not only the count, so the sync can match the new
+ * activity with the logs it replaces.
  */
 export function parseEpisodeRange(
   status?: string | null,

@@ -41,7 +41,7 @@ const SPEED_WINDOW = 50;
 
 /**
  * Rolling median over the last SPEED_WINDOW reading-speed samples, tracked
- * per log type with a category-wide fallback — mirrors
+ * per log type with a category-wide fallback: mirrors
  * getUserReadingSpeedCph's behavior for the live path.
  */
 class RollingSpeed {

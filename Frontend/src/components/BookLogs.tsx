@@ -317,7 +317,6 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
 
   return (
     <div className="w-full p-4">
-      {/* Auto-match warning modal */}
       {showAutoMatchModal && (
         <dialog open className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -387,7 +386,6 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left panel - Log groups */}
         <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">{t('matcher.unassignedLogs')}</h2>
@@ -463,7 +461,6 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
           </div>
         </div>
 
-        {/* Right panel - Book search */}
         <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">

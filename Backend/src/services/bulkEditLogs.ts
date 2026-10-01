@@ -15,7 +15,7 @@ const editableFields = [
 
 const logTypes: ReadonlySet<string> = new Set([
   'light-novel', 'reading', 'anime', 'vn', 'video', 'manga',
-  'audio', 'movie', 'tv show', 'other', 'game', 'book',
+  'audio', 'movie', 'tv show', 'game', 'book',
 ]);
 
 type BulkEditField = (typeof editableFields)[number];

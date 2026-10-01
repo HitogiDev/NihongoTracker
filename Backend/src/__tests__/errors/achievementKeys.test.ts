@@ -22,10 +22,8 @@ function translatedItems(language: string): Record<string, unknown> {
 }
 
 /**
- * Achievement text is stored in English in MongoDB and translated client-side
- * from the stable `key`. Nothing at runtime notices when a newly seeded
- * achievement has no translation — it silently falls back to English — so this
- * is the guard that catches it.
+ * Achievement text is stored in English and translated on the client by key.
+ * A missing translation falls back to English. This test catches that gap.
  */
 describe('achievement translations', () => {
   const keys = seededKeys();

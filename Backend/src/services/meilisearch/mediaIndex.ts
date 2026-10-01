@@ -62,8 +62,8 @@ export async function initMediaIndexes() {
   const failed: string[] = [];
 
   // Per-index error handling: one index failing to initialize must not stop the
-  // rest from being created (that would leave later indexes — e.g. newly added
-  // ones — missing, and multi-search 400s on a missing index).
+  // rest from being created (that would leave later indexes: e.g. newly added
+  // ones: missing, and multi-search 400s on a missing index).
   for (const indexName of MEDIA_INDEXES) {
     try {
       if (!existing.has(indexName)) {
@@ -246,7 +246,7 @@ export async function syncApprovedRequestMedia(): Promise<number> {
 
 export async function syncAllMedia() {
   try {
-    // Check if any index is empty — only sync those
+    // Check if any index is empty: only sync those
     const emptyChecks = await Promise.all(
       MEDIA_INDEXES.map(async (idx) => ({
         index: idx,

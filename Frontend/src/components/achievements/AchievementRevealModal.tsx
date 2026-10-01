@@ -49,7 +49,7 @@ export default function AchievementRevealModal({
   const a = current?.achievement;
   const isLast = currentIndex === achievements.length - 1;
 
-  // Overlay fades in once — not again on every card.
+  // Fade in the overlay once, not on each card.
   useEffect(() => {
     gsap.fromTo(
       overlayRef.current,
@@ -109,7 +109,7 @@ export default function AchievementRevealModal({
   }, [currentIndex, a]);
 
   // Text intro runs in its own effect so it fires after the elements are
-  // actually mounted — animating straight from the timeline callback hit the
+  // actually mounted: animating straight from the timeline callback hit the
   // refs while they were still null, leaving the text stuck at opacity 0.
   useEffect(() => {
     if (!showContent) return;
@@ -168,14 +168,12 @@ export default function AchievementRevealModal({
         if (e.target === e.currentTarget) handleDismiss();
       }}
     >
-      {/* Legendary reveal flash */}
       <div
         ref={flashRef}
         className="pointer-events-none absolute inset-0 bg-white"
         style={{ opacity: 0 }}
       />
 
-      {/* Count indicator */}
       {achievements.length > 1 && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2">
           {achievements.map((_, i) => (
@@ -189,14 +187,11 @@ export default function AchievementRevealModal({
         </div>
       )}
 
-      {/* Card container */}
       <div className="flex flex-col items-center gap-6 px-4 max-w-sm w-full">
-        {/* Achievement unlocked label */}
         <div className="text-xs font-bold uppercase tracking-widest text-white/70">
           {t('reveal.unlocked')}
         </div>
 
-        {/* 3D flip card */}
         <div className="achievement-flip-scene w-48 h-48">
           {/* Keyed on the index so advancing mounts a fresh card: reusing the
               node would play the 0.8s flip in reverse, briefly showing the next
@@ -205,14 +200,13 @@ export default function AchievementRevealModal({
             key={currentIndex}
             className={`achievement-flip-card ${isFlipped ? 'flipped' : ''}`}
           >
-            {/* Front — unrevealed ? card */}
+            {/* Front: unrevealed ? card */}
             <div className="achievement-flip-front surface-muted flex items-center justify-center">
               <span className="text-7xl font-black text-base-content/20">
                 ?
               </span>
             </div>
 
-            {/* Back — real achievement */}
             <div
               className={`achievement-flip-back rounded-2xl border bg-base-100 flex items-center justify-center ${
                 isFlipped ? 'achievement-glow' : ''
@@ -238,7 +232,6 @@ export default function AchievementRevealModal({
           </div>
         </div>
 
-        {/* Achievement info */}
         {showContent && (
           <div className="text-center flex flex-col gap-2">
             <h2
@@ -286,7 +279,6 @@ export default function AchievementRevealModal({
           </div>
         )}
 
-        {/* Action buttons */}
         <div className="flex gap-3 mt-2">
           <button onClick={handleNext} className="btn btn-primary btn-sm px-6">
             {isLast

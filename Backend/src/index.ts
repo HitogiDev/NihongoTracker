@@ -267,7 +267,7 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('receive_line', lineData);
       }
     } catch {
-      // Ignore failed room updates; the client can retry.
+      // Ignore failed room updates. The client can retry.
     }
   });
 
@@ -281,7 +281,7 @@ io.on('connection', (socket) => {
       );
       socket.to(roomId).emit('lines_deleted', { lineIds });
     } catch {
-      // Ignore failed room updates; the client can retry.
+      // Ignore failed room updates. The client can retry.
     }
   });
 
@@ -304,7 +304,7 @@ io.on('connection', (socket) => {
       );
       socket.to(roomId).emit('lines_restored', { lines });
     } catch {
-      // Ignore failed room updates; the client can retry.
+      // Ignore failed room updates. The client can retry.
     }
   });
 

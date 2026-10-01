@@ -5,7 +5,7 @@ import Log from '../../../models/log.model.js';
  * Counts how many distinct titles the user has logged.
  * Used for Century Club (100 different titles).
  *
- * Logs with no linked media (free-form entries) can't be told apart, so they
+ * Logs with no linked media (free-form entries) cannot be told apart, so they
  * are skipped rather than each counting as a title.
  */
 export async function evaluateDistinctMediaCount(

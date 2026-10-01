@@ -42,7 +42,7 @@ function soleTypeContext(list: IMediaList): string | undefined {
 
 interface PosterStackProps {
   posters: IMediaDocument[];
-  /** Poster width in px at a full stack; scaled up when fewer posters exist. */
+  /** Poster width in px at a full stack. Scaled up when fewer posters exist. */
   width: number;
   height: number;
   /** Visible sliver of each overlapped poster, in px at a full stack. */

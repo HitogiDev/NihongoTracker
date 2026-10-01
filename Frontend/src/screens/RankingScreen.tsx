@@ -995,9 +995,8 @@ function RankingScreen() {
 
                       <div className="dropdown dropdown-bottom">
                         <div
-                          // Not a <button>, so `btn-disabled` is the right class
-                          // here — but on its own it only blocks pointer events,
-                          // so the tab stop and the ARIA state go with it.
+                          // This is a div, not a button. The class only blocks pointer events.
+                          // Keep tabIndex and ARIA state in sync with the disabled state.
                           tabIndex={customStartDate ? 0 : -1}
                           role="button"
                           aria-disabled={!customStartDate}
@@ -1198,7 +1197,6 @@ function RankingScreen() {
             </ul>
           </div>
 
-          {/* Medium filters */}
           <div
             className="dropdown dropdown-end w-full sm:w-auto"
             hidden={mode !== 'medium'}
@@ -1806,7 +1804,7 @@ function RankingScreen() {
                           user.customization
                         );
 
-                        // Skip top 3 in the table if they're already shown in podium
+                        // Skip top 3 in the table if they are already shown in podium
                         if (
                           (mode === 'global' &&
                             rank <= 3 &&
@@ -1865,7 +1863,6 @@ function RankingScreen() {
                                     >
                                       {user.username}
                                     </span>
-                                    {/* Patreon Badge */}
                                     {patreonBadge && (
                                       <div
                                         className={`badge badge-sm gap-1 hidden sm:inline-flex ${patreonBadge.colorClass} md:max-w-none md:overflow-visible md:whitespace-normal max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap`}

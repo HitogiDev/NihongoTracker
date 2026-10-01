@@ -232,7 +232,7 @@ export async function handleAnilistOAuthCallback(
 
     const expiresIn: number | undefined = tokenResponse.data?.expires_in;
     const now = new Date();
-    // Relinking the same account keeps its watermark so nothing is replayed;
+    // Relinking the same account keeps its watermark so nothing is replayed.
     // linking a different one starts clean from this moment.
     const previous = user.anilist;
     const isSameAccount = previous?.anilistId === viewer.id;
@@ -310,7 +310,7 @@ export async function updateAnilistSettings(
       user.anilist.autoSync = req.body.autoSync;
     }
 
-    // The frontend sends the whole desired exclusion list; dedupe and drop
+    // The frontend sends the whole desired exclusion list. Dedupe and drop
     // entries without a numeric AniList id.
     if (Array.isArray(req.body?.excludedMedia)) {
       const seen = new Set<number>();
@@ -412,7 +412,7 @@ export async function backfillAnilist(
   return runSync(req, res, next, { backfill: true });
 }
 
-/** Logs this integration created, newest first — shown in settings. */
+/** Logs this integration created, newest first: shown in settings. */
 export async function getAnilistSyncedLogs(
   req: Request,
   res: Response,

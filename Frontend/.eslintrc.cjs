@@ -1,7 +1,7 @@
 /**
  * `no-restricted-syntax` below guards the UI conventions documented in
  * CLAUDE.md > UI Conventions (Frontend). Each selector matches a class name
- * inside a `className` attribute — either a plain string literal, a string
+ * inside a `className` attribute: either a plain string literal, a string
  * literal inside a conditional, or a chunk of a template literal.
  */
 const DEAD_V4_CLASSES = [

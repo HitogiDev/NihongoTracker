@@ -383,7 +383,6 @@ function CreateClubScreen() {
 
   return (
     <div className="min-h-screen bg-base-200">
-      {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 to-secondary/10 pt-28 pb-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4 mb-6">
@@ -405,11 +404,9 @@ function CreateClubScreen() {
         </div>
       </div>
 
-      {/* Form */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Basic Information Card */}
             <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
@@ -417,7 +414,6 @@ function CreateClubScreen() {
                   {t('create.basicInfo')}
                 </h2>
 
-                {/* Club Name */}
                 <div>
                   <fieldset className="fieldset">
                     <legend className="fieldset-legend font-medium">
@@ -445,7 +441,6 @@ function CreateClubScreen() {
                   )}
                 </div>
 
-                {/* Description */}
                 <div>
                   <fieldset className="fieldset w-full">
                     <legend className="fieldset-legend font-medium">
@@ -471,7 +466,6 @@ function CreateClubScreen() {
                   )}
                 </div>
 
-                {/* Privacy Settings */}
                 <Field label={t('create.privacy')}>
                   <div className="flex gap-4">
                     <label className="label cursor-pointer flex-1 surface-muted p-4">
@@ -518,7 +512,6 @@ function CreateClubScreen() {
                   </div>
                 </Field>
 
-                {/* Member Limit */}
                 <Field label={t('create.memberLimit')}>
                   <div className="flex items-center gap-4">
                     <input
@@ -560,7 +553,6 @@ function CreateClubScreen() {
               </div>
             </div>
 
-            {/* Tags Card */}
             <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
@@ -571,7 +563,6 @@ function CreateClubScreen() {
                   {t('create.tagsHint')}
                 </p>
 
-                {/* Add Tag Input */}
                 <div className="flex gap-2 mb-4">
                   <input
                     type="text"
@@ -599,7 +590,6 @@ function CreateClubScreen() {
                   </button>
                 </div>
 
-                {/* Current Tags */}
                 {(formData.tags?.length || 0) > 0 && (
                   <div className="mb-4">
                     <p className="text-sm font-medium mb-2">
@@ -622,7 +612,6 @@ function CreateClubScreen() {
                   </div>
                 )}
 
-                {/* Predefined Tags */}
                 <div>
                   <p className="text-sm font-medium mb-2">
                     {t('create.suggestedTags')}
@@ -646,7 +635,6 @@ function CreateClubScreen() {
               </div>
             </div>
 
-            {/* Club Media Card */}
             <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
@@ -658,7 +646,6 @@ function CreateClubScreen() {
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* Club Profile Picture */}
                   <div className="flex-1">
                     <label className="label font-medium">
                       <span>{t('create.icon')}</span>
@@ -707,7 +694,6 @@ function CreateClubScreen() {
                     </div>
                   </div>
 
-                  {/* Club Banner */}
                   <div className="flex-1">
                     <label className="label font-medium">
                       <span>{t('create.banner')}</span>
@@ -755,7 +741,6 @@ function CreateClubScreen() {
               </div>
             </div>
 
-            {/* Rules Card */}
             <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
@@ -803,7 +788,6 @@ function CreateClubScreen() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-end gap-4">
               <button
                 type="button"
@@ -854,7 +838,6 @@ function CreateClubScreen() {
         getInitialCrop={getInitialBannerCrop}
       />
 
-      {/* Hidden canvases for preview */}
       <canvas ref={avatarPreviewCanvasRef} className="hidden" />
       <canvas ref={bannerPreviewCanvasRef} className="hidden" />
     </div>

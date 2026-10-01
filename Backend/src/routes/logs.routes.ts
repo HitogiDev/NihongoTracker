@@ -60,7 +60,7 @@ router.post<ParamsDictionary, any, ICreateLog>(
   createLog
 );
 
-// XP preview for the log form — computes without persisting
+// XP preview for the log form: computes without persisting
 router.post('/preview-xp', protect, calculateXp, previewLogXp);
 router.post('/calculate-xp', optionalProtect, calculateXpScenarioPreview);
 
@@ -80,7 +80,7 @@ router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 
 router.post('/sync-manabe-ids', protect, syncManabeIds);
 
-// Bulk delete — must be registered BEFORE /:id to avoid route conflict
+// Bulk delete: must be registered BEFORE /:id to avoid route conflict
 router.delete('/bulk', protect, deleteLogsBulk);
 router.patch('/bulk', protect, updateLogsBulk);
 

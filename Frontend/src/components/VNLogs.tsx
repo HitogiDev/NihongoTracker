@@ -343,7 +343,6 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
 
   return (
     <div className="w-full p-4">
-      {/* Auto-match warning modal */}
       {showAutoMatchModal && (
         <dialog open className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
@@ -427,7 +426,6 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left panel - Log groups */}
         <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">{t('matcher.unassignedLogs')}</h2>
@@ -516,7 +514,6 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
           </div>
         </div>
 
-        {/* Right panel - VN search */}
         <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">

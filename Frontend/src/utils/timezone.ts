@@ -2,7 +2,7 @@ import i18n from '../i18n';
 
 /**
  * The active UI language. This module is inherently locale-aware, so it reads
- * the i18next singleton directly rather than taking a locale parameter — that
+ * the i18next singleton directly rather than taking a locale parameter: that
  * keeps the ~40 existing call sites correct without touching any of them.
  */
 export const getLocale = (): string => i18n.language || 'en';
@@ -336,16 +336,12 @@ export const formatRelativeDateInTimezone = (
 };
 
 /**
- * Day/time bucketing in the user's configured timezone.
- *
- * A log stores one instant, but every day-based reader (streaks, heatmap,
- * rankings) buckets it by the calendar day that instant falls on *in the user's
- * configured timezone*. Write paths therefore have to build instants in the
- * same frame. Using the browser's local timezone instead is what made backdated
- * logs land a day early (missing the heatmap cell and leaving the streak hole
- * unfilled) and made editing an evening log's date a silent no-op: the day was
- * read back in UTC while the replacement was built in local time, so for a log
- * whose UTC day and local day differ the "new" instant equalled the old one.
+ * Group log dates by the user's configured timezone.
+ * Logs store instants. Streaks, heatmaps, and rankings use each log's local calendar day.
+ * Build write-path dates in the same timezone.
+ * Browser-local time shifted some backdated logs one day early.
+ * That caused missing heatmap cells and streak gaps.
+ * It also made some edits keep the old instant when UTC and local dates differed.
  */
 function zonedParts(
   date: Date,
@@ -358,7 +354,7 @@ function zonedParts(
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    // h23 keeps midnight as "00" — hour12:false reports it as "24" in some engines.
+    // h23 keeps midnight as "00": hour12:false reports it as "24" in some engines.
     hourCycle: 'h23',
   }).formatToParts(date);
 
@@ -378,7 +374,7 @@ function zonedParts(
 function zoneOffsetMs(date: Date, timeZone: string): number {
   const { year, month, day, hour, minute } = zonedParts(date, timeZone);
   const asIfUtc = Date.UTC(year, month - 1, day, hour, minute);
-  // Seconds/ms don't shift across timezones, so compare on whole minutes.
+  // Seconds/ms do not shift across timezones, so compare on whole minutes.
   return asIfUtc - Math.floor(date.getTime() / 60000) * 60000;
 }
 
@@ -414,7 +410,7 @@ export const getTimeInTimezone = (
 
 /**
  * The instant at which the given wall clock (`YYYY-MM-DD` + `HH:mm`) reads in
- * `timezone` — the inverse of the two helpers above.
+ * `timezone`: the inverse of the two helpers above.
  */
 export const zonedDayTimeToUtc = (
   dayKey: string,
@@ -442,7 +438,7 @@ export const zonedDayTimeToUtc = (
  * Turn a calendar day picked in a date picker into the instant to store.
  *
  * Date pickers hand back local midnight of the chosen day, which is an instant
- * in the *browser's* timezone — re-read in the user's configured timezone it
+ * in the *browser's* timezone: re-read in the user's configured timezone it
  * can be the previous or next day, so a backdated log missed the heatmap cell
  * and the streak hole it was meant to fill. Anchor the day in the user's own
  * timezone instead: at the current time when they picked today, otherwise at

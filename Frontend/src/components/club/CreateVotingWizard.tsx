@@ -79,7 +79,7 @@ export default function CreateVotingWizard({
   const { t } = useTranslation(['clubs', 'common']);
   // MEDIA_TYPES is `as const`, so labelKey is a union of literal keys.
   // `t` cannot be typed over a key union, so widen it for those two call
-  // sites only; the keys themselves are still checked at the array.
+  // sites only. The keys themselves are still checked at the array.
   const tKey = t as (key: (typeof MEDIA_TYPES)[number]['labelKey']) => string;
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,7 +156,7 @@ export default function CreateVotingWizard({
         }
       }
 
-      // Step 3: Only finalize the voting if it's manual submission
+      // Step 3: Only finalize the voting if it is manual submission
       // For member suggestions, leave it in 'suggestions_open' status
       if (votingData.candidateSubmissionType === 'manual') {
         await finalizeVotingFn(club._id, createdVotingId);
@@ -343,7 +343,7 @@ export default function CreateVotingWizard({
 
   const handleStep1Submit = () => {
     if (!validateStep1()) return;
-    // Just move to next step, don't create voting yet
+    // Just move to next step, do not create voting yet
     setCurrentStep(2);
   };
 
@@ -391,7 +391,6 @@ export default function CreateVotingWizard({
           </button>
         </div>
 
-        {/* Progress Steps */}
         <ul className="steps steps-vertical sm:steps-horizontal w-full mb-8">
           <div className={`step ${currentStep >= 1 ? 'step-primary' : ''}`}>
             {t('wizard.stepSetup')}
@@ -404,7 +403,6 @@ export default function CreateVotingWizard({
           </div>
         </ul>
 
-        {/* Step 1: Basic Information */}
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -576,7 +574,7 @@ export default function CreateVotingWizard({
                             }));
                             // Close dropdown by removing focus
                             (document.activeElement as HTMLElement)?.blur?.();
-                            // Reset end date if it's before the new start date
+                            // Reset end date if it is before the new start date
                             if (
                               votingData.suggestionEndDate &&
                               date &&
@@ -686,7 +684,7 @@ export default function CreateVotingWizard({
                         }));
                         // Close dropdown by removing focus
                         (document.activeElement as HTMLElement)?.blur?.();
-                        // Reset end date if it's before the new start date
+                        // Reset end date if it is before the new start date
                         if (
                           votingData.votingEndDate &&
                           date &&
@@ -817,7 +815,7 @@ export default function CreateVotingWizard({
                         }));
                         // Close dropdown by removing focus
                         (document.activeElement as HTMLElement)?.blur?.();
-                        // Reset end date if it's before the new start date
+                        // Reset end date if it is before the new start date
                         if (
                           votingData.consumptionEndDate &&
                           date &&
@@ -906,7 +904,6 @@ export default function CreateVotingWizard({
           </div>
         )}
 
-        {/* Step 2: Add Candidates */}
         {currentStep === 2 &&
           votingData.candidateSubmissionType === 'manual' && (
             <div className="space-y-6">
@@ -914,7 +911,6 @@ export default function CreateVotingWizard({
                 <div className="text-sm">{t('wizard.manualCandidatesNote')}</div>
               </div>
 
-              {/* Add Candidate Form */}
               <div className="card surface-muted">
                 <div className="card-body">
                   <h4 className="card-title text-lg">
@@ -945,7 +941,6 @@ export default function CreateVotingWizard({
                         )}
                       </div>
 
-                      {/* Search Results */}
                       {showResults &&
                         searchResults &&
                         searchResults.length > 0 && (
@@ -1047,7 +1042,6 @@ export default function CreateVotingWizard({
                 </div>
               </div>
 
-              {/* Current Candidates */}
               {candidates.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between gap-3 mb-4">
@@ -1104,7 +1098,6 @@ export default function CreateVotingWizard({
             </div>
           )}
 
-        {/* Step 2: Member Suggestions Info */}
         {currentStep === 2 &&
           votingData.candidateSubmissionType === 'member_suggestions' && (
             <div className="space-y-6">
@@ -1139,7 +1132,6 @@ export default function CreateVotingWizard({
             </div>
           )}
 
-        {/* Step 3: Confirmation */}
         {currentStep === 3 && (
           <div className="space-y-6">
             <div className="alert alert-success">
@@ -1225,7 +1217,6 @@ export default function CreateVotingWizard({
           </div>
         )}
 
-        {/* Navigation */}
         <div className="modal-action">
           {currentStep > 1 && (
             <button

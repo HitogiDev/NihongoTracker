@@ -261,7 +261,6 @@ function RegisterScreen() {
 
   return (
     <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -269,7 +268,6 @@ function RegisterScreen() {
 
       <div className="relative min-h-screen flex items-center justify-center p-4 lg:p-8">
         <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          {/* Left Side - Hero Content */}
           <div className="hidden lg:block space-y-8 p-8">
             <div className="space-y-6">
               <div className="inline-block">
@@ -311,7 +309,6 @@ function RegisterScreen() {
               </p>
             </div>
 
-            {/* Features List */}
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 rounded-lg bg-base-100/50 backdrop-blur-sm border border-base-300/50 hover:border-primary/50 transition-all">
                 <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
@@ -395,7 +392,6 @@ function RegisterScreen() {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-4">
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-primary">
@@ -424,7 +420,6 @@ function RegisterScreen() {
             </div>
           </div>
 
-          {/* Right Side - Registration Form */}
           <div className="flex justify-center lg:justify-end">
             <div
               ref={cardRef}
@@ -442,7 +437,6 @@ function RegisterScreen() {
                   <span>{t('register.form.subtitle')}</span>
                 </p>
 
-                {/* Username Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -638,7 +632,6 @@ function RegisterScreen() {
                   </Field>
                 </div>
 
-                {/* Email Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -706,7 +699,6 @@ function RegisterScreen() {
                   </Field>
                 </div>
 
-                {/* Password Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -812,7 +804,6 @@ function RegisterScreen() {
                   </Field>
                 </div>
 
-                {/* Password Confirmation Field */}
                 <div ref={addToRefs}>
                   <Field
                     label={
@@ -882,7 +873,6 @@ function RegisterScreen() {
                   </Field>
                 </div>
 
-                {/* Terms and Conditions */}
                 <div ref={addToRefs}>
                   <label className="label flex w-full min-w-0 cursor-pointer items-start justify-start gap-3 whitespace-normal rounded-lg p-3 transition-colors hover:bg-base-200/50">
                     <input
@@ -918,7 +908,6 @@ function RegisterScreen() {
                   </label>
                 </div>
 
-                {/* Submit Button */}
                 <div ref={addToRefs} className="mt-4 items-center">
                   <button
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
@@ -956,7 +945,6 @@ function RegisterScreen() {
                   </button>
                 </div>
 
-                {/* Login Link */}
                 <div
                   ref={addToRefs}
                   className="divider text-xs text-base-content/60"

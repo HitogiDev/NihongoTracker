@@ -92,7 +92,6 @@ function TimezonePicker({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger Button */}
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -122,10 +121,8 @@ function TimezonePicker({
         </svg>
       </button>
 
-      {/* Dropdown */}
       {isOpen && !disabled && (
         <div className="absolute z-50 w-full mt-1 surface-raised max-h-80 overflow-hidden">
-          {/* Search Input */}
           <div className="p-3 border-b border-base-300">
             <input
               ref={searchInputRef}
@@ -137,7 +134,6 @@ function TimezonePicker({
             />
           </div>
 
-          {/* Auto-detect option */}
           {detectedTimezone !== currentTimezone && (
             <div className="p-2 border-b border-base-300">
               <button
@@ -169,7 +165,6 @@ function TimezonePicker({
             </div>
           )}
 
-          {/* Timezone List */}
           <div className="max-h-48 overflow-y-auto">
             {filteredTimezones.length === 0 ? (
               <div className="p-3 text-center text-base-content/60">
@@ -196,7 +191,6 @@ function TimezonePicker({
             )}
           </div>
 
-          {/* Show More/Less Toggle */}
           {searchTerm === '' && (
             <div className="p-2 border-t border-base-300">
               <button

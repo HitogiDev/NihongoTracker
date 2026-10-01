@@ -10,7 +10,7 @@ import {
  * `hours` hours every single day.
  * Used for the secret Iron Will (7 days straight of 4h+).
  *
- * Days are bucketed in the user's timezone; unknownDate logs are ignored.
+ * Days are bucketed in the user's timezone. UnknownDate logs are ignored.
  * Progress is the longest qualifying run found.
  */
 export async function evaluateConsecutiveDaysWithHours(

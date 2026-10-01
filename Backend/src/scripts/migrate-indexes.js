@@ -4,7 +4,7 @@
  * Production Database Migration Script
  *
  * This script creates performance indexes for the NihongoTracker application.
- * It's designed to run safely in production environments.
+ * It is designed to run safely in production environments.
  *
  * Usage:
  *   NODE_ENV=production npm run migrate:indexes

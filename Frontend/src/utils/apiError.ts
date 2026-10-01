@@ -27,10 +27,10 @@ export function isPrivateProfileError(error: unknown): boolean {
  * Turns any thrown value from an API call into a message to show the user.
  *
  * Order matters:
- *  1. a `code` the client knows about wins, translated into the active language;
- *  2. otherwise the server's English `message` is shown verbatim — this is the
+ *  1. a `code` the client knows about wins, translated into the active language.
+ *  2. otherwise the server's English `message` is shown verbatim: this is the
  *     behaviour the app had before i18n, so an unmigrated endpoint or an older
- *     client against a newer server degrades to exactly what it did before;
+ *     client against a newer server degrades to exactly what it did before.
  *  3. finally a generic fallback.
  *
  * Reads the i18next singleton rather than a hook so it can be used inside
@@ -46,7 +46,7 @@ export function getApiErrorMessage(
       : undefined;
 
   // Error codes are runtime strings from the server, so the typed `t` signature
-  // cannot apply here; the catalogue is kept in sync by a backend test instead.
+  // cannot apply here. The catalogue is kept in sync by a backend test instead.
   const translate = i18n.t.bind(i18n) as unknown as (
     key: string,
     params?: Record<string, string | number>

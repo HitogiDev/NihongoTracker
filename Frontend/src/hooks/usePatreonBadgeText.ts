@@ -6,7 +6,7 @@ import type { PatreonBadgeProps } from '../utils/patreonBadge';
  * Resolves the text shown on a Patreon badge.
  *
  * Supporter-authored text is rendered verbatim in whatever language they wrote
- * it; only the default tier label is translated.
+ * it. Only the default tier label is translated.
  */
 export function usePatreonBadgeText() {
   const { t } = useTranslation('common');
