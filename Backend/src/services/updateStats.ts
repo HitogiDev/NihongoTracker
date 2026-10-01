@@ -153,7 +153,7 @@ export default async function updateStats(
     updateLevelAndXp(userStats, 'reading');
     updateLevelAndXp(userStats, 'user');
 
-    // Ensure we're handling NaN values
+    // Ensure we are handling NaN values
     if (Number.isNaN(Number(userStats.listeningXp))) {
       userStats.listeningXp = 0;
     }

@@ -238,7 +238,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       const isYouTubeHost = host.endsWith('youtube.com') || host === 'youtu.be';
       const list = parsed.searchParams.get('list');
       if (isYouTubeHost && list && list.length > 2) {
-        // It's a playlist URL — open the selector modal
+        // It is a playlist URL: open the selector modal
         setPlaylistResult(null);
         setPlaylistModalOpen(true);
         setIsFetchingPlaylist(true);
@@ -259,7 +259,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         return;
       }
     } catch {
-      /* not a URL — fall through to single video */
+      /* not a URL: fall through to single video */
     }
     // ── End playlist detection ───────────────────────────────────────────
 
@@ -602,7 +602,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         </div>
       </div>
 
-      {/* Auto-match section */}
       {logsWithYouTubeUrls.length > 0 && (
         <div className="card bg-primary/10 border border-primary mb-6">
           <div className="card-body">
@@ -670,7 +669,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         </div>
       )}
 
-      {/* Manual matching section */}
       <div className="card surface-muted">
         <div className="card-body p-4">
           <h2 className="card-title">{t('video.manualGroups')}</h2>
@@ -823,7 +821,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         </div>
       </div>
 
-      {/* ── Playlist selector modal ──────────────────────────────────────── */}
       <PlaylistSelectorModal
         isOpen={playlistModalOpen}
         isFetching={isFetchingPlaylist}

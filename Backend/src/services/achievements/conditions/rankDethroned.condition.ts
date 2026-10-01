@@ -3,7 +3,7 @@ import WeeklyRankSnapshot from '../../../models/weeklyRankSnapshot.model.js';
 
 /**
  * Dethroned: the user held #1 on the weekly leaderboard and later showed up in
- * a snapshot at a worse position — somebody took the top spot from them.
+ * a snapshot at a worse position: somebody took the top spot from them.
  *
  * Reads the weekly snapshots the rank cron already records.
  */

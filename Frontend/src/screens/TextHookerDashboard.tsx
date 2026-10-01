@@ -207,7 +207,6 @@ function TextHookerDashboard() {
           <p className="text-base-content/70">{t('dashboard.subtitle')}</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="stats stats-vertical w-full overflow-hidden shadow-sm bg-base-100">
             <div className="stat">
@@ -268,7 +267,6 @@ function TextHookerDashboard() {
           </div>
         </div>
 
-        {/* Recent Sessions */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold">
             {t('dashboard.recentSessions')}
@@ -433,7 +431,6 @@ function TextHookerDashboard() {
         )}
       </div>
 
-      {/* Join Room Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isJoinRoomOpen ? 'modal-open' : ''}`}
       >
@@ -589,7 +586,6 @@ function TextHookerDashboard() {
         </form>
       </dialog>
 
-      {/* Media Session Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isMediaModalOpen ? 'modal-open' : ''}`}
       >
@@ -608,7 +604,6 @@ function TextHookerDashboard() {
           </div>
 
           <div className="space-y-3">
-            {/* Media Type Selector */}
             <div>
               <label className="label mb-2">
                 <span className="font-semibold">
@@ -677,7 +672,6 @@ function TextHookerDashboard() {
               </div>
             </div>
 
-            {/* Search Input */}
             <div>
               <label className="input w-full flex items-center gap-2">
                 <Search className="w-4 h-4 opacity-50" />
@@ -696,7 +690,6 @@ function TextHookerDashboard() {
               </label>
             </div>
 
-            {/* Search Results */}
             <div className="max-h-64 overflow-y-auto">
               {searchResults.length > 0 ? (
                 <div className="space-y-2">
@@ -764,7 +757,6 @@ function TextHookerDashboard() {
               ) : null}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-base-300">
               <button
                 type="button"
@@ -789,7 +781,6 @@ function TextHookerDashboard() {
         </form>
       </dialog>
 
-      {/* Blank Session Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isBlankModalOpen ? 'modal-open' : ''}`}
       >
@@ -871,7 +862,6 @@ function TextHookerDashboard() {
         </form>
       </dialog>
 
-      {/* Delete Confirmation Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isDeleteModalOpen ? 'modal-open' : ''}`}
       >

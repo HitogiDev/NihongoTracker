@@ -35,7 +35,6 @@ export default function ClubMediaRankings() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
-        {/* Period Toggle */}
         <div className="card surface">
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">

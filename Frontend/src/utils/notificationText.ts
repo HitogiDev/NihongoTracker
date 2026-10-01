@@ -18,8 +18,8 @@ interface NotificationLike {
  *
  * The English text always wins as a fallback, which covers three cases without
  * any data migration:
- *  - rows written before keys existed (they simply have no `labelKey`);
- *  - a key the client does not know yet (older client, newer server);
+ *  - rows written before keys existed (they simply have no `labelKey`).
+ *  - a key the client does not know yet (older client, newer server).
  *  - a key that was removed from the locale files.
  *
  * Reads the i18next singleton rather than a hook so it can be used from list
@@ -36,7 +36,7 @@ function resolve(
   if (!i18n.exists(fullKey)) return fallback;
 
   // Keys and params are runtime strings from the API, so the typed `t`
-  // signature cannot apply; the catalogue is kept in sync by hand.
+  // signature cannot apply. The catalogue is kept in sync by hand.
   const translate = i18n.t.bind(i18n) as unknown as (
     k: string,
     options?: Record<string, unknown>

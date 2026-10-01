@@ -28,7 +28,7 @@ module.exports = {
     // Mongoose documents and Socket.IO state are mutable objects.
     'no-param-reassign': ['error', { props: false }],
     'no-continue': 'off',
-    // Express ignores handler returns; Mongoose requires function callbacks.
+    // Express ignores handler returns. Mongoose requires function callbacks.
     'consistent-return': 'off',
     'func-names': 'off',
     // Cron jobs start on construction and detached promises are intentional.

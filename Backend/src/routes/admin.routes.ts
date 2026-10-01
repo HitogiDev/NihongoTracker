@@ -270,7 +270,7 @@ router.get(
   getJitenDifficultyBackfillStatus
 );
 
-// Media editing (admin or mod — pairs with the media-request approval flow)
+// Media editing (admin or mod: pairs with the media-request approval flow)
 router.patch(
   '/media/:id',
   protect,

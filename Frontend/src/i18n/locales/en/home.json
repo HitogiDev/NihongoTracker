@@ -44,7 +44,6 @@
     "unit": "Unit to calculate",
     "timeHint": "When characters are also entered, they cap implausible reading time.",
     "charsHint": "Without time, characters are converted using your reading speed.",
-    "otherNoXp": "The Other type earns no XP.",
     "fixedContext": "This estimate keeps level, history and speed fixed for the session.",
     "calculating": "Calculating XP",
     "calculationError": "Calculation failed. Check the entered values.",
@@ -57,7 +56,7 @@
     "comfort": "Estimated comfort",
     "fullBonusAt": "Full bonus at {{target}} Jiten",
     "units": { "time": "minutes", "chars": "characters", "pages": "pages", "episodes": "episodes" },
-    "types": { "reading": "Reading", "lightNovel": "Light Novel", "manga": "Manga", "vn": "Visual Novel", "game": "Video Game", "book": "Book", "anime": "Anime", "video": "Video", "movie": "Movie", "tvShow": "TV Show", "audio": "Audio", "other": "Other" }
+    "types": { "reading": "Reading", "lightNovel": "Light Novel", "manga": "Manga", "vn": "Visual Novel", "game": "Video Game", "book": "Book", "anime": "Anime", "video": "Video", "movie": "Movie", "tvShow": "TV Show", "audio": "Audio" }
   },
   "common": {
     "close": "Close"
@@ -287,7 +286,7 @@
             "description": "Unlock milestones and celebrate your progress"
           },
           "goals": {
-            "title": "Daily & Long-term Goals",
+            "title": "Daily & Custom Period Goals",
             "description": "Set targets for different media types and time periods"
           },
           "progressIndicators": {
@@ -390,7 +389,7 @@
           },
           "goals": {
             "title": "Goal Management",
-            "description": "Set up and track both daily and long-term objectives"
+            "description": "Set up and track daily and custom period objectives"
           },
           "export": {
             "title": "Data Export",

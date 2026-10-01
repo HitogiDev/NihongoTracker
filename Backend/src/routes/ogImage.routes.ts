@@ -46,7 +46,7 @@ router.get(
 );
 
 // Draw-only stats card: the frontend sends the already-computed metrics (from
-// the authoritative getUserStats endpoint) plus a date-range label; we load the
+// the authoritative getUserStats endpoint) plus a date-range label. We load the
 // user server-side for the avatar and render a shareable PNG.
 router.post(
   '/stats-card',

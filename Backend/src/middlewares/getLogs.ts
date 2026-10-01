@@ -546,7 +546,7 @@ function parseKechimochiNumber(value?: string): number {
 /**
  * Kechimochi describes a log with up to four columns, and which ones exist
  * depends on the export version. The medium is the most specific signal
- * (`Media Variant` — "Light Novel", "Anime"; `Media Type` in older exports),
+ * (`Media Variant`: "Light Novel", "Anime". `Media Type` in older exports),
  * then the activity (`Activity Type`, falling back to the media's
  * `Default Activity Type`). First column that maps to a known type wins.
  */
@@ -568,7 +568,7 @@ function mapKechimochiType(log: KechimochiCSVLog): ILog['type'] {
     youtube: 'video',
     livestream: 'video',
     video: 'video',
-    // Generic "Watching" stays video; `Media Variant` upgrades it to anime,
+    // Generic "Watching" stays video. `Media Variant` upgrades it to anime,
     // movie or tv show when Kechimochi knows the subtype.
     watching: 'video',
     reading: 'reading',
@@ -633,7 +633,7 @@ function transformKechimochiLogsList(
       const time = Math.round(parseKechimochiNumber(log.Duration));
       const chars = Math.round(parseKechimochiNumber(log.Characters));
 
-      // Skip rows that don't provide any measurable progress.
+      // Skip rows that do not provide any measurable progress.
       if (time <= 0 && chars <= 0) {
         return null;
       }
@@ -676,7 +676,7 @@ export async function getLogsFromCSV(
     } else if (importType === 'other') {
       logs = transformOtherCSVLogsList(req.body.logs, res.locals.user);
 
-      // Resolve tag names to ObjectIds, creating tags that don't exist
+      // Resolve tag names to ObjectIds, creating tags that do not exist
       const allTagNames = new Set<string>();
       for (const log of logs) {
         if (log.tagNames) {
@@ -698,7 +698,7 @@ export async function getLogsFromCSV(
           tagNameToId.set(tag.name, tag._id);
         }
 
-        // Create tags that don't exist yet
+        // Create tags that do not exist yet
         const missingNames = Array.from(allTagNames).filter(
           (name) => !tagNameToId.has(name)
         );

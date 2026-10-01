@@ -132,7 +132,7 @@ export async function deleteFile(fileUrl: string): Promise<void> {
     // Extract the file path from the Firebase Storage URL
     const url = new URL(fileUrl);
 
-    // Check if it's a Firebase Storage URL
+    // Check if it is a Firebase Storage URL
     if (!url.hostname.includes('firebasestorage.googleapis.com')) {
       console.warn('Not a Firebase Storage URL, skipping deletion:', fileUrl);
       return;
@@ -150,7 +150,7 @@ export async function deleteFile(fileUrl: string): Promise<void> {
 
     await deleteObject(fileRef);
   } catch (error: any) {
-    // Don't throw error if file doesn't exist (already deleted)
+    // Do not throw error if file does not exist (already deleted)
     if (error.code === 'storage/object-not-found') {
       console.log('File already deleted or does not exist:', fileUrl);
     } else {
@@ -160,7 +160,7 @@ export async function deleteFile(fileUrl: string): Promise<void> {
         message: error.message,
         url: fileUrl,
       });
-      // Log but don't throw to prevent blocking user updates
+      // Log but do not throw to prevent blocking user updates
     }
   }
 }

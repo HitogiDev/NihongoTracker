@@ -34,10 +34,9 @@ import {
 } from 'lucide-react';
 
 /**
- * The catalogue holds only the parts that are not text: which icon, which
- * accent, which entries are highlighted or still planned. Every title and
- * description lives in `home:features.categories.*` and is looked up by id, so
- * translating this page never touches this file.
+ * Store icon and layout metadata here.
+ * Keep titles and descriptions in `home:features.categories.*`.
+ * Components find each entry by ID. Translate page text in the locale files.
  */
 interface FeatureEntry {
   id: string;
@@ -162,7 +161,7 @@ function FeaturesScreen() {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // Category and feature ids are runtime strings, so the typed `t` signature
-  // does not apply to the catalogue lookups; the ids are kept in sync with
+  // does not apply to the catalogue lookups. The ids are kept in sync with
   // `home.json` by the structure of FEATURE_CATEGORIES above.
   const tf = t as unknown as (key: string, options?: object) => string;
 
@@ -172,7 +171,6 @@ function FeaturesScreen() {
 
   return (
     <div className="pt-20 bg-base-100 min-h-screen">
-      {/* ─── Hero ─── */}
       <section className="py-24 px-4 text-center">
         <div className="max-w-3xl mx-auto">
           <span className="badge badge-primary badge-outline mb-6">
@@ -204,7 +202,6 @@ function FeaturesScreen() {
         </div>
       </section>
 
-      {/* ─── Stats strip ─── */}
       <section className="py-10 px-4 bg-base-200/50 border-y border-base-300/50">
         <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
@@ -234,7 +231,6 @@ function FeaturesScreen() {
         </div>
       </section>
 
-      {/* ─── Feature Categories ─── */}
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto space-y-4">
           {FEATURE_CATEGORIES.map((category) => (
@@ -242,7 +238,6 @@ function FeaturesScreen() {
               key={category.id}
               className="overflow-hidden surface hover:shadow-lg transition-shadow duration-300"
             >
-              {/* Header */}
               <button
                 className="w-full px-6 py-5 flex items-center justify-between gap-4 hover:bg-base-200/40 transition-colors duration-200 text-left"
                 onClick={() => toggleCategory(category.id)}
@@ -272,7 +267,6 @@ function FeaturesScreen() {
                 </div>
               </button>
 
-              {/* Feature grid */}
               {expandedCategory === category.id && (
                 <div className="px-6 pb-6 border-t border-base-300/60">
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-5">
@@ -317,7 +311,6 @@ function FeaturesScreen() {
         </div>
       </section>
 
-      {/* ─── How it works ─── */}
       <section className="py-20 px-4 bg-base-200/30">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
@@ -351,7 +344,6 @@ function FeaturesScreen() {
         </div>
       </section>
 
-      {/* ─── CTA ─── */}
       <section className="py-28 px-4 bg-base-200/50 border-t border-base-300/50">
         <div className="max-w-xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">

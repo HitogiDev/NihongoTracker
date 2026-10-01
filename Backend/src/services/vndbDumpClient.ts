@@ -24,7 +24,7 @@ export async function getVndbDumpFileName(): Promise<string> {
 
   const basename = path.basename(finalUrl);
 
-  // Fall back to Content-Disposition if the URL didn't change (unlikely but safe)
+  // Fall back to Content-Disposition if the URL did not change (unlikely but safe)
   if (!basename.startsWith('vndb-db-')) {
     const disposition: string =
       response.headers['content-disposition'] || '';

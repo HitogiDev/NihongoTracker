@@ -94,8 +94,8 @@
     "invalidType": "Ese tipo de objetivo no es válido",
     "longTermFieldsRequired": "Hacen falta el tipo, el objetivo total, la fecha objetivo y la fecha de inicio",
     "notFound": "Objetivo no encontrado",
-    "startBeforeTarget": "La fecha de inicio debe ser anterior a la fecha objetivo",
-    "targetInFuture": "La fecha objetivo debe estar en el futuro",
+    "startBeforeTarget": "La fecha de inicio debe ser igual o anterior a la fecha objetivo",
+    "targetInFuture": "La fecha objetivo debe ser hoy o posterior",
     "targetPositive": "El objetivo debe ser mayor que 0",
     "totalTargetPositive": "El objetivo total debe ser mayor que 0",
     "typeAndTargetRequired": "Hacen falta un tipo y un objetivo"

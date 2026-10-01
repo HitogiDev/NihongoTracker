@@ -42,6 +42,7 @@ import {
 } from '../controllers/follow.controller.js';
 import { socialRateLimit } from '../middlewares/socialRateLimit.js';
 import { getCurrentUser } from '../controllers/currentUser.controller.js';
+import { getFriendsCompanionPresence, updateCompanionPresence } from '../controllers/companionPresence.controller.js';
 
 const router = Router();
 const followRateLimit = socialRateLimit({
@@ -64,6 +65,8 @@ router.get('/me', protect, getCurrentUser);
 router.get('/me/customization', protect, getCustomizationOptions);
 router.patch('/me/customization', protect, updateCustomization);
 router.put('/me/custom-themes', protect, updateCustomThemes);
+router.put('/me/immersion-presence', protect, updateCompanionPresence);
+router.get('/friends/immersion-presence', protect, getFriendsCompanionPresence);
 
 router.get('/compare', optionalProtect, compareUserStats);
 

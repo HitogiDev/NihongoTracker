@@ -145,7 +145,6 @@ export default function ClubMediaHeader() {
 
   return (
     <div className="flex flex-col justify-center bg-base-200 text-base-content">
-      {/* Banner Background */}
       <div
         className={
           'h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat'
@@ -166,11 +165,9 @@ export default function ClubMediaHeader() {
         )}
       </div>
 
-      {/* Content Section with Media Poster */}
       <div className="bg-base-100">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
-            {/* Media Poster */}
             <div className="flex flex-col items-center md:items-start">
               <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
                 {media.mediaDocument?.contentImage ? (
@@ -194,7 +191,6 @@ export default function ClubMediaHeader() {
                 )}
               </div>
 
-              {/* Quick Actions */}
               {canAddReview && (
                 <button
                   className="btn btn-primary w-full max-w-[200px] mt-4 items-center"
@@ -213,7 +209,6 @@ export default function ClubMediaHeader() {
               )}
             </div>
 
-            {/* Media Info */}
             <div className="py-4 md:py-5 md:px-4">
               <div className="flex items-center gap-2 mb-4">
                 <span className="badge badge-primary badge-lg capitalize">
@@ -267,7 +262,6 @@ export default function ClubMediaHeader() {
         </div>
       </div>
 
-      {/* Navigation */}
       <ClubMediaNavbar
         clubId={clubId!}
         mediaId={mediaId!}
@@ -276,7 +270,6 @@ export default function ClubMediaHeader() {
         clubMediaId={media._id}
       />
 
-      {/* Outlet for the content */}
       <Outlet
         context={
           {
@@ -289,7 +282,6 @@ export default function ClubMediaHeader() {
         }
       />
 
-      {/* Quick Log Modal */}
       {selectedMedia && (
         <QuickLog
           open={logModalOpen}

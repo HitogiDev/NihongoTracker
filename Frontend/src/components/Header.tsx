@@ -253,7 +253,6 @@ function Header() {
                   </>
                 )}
 
-                {/* Main Navigation */}
                 <li className="menu-title px-2">
                   <span className="text-xs font-bold text-base-content/70">
                     {t('sections.navigation')}
@@ -334,7 +333,6 @@ function Header() {
                   </Link>
                 </li>
 
-                {/* Account Section */}
                 <li>
                   <div className="divider my-1"></div>
                 </li>
@@ -424,7 +422,6 @@ function Header() {
         </div>
         {user ? (
           <div className="hidden xl:inline-flex flex-none justify-center">
-            {/* <QuickLog /> */}
             <ul className="inline-flex flex-row gap-1 min-[1450px]:gap-3 min-[1600px]:gap-6">
               <li>
                 <Link
@@ -518,7 +515,6 @@ function Header() {
         )}
 
         <div className="navbar-end flex-1 w-auto gap-1 sm:gap-3 mx-1 sm:mx-3">
-          {/* Search Button */}
           <button
             className="btn btn-ghost btn-sm sm:btn-md gap-2"
             onClick={() => setIsSearchOpen(true)}
@@ -550,7 +546,6 @@ function Header() {
                 )}
               </Link>
 
-              {/* Desktop */}
               <div className="hidden md:block">
                 <NotificationBell />
               </div>

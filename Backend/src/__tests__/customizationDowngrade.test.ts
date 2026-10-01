@@ -7,7 +7,7 @@ import User, {
  * The wiring, as opposed to the rules (those live in `customization.test.ts`).
  *
  * Mongoose documents work without a connection, so this exercises the real
- * schema and the real subdocument getters — the parts a plain unit test of the
+ * schema and the real subdocument getters: the parts a plain unit test of the
  * service would not touch.
  */
 function makeSupporter() {

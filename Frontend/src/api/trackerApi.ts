@@ -1400,7 +1400,7 @@ export async function syncAnilistNowFn(
   return data;
 }
 
-/** Walks the whole AniList activity feed instead of only what's new. */
+/** Walks the whole AniList activity feed instead of only what is new. */
 export async function backfillAnilistFn(
   status: IAnilistStatus,
   includeExistingMedia: boolean

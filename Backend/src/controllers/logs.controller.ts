@@ -1280,7 +1280,7 @@ export async function deleteLog(
 
     await updateStats(res, next, true);
 
-    // After deletion, streaks may change; recalc for this user
+    // After deletion, streaks may change. Recalc for this user
     if (deletedLog) {
       await recalculateStreaksForUser(res.locals.user._id);
       await deleteActivitiesBySource('log', [
@@ -2049,7 +2049,7 @@ export async function createLog(
     await recordLogActivity(savedLog, res.locals.user, activityMediaTitle);
 
     // Celebration payload the client plays back after logging (XP roll-up,
-    // level up, monthly-rank overtakes). Best-effort — never fails the log.
+    // level up, monthly-rank overtakes). Best-effort: never fails the log.
     let celebration: ILogCelebration | undefined;
     try {
       const freshUser = await User.findById(res.locals.user._id).select(
@@ -2290,7 +2290,7 @@ export async function importLogs(
     await recalculateStreaksForUser(res.locals.user._id);
 
     // Grant achievements earned by the imported logs. Left unnotified on
-    // purpose — the client drains /me/pending on its next load and reveals them.
+    // purpose: the client drains /me/pending on its next load and reveals them.
     if (insertedLogs.length > 0) {
       await checkAchievements(res.locals.user._id, { trigger: 'log' });
       await checkAchievements(res.locals.user._id, { trigger: 'streak' });
@@ -3236,7 +3236,7 @@ export async function syncManabeIds(
           continue;
         }
 
-        // Get all logs for this user that don't have a manabeId
+        // Get all logs for this user that do not have a manabeId
         const userLogs = await Log.find({
           user: user._id,
           manabeId: { $exists: false },

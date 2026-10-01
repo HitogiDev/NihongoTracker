@@ -86,7 +86,7 @@ function SpeedChart({
       return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
     };
 
-    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing — do not localize.
+    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing: do not localize.
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
       year: 'numeric',
@@ -362,7 +362,7 @@ function SpeedChart({
             else if (lastValidValue !== null) {
               result.push(lastValidValue);
             }
-            // If we don't have a last valid value, use 0 instead of null
+            // If we do not have a last valid value, use 0 instead of null
             else {
               result.push(0);
             }

@@ -1,14 +1,8 @@
 import { useId, type ReactNode } from 'react';
 
 /**
- * The app's form field.
- *
- * daisyUI v5 removed `form-control` / `label-text` / `label-text-alt`. v4's
- * `.label` was `display:flex; justify-content:space-between`, so a
- * label + right-hand note pair sat at opposite ends of the row; v5's `.label`
- * is `inline-flex`, which collapses that pair to the left. `fieldset-legend`
- * is the v5 element that restores the split, so migrating here is a layout fix
- * rather than a style preference.
+ * Use `fieldset-legend` to place the label and note at opposite ends of one row.
+ * In daisyUI v5, `.label` uses inline-flex and does not keep this layout.
  */
 interface FieldProps {
   label: ReactNode;
@@ -22,7 +16,7 @@ interface FieldProps {
   className?: string;
   /**
    * The control. Pass a function to receive a generated id and wire the label
-   * to it (`{(id) => <input id={id} />}`); pass plain children when the control
+   * to it (`{(id) => <input id={id} />}`). Pass plain children when the control
    * already carries its own id or is a group with no single focus target.
    */
   children: ReactNode | ((id: string) => ReactNode);
@@ -43,9 +37,7 @@ function Field({
 
   return (
     <fieldset className={`fieldset min-w-0 ${className}`}>
-      {/* `w-full`: a <legend> shrink-wraps its content by default, which would
-          collapse the label / aside pair together instead of pushing them to
-          opposite ends of the row. */}
+      {/* A legend shrink-wraps by default. Use full width to split the label and note. */}
       <legend className="fieldset-legend w-full">
         {/* Only claim to label a control when a control actually got the id. */}
         {/* flex row: Tailwind's preflight makes `svg` a block, so an icon in

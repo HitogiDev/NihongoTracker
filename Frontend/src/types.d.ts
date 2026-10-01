@@ -88,7 +88,7 @@ export interface IAnilistStatus {
   /** Oldest timestamp included by the first incremental sync. */
   syncFrom?: string | Date | null;
   tokenExpiry?: string | Date;
-  /** AniList tokens last a year and can't be refreshed — re-link when true. */
+  /** AniList tokens last a year and cannot be refreshed: re-link when true. */
   tokenExpired?: boolean;
 }
 
@@ -328,7 +328,7 @@ export interface IActivityComment {
   createdAt: string;
 }
 
-/** Mirrors Backend/src/types.ts — keep both lists in sync. */
+/** Mirrors Backend/src/types.ts: keep both lists in sync. */
 export type NameEffect = 'none' | 'gradient' | 'glow' | 'shimmer';
 export type AvatarFrame =
   | 'none'
@@ -408,7 +408,7 @@ export interface ICustomizationOptionsResponse {
 enum userRoles {
   admin = 'admin',
   user = 'user',
-  mod = 'mod',
+  mod = 'mod'
 }
 
 export type OutletProfileContextType = {
@@ -1212,6 +1212,7 @@ export interface youtubeChannelInfo {
 export interface IDailyGoal {
   _id?: string;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  mediaType?: GoalMediaType | null;
   cadence?: 'daily' | 'weekly';
   target: number;
   isActive: boolean;
@@ -1237,11 +1238,27 @@ export interface IDailyGoalsResponse {
   goals: IDailyGoal[];
   todayProgress: IDailyGoalProgress;
   weeklyProgress: IDailyGoalProgress;
+  goalProgress: Record<string, number>;
 }
+
+export type GoalMediaType =
+  | 'light-novel'
+  | 'reading'
+  | 'anime'
+  | 'vn'
+  | 'video'
+  | 'manga'
+  | 'audio'
+  | 'movie'
+  | 'tv show'
+  | 'other'
+  | 'game'
+  | 'book';
 
 export interface ILongTermGoal {
   _id?: string;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  mediaType?: GoalMediaType | null;
   totalTarget: number; // Total amount to achieve by target date
   targetDate: Date | string; // Deadline for achieving the goal
   displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
@@ -1695,9 +1712,9 @@ export interface INotificationSummaryResponse {
 
 export interface INotificationListItem {
   id: string;
-  /** English text; shown whenever no translation key matches. */
+  /** English text. Shown whenever no translation key matches. */
   label: string;
-  /** Translation key for `label`; interpolation values live in `meta`. */
+  /** Translation key for `label`. Interpolation values live in `meta`. */
   labelKey?: string;
   body?: string;
   bodyKey?: string;
@@ -1705,7 +1722,7 @@ export interface INotificationListItem {
   count: number;
   isRead: boolean;
   createdAt: string;
-  /** Route to open. Present on stored notifications; derived ones fall back. */
+  /** Route to open. Present on stored notifications. Derived ones fall back. */
   link?: string;
   /** Image override (media cover, club icon…). Falls back to actor avatar. */
   image?: string;
@@ -1857,9 +1874,9 @@ export interface IAchievement {
   unlockedAt?: string | null;
   progress?: number;
   /**
-   * True on a secret the viewer unlocked themselves. Sent only to that user —
-   * never on someone else's view of their profile — and the signal for showing
-   * `fullDescription` instead of the vague public line.
+   * Set this only when the viewer unlocked the secret.
+   * Send it only to that viewer.
+   * Use it to show `fullDescription` instead of public text.
    */
   isOwnUnlock?: boolean;
 }
@@ -1870,18 +1887,18 @@ export interface IAchievementCondition {
   threshold?: number;
   mediaType?: string;
   stat?: string;
-  /** logTimeRange — hour range [startHour, endHour) in the user's timezone */
+  /** logTimeRange: hour range [startHour, endHour) in the user's timezone */
   startHour?: number;
   endHour?: number;
-  /** logOnDate — MM-DD pattern */
+  /** logOnDate: MM-DD pattern */
   datePattern?: string;
-  /** mediaReleasedBefore — exclusive upper bound on the release year */
+  /** mediaReleasedBefore: exclusive upper bound on the release year */
   year?: number;
-  /** mediaTypesInWeek — rolling window size in days */
+  /** mediaTypesInWeek: rolling window size in days */
   days?: number;
-  /** consecutiveDaysWithHours — hours required on each day */
+  /** consecutiveDaysWithHours: hours required on each day */
   hours?: number;
-  /** rapidSuccession — max gap between two logs, in seconds */
+  /** rapidSuccession: max gap between two logs, in seconds */
   seconds?: number;
 }
 
@@ -1907,7 +1924,7 @@ declare global {
 }
 
 /**
- * Mirror of Backend/src/types.ts ILogCelebration — post-log feedback payload
+ * Mirror of Backend/src/types.ts ILogCelebration: post-log feedback payload
  * returned inline by POST /logs.
  */
 export interface ILogCelebration {

@@ -120,7 +120,7 @@ function FavoriteCover({
         </div>
       )}
 
-      {/* Info / note button — the tap target for touch devices */}
+      {/* Info / note button: the tap target for touch devices */}
       <button
         type="button"
         className={`absolute top-1 right-1 rounded-full p-1 shadow-sm ${
@@ -134,7 +134,7 @@ function FavoriteCover({
             : t('favoritesWidget.viewInfo')
         }
         onClick={(e) => {
-          // Don't navigate the wrapping Link; toggle the popover instead.
+          // Do not navigate the wrapping Link. Toggle the popover instead.
           e.preventDefault();
           e.stopPropagation();
           onShow(fav, anchorRef.current);
@@ -209,7 +209,7 @@ function FavoritePopover({
     typeof window !== 'undefined' ? window.innerWidth : WIDTH + MARGIN * 2;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-  // Prefer the right side of the cover; flip to the left when it would overflow.
+  // Prefer the right side of the cover. Flip to the left when it would overflow.
   let left = rect.right + MARGIN;
   if (left + WIDTH > vw - MARGIN) {
     left = Math.max(MARGIN, rect.left - MARGIN - WIDTH);
@@ -319,7 +319,6 @@ function SortableFavorite({
           )}
         </div>
 
-        {/* Note */}
         <button
           type="button"
           className={`absolute top-1 left-1 rounded-full p-1 shadow-sm ${
@@ -334,7 +333,6 @@ function SortableFavorite({
           <PencilLine className="w-3 h-3" />
         </button>
 
-        {/* Remove */}
         <button
           type="button"
           className="absolute top-1 right-1 bg-error text-error-content rounded-full p-0.5 shadow-sm"
@@ -443,7 +441,7 @@ function FavoriteMedia({
   };
   const hidePopover = () => setPopover(null);
 
-  // Keep draft in sync when server data changes and we're not editing.
+  // Keep draft in sync when server data changes and we are not editing.
   useEffect(() => {
     if (!isEditing) setDraft(favorites);
   }, [favorites, isEditing]);
@@ -510,7 +508,7 @@ function FavoriteMedia({
     save.mutate(entries);
   }
 
-  // Hide entirely when there's nothing to show and viewer can't add.
+  // Hide entirely when there is nothing to show and viewer cannot add.
   if (!isOwner && favorites.length === 0) return null;
 
   const draftKeys = new Set(draft.map((f) => favoriteKey(f)));

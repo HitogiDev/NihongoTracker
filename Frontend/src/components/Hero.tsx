@@ -189,7 +189,6 @@ function Hero() {
         </div>
       )}
       <div ref={containerRef} className="pt-20 bg-base-100">
-        {/* ─── Hero ─── */}
         <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-20 overflow-hidden">
           <div className="relative z-10 max-w-4xl mx-auto text-center mb-14">
             <h1
@@ -246,7 +245,6 @@ function Hero() {
             </p>
           </div>
 
-          {/* Hero screenshot */}
           <div
             ref={heroImgRef}
             className="relative z-10 w-full max-w-5xl mx-auto px-4"
@@ -283,7 +281,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Media type strip ─── */}
         <section className="py-14 px-4 bg-base-200/50 border-y border-base-300/50">
           <div className="max-w-3xl mx-auto text-center scroll-reveal">
             <p className="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-5">
@@ -311,7 +308,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Feature: Log Tracking ─── */}
         <section className="py-24 px-4 bg-base-100">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
@@ -351,7 +347,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Feature: Statistics ─── */}
         <section className="py-24 px-4 bg-base-200/30">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal">
@@ -395,7 +390,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Feature: Leaderboards ─── */}
         <section className="py-24 px-4 bg-base-100">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
@@ -439,7 +433,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Feature: TextHooker ─── */}
         <section className="py-24 px-4 bg-base-200/30">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal">
@@ -483,7 +476,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── Feature: Clubs ─── */}
         <section className="py-24 px-4 bg-base-100">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
@@ -527,7 +519,6 @@ function Hero() {
           </div>
         </section>
 
-        {/* ─── CTA ─── */}
         <section className="py-28 px-4 bg-base-200/50 border-t border-base-300/50">
           <div className="max-w-xl mx-auto text-center scroll-reveal">
             <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">

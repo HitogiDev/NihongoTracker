@@ -94,8 +94,8 @@
     "invalidType": "That goal type is not valid",
     "longTermFieldsRequired": "Type, total target, target date and start date are required",
     "notFound": "Goal not found",
-    "startBeforeTarget": "The start date must be before the target date",
-    "targetInFuture": "The target date must be in the future",
+    "startBeforeTarget": "The start date must be on or before the target date",
+    "targetInFuture": "The target date must be today or later",
     "targetPositive": "The target must be greater than 0",
     "totalTargetPositive": "The total target must be greater than 0",
     "typeAndTargetRequired": "A type and a target are required"

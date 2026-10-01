@@ -15,7 +15,7 @@ interface ListBlock {
   /** A short bold sub-heading above the list, e.g. "Account Information:". */
   heading?: string;
   headingLevel?: 'h3' | 'h4';
-  /** An ordinary lead-in sentence above the list — plain text, not a heading. */
+  /** An ordinary lead-in sentence above the list: plain text, not a heading. */
   intro?: string;
   items: string[];
 }
@@ -43,7 +43,7 @@ interface LegalDocumentData {
 /**
  * Minimal inline markup so translators can move links and emphasis around
  * inside a sentence without touching code: `**bold**` and `[text](href)`.
- * Deliberately not full markdown — nothing here is user-generated, so there is
+ * Deliberately not full markdown: nothing here is user-generated, so there is
  * no HTML to sanitize.
  */
 const INLINE_PATTERN = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
@@ -143,7 +143,7 @@ export default function LegalDocument({ doc }: { doc: LegalDocumentId }) {
   const { t, i18n } = useTranslation('legal');
 
   // The document bodies are nested objects rather than flat strings, so the
-  // typed `t` signature does not apply; the shape is guarded by the
+  // typed `t` signature does not apply. The shape is guarded by the
   // `LegalDocumentData` cast and by every locale sharing one source file.
   const read = t as unknown as (
     key: string,

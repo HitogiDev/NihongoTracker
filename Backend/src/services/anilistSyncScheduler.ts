@@ -42,8 +42,8 @@ export async function runAnilistSyncCycle(): Promise<{
       summary.logs += result.created;
     } catch (error) {
       summary.failed += 1;
-      // The per-user failure is already recorded on the user document; keep the
-      // cycle going so one broken token can't stall everyone else.
+      // The per-user failure is already recorded on the user document. Keep the
+      // cycle going so one broken token cannot stall everyone else.
       console.error(`AniList sync failed for user ${userId.toString()}:`, error);
     }
     await sleep(USER_DELAY_MS);

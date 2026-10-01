@@ -283,7 +283,7 @@ html {
   scroll-behavior: auto !important;
 }
 
-/* Ensure tooltips don't cause horizontal overflow on mobile */
+/* Ensure tooltips do not cause horizontal overflow on mobile */
 @media (max-width: 768px) {
   .tooltip:before,
   .tooltip:after {

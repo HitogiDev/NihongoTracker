@@ -842,7 +842,7 @@ function TextHooker() {
     }
 
     // Keep queued unsynced lines visible after re-entering so current session
-    // counters don't briefly reset while background sync catches up.
+    // counters do not briefly reset while background sync catches up.
     const mergedLines = [...nextLines];
     const existingIds = new Set(mergedLines.map((line) => line.id));
 
@@ -903,7 +903,7 @@ function TextHooker() {
           baseline = { lines: 0, chars: 0 };
         }
       } else if ((sessionData.sessionHistory?.length || 0) > 0) {
-        // Existing users may have old captured lines; treat current buffer as already logged baseline.
+        // Existing users may have old captured lines. Treat current buffer as already logged baseline.
         baseline = {
           lines: nextLines.length,
           chars: linesCharsTotal,
@@ -1302,7 +1302,7 @@ function TextHooker() {
     const tick = () => {
       const now = Date.now();
       // Auto-pause also caps how much of a gap counts. Reading the clock means
-      // a tab that was throttled for ten minutes hands back all ten — right if
+      // a tab that was throttled for ten minutes hands back all ten: right if
       // lines kept arriving, wrong if the reader walked away. The cap keeps the
       // second case honest: nothing past the auto-pause deadline is counted.
       const pauseAt =
@@ -1814,7 +1814,7 @@ function TextHooker() {
         lastAction.data.forEach((lineToRestore, indexInAction) => {
           const targetIndex =
             lastAction.indices?.[indexInAction] ?? nextLines.length;
-          // To ensure we don't duplicate
+          // To ensure we do not duplicate
           if (!nextLines.some((l) => l.id === lineToRestore.id)) {
             nextLines.splice(targetIndex, 0, lineToRestore);
           }
@@ -2446,9 +2446,9 @@ function TextHooker() {
       const el = topbarRef.current;
 
       // Only trust scrollWidth as the "natural" row width while actually
-      // laid out as a row; once vertical, the row width shrinks to the
+      // laid out as a row. Once vertical, the row width shrinks to the
       // widest single item, so keep the last known row width instead.
-      // el is null while the bar is hidden (unmounted) — fall back to the
+      // el is null while the bar is hidden (unmounted): fall back to the
       // last known natural width so it can still flip back to horizontal.
       if (el && !isTopbarVerticalRef.current) {
         topbarNaturalWidthRef.current = el.scrollWidth;
@@ -2512,7 +2512,6 @@ function TextHooker() {
         </div>
       )}
 
-      {/* Top Bar */}
       {isTopbarHidden && effectiveTopbarVertical ? (
         <button
           type="button"
@@ -2761,7 +2760,6 @@ function TextHooker() {
         </div>
       )}
 
-      {/* Timer Edit Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isTimerEditOpen ? 'modal-open' : ''}`}
       >
@@ -2841,7 +2839,6 @@ function TextHooker() {
         </form>
       </dialog>
 
-      {/* Reset Timer Confirmation Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isResetTimerConfirmOpen ? 'modal-open' : ''}`}
       >
@@ -2910,7 +2907,6 @@ function TextHooker() {
         </form>
       </dialog>
 
-      {/* Resume Session Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isResumePromptOpen ? 'modal-open' : ''}`}
       >
@@ -2966,7 +2962,6 @@ function TextHooker() {
         </form>
       </dialog>
 
-      {/* Stats Modal */}
       <dialog
         className={`modal modal-bottom sm:modal-middle ${isStatsOpen ? 'modal-open' : ''}`}
       >
@@ -3011,7 +3006,6 @@ function TextHooker() {
                     </div>
                   </div>
 
-                  {/* Progress */}
                   <div className="space-y-2 mt-4">
                     <div className="text-sm font-semibold opacity-70 mb-2">
                       {t('texthooker:hooker.readingProgress')}
@@ -3294,7 +3288,6 @@ function TextHooker() {
         onClose={() => setSelectedIntelligenceEntry(null)}
       />
 
-      {/* Settings Dropdown Panel */}
       {isSettingsOpen && (
         <div
           ref={settingsPanelRef}

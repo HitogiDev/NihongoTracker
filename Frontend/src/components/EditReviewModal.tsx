@@ -220,7 +220,6 @@ export default function EditReviewModal({
               )}
           </Field>
 
-          {/* Rating */}
           <Field label={t('write.ratingOptional')}>
             <div className="flex items-center gap-3">
               <div className="rating rating-lg rating-half">
@@ -257,7 +256,6 @@ export default function EditReviewModal({
             </div>
           </Field>
 
-          {/* Content */}
           <Field label={t('write.review')}>
             <div className="flex flex-wrap gap-2 mb-2">
               <button
@@ -425,7 +423,6 @@ export default function EditReviewModal({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2 justify-end pt-4">
             <button
               type="button"

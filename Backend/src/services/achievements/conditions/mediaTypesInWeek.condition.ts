@@ -16,7 +16,7 @@ export async function evaluateMediaTypesInWeek(
   windowDays = 7
 ): Promise<{ met: boolean; progress: number }> {
   const rows = await Log.aggregate<{ _id: { day: string; type: string } }>([
-    // unknownDate logs have a placeholder date — they belong to no real week
+    // unknownDate logs have a placeholder date: they belong to no real week
     { $match: { user: userId, unknownDate: { $ne: true } } },
     {
       $group: {

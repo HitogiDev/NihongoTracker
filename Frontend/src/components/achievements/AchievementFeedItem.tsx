@@ -57,7 +57,6 @@ export default function AchievementFeedItem({
       }}
       className="flex items-center gap-3 rounded-2xl px-3 py-2.5 bg-base-200/60 border border-base-300 cursor-pointer hover:border-primary/40 hover:bg-base-200 transition"
     >
-      {/* User avatar (global feed) */}
       {showUser && user?.username && (
         <Link
           to={`/user/${user.username}`}
@@ -78,7 +77,6 @@ export default function AchievementFeedItem({
         </Link>
       )}
 
-      {/* Achievement icon */}
       <div className="shrink-0">
         {a.iconSlug ? (
           <Icon
@@ -92,7 +90,6 @@ export default function AchievementFeedItem({
         )}
       </div>
 
-      {/* Text */}
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-1.5 text-sm">
           {showUser && user?.username ? (

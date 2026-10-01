@@ -82,7 +82,7 @@ const MangaSchema = new Schema({
 const Manga = MediaBase.discriminator('manga', MangaSchema);
 
 // Light novels reuse the manga shape (chapters/characters/volumes). The
-// discriminator value is 'light-novel'; the JS identifier stays `Reading`.
+// discriminator value is 'light-novel'. The JS identifier stays `Reading`.
 const Reading = MediaBase.discriminator('light-novel', MangaSchema);
 
 const VideoSchema = new Schema({

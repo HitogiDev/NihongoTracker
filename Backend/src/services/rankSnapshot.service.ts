@@ -294,7 +294,7 @@ export async function backfillRankHistory(): Promise<{
     start = new Date(end.getTime() - (MAX_WEEKS - 1) * WEEK_MS);
   }
 
-  // Clean rebuild so re-runs don't leave stale snapshots from a wider window.
+  // Clean rebuild so re-runs do not leave stale snapshots from a wider window.
   await RankSnapshot.deleteMany({});
 
   let weeks = 0;

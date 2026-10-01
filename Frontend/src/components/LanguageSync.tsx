@@ -7,7 +7,7 @@ import { useUserDataStore } from '../store/userData';
  * Keeps the active i18next language in step with the language stored on the
  * account. Renders nothing.
  *
- * The account value wins whenever it changes — that is what makes login and
+ * The account value wins whenever it changes: that is what makes login and
  * cross-device sync work. Local switches update the store on mutation success,
  * so they converge here instead of fighting.
  */

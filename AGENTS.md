@@ -24,6 +24,19 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 - There is no configured frontend test runner; verify UI behavior manually when appropriate.
 - When adding an environment variable, update both the README environment table and `Backend/.env.example`.
 
+## Code comment style
+
+Apply the relevant word, verb, sentence, punctuation, and style rules from [ASD-STE100 Issue 9, Part 1](https://www.asd-ste100.org/assets/files/ASD-STE100_ISSUE9.pdf). This adapts the rules for source code. It does not claim full ASD-STE100 compliance.
+
+- Keep a comment only when code and names do not explain a constraint, reason, edge case, compatibility rule, security rule, or contract.
+- Delete comments that repeat the next statement, describe an obvious UI region, or preserve inactive code. Keep TODOs, license notices, generated-file markers, and tool directives.
+- Write one idea per sentence. Use direct words, active voice, and consistent names. Use the imperative for instructions.
+- Keep descriptive sentences to 25 words or fewer. Keep procedural instructions to 20 words or fewer. Split longer explanations into separate sentences or a list.
+- Use full words and standard punctuation. Do not use contractions, semicolons as sentence punctuation, or em dashes. Prefer a direct verb to a noun that describes an action.
+- Use dictionary words with their approved meaning and part of speech when verified. Keep code identifiers, protocol names, and domain terms exact as project terminology.
+- Do not change behavior or user-facing copy while editing comments.
+- Preserve the meaning of comments that document non-obvious behavior. Do not force dictionary substitutions that make a technical explanation less accurate.
+
 ## Common commands
 
 ### Backend
@@ -86,6 +99,9 @@ cd ../Backend && npm run build:frontend && npm run build && npm start
 Throw `customError(message, statusCode, kind?)` from controllers/services and pass failures to the global handler. `errorMiddleware.ts` normalizes Mongoose and JWT errors. Keep unmatched API handling before the SPA catch-all.
 
 ### Logs and XP
+
+Daily, weekly, and custom period goals can optionally filter progress by a log's media type. A missing or null media type counts all logs. Keep the goal media type options aligned with the log schema, and calculate recurring progress per goal so goals with the same metric can track different media.
+Custom period goal dates include both their start and target days in the owner's timezone. Presets use Sunday through Saturday for This Week, calendar boundaries for This Month, and count today as the first of Next X days. Keep creation, editing, validation, and progress aligned on these date rules.
 
 `models/log.model.ts` is the central immersion model. Valid log types are `light-novel|reading|anime|vn|video|manga|audio|movie|tv show|other|game`.
 

@@ -601,7 +601,7 @@ function SettingsScreen() {
         setShowEmailSentModal(true);
         setResendCooldown(60); // Start cooldown immediately after sending verification email
       } else {
-        // Only show toast if email wasn't changed (no modal will be shown)
+        // Only show toast if email was not changed (no modal will be shown)
         toast.success(t('toast.userUpdated'));
       }
 
@@ -2072,7 +2072,7 @@ function SettingsScreen() {
     return renderMarkdownWithSpoilers(aboutPreviewText);
   }, [aboutPreviewText]);
 
-  // ——— Markdown toolbar ———
+  // ::: Markdown toolbar :::
   const MarkdownToolbar = (
     <div className="flex flex-wrap gap-1 mb-2 p-2 bg-base-200 rounded-t-lg border border-base-300 border-b-0">
       <button
@@ -2209,7 +2209,6 @@ function SettingsScreen() {
         <ImageIcon className="w-4 h-4" />
       </button>
 
-      {/* View mode switcher */}
       <div className="ml-auto flex items-center gap-1">
         <button
           type="button"
@@ -2258,7 +2257,6 @@ function SettingsScreen() {
 
   return (
     <div className="min-h-screen bg-base-200 pt-20">
-      {/* Clear Data Modal */}
       <dialog
         id="clear_data_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -2360,7 +2358,7 @@ function SettingsScreen() {
       />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Page Header — same block every other screen uses; a full-bleed
+        {/* Page Header: same block every other screen uses. A full-bleed
             bg-base-100 band here was the only one in the app. */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-base-content mb-2">
@@ -2370,7 +2368,6 @@ function SettingsScreen() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar Navigation */}
           <aside className="lg:w-64 flex-shrink-0">
             <div className="card surface sticky top-6">
               <div className="card-body p-2">
@@ -2397,9 +2394,7 @@ function SettingsScreen() {
             </div>
           </aside>
 
-          {/* Main Content */}
           <main className="flex-1 min-w-0 space-y-6">
-            {/* ── PROFILE TAB ── */}
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div className="card surface">
@@ -2419,18 +2414,15 @@ function SettingsScreen() {
                     </div>
 
                     <form onSubmit={handleUpdateProfile} className="space-y-8">
-                      {/* About Me with real-time preview */}
                       <Field
                         label={t('profile.about')}
                         aside={t('profile.markdownSupported')}
                       >
                         {MarkdownToolbar}
 
-                        {/* Editor + Preview area */}
                         <div
                           className={`border border-base-300 rounded-b-lg overflow-hidden ${aboutViewMode === 'split' ? 'grid grid-cols-2 divide-x divide-base-300' : ''}`}
                         >
-                          {/* Editor pane */}
                           {(aboutViewMode === 'edit' ||
                             aboutViewMode === 'split') && (
                             <div
@@ -2448,7 +2440,6 @@ function SettingsScreen() {
                             </div>
                           )}
 
-                          {/* Preview pane */}
                           {(aboutViewMode === 'preview' ||
                             aboutViewMode === 'split') && (
                             <div className="p-4 min-h-48 bg-base-50">
@@ -2477,7 +2468,6 @@ function SettingsScreen() {
                         </div>
                       </Field>
 
-                      {/* Avatar */}
                       <Field label={t('profile.avatar')}>
                         <div className="flex flex-col sm:flex-row gap-4 items-start">
                           <div className="flex-1 w-full">
@@ -2579,7 +2569,6 @@ function SettingsScreen() {
                         </div>
                       </Field>
 
-                      {/* Banner */}
                       <Field label={t('profile.banner')}>
                         <div className="flex flex-col gap-4">
                           <div className="w-full">
@@ -2640,7 +2629,7 @@ function SettingsScreen() {
                                 )}
                             </label>
                           </div>
-                          {/* Always mounted — see the avatar canvas above. */}
+                          {/* Always mounted: see the avatar canvas above. */}
                           {user?.banner &&
                             !croppedBannerFile &&
                             !bannerMarkedForRemoval && (
@@ -2696,10 +2685,8 @@ function SettingsScreen() {
               </div>
             )}
 
-            {/* ── CUSTOMIZATION TAB ── */}
             {activeTab === 'customization' && <CustomizationSettings />}
 
-            {/* ── ACCOUNT & SECURITY TAB ── */}
             {activeTab === 'account' && (
               <div className="space-y-6">
                 <div className="card surface">
@@ -2718,7 +2705,6 @@ function SettingsScreen() {
                       </div>
                     </div>
 
-                    {/* Current password context banner */}
                     <div className="alert alert-info alert-soft mb-6">
                       <ShieldCheck className="h-5 w-5 shrink-0" />
                       <div>
@@ -2730,7 +2716,7 @@ function SettingsScreen() {
                     </div>
 
                     <form onSubmit={handleUpdateUser} className="space-y-6">
-                      {/* Current Password — shown prominently at top */}
+                      {/* Current Password: shown prominently at top */}
                       <div className="w-full surface-muted rounded-box p-4">
                         <div className="mb-2 flex items-center justify-between gap-4">
                           <label
@@ -2762,7 +2748,6 @@ function SettingsScreen() {
                         {t('account.detailsHeading')}
                       </div>
 
-                      {/* Username */}
                       <Field label={t('account.username')} className="w-full">
                         <input
                           type="text"
@@ -2782,7 +2767,6 @@ function SettingsScreen() {
                         </label>
                       </Field>
 
-                      {/* Email */}
                       <Field
                         label={t('account.email')}
                         aside={
@@ -2863,7 +2847,6 @@ function SettingsScreen() {
                         {t('account.changePasswordHeading')}
                       </div>
 
-                      {/* New Password */}
                       <Field
                         label={t('account.newPassword')}
                         className="w-full"
@@ -2888,7 +2871,6 @@ function SettingsScreen() {
                         </label>
                       </Field>
 
-                      {/* Confirm New Password */}
                       <Field
                         label={t('account.confirmPassword')}
                         className="w-full"
@@ -2943,7 +2925,6 @@ function SettingsScreen() {
                   </div>
                 </div>
 
-                {/* Danger Zone */}
                 <div className="card bg-error/5 border border-error/20 shadow-sm">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-4">
@@ -2988,7 +2969,6 @@ function SettingsScreen() {
               </div>
             )}
 
-            {/* ── PREFERENCES TAB ── */}
             {activeTab === 'preferences' && (
               <div className="space-y-6">
                 <div className="card surface">
@@ -3116,7 +3096,6 @@ function SettingsScreen() {
                   </div>
                 </div>
 
-                {/* Tags */}
                 <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
@@ -3138,7 +3117,6 @@ function SettingsScreen() {
               </div>
             )}
 
-            {/* ── PATREON TAB ── */}
             {activeTab === 'privacy' && (
               <div className="card surface">
                 <div className="card-body">
@@ -3160,10 +3138,8 @@ function SettingsScreen() {
               </div>
             )}
 
-            {/* ── PATREON TAB ── */}
             {activeTab === 'patreon' && (
               <div className="space-y-6">
-                {/* Patreon connection */}
                 <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
@@ -3183,7 +3159,6 @@ function SettingsScreen() {
                     <div className="space-y-4">
                       {patreonStatus.patreonId ? (
                         <div className="space-y-4">
-                          {/* Connected Status */}
                           <div className="flex items-center justify-between p-4 bg-success/10 border border-success/20 rounded-lg">
                             <div className="flex items-center gap-3">
                               <HeartHandshake className="w-5 h-5 text-success" />
@@ -3273,7 +3248,6 @@ function SettingsScreen() {
                   </div>
                 </div>
 
-                {/* Badge visibility - any active supporter */}
                 {patreonStatus.isActive && patreonStatus.tier && (
                   <div className="card surface">
                     <div className="card-body">
@@ -3368,7 +3342,6 @@ function SettingsScreen() {
 
                 {/* Badge Color Customization - Consumer Only */}
                 <div className="card surface relative overflow-hidden">
-                  {/* Lock Overlay for non-Consumer tiers */}
                   {!(
                     patreonStatus.isActive && patreonStatus.tier === 'consumer'
                   ) && (
@@ -3430,7 +3403,6 @@ function SettingsScreen() {
                     </div>
 
                     <div className="space-y-6">
-                      {/* Badge Preview */}
                       <div className="flex items-center justify-center p-6 surface-muted">
                         <div
                           className={`badge badge-lg gap-2 px-4 py-3 font-bold ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'badge-primary' : badgeColor === 'secondary' ? 'badge-secondary' : ''}`}
@@ -3464,9 +3436,7 @@ function SettingsScreen() {
                         </div>
                       </div>
 
-                      {/* Color Selectors */}
                       <div className="flex items-center justify-center gap-4">
-                        {/* Background Color */}
                         <button
                           type="button"
                           className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
@@ -3487,7 +3457,6 @@ function SettingsScreen() {
                           </span>
                         </button>
 
-                        {/* Text Color */}
                         <button
                           type="button"
                           className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
@@ -3508,7 +3477,6 @@ function SettingsScreen() {
                         </button>
                       </div>
 
-                      {/* Save Button */}
                       <button
                         type="button"
                         className="btn btn-primary w-full"
@@ -3533,7 +3501,6 @@ function SettingsScreen() {
               </div>
             )}
 
-            {/* ── ADVANCED TAB ── */}
             {activeTab === 'advanced' && (
               <div className="space-y-6">
                 {/* AniList lives here rather than in its own tab: it is how logs
@@ -3970,7 +3937,6 @@ function SettingsScreen() {
                   }}
                 />
 
-                {/* Data Management */}
                 <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
@@ -3988,7 +3954,6 @@ function SettingsScreen() {
                     </div>
 
                     <div className="space-y-8">
-                      {/* Import */}
                       <div>
                         <h3 className="font-semibold mb-3 text-base-content flex items-center gap-2">
                           <CloudUpload className="h-4 w-4 text-info" />
@@ -4130,7 +4095,6 @@ function SettingsScreen() {
 
                       <div className="divider"></div>
 
-                      {/* Export */}
                       <div>
                         <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
                           <Download className="h-4 w-4 text-success" />
@@ -4161,7 +4125,6 @@ function SettingsScreen() {
 
                       <div className="divider"></div>
 
-                      {/* API Keys */}
                       <div>
                         <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
                           <Key className="h-4 w-4" />
@@ -4180,7 +4143,6 @@ function SettingsScreen() {
                           {t('apiKeys.introEnd')}
                         </p>
 
-                        {/* New key creation */}
                         <div className="flex gap-2 mb-4">
                           <input
                             type="text"
@@ -4212,7 +4174,6 @@ function SettingsScreen() {
                           </button>
                         </div>
 
-                        {/* Newly created key banner */}
                         {newlyCreatedKey && (
                           <div className="alert alert-success mb-4 max-w-full overflow-hidden">
                             <div className="w-full min-w-0 space-y-2">
@@ -4262,7 +4223,6 @@ function SettingsScreen() {
                           </div>
                         )}
 
-                        {/* Existing keys list */}
                         {isLoadingApiKeys ? (
                           <div className="flex justify-center py-4">
                             <span className="loading loading-spinner loading-md"></span>
@@ -4327,7 +4287,6 @@ function SettingsScreen() {
 
                       <div className="divider"></div>
 
-                      {/* Sync External Data */}
                       <details
                         ref={advancedOptionsRef}
                         className="collapse collapse-arrow bg-base-200 border border-base-300"
@@ -4337,12 +4296,11 @@ function SettingsScreen() {
                           {t('advanced.title')}
                         </summary>
                         <div className="collapse-content space-y-6 pt-2">
-                          {/* Discord ID */}
                           <form
                             onSubmit={handleUpdateDiscord}
                             className="space-y-4"
                           >
-                            {/* The field's own legend is the heading here —
+                            {/* The field's own legend is the heading here:
                                 a separate <h3> repeated the same string. */}
                             <Field
                               label={t('advanced.discordId')}
@@ -4421,7 +4379,6 @@ function SettingsScreen() {
 
                           <div className="divider my-1"></div>
 
-                          {/* Sync External Data */}
                           <div>
                             <h3 className="font-semibold mb-3 text-base-content">
                               {t('data.syncExternal')}
@@ -4452,7 +4409,6 @@ function SettingsScreen() {
                   </div>
                 </div>
 
-                {/* Log Management */}
                 <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
@@ -4492,7 +4448,6 @@ function SettingsScreen() {
         </div>
       </div>
 
-      {/* Insert Image Modal */}
       <dialog
         id="insert-image-modal"
         className={`modal modal-bottom sm:modal-middle ${isImageModalOpen ? 'modal-open' : ''}`}
@@ -4556,7 +4511,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Background Color Picker Modal */}
       <dialog
         id="bg_color_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -4567,7 +4521,6 @@ function SettingsScreen() {
             {t('patreon.badgeBackgroundColor')}
           </h3>
 
-          {/* Theme Presets */}
           <div className="space-y-3 mb-4">
             <button
               type="button"
@@ -4598,7 +4551,6 @@ function SettingsScreen() {
 
           <div className="divider">OR</div>
 
-          {/* Custom Color Picker */}
           <div className="flex flex-col items-center gap-3">
             <div style={{ width: '200px', height: '200px' }}>
               <Wheel
@@ -4638,7 +4590,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Text Color Picker Modal */}
       <dialog
         id="text_color_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -4649,7 +4600,6 @@ function SettingsScreen() {
             {t('patreon.badgeTextColor')}
           </h3>
 
-          {/* Theme Presets */}
           <div className="space-y-3 mb-4">
             <button
               type="button"
@@ -4671,7 +4621,6 @@ function SettingsScreen() {
 
           <div className="divider">OR</div>
 
-          {/* Custom Color Picker */}
           <div className="flex flex-col items-center gap-3">
             <div style={{ width: '200px', height: '200px' }}>
               <Wheel
@@ -4711,7 +4660,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Email Sent Modal */}
       <dialog
         className="modal modal-bottom sm:modal-middle"
         open={showEmailSentModal}
@@ -4745,7 +4693,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Advanced Options Info Modal */}
       <dialog
         id="advanced_options_info_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -4794,7 +4741,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Other CSV Help Modal */}
       <dialog
         id="other_csv_help_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -4926,7 +4872,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Kechimochi CSV Help Modal */}
       <dialog
         id="kechimochi_csv_help_modal"
         className="modal modal-bottom sm:modal-middle"

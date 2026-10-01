@@ -177,14 +177,14 @@ const AnilistSchema = new Schema<IAnilistData>(
     anilistId: { type: Number, sparse: true, unique: true },
     anilistUsername: { type: String },
     anilistAvatar: { type: String },
-    // AniList tokens live a year and have no refresh grant — kept out of every
+    // AniList tokens live a year and have no refresh grant: kept out of every
     // query by default and only ever read by the sync service.
     accessToken: { type: String, select: false },
     tokenExpiry: { type: Date },
     linkedAt: { type: Date },
     autoSync: { type: Boolean, default: true },
     // AniList shows the user asks not to import. Stored denormalized (title +
-    // image) so the settings UI can render them without an extra lookup; the
+    // image) so the settings UI can render them without an extra lookup. The
     // sync only ever reads `anilistId`.
     excludedMedia: { type: [AnilistMediaExclusionSchema], default: [] },
     lastActivityId: { type: Number, default: 0 },
@@ -379,7 +379,7 @@ UserSchema.pre('save', async function (next) {
 /**
  * Losing a Patreon tier takes the paid cosmetics with it.
  *
- * Exported so it can be tested against a real document without a database —
+ * Exported so it can be tested against a real document without a database:
  * the hook below is the only caller.
  */
 export function applyPatreonCustomizationDowngrade(user: IUser): boolean {
@@ -395,11 +395,9 @@ export function applyPatreonCustomizationDowngrade(user: IUser): boolean {
 }
 
 /**
- * This lives on the model rather than at the call sites because the tier is
- * cleared from half a dozen places — the webhook, the OAuth sync, unlinking,
- * the admin panel, and the manual-expiry check in `authMiddleware` — and every
- * one of them ends in `user.save()`. One hook cannot be forgotten by the next
- * one added.
+ * Keep this hook on the model because several paths clear the tier.
+ * The webhook, OAuth sync, unlink flow, admin panel, and expiry check all call `user.save()`.
+ * The model hook applies the downgrade across those paths.
  */
 UserSchema.pre('save', function (next) {
   applyPatreonCustomizationDowngrade(this);

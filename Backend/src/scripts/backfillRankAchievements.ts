@@ -3,10 +3,10 @@
  * Run: npm run backfill:ranks
  *
  * Retroactively awards Top 10 / Podium / King / Consistent for every completed
- * Sunday→Saturday week. The weekly cron used to score the wrong window — it
- * ranked the ~25 hours of the week that had just started instead of the week
- * that had just ended — so users who finished a week in the top 10 never got
- * the achievement. This replays the history with the corrected window.
+ * Sunday-to-Saturday week. The weekly cron used to score the wrong window.
+ * It counted about 25 hours from the current week instead of the week that ended.
+ * Users who finished in the top 10 did not get the achievement.
+ * This script replays history with the corrected window.
  *
  * Safe to re-run: grants are upserts and never re-award what a user already has.
  */

@@ -15,7 +15,7 @@ import { AchievementRarity, IPendingAchievement } from '../../types';
  * Achievements reach it from two directions:
  * - inline, pushed by `createLogFn` from the mutation response, so every
  *   log entry point (log screen, quick log, texthooker, shared log, playlist
- *   batches) reveals without wiring anything itself;
+ *   batches) reveals without wiring anything itself.
  * - on mount, by draining `/achievements/me/pending`, which covers unlocks
  *   granted outside a request the client saw (cron re-evaluation, imports).
  */
@@ -97,7 +97,7 @@ export default function AchievementRevealHost() {
         refreshNotificationsAfterReveal();
       })
       .catch(() => {
-        // Achievement display is non-critical — stay silent.
+        // Achievement display is non-critical: stay silent.
       });
 
     return () => {

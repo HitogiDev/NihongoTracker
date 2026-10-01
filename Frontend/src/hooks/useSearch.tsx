@@ -260,7 +260,7 @@ export default function useSearch(
     },
     enabled: isEnabled,
     // Keep the last results visible while a new query is in flight so the
-    // dropdown doesn't flash empty between keystrokes (smooths Google Books,
+    // dropdown does not flash empty between keystrokes (smooths Google Books,
     // which can lag on rate-limited bursts).
     placeholderData: keepPreviousData,
     retry: 1,

@@ -34,7 +34,7 @@ interface IGoogleBooksResponse {
   items?: IGoogleBookVolume[];
 }
 
-/** Google Books thumbnails come as http with a page-curl overlay — clean them up. */
+/** Google Books thumbnails come as http with a page-curl overlay: clean them up. */
 function normalizeImage(url?: string): string | undefined {
   if (!url) return undefined;
   return url.replace(/^http:\/\//, 'https://').replace(/&edge=curl/, '');
@@ -100,8 +100,8 @@ const sleep = (ms: number) => new Promise((resolve) => {
 });
 
 // Short-lived in-memory cache. Typing (and re-typing) the same query fires many
-// identical searches; Google Books rate-limits bursts with 429, so caching both
-// speeds up repeats and keeps us under the quota — the main cause of the search
+// identical searches. Google Books rate-limits bursts with 429, so caching both
+// speeds up repeats and keeps us under the quota: the main cause of the search
 // feeling flaky/slow.
 const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
 const searchCache = new Map<string, { at: number; data: IMediaDocument[] }>();
@@ -125,7 +125,7 @@ export async function searchGoogleBooks(
   );
 
   // Retry once on a 429 (transient burst rate-limit) before giving up, so a
-  // momentary throttle doesn't surface as an empty "No results" flicker.
+  // momentary throttle does not surface as an empty "No results" flicker.
   const MAX_ATTEMPTS = 2;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -135,8 +135,8 @@ export async function searchGoogleBooks(
         .filter((doc): doc is IMediaDocument => doc !== null);
 
       // Only cache non-empty responses. An empty result can be a soft throttle
-      // rather than a genuine "no matches"; caching it would wrongly pin the
-      // query to empty for the whole TTL. Empty results just aren't cached, so
+      // rather than a genuine "no matches". Caching it would wrongly pin the
+      // query to empty for the whole TTL. Empty results just are not cached, so
       // the next keystroke retries.
       if (results.length > 0) {
         searchCache.set(cacheKey, { at: Date.now(), data: results });
@@ -153,7 +153,7 @@ export async function searchGoogleBooks(
       }
 
       // Degrade to an empty result set instead of surfacing a 500 to the log
-      // form. Do NOT cache this — it's a failure, not a real "no results", so
+      // form. Do NOT cache this: it is a failure, not a real "no results", so
       // the next keystroke should retry. A persistent 429 usually means
       // GOOGLE_BOOKS_API_KEY is unset (low keyless quota).
       console.warn(

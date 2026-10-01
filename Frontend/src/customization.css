@@ -304,7 +304,7 @@
 }
 
 /* Motion-sensitive visitors get the cosmetics without the movement. */
-/* daisyUI only slows `aura` down under reduced motion; this app's contract (see
+/* daisyUI only slows `aura` down under reduced motion. This app's contract (see
    the notice in Settings › Customization) is that animated cosmetics stop, so
    the aura frame and its two halo pseudo-elements are stopped with the rest. */
 @media (prefers-reduced-motion: reduce) {

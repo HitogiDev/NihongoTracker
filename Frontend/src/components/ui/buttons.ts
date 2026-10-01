@@ -7,7 +7,7 @@
  * button, and `join-item` members whose state is computed.
  *
  * Class order is always: btn -> color -> style -> behavior -> size -> shape.
- * Never build a class by interpolation (`btn-${color}`) — Tailwind v4 only
+ * Never build a class by interpolation (`btn-${color}`): Tailwind v4 only
  * generates utilities it can see as literal strings in the source.
  */
 export const BTN = {
@@ -113,7 +113,7 @@ export interface ButtonStyleProps {
 }
 
 /**
- * Class string for elements that must not be a `<button>` — router `Link`,
+ * Class string for elements that must not be a `<button>`: router `Link`,
  * `<a>`, `<label htmlFor>`, `<summary>`. Prefer `<Button>` everywhere else.
  */
 export function buttonClass({

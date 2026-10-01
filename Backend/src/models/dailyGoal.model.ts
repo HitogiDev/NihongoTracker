@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IDailyGoal } from '../types.js';
+import { goalMediaTypes } from '../services/goalMediaType.js';
 
 const DailyGoalSchema = new Schema<IDailyGoal>(
   {
@@ -7,11 +8,12 @@ const DailyGoalSchema = new Schema<IDailyGoal>(
     type: {
       type: String,
       required: true,
-      enum: ['time', 'chars', 'episodes', 'pages'],
+      enum: ['time', 'chars', 'episodes', 'pages']
     },
+    mediaType: { type: String, enum: goalMediaTypes, default: null },
     cadence: { type: String, enum: ['daily', 'weekly'], default: 'daily' },
     target: { type: Number, required: true, min: 1 },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

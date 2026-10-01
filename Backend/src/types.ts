@@ -17,7 +17,7 @@ export interface IRanking extends Document {
 export enum userRoles {
   admin = 'admin',
   user = 'user',
-  mod = 'mod',
+  mod = 'mod'
 }
 
 export type StatsCardId =
@@ -77,7 +77,7 @@ export interface ProfileWidgetLayout {
 
 /**
  * UI languages the app ships translations for.
- * Mirrored in Frontend/src/i18n/languages.ts — there is no shared package in
+ * Mirrored in Frontend/src/i18n/languages.ts: there is no shared package in
  * this monorepo, so both lists must be updated together when adding a locale.
  */
 export const SUPPORTED_LANGUAGES = ['en', 'es'] as const;
@@ -87,16 +87,11 @@ export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
  * Cosmetic profile customization.
  *
  * Every option is gated by either merit (level, streak, unlocked achievements)
- * or an active Patreon tier — see `services/customization.ts`, which owns the
+ * or an active Patreon tier: see `services/customization.ts`, which owns the
  * rules and is the only place allowed to decide what a user may equip. The
  * stored value is always re-validated on write, never trusted from the client.
  */
-export const NAME_EFFECTS = [
-  'none',
-  'gradient',
-  'glow',
-  'shimmer',
-] as const;
+export const NAME_EFFECTS = ['none', 'gradient', 'glow', 'shimmer'] as const;
 export type NameEffect = (typeof NAME_EFFECTS)[number];
 
 export const AVATAR_FRAMES = [
@@ -108,12 +103,12 @@ export const AVATAR_FRAMES = [
   'neon',
   'rainbow',
   /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
-  'aura',
+  'aura'
 ] as const;
 export type AvatarFrame = (typeof AVATAR_FRAMES)[number];
 
 /**
- * Accent applied to the owner's whole profile page — the immersion heatmap,
+ * Accent applied to the owner's whole profile page: the immersion heatmap,
  * progress bars, highlights. `custom` reads `accentColor` instead of a preset.
  */
 export const PROFILE_ACCENTS = [
@@ -123,7 +118,7 @@ export const PROFILE_ACCENTS = [
   'forest',
   'retro',
   'mono',
-  'custom',
+  'custom'
 ] as const;
 export type ProfileAccent = (typeof PROFILE_ACCENTS)[number];
 
@@ -134,7 +129,7 @@ export const SIGNATURE_STATS = [
   'streak',
   'level',
   'xp',
-  'logs',
+  'logs'
 ] as const;
 export type SignatureStat = (typeof SIGNATURE_STATS)[number];
 
@@ -143,7 +138,7 @@ export const BANNER_EFFECTS = [
   'sakura',
   'snow',
   'stars',
-  'fireflies',
+  'fireflies'
 ] as const;
 export type BannerEffect = (typeof BANNER_EFFECTS)[number];
 
@@ -214,7 +209,7 @@ export interface IPatreonData {
   memberSince?: Date;
   lastChecked?: Date;
   isActive?: boolean;
-  /** Set when tier was granted manually by an admin; auto-expires at this date */
+  /** Set when tier was granted manually by an admin. Auto-expires at this date */
   manualTierExpiry?: Date;
 }
 
@@ -248,7 +243,7 @@ export interface IAnilistData {
   lastActivityId?: number;
   /**
    * Activities older than this are ignored. Set to the link time so linking
-   * doesn't retroactively log years of history; cleared by a full backfill.
+   * does not retroactively log years of history. Cleared by a full backfill.
    */
   syncFrom?: Date | null;
   lastSyncedAt?: Date;
@@ -307,7 +302,7 @@ export interface IUserMediaStatus extends Document {
   autoCompleteSuppressed?: boolean;
   /**
    * Set when the user removes the media from their immersion list without
-   * deleting its logs. Hides the entry from getImmersionList; cleared as soon as
+   * deleting its logs. Hides the entry from getImmersionList. Cleared as soon as
    * the user logs the media again or sets a status on it explicitly.
    */
   hiddenFromList?: boolean;
@@ -547,7 +542,7 @@ export const ACTIVITY_TYPES = [
   'club_milestone',
   'club_challenge_started',
   'cooperative_goal_progress',
-  'cooperative_goal_completed',
+  'cooperative_goal_completed'
 ] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
@@ -555,7 +550,7 @@ export const SOCIAL_VISIBILITIES = [
   'public',
   'followers',
   'following',
-  'private',
+  'private'
 ] as const;
 export type SocialVisibility = (typeof SOCIAL_VISIBILITIES)[number];
 
@@ -563,7 +558,7 @@ export const COMMENT_PERMISSIONS = [
   'everyone',
   'followers',
   'following',
-  'nobody',
+  'nobody'
 ] as const;
 export type CommentPermission = (typeof COMMENT_PERMISSIONS)[number];
 
@@ -574,9 +569,7 @@ export interface ISocialPrivacySettings {
   commenting?: CommentPermission;
 }
 
-export const ACTIVITY_REACTIONS = [
-  'like',
-] as const;
+export const ACTIVITY_REACTIONS = ['like'] as const;
 export type ActivityReactionType = (typeof ACTIVITY_REACTIONS)[number];
 
 export interface IActivity extends Document {
@@ -657,10 +650,10 @@ export interface IMediaDocument {
     | 'book';
   episodes?: number;
   episodeDuration?: number;
-  /** Anime only — AniList airing window (end is null while still airing) */
+  /** Anime only: AniList airing window (end is null while still airing) */
   airingStartDate?: Date | null;
   airingEndDate?: Date | null;
-  /** VN only — year of the earliest known release, from the VNDB dump */
+  /** VN only: year of the earliest known release, from the VNDB dump */
   releaseYear?: number | null;
   genres?: string[];
   chapters?: number;
@@ -806,7 +799,7 @@ export interface IEditedFields {
   xp?: number;
 }
 
-/** AniList dates can be partially unknown — any component may be null. */
+/** AniList dates can be partially unknown: any component may be null. */
 export interface AnilistFuzzyDate {
   year: number | null;
   month: number | null;
@@ -894,12 +887,12 @@ export interface ILog extends Document {
   mediaId?: string;
   matchDismissed?: boolean;
   manabeId?: string;
-  /** AniList ListActivity this log was synced from — the dedupe key. */
+  /** AniList ListActivity this log was synced from: the dedupe key. */
   anilistActivityId?: number;
   /**
    * Episode range the source AniList activity covered (inclusive). Stored so a
-   * later merged activity — AniList replaces the originals with a new id
-   * spanning the combined range — can be recognised as superseding this log
+   * later merged activity: AniList replaces the originals with a new id
+   * spanning the combined range: can be recognised as superseding this log
    * instead of being written as a duplicate.
    */
   anilistProgressStart?: number;
@@ -1077,7 +1070,7 @@ export interface OtherCSVLog {
 }
 
 /**
- * Kechimochi's activity export. The current export has no `Media Type` column —
+ * Kechimochi's activity export. The current export has no `Media Type` column:
  * the medium is described by `Media Variant` (most specific, e.g. "Light Novel")
  * and the activity by `Activity Type` / `Default Activity Type` ("Reading",
  * "Watching"). `Media Type` is kept optional for older exports.
@@ -1099,6 +1092,7 @@ export interface IDailyGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  mediaType?: ILog['type'] | null;
   cadence: 'daily' | 'weekly';
   target: number;
   isActive: boolean;
@@ -1124,6 +1118,7 @@ export interface ILongTermGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  mediaType?: ILog['type'] | null;
   totalTarget: number;
   targetDate: Date;
   displayTimeframe: 'daily' | 'weekly' | 'monthly';
@@ -1323,7 +1318,7 @@ export const CLUB_CHALLENGE_METRICS = [
   'chars',
   'pages',
   'episodes',
-  'active_days',
+  'active_days'
 ] as const;
 export type ClubChallengeMetric = (typeof CLUB_CHALLENGE_METRICS)[number];
 export type ClubObjectiveMode = 'collective' | 'individual';
@@ -1454,7 +1449,7 @@ export interface IClubListResponse {
 
 /**
  * Every notification kind the platform can emit. Adding a new kind is a
- * one-line change here plus a `createNotification` call at the event source —
+ * one-line change here plus a `createNotification` call at the event source:
  * the API, the bell and the notifications page are all type-agnostic.
  */
 export const NOTIFICATION_TYPES = [
@@ -1487,7 +1482,7 @@ export const NOTIFICATION_TYPES = [
   'streak_lost',
   // Platform
   'changelog',
-  'system',
+  'system'
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -1532,7 +1527,7 @@ export interface INotification extends Document {
 export interface INotificationSummaryItem {
   id: string;
   label: string;
-  /** Translation key for `label`; the client falls back to `label` without it. */
+  /** Translation key for `label`. The client falls back to `label` without it. */
   labelKey?: string;
   count: number;
   type: NotificationType | 'club_join_requests';
@@ -1782,20 +1777,20 @@ export interface IAchievementCondition {
   threshold?: number;
   /** For mediaType / mediaTypeHours conditions */
   mediaType?: string;
-  /** For level conditions — which stat (userLevel, readingLevel, listeningLevel) */
+  /** For level conditions, names the stat: userLevel, readingLevel, or listeningLevel */
   stat?: string;
-  /** For logTimeRange — hour range [startHour, endHour) in the user's timezone */
+  /** For logTimeRange: hour range [startHour, endHour) in the user's timezone */
   startHour?: number;
   endHour?: number;
-  /** For logOnDate — MM-DD pattern (e.g. '07-07' for Tanabata) */
+  /** For logOnDate: MM-DD pattern (e.g. '07-07' for Tanabata) */
   datePattern?: string;
-  /** For mediaReleasedBefore — exclusive upper bound on the release year */
+  /** For mediaReleasedBefore: exclusive upper bound on the release year */
   year?: number;
-  /** For mediaTypesInWeek — size of the rolling window in days (default 7) */
+  /** For mediaTypesInWeek: size of the rolling window in days (default 7) */
   days?: number;
-  /** For consecutiveDaysWithHours — hours required on each day */
+  /** For consecutiveDaysWithHours: hours required on each day */
   hours?: number;
-  /** For rapidSuccession — max gap between two logs, in seconds */
+  /** For rapidSuccession: max gap between two logs, in seconds */
   seconds?: number;
 }
 
@@ -1825,7 +1820,7 @@ export interface IUserAchievement extends Document {
   unlockedAt: Date;
   progress: number;
   notified: boolean;
-  /** Granted by an admin — exempt from automatic revocation */
+  /** Granted by an admin: exempt from automatic revocation */
   manuallyGranted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -1862,7 +1857,7 @@ export const MEDIA_RECOMMENDATION_STATUSES = [
   'pending',
   'viewed',
   'dismissed',
-  'accepted',
+  'accepted'
 ] as const;
 
 export type MediaRecommendationStatus =

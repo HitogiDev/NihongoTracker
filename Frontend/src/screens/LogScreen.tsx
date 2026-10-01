@@ -793,8 +793,8 @@ function LogScreen() {
       time: totalMinutes || undefined,
       chars: logData.readChars || undefined,
       pages: logData.readPages || undefined,
-      // Anchor the picked day in the user's timezone — the frame streaks and
-      // the heatmap bucket by — instead of the browser's local midnight.
+      // Anchor the picked day in the user's timezone: the frame streaks and
+      // the heatmap bucket by: instead of the browser's local midnight.
       date:
         logData.unknownDate || !logData.date
           ? undefined
@@ -883,7 +883,6 @@ function LogScreen() {
               <p className="text-base-content/70">{t('create.subtitle')}</p>
             </div>
 
-            {/* Log Type Selection */}
             <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title">{t('create.stepType')}</h2>
@@ -927,12 +926,10 @@ function LogScreen() {
 
             {logData.type && (
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                {/* Left Column: Form Inputs */}
                 <div className="lg:col-span-3 space-y-6">
                   <div className="card surface">
                     <div className="card-body">
                       <h2 className="card-title">{t('create.stepDetails')}</h2>
-                      {/* Media Name Input */}
                       <Field
                         label={
                           logData.type === 'video'
@@ -971,7 +968,7 @@ function LogScreen() {
                                 detectPlaylistUrl(value)
                               ) {
                                 void handlePlaylistPaste(value);
-                                // Don't populate the field — keep it clean
+                                // Do not populate the field: keep it clean
                                 return;
                               }
                               handleFieldChange('mediaName', value);
@@ -993,7 +990,6 @@ function LogScreen() {
                             </span>
                           </label>
                         )}
-                        {/* Search Suggestions */}
                         <div ref={suggestionRef} className="relative">
                           {isSuggestionsOpen &&
                             searchResult &&
@@ -1120,7 +1116,6 @@ function LogScreen() {
                         ></textarea>
                       </Field>
 
-                      {/* Dynamic Inputs based on Log Type */}
                       <div className="space-y-4">
                         {isSeriesType && (
                           <Field
@@ -1408,7 +1403,6 @@ function LogScreen() {
                         )}
                       </div>
 
-                      {/* Advanced Options */}
                       <div className="collapse collapse-arrow surface-muted overflow-visible">
                         <input
                           type="checkbox"
@@ -1613,7 +1607,6 @@ function LogScreen() {
                   </div>
                 </div>
 
-                {/* Right Column: Media Preview */}
                 <div className="lg:col-span-2">
                   <div className="card surface sticky top-24">
                     <div className="card-body">
@@ -1668,7 +1661,6 @@ function LogScreen() {
               </div>
             )}
 
-            {/* Tags Selection */}
             {logData.type && (
               <div className="card surface">
                 <div className="card-body">
@@ -1681,7 +1673,6 @@ function LogScreen() {
               </div>
             )}
 
-            {/* Submit Button */}
             {logData.type && (
               <div className="card surface">
                 <div className="card-body items-center text-center">
@@ -1709,7 +1700,6 @@ function LogScreen() {
           </form>
         </div>
 
-        {/* ── Playlist selector modal ──────────────────────────────────── */}
         <PlaylistSelectorModal
           isOpen={playlistModalOpen}
           isFetching={isFetchingPlaylist}
@@ -1724,7 +1714,6 @@ function LogScreen() {
           isSubmitting={isBatchLogging}
         />
 
-        {/* ── Batch-logging progress banner ───────────────────────────── */}
         {isBatchLogging && batchProgress && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] surface-raised border border-base-content/20 px-6 py-4 flex items-center gap-4 min-w-72">
             <span className="loading loading-spinner loading-sm text-primary" />

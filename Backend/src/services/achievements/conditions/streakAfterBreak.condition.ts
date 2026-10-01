@@ -5,7 +5,7 @@ import { getStreakRuns } from './streakHistory.js';
  * Loyal: after breaking a streak, the user came straight back and logged every
  * day for a full week.
  *
- * Only runs after the first count — the very first streak was never preceded by
+ * Only runs after the first count: the very first streak was never preceded by
  * a break. Progress is the longest such comeback run.
  */
 export async function evaluateStreakAfterBreak(

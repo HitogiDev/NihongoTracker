@@ -155,9 +155,7 @@ function ClubsScreen() {
           <p className="text-base-content/70">{t('browse.subtitle')}</p>
         </div>
 
-        {/* Search and Actions */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8 max-w-4xl mx-auto">
-          {/* Search Bar */}
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
             <input
@@ -171,7 +169,6 @@ function ClubsScreen() {
             />
           </div>
 
-          {/* Create Club Button */}
           {user && (
             <button
               className="btn btn-primary gap-2 whitespace-nowrap"
@@ -184,10 +181,8 @@ function ClubsScreen() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar - Filters */}
           <div className="lg:w-64 flex-shrink-0">
             <div className="surface p-6 space-y-6">
-              {/* Sort Options */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
                   <ListFilter className="w-5 h-5" />
@@ -243,7 +238,6 @@ function ClubsScreen() {
                 </div>
               </div>
 
-              {/* Visibility Filter */}
               <div>
                 <Field
                   label={
@@ -277,7 +271,6 @@ function ClubsScreen() {
                 </Field>
               </div>
 
-              {/* Membership Filter */}
               {user && (
                 <div>
                   <Field label={t('browse.membership')}>
@@ -306,7 +299,6 @@ function ClubsScreen() {
                 </div>
               )}
 
-              {/* Tags Filter */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3">
                   {t('common.tags')}
@@ -340,11 +332,9 @@ function ClubsScreen() {
             </div>
           </div>
 
-          {/* Clubs Grid */}
           <div className="flex-1">
             {clubsData?.clubs && clubsData.clubs.length > 0 ? (
               <>
-                {/* Results Info */}
                 <div className="mb-6 text-base-content/70">
                   {t('browse.showing', {
                     shown: clubsData.clubs.length,
@@ -352,14 +342,12 @@ function ClubsScreen() {
                   })}
                 </div>
 
-                {/* Clubs Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {clubsData.clubs.map((club) => (
                     <ClubCard key={club._id} club={club} />
                   ))}
                 </div>
 
-                {/* Pagination */}
                 {clubsData.total > 12 && (
                   <div className="flex justify-center mt-8">
                     <div className="join">
@@ -423,7 +411,6 @@ function ClubCard({ club }: { club: IClubResponse }) {
       className="card surface hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30"
       onClick={() => navigate(`/clubs/${club._id}`)}
     >
-      {/* Banner */}
       <div className="relative h-32 overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/20 to-secondary/20">
         {club.banner && (
           <img
@@ -433,7 +420,6 @@ function ClubCard({ club }: { club: IClubResponse }) {
           />
         )}
 
-        {/* Privacy Badge */}
         <div className="absolute top-3 right-3">
           <div
             className={`badge gap-1 ${club.isPublic ? 'badge-success' : 'badge-warning'}`}
@@ -449,7 +435,6 @@ function ClubCard({ club }: { club: IClubResponse }) {
       </div>
 
       <div className="card-body pt-6 pb-6">
-        {/* Club Avatar */}
         <div className="flex justify-center md:justify-start -mt-16 mb-4">
           <div className="avatar">
             <div className="w-20 h-20 rounded-full bg-base-100 p-1 shadow-lg">
@@ -467,19 +452,16 @@ function ClubCard({ club }: { club: IClubResponse }) {
             </div>
           </div>
         </div>
-        {/* Club Name */}
         <div className="mb-3">
           <h3 className="card-title text-lg font-bold truncate">{club.name}</h3>
         </div>
 
-        {/* Description */}
         {club.description && (
           <p className="text-sm text-base-content/70 line-clamp-2 mb-3">
             <LinkifiedText text={club.description} />
           </p>
         )}
 
-        {/* Stats */}
         <div className="flex items-center text-sm text-base-content/70 mb-4">
           <div className="flex items-center gap-1">
             <Users className="text-base w-4 h-4" />
@@ -492,7 +474,6 @@ function ClubCard({ club }: { club: IClubResponse }) {
           </div>
         </div>
 
-        {/* Tags */}
         {club.tags && club.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
             {club.tags.slice(0, 3).map((tag) => (
@@ -508,7 +489,6 @@ function ClubCard({ club }: { club: IClubResponse }) {
           </div>
         )}
 
-        {/* Join Status */}
         <div className="card-actions justify-end">
           {club.isUserMember && club.userStatus === 'active' ? (
             <div className="badge badge-primary gap-1">

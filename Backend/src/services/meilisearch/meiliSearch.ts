@@ -161,7 +161,7 @@ export async function multiSearchDocuments(
   }>
 ) {
   // Meilisearch rejects the *whole* multi-search with a 400 when a single
-  // indexUid doesn't exist, so drop unknown indexes rather than lose every
+  // indexUid does not exist, so drop unknown indexes rather than lose every
   // result (an index can legitimately be missing until its first sync runs).
   let effectiveQueries = queries;
   try {
@@ -178,7 +178,7 @@ export async function multiSearchDocuments(
       invalidateIndexUidCache();
     }
   } catch (error) {
-    // Listing failed — fall back to querying everything as before.
+    // Listing failed: fall back to querying everything as before.
     console.warn('Failed to list Meilisearch indexes:', error);
   }
 

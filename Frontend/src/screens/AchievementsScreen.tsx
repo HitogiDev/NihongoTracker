@@ -42,7 +42,7 @@ const RARITY_ORDER: AchievementRarity[] = [
   'secret',
 ];
 /**
- * Module scope, so these hold key names rather than text — a literal here
+ * Module scope, so these hold key names rather than text: a literal here
  * would be resolved once at import time and never update on a language change.
  */
 const RARITY_CONFIG: Record<
@@ -209,7 +209,6 @@ export default function AchievementsScreen() {
         routeUsername ? 'pt-8' : 'pt-28'
       }`}
     >
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">
           {routeUsername
@@ -219,7 +218,6 @@ export default function AchievementsScreen() {
         <p className="text-sm opacity-50 mt-1">{t('screen.subtitle')}</p>
       </div>
 
-      {/* Stats summary bar */}
       {achievements && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-xl p-4 border border-base-300 bg-base-200/50">
@@ -256,7 +254,6 @@ export default function AchievementsScreen() {
         </div>
       )}
 
-      {/* Rarity breakdown */}
       {achievements && (
         <div className="flex gap-3 flex-wrap">
           {rarityBreakdown.map(
@@ -287,9 +284,7 @@ export default function AchievementsScreen() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex flex-col gap-3">
-        {/* Search */}
         <label className="input flex items-center gap-2 w-full">
           <Search className="w-4 h-4 opacity-60 shrink-0" />
           <input
@@ -310,9 +305,7 @@ export default function AchievementsScreen() {
           )}
         </label>
 
-        {/* Dropdowns row */}
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Category filter */}
           <div className="dropdown flex-1 sm:flex-none relative z-40">
             <div
               tabIndex={0}
@@ -346,7 +339,6 @@ export default function AchievementsScreen() {
             </ul>
           </div>
 
-          {/* Status filter */}
           <div className="dropdown flex-1 sm:flex-none relative z-40">
             <div
               tabIndex={0}
@@ -395,7 +387,6 @@ export default function AchievementsScreen() {
             </ul>
           </div>
 
-          {/* Sort */}
           <div className="dropdown dropdown-end flex-1 sm:flex-none relative z-40">
             <div
               tabIndex={0}
@@ -440,7 +431,6 @@ export default function AchievementsScreen() {
             </ul>
           </div>
 
-          {/* Group toggle */}
           <button
             type="button"
             className={`btn gap-2 ${grouped ? 'btn-active' : 'btn-outline'}`}
@@ -461,7 +451,6 @@ export default function AchievementsScreen() {
         </div>
       </div>
 
-      {/* Achievement grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[...Array(12)].map((_, i) => (

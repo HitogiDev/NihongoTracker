@@ -2,6 +2,10 @@ import DropdownSelect from './ui/DropdownSelect';
 import { useState } from 'react';
 import Field from './ui/Field';
 import DatePickerInput from './ui/DatePickerInput';
+import GoalPeriodPresets from './GoalPeriodPresets';
+import { goalDateKey, goalInputDate } from '../utils/goalPeriod';
+import { parseDateValue } from '../utils/dateInput';
+import { useUserDataStore } from '../store/userData';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,9 +15,10 @@ import {
   createDailyGoalFn,
   deleteDailyGoalFn,
   updateDailyGoalFn,
-  createLongTermGoalFn,
+  createLongTermGoalFn
 } from '../api/trackerApi';
 import { IDailyGoal, ILongTermGoal } from '../types';
+import { goalMediaTypes, goalMediaTypeKey } from '../utils/goalMediaTypes';
 
 import {
   Plus,
@@ -26,7 +31,7 @@ import {
   Play,
   FileText,
   X,
-  Clock12,
+  Clock12
 } from 'lucide-react';
 
 /** Module scope: key names, never text. */
@@ -35,26 +40,26 @@ const goalTypeConfig = {
     labelKey: 'types.timeMinutes',
     icon: Clock5,
     color: 'text-primary',
-    unit: 'min',
+    unit: 'min'
   },
   chars: {
     labelKey: 'types.chars',
     icon: BookOpen,
     color: 'text-secondary',
-    unit: 'chars',
+    unit: 'chars'
   },
   episodes: {
     labelKey: 'types.episodes',
     icon: Play,
     color: 'text-accent',
-    unit: 'ep',
+    unit: 'ep'
   },
   pages: {
     labelKey: 'types.pages',
     icon: FileText,
     color: 'text-info',
-    unit: 'pages',
-  },
+    unit: 'pages'
+  }
 };
 
 interface GoalsModalProps {
@@ -66,18 +71,22 @@ interface GoalsModalProps {
 
 function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   const { t } = useTranslation(['goals', 'common']);
+  const { user } = useUserDataStore();
+  const timeZone =
+    user?.settings?.timezone ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [isCreating, setIsCreating] = useState(false);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
-  const [goalDuration, setGoalDuration] = useState<'daily' | 'weekly' | 'long-term'>(
-    'daily'
-  );
+  const [goalDuration, setGoalDuration] = useState<
+    'daily' | 'weekly' | 'long-term'
+  >('daily');
   const [newGoal, setNewGoal] = useState<
     Omit<IDailyGoal, '_id' | 'createdAt' | 'updatedAt'>
   >({
     type: 'time',
     cadence: 'daily',
     target: 30,
-    isActive: true,
+    isActive: true
   });
   const [newLongTermGoal, setNewLongTermGoal] = useState<
     Omit<ILongTermGoal, '_id' | 'createdAt' | 'updatedAt' | 'progress'>
@@ -88,8 +97,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       .toISOString()
       .split('T')[0],
     displayTimeframe: 'daily',
-    startDate: new Date().toISOString().split('T')[0],
-    isActive: true,
+    startDate: goalDateKey(new Date(), timeZone),
+    isActive: true
   });
   const [editGoal, setEditGoal] = useState<Partial<IDailyGoal>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -113,13 +122,13 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           ? error.response?.data?.message
           : t('common:errors.generic');
       toast.error(errorMessage);
-    },
+    }
   });
 
   const { mutate: updateGoal, isPending: isUpdatingGoal } = useMutation({
     mutationFn: ({
       goalId,
-      goal,
+      goal
     }: {
       goalId: string;
       goal: Partial<IDailyGoal>;
@@ -136,7 +145,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           ? error.response?.data?.message
           : t('common:errors.generic');
       toast.error(errorMessage);
-    },
+    }
   });
 
   const { mutate: deleteGoal, isPending: isDeletingGoal } = useMutation({
@@ -151,7 +160,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           ? error.response?.data?.message
           : t('common:errors.generic');
       toast.error(errorMessage);
-    },
+    }
   });
 
   // Long-term goal mutations
@@ -161,7 +170,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [username, 'dailyGoals'] });
         queryClient.invalidateQueries({
-          queryKey: [username, 'longTermGoals'],
+          queryKey: [username, 'longTermGoals']
         });
         toast.success(t('toast.longTermCreated'));
         setIsCreating(false);
@@ -172,8 +181,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
             .toISOString()
             .split('T')[0],
           displayTimeframe: 'daily',
-          startDate: new Date().toISOString().split('T')[0],
-          isActive: true,
+          startDate: goalDateKey(new Date(), timeZone),
+          isActive: true
         });
       },
       onError: (error) => {
@@ -182,12 +191,17 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
             ? error.response?.data?.message
             : t('common:errors.generic');
         toast.error(errorMessage);
-      },
+      }
     }
   );
 
   const validateGoal = (
-    goal: { type: string; target: number; cadence?: 'daily' | 'weekly' },
+    goal: {
+      type: string;
+      mediaType?: IDailyGoal['mediaType'];
+      target: number;
+      cadence?: 'daily' | 'weekly';
+    },
     isEdit = false
   ) => {
     const validationErrors: Record<string, string> = {};
@@ -218,6 +232,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       const existingGoal = goals.find(
         (g) =>
           g.type === goal.type &&
+          (g.mediaType ?? null) === (goal.mediaType ?? null) &&
           (g.cadence || 'daily') === (goal.cadence || 'daily') &&
           g.isActive
       );
@@ -226,7 +241,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           type: t(
             goalTypeConfig[goal.type as keyof typeof goalTypeConfig]
               .labelKey as ParseKeys<'goals'>
-          ).toLowerCase(),
+          ).toLowerCase()
         });
       }
     }
@@ -246,15 +261,15 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       validationErrors.totalTarget = t('validation.totalTargetPositive');
     }
 
-    const targetDate = new Date(goal.targetDate);
-    const startDate = new Date(goal.startDate);
-    const now = new Date();
+    const targetDate = goalInputDate(goal.targetDate);
+    const startDate = goalInputDate(goal.startDate);
+    const today = goalDateKey(new Date(), timeZone);
 
-    if (targetDate <= now) {
+    if (!parseDateValue(targetDate) || targetDate < today) {
       validationErrors.targetDate = t('validation.targetDateFuture');
     }
 
-    if (startDate >= targetDate) {
+    if (!parseDateValue(startDate) || startDate > targetDate) {
       validationErrors.startDate = t('validation.startBeforeTarget');
     }
 
@@ -302,7 +317,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       const validationErrors = validateGoal(
         {
           type: editGoal.type,
-          target: editGoal.target,
+          target: editGoal.target
         },
         true
       );
@@ -320,9 +335,10 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
     setEditingGoal(goal._id!);
     setEditGoal({
       type: goal.type,
+      mediaType: goal.mediaType ?? null,
       cadence: goal.cadence || 'daily',
       target: goal.target,
-      isActive: goal.isActive,
+      isActive: goal.isActive
     });
   };
 
@@ -360,7 +376,6 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           </button>
         </div>
 
-        {/* Create Goal Form */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">{t('modal.createNew')}</h3>
@@ -381,7 +396,9 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     className="select w-full"
                     value={goalDuration}
                     onChange={(e) => {
-                      setGoalDuration(e.target.value as 'daily' | 'weekly' | 'long-term');
+                      setGoalDuration(
+                        e.target.value as 'daily' | 'weekly' | 'long-term'
+                      );
                       setErrors({});
                     }}
                   >
@@ -391,7 +408,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                   </DropdownSelect>
                 </Field>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Field label={t('modal.goalType')}>
                     <DropdownSelect
                       className="select w-full"
@@ -404,12 +421,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         if (goalDuration !== 'long-term') {
                           setNewGoal({
                             ...newGoal,
-                            type: e.target.value as IDailyGoal['type'],
+                            type: e.target.value as IDailyGoal['type']
                           });
                         } else {
                           setNewLongTermGoal({
                             ...newLongTermGoal,
-                            type: e.target.value as ILongTermGoal['type'],
+                            type: e.target.value as ILongTermGoal['type']
                           });
                         }
                         setErrors({});
@@ -422,10 +439,43 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       ))}
                     </DropdownSelect>
                   </Field>
+                  <Field label={t('modal.mediaType')}>
+                    <DropdownSelect
+                      className="select w-full"
+                      value={
+                        (goalDuration === 'long-term'
+                          ? newLongTermGoal.mediaType
+                          : newGoal.mediaType) ?? ''
+                      }
+                      onChange={(e) => {
+                        const mediaType = (e.target.value ||
+                          null) as IDailyGoal['mediaType'];
+                        if (goalDuration === 'long-term') {
+                          setNewLongTermGoal({ ...newLongTermGoal, mediaType });
+                        } else {
+                          setNewGoal({ ...newGoal, mediaType });
+                        }
+                        setErrors({});
+                      }}
+                    >
+                      <option value="">{t('common:allMediaTypes')}</option>
+                      {goalMediaTypes.map((mediaType) => (
+                        <option key={mediaType} value={mediaType}>
+                          {t(
+                            `common:mediaTypes.${goalMediaTypeKey(mediaType)}`
+                          )}
+                        </option>
+                      ))}
+                    </DropdownSelect>
+                  </Field>
                   <Field
                     label={
                       goalDuration !== 'long-term'
-                        ? t(goalDuration === 'weekly' ? 'modal.weeklyTarget' : 'modal.dailyTarget')
+                        ? t(
+                            goalDuration === 'weekly'
+                              ? 'modal.weeklyTarget'
+                              : 'modal.dailyTarget'
+                          )
                         : t('modal.totalTarget')
                     }
                   >
@@ -447,12 +497,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         if (goalDuration !== 'long-term') {
                           setNewGoal({
                             ...newGoal,
-                            target: Number(e.target.value),
+                            target: Number(e.target.value)
                           });
                         } else {
                           setNewLongTermGoal({
                             ...newLongTermGoal,
-                            totalTarget: Number(e.target.value),
+                            totalTarget: Number(e.target.value)
                           });
                         }
                         setErrors({});
@@ -481,7 +531,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           setNewLongTermGoal({
                             ...newLongTermGoal,
                             displayTimeframe: e.target
-                              .value as ILongTermGoal['displayTimeframe'],
+                              .value as ILongTermGoal['displayTimeframe']
                           });
                           setErrors({});
                         }}
@@ -501,58 +551,69 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                 </div>
 
                 {goalDuration === 'long-term' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <Field label={t('modal.startDate')}>
-                      <DatePickerInput
-                        className={errors.startDate ? 'input-error' : ''}
-                        value={
-                          typeof newLongTermGoal.startDate === 'string'
-                            ? newLongTermGoal.startDate
-                            : new Date(newLongTermGoal.startDate)
-                                .toISOString()
-                                .split('T')[0]
-                        }
-                        onChange={(startDate) => {
-                          setNewLongTermGoal({
-                            ...newLongTermGoal,
-                            startDate,
-                          });
-                          setErrors({});
-                        }}
-                      />
-                      {errors.startDate && (
-                        <div className="label">
-                          <span className="text-error">{errors.startDate}</span>
-                        </div>
-                      )}
-                    </Field>
+                  <div className="space-y-4 mt-4">
+                    <GoalPeriodPresets
+                      timeZone={timeZone}
+                      onSelect={(period) => {
+                        setNewLongTermGoal({ ...newLongTermGoal, ...period });
+                        setErrors({});
+                      }}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label={t('modal.startDate')}>
+                        <DatePickerInput
+                          className={errors.startDate ? 'input-error' : ''}
+                          value={
+                            typeof newLongTermGoal.startDate === 'string'
+                              ? newLongTermGoal.startDate
+                              : new Date(newLongTermGoal.startDate)
+                                  .toISOString()
+                                  .split('T')[0]
+                          }
+                          onChange={(startDate) => {
+                            setNewLongTermGoal({
+                              ...newLongTermGoal,
+                              startDate
+                            });
+                            setErrors({});
+                          }}
+                        />
+                        {errors.startDate && (
+                          <div className="label">
+                            <span className="text-error">
+                              {errors.startDate}
+                            </span>
+                          </div>
+                        )}
+                      </Field>
 
-                    <Field label={t('modal.targetDate')}>
-                      <DatePickerInput
-                        className={errors.targetDate ? 'input-error' : ''}
-                        value={
-                          typeof newLongTermGoal.targetDate === 'string'
-                            ? newLongTermGoal.targetDate
-                            : new Date(newLongTermGoal.targetDate)
-                                .toISOString()
-                                .split('T')[0]
-                        }
-                        onChange={(targetDate) => {
-                          setNewLongTermGoal({
-                            ...newLongTermGoal,
-                            targetDate,
-                          });
-                          setErrors({});
-                        }}
-                      />
-                      {errors.targetDate && (
-                        <div className="label">
-                          <span className="text-error">
-                            {errors.targetDate}
-                          </span>
-                        </div>
-                      )}
-                    </Field>
+                      <Field label={t('modal.targetDate')}>
+                        <DatePickerInput
+                          className={errors.targetDate ? 'input-error' : ''}
+                          value={
+                            typeof newLongTermGoal.targetDate === 'string'
+                              ? newLongTermGoal.targetDate
+                              : new Date(newLongTermGoal.targetDate)
+                                  .toISOString()
+                                  .split('T')[0]
+                          }
+                          onChange={(targetDate) => {
+                            setNewLongTermGoal({
+                              ...newLongTermGoal,
+                              targetDate
+                            });
+                            setErrors({});
+                          }}
+                        />
+                        {errors.targetDate && (
+                          <div className="label">
+                            <span className="text-error">
+                              {errors.targetDate}
+                            </span>
+                          </div>
+                        )}
+                      </Field>
+                    </div>
                   </div>
                 )}
 
@@ -583,8 +644,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           {t('modal.createGoal', {
                             duration:
                               goalDuration !== 'long-term'
-                                ? t(goalDuration === 'weekly' ? 'modal.weekly' : 'modal.daily')
-                                : t('modal.longTerm'),
+                                ? t(
+                                    goalDuration === 'weekly'
+                                      ? 'modal.weekly'
+                                      : 'modal.daily'
+                                  )
+                                : t('modal.longTerm')
                           })}
                         </>
                       )}
@@ -596,7 +661,6 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           )}
         </div>
 
-        {/* Goals List with Enhanced Validation */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">{t('modal.yourGoals')}</h3>
           {goals.length === 0 ? (
@@ -620,7 +684,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                   >
                     <div className="card-body p-4">
                       {isEditing ? (
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-start">
                           <div>
                             <DropdownSelect
                               className="select select-sm w-full"
@@ -628,7 +692,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               onChange={(e) => {
                                 setEditGoal({
                                   ...editGoal,
-                                  type: e.target.value as IDailyGoal['type'],
+                                  type: e.target.value as IDailyGoal['type']
                                 });
                                 setErrors({});
                               }}
@@ -642,19 +706,47 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               )}
                             </DropdownSelect>
                           </div>
+                          <DropdownSelect
+                            aria-label={t('modal.mediaType')}
+                            className="select select-sm w-full"
+                            value={editGoal.mediaType ?? ''}
+                            onChange={(e) => {
+                              setEditGoal({
+                                ...editGoal,
+                                mediaType: (e.target.value ||
+                                  null) as IDailyGoal['mediaType']
+                              });
+                              setErrors({});
+                            }}
+                          >
+                            <option value="">
+                              {t('common:allMediaTypes')}
+                            </option>
+                            {goalMediaTypes.map((mediaType) => (
+                              <option key={mediaType} value={mediaType}>
+                                {t(
+                                  `common:mediaTypes.${goalMediaTypeKey(mediaType)}`
+                                )}
+                              </option>
+                            ))}
+                          </DropdownSelect>
                           <div>
                             <DropdownSelect
                               className="select select-sm w-full"
-                              value={editGoal.cadence || goal.cadence || 'daily'}
+                              value={
+                                editGoal.cadence || goal.cadence || 'daily'
+                              }
                               onChange={(e) =>
                                 setEditGoal({
                                   ...editGoal,
-                                  cadence: e.target.value as 'daily' | 'weekly',
+                                  cadence: e.target.value as 'daily' | 'weekly'
                                 })
                               }
                             >
                               <option value="daily">{t('modal.daily')}</option>
-                              <option value="weekly">{t('modal.weekly')}</option>
+                              <option value="weekly">
+                                {t('modal.weekly')}
+                              </option>
                             </DropdownSelect>
                           </div>
                           <div>
@@ -668,7 +760,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               onChange={(e) => {
                                 setEditGoal({
                                   ...editGoal,
-                                  target: Number(e.target.value),
+                                  target: Number(e.target.value)
                                 });
                                 setErrors({});
                               }}
@@ -689,7 +781,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                 onChange={(e) =>
                                   setEditGoal({
                                     ...editGoal,
-                                    isActive: e.target.checked,
+                                    isActive: e.target.checked
                                   })
                                 }
                               />
@@ -721,12 +813,24 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                             <Icon className={`w-6 h-6 ${config.color}`} />
                             <div>
                               <h4 className="font-semibold">
-                                {t(config.labelKey as ParseKeys<'goals'>)} · {t((goal.cadence || 'daily') === 'weekly' ? 'modal.weekly' : 'modal.daily')}
+                                {t(config.labelKey as ParseKeys<'goals'>)} ·{' '}
+                                {t(
+                                  (goal.cadence || 'daily') === 'weekly'
+                                    ? 'modal.weekly'
+                                    : 'modal.daily'
+                                )}
                               </h4>
+                              <p className="text-xs text-base-content/60">
+                                {goal.mediaType
+                                  ? t(
+                                      `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
+                                    )
+                                  : t('common:allMediaTypes')}
+                              </p>
                               <p className="text-sm text-base-content/70">
                                 {t('modal.target', {
                                   value: formatProgress(goal.target, goal.type),
-                                  unit: config.unit,
+                                  unit: config.unit
                                 })}
                                 {!goal.isActive && t('modal.inactive')}
                               </p>
@@ -778,7 +882,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                 type: t(
                   goalTypeConfig[dailyGoalToDelete.type]
                     .labelKey as ParseKeys<'goals'>
-                ).toLowerCase(),
+                ).toLowerCase()
               })}
             </p>
             <div className="modal-action">

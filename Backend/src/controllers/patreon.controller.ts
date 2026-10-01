@@ -614,6 +614,8 @@ export async function handlePatreonOAuthCallback(
   res: Response,
   _next: NextFunction
 ) {
+  let oauthStage = 'parse callback';
+
   try {
     const { code, state } = req.query;
     const { backendUrl, frontendUrl } = getUrls(req);
@@ -644,6 +646,7 @@ export async function handlePatreonOAuthCallback(
       );
     }
 
+    oauthStage = 'exchange authorization code';
     // Exchange code for access token
     const tokenResponse = await axios.post(
       'https://www.patreon.com/api/oauth2/token',
@@ -674,6 +677,7 @@ export async function handlePatreonOAuthCallback(
     const includes =
       'memberships,memberships.currently_entitled_tiers,memberships.campaign';
 
+    oauthStage = 'fetch Patreon identity';
     const identityResponse = await axios.get<IPatreonIdentityResponse>(
       'https://www.patreon.com/api/oauth2/v2/identity',
       {
@@ -689,8 +693,7 @@ export async function handlePatreonOAuthCallback(
       }
     );
 
-    console.log(JSON.stringify(identityResponse.data, null, 2));
-
+    oauthStage = 'read membership data';
     const patreonData = identityResponse.data.data;
     const patreonId = patreonData.id;
     const patreonEmail = patreonData.attributes?.email;
@@ -754,6 +757,7 @@ export async function handlePatreonOAuthCallback(
       );
     }
 
+    oauthStage = 'load tracker account';
     const user = await User.findById(stateData.userId);
 
     if (!user) {
@@ -776,11 +780,34 @@ export async function handlePatreonOAuthCallback(
       lastChecked: new Date(),
     };
 
+    oauthStage = 'save Patreon link';
     await user.save();
 
     // Redirect to frontend with success
     res.redirect(`${frontendUrl}/settings?patreon=success`);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const axiosError = axios.isAxiosError(error) ? error : undefined;
+    const responseBody = axiosError?.response?.data;
+    const providerBody =
+      typeof responseBody === 'object' && responseBody !== null
+        ? (responseBody as Record<string, unknown>)
+        : undefined;
+
+    console.error('Patreon OAuth callback failed', {
+      stage: oauthStage,
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      httpStatus: axiosError?.response?.status,
+      providerCode:
+        typeof providerBody?.error === 'string'
+          ? providerBody.error
+          : undefined,
+      providerDescription:
+        typeof providerBody?.error_description === 'string'
+          ? providerBody.error_description
+          : undefined,
+    });
+
     const { frontendUrl } = getUrls(req);
     res.redirect(`${frontendUrl}/settings?patreon=error&message=oauth_failed`);
   }

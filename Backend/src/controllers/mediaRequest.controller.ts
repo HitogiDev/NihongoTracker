@@ -23,8 +23,8 @@ import {
   MediaRequestType,
 } from '../types.js';
 
-// 'video' (YouTube channels) is intentionally excluded — those aren't
-// user-requestable and can't be searched via the media search endpoint.
+// 'video' (YouTube channels) is intentionally excluded: those are not
+// user-requestable and cannot be searched via the media search endpoint.
 const MEDIA_REQUEST_TYPES: MediaRequestType[] = [
   'anime',
   'manga',
@@ -91,7 +91,7 @@ function sanitizeDescriptions(raw: unknown): IMediaDescription[] {
   return result;
 }
 
-// POST /api/media-requests — any authenticated user submits a media request.
+// POST /api/media-requests: any authenticated user submits a media request.
 export async function createMediaRequest(
   req: Request,
   res: Response,
@@ -162,7 +162,7 @@ export async function createMediaRequest(
   }
 }
 
-// GET /api/media-requests/mine — the requester's own submissions.
+// GET /api/media-requests/mine: the requester's own submissions.
 export async function getMyMediaRequests(
   _req: Request,
   res: Response,
@@ -184,7 +184,7 @@ export async function getMyMediaRequests(
   }
 }
 
-// GET /api/media-requests — admin/mod review queue (paginated, filter by status).
+// GET /api/media-requests: admin/mod review queue (paginated, filter by status).
 export async function getMediaRequests(
   req: Request,
   res: Response,
@@ -230,7 +230,7 @@ export async function getMediaRequests(
   }
 }
 
-// PATCH /api/media-requests/:id/review — admin/mod approves or rejects.
+// PATCH /api/media-requests/:id/review: admin/mod approves or rejects.
 export async function reviewMediaRequest(
   req: Request,
   res: Response,
@@ -308,7 +308,7 @@ export async function reviewMediaRequest(
       description: request.description ?? [],
     });
 
-    // Make it searchable immediately (startup sync won't re-run).
+    // Make it searchable immediately (startup sync will not re-run).
     try {
       await addMediaToIndex({
         _id: mediaDoc._id,

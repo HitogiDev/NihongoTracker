@@ -448,7 +448,7 @@ export default function EditVotingModal({
                             }));
                             // Close dropdown by removing focus
                             (document.activeElement as HTMLElement)?.blur?.();
-                            // Reset end date if it's before the new start date
+                            // Reset end date if it is before the new start date
                             if (
                               votingData.suggestionEndDate &&
                               date &&
@@ -525,7 +525,6 @@ export default function EditVotingModal({
                 </>
               )}
 
-            {/* Voting Period */}
             {!onlyConsumptionEditable && (
               <>
                 <Field label={t('editVoting.votingStart')}>
@@ -561,7 +560,7 @@ export default function EditVotingModal({
                           }));
                           // Close dropdown by removing focus
                           (document.activeElement as HTMLElement)?.blur?.();
-                          // Reset end date if it's before the new start date
+                          // Reset end date if it is before the new start date
                           if (
                             votingData.votingEndDate &&
                             date &&
@@ -665,7 +664,6 @@ export default function EditVotingModal({
               </>
             )}
 
-            {/* Consumption Period */}
             <Field label={t('editVoting.consumptionStart')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -699,7 +697,7 @@ export default function EditVotingModal({
                       }));
                       // Close dropdown by removing focus
                       (document.activeElement as HTMLElement)?.blur?.();
-                      // Reset end date if it's before the new start date
+                      // Reset end date if it is before the new start date
                       if (
                         votingData.consumptionEndDate &&
                         date &&
@@ -786,7 +784,6 @@ export default function EditVotingModal({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="modal-action">
           <button
             onClick={onClose}

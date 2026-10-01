@@ -124,7 +124,7 @@ interface TitleDescriptor {
   /** Key inside the `nav:titles` bundle, or null for the bare app name. */
   key: TitleKey | null;
   /**
-   * Nested keys are resolved by the caller — i18next only expands `$t()` inside
+   * Nested keys are resolved by the caller: i18next only expands `$t()` inside
    * translation values, not inside interpolation parameters.
    */
   sectionKey?: TitleKey;
@@ -222,7 +222,7 @@ function TitleManager() {
     if (typeKey) params.type = t(typeKey);
     if (username) params.username = username;
 
-    // The keys are already checked as ParseKeys above; widening here only
+    // The keys are already checked as ParseKeys above. Widening here only
     // relaxes the per-key interpolation signature, which cannot be expressed
     // over a union of keys.
     const translate = t as (

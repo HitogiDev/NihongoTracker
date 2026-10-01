@@ -3,7 +3,7 @@ import { Club } from '../../../models/club.model.js';
 import Log from '../../../models/log.model.js';
 
 /**
- * Checks whether the user finished as the top contributor on a club challenge —
+ * Checks whether the user finished as the top contributor on a club challenge:
  * a club media whose reading/watching period has ended.
  * Used for Club MVP.
  *

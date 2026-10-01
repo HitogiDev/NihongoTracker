@@ -318,7 +318,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) throw new Error('YouTube API key not configured');
 
-  // Step 1 — collect video IDs from playlistItems (paginated, max 200)
+  // Step 1: collect video IDs from playlistItems (paginated, max 200)
   const videoIds: string[] = [];
   const channelIdsByVideoId = new Map<string, string>();
   let pageToken: string | undefined;
@@ -368,7 +368,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
 
   if (videoIds.length === 0) return null;
 
-  // Step 2 — fetch playlist snippet for title
+  // Step 2: fetch playlist snippet for title
   try {
     const plRes = await axios.get(
       'https://www.googleapis.com/youtube/v3/playlists',
@@ -379,7 +379,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
     playlistTitle = 'YouTube Playlist';
   }
 
-  // Step 3 — batch fetch video details (snippet + contentDetails) in groups of 50
+  // Step 3: batch fetch video details (snippet + contentDetails) in groups of 50
   const videoDetails = new Map<string, YouTubeVideoData>();
   for (let i = 0; i < videoIds.length; i += 50) {
     const batch = videoIds.slice(i, i + 50);
@@ -398,7 +398,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
     }
   }
 
-  // Step 4 — batch fetch unique channel details
+  // Step 4: batch fetch unique channel details
   const uniqueChannelIds = [...new Set(channelIdsByVideoId.values())];
   const channelDetails = new Map<string, YouTubeChannelData>();
   for (let i = 0; i < uniqueChannelIds.length; i += 50) {
@@ -412,7 +412,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
     }
   }
 
-  // Step 5 — assemble result
+  // Step 5: assemble result
   const videos: Array<{ video: MediaDocument; channel: MediaDocument }> = [];
 
   for (const videoId of videoIds) {

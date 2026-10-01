@@ -9,7 +9,7 @@ export interface StreakRun {
 
 /**
  * Rebuilds every streak the user has ever had, in order, from their logs.
- * Days are bucketed in the user's timezone; unknownDate logs are ignored the
+ * Days are bucketed in the user's timezone. UnknownDate logs are ignored the
  * same way streaks.ts ignores them.
  *
  * A "run" is a maximal set of consecutive logged days, so any run after the

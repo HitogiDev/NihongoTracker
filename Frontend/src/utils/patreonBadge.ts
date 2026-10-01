@@ -30,7 +30,7 @@ const TIER_KEYS: Record<
 };
 
 /**
- * @param options.ignoreHidden render the badge even when the supporter hid it —
+ * @param options.ignoreHidden render the badge even when the supporter hid it:
  *   used by the settings previews, which have to show what is being edited.
  */
 export function getPatreonBadgeProps(

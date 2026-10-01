@@ -15,8 +15,8 @@ export async function evaluateLogTimeRange(
   timezone = 'UTC'
 ): Promise<{ met: boolean; progress: number }> {
   const result = await Log.aggregate([
-    // unknownDate logs carry a placeholder date — they say nothing about when
-    // the user actually immersed, so they can't earn time-of-day achievements
+    // unknownDate logs carry a placeholder date: they say nothing about when
+    // the user actually immersed, so they cannot earn time-of-day achievements
     { $match: { user: userId, unknownDate: { $ne: true } } },
     {
       $project: {

@@ -426,7 +426,7 @@ async function generateMetaTags(
     });
   }
 
-  // /clubs/:clubId/media/:mediaId  (club media page — check before /clubs/:clubId)
+  // /clubs/:clubId/media/:mediaId  (club media page: check before /clubs/:clubId)
   if (parts[0] === 'clubs' && parts[1] && parts[2] === 'media' && parts[3]) {
     return (
       (await clubMeta(parts[1], protocol, host, normalizedUrl)) ??

@@ -5,7 +5,7 @@ import Log from '../../../models/log.model.js';
  * Speedrunner: two logs created within `seconds` of each other.
  *
  * Uses createdAt (when the entry was submitted), not date (when the immersion
- * happened) — this is about how fast the user filled the form, so backdated
+ * happened): this is about how fast the user filled the form, so backdated
  * logs entered back to back still count.
  */
 export async function evaluateRapidSuccession(

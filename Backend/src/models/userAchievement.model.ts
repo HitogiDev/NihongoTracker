@@ -26,7 +26,7 @@ const UserAchievementSchema = new Schema<IUserAchievement>(
       type: Boolean,
       default: false,
     },
-    // Granted by an admin rather than by an evaluated condition — never revoked
+    // Granted by an admin rather than by an evaluated condition: never revoked
     // by the re-evaluation pass, which has no condition to check it against.
     manuallyGranted: {
       type: Boolean,

@@ -21,7 +21,7 @@ router.post('/sync', protect, syncAnilistNow);
 router.post('/backfill', protect, backfillAnilist);
 
 // OAuth2: the callback is hit by AniList's redirect, so it carries no session
-// of its own — the one-shot state issued by /oauth/init identifies the user.
+// of its own: the one-shot state issued by /oauth/init identifies the user.
 router.get('/oauth/init', protect, initiateAnilistOAuth);
 router.get('/oauth/callback', handleAnilistOAuthCallback);
 

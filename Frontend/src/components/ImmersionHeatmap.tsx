@@ -15,7 +15,7 @@ interface HeatmapCell {
 
 interface ImmersionHeatmapProps {
   username: string;
-  /** Profile owner's accent; falls back to the visitor's theme color. */
+  /** Profile owner's accent. Falls back to the visitor's theme color. */
   accent?: Pick<IUserCustomization, 'profileAccent' | 'accentColor'>;
 }
 
@@ -30,7 +30,7 @@ interface LogData {
  *  constructing a new Date (avoids the double-shift bug). */
 function toDateKey(utcDate: Date, timezone: string): string {
   try {
-    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing — do not localize.
+    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing: do not localize.
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone || 'UTC',
       year: 'numeric',
@@ -79,7 +79,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
 
   const { data: logs, isLoading } = useQuery({
     queryKey: ['heatmap-logs', username],
-    // limit 0 = no limit so we don't miss logs that could affect the XP scale
+    // limit 0 = no limit so we do not miss logs that could affect the XP scale
     queryFn: () => getUserLogsFn(username, { limit: 0 }),
     enabled: !!username,
   });
@@ -120,7 +120,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
 
     // ── Build columns (weeks), each column = 7 rows (Sun→Sat) ────────────
     // Today falls on dayOfWeek(todayKey) row. The last column ends on today's
-    // row; rows after today in that column are empty padding cells.
+    // row. Rows after today in that column are empty padding cells.
     const todayDow = dayOfWeek(todayKey); // 0–6
     // Total cells in the grid = WEEKS * 7, last cell = todayKey, aligned so
     // today sits at row `todayDow` of the last column.
@@ -136,7 +136,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
         // Days relative to today: negative = past, positive = future
         const daysOffset = cellIndex - todayCellIndex;
         if (daysOffset > 0) {
-          // Future cells in the last column — render as empty padding
+          // Future cells in the last column: render as empty padding
           column.push(null);
           continue;
         }
@@ -157,7 +157,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
   });
 
   const tooltip = (cell: HeatmapCell) => {
-    // Format date for display — parse as UTC noon so timezone doesn't shift the day
+    // Format date for display: parse as UTC noon so timezone does not shift the day
     const d = new Date(`${cell.date}T12:00:00Z`);
     const label = d.toLocaleDateString(getLocale(), {
       weekday: 'short',

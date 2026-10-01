@@ -24,7 +24,7 @@ function lookup(
 ): string {
   if (!achievement) return '';
 
-  // `fullDescription` has no database counterpart — it only exists as a
+  // `fullDescription` has no database counterpart: it only exists as a
   // translation, so an untranslated achievement falls back to nothing here and
   // the caller drops to the public description instead.
   const fallback =
@@ -40,7 +40,7 @@ function lookup(
     return '';
 
   // The key comes from the database at runtime, so the typed `t` signature
-  // cannot apply; `errorCodes`-style catalogue drift is guarded by the seed
+  // cannot apply. `errorCodes`-style catalogue drift is guarded by the seed
   // check in the i18n status script instead.
   const translate = i18n.t.bind(i18n) as unknown as (
     key: string,
@@ -73,7 +73,7 @@ export function getAchievementHint(
 /**
  * The spelled-out description of a secret, for the user who unlocked it.
  *
- * Secrets describe themselves vaguely in public so they stay a surprise; only
+ * Secrets describe themselves vaguely in public so they stay a surprise. Only
  * `isOwnUnlock` payloads should reach this. Falls back to the public line for
  * achievements that have nothing extra to say.
  */

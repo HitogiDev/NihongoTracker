@@ -48,6 +48,11 @@ describe('bulkEditLogs', () => {
     expect(Log.find).not.toHaveBeenCalled();
   });
 
+  it('rejects Other as a new media type', async () => {
+    await expect(bulkEditLogs([firstId], { type: 'other' }, ownerId)).rejects.toThrow();
+    expect(Log.find).not.toHaveBeenCalled();
+  });
+
   it('rejects any missing or unowned ID without writing', async () => {
     const first = makeLog(firstId);
     vi.mocked(Log.find).mockResolvedValue([first] as never);

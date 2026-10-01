@@ -112,7 +112,6 @@ export default function TagFilter({
         </div>
 
         <div className="space-y-4">
-          {/* Include Tags */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-base-content/70">
@@ -174,7 +173,6 @@ export default function TagFilter({
 
           <div className="divider my-2"></div>
 
-          {/* Exclude Tags */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-base-content/70">

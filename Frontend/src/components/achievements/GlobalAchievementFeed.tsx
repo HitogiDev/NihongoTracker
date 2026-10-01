@@ -39,7 +39,6 @@ export default function GlobalAchievementFeed() {
             key={item.userAchievementId}
             className="flex items-center gap-3 rounded-xl px-3 py-2 bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
           >
-            {/* Icon */}
             <div className="shrink-0">
               {a.iconSlug ? (
                 <Icon
@@ -53,7 +52,6 @@ export default function GlobalAchievementFeed() {
               )}
             </div>
 
-            {/* Text */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 flex-wrap text-xs">
                 {user?.username && (

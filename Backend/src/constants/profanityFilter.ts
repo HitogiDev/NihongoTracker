@@ -3,7 +3,7 @@
  *
  * Lightweight offensive-text detection for user-supplied vanity strings
  * (currently the Patreon custom badge text). The goal is to reject slurs and
- * strong profanity — including common obfuscations (leetspeak, spacing) —
+ * strong profanity: including common obfuscations (leetspeak, spacing):
  * while keeping false positives low so ordinary words are not blocked.
  *
  * This is deliberately not a perfect filter: badge text is short, cosmetic,
@@ -34,7 +34,7 @@ function normalize(input: string): string {
 }
 
 /**
- * Slurs and strong profanity that are safe to match anywhere — they almost
+ * Slurs and strong profanity that are safe to match anywhere: they almost
  * never appear inside an innocent word, so matching them as substrings catches
  * compounds ("shithead", "motherfucker") and spaced-out evasion ("f a g g o t")
  * without tripping ordinary words.

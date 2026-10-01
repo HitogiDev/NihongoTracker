@@ -47,7 +47,7 @@ export async function recalculateStreaksForUser(
 
   const timezone = user.settings?.timezone || FALLBACK_TIMEZONE;
 
-  // Exclude unknownDate logs — they have no real date to streak on
+  // Exclude unknownDate logs: they have no real date to streak on
   const logs = await Log.find({
     user: user._id,
     unknownDate: { $ne: true },
@@ -83,14 +83,14 @@ export async function recalculateStreaksForUser(
       } else if (diff > 1) {
         current = 1;
       }
-      // diff === 0 cannot occur — Set guarantees uniqueness
+      // diff === 0 cannot occur: Set guarantees uniqueness
       if (current > longest) longest = current;
     }
   }
 
   // Check if streak is still active: lastKey must be today or yesterday in user tz.
-  // If the last log was 2+ days ago the streak is broken — zero currentStreak so
-  // the stored value doesn't lie when read back without a live check.
+  // If the last log was 2+ days ago the streak is broken: zero currentStreak so
+  // the stored value does not lie when read back without a live check.
   const todayKey = getUserDayKey(new Date(), timezone);
   const lastKey = dayKeys[dayKeys.length - 1];
   const diffFromToday = dayDiff(lastKey, todayKey);
@@ -99,7 +99,7 @@ export async function recalculateStreaksForUser(
   }
 
   user.stats.currentStreak = current;
-  // Use the recalculated value directly — recalc has ground truth from all remaining logs.
+  // Use the recalculated value directly: recalc has ground truth from all remaining logs.
   // Math.max would prevent longestStreak from decreasing after log deletions.
   user.stats.longestStreak = longest;
   user.stats.lastStreakDate = getUTCDateFromDayKey(lastKey);
@@ -108,8 +108,8 @@ export async function recalculateStreaksForUser(
 
 /**
  * Returns the live current streak, accounting for a potentially stale lastStreakDate.
- * Use this at read-time so users who stopped logging but haven't triggered a recalc
- * don't see a falsely non-zero streak.
+ * Use this at read-time so users who stopped logging but have not triggered a recalc
+ * do not see a falsely non-zero streak.
  */
 export function getLiveCurrentStreak(
   currentStreak: number,
@@ -124,7 +124,7 @@ export function getLiveCurrentStreak(
   return diff <= 1 ? currentStreak : 0;
 }
 
-// Incremental update on new log; falls back to full recalc for backfill/out-of-order
+// Incremental update on new log. Falls back to full recalc for backfill/out-of-order
 export async function updateStreakWithLog(
   userId: Types.ObjectId,
   logDate: Date
@@ -155,19 +155,19 @@ export async function updateStreakWithLog(
     return;
   }
 
-  // lastStreakDate stores a UTC day key anchor; read it back in UTC to avoid timezone day shifts
+  // lastStreakDate stores a UTC day key anchor. Read it back in UTC to avoid timezone day shifts
   const lastKey = getDayKeyFromUTCDate(new Date(lastDate));
   const diff = dayDiff(lastKey, newKey);
 
   if (diff === 0) {
-    // Same day — nothing to change, ensure anchor is up to date
+    // Same day: nothing to change, ensure anchor is up to date
     user.stats.lastStreakDate = getUTCDateFromDayKey(newKey);
     await user.save();
     return;
   }
 
   if (diff === 1) {
-    // Validate stored currentStreak isn't stale first
+    // Validate stored currentStreak is not stale first
     const liveCurrent = getLiveCurrentStreak(
       user.stats.currentStreak,
       lastDate,
@@ -177,8 +177,8 @@ export async function updateStreakWithLog(
   } else {
     // diff > 1: the new log is not adjacent to lastStreakDate, or
     // diff < 0: backfill/out-of-order.
-    // Either way, the incremental path can't determine the correct streak
-    // without examining all logs — fall back to full recalc.
+    // Either way, the incremental path cannot determine the correct streak
+    // without examining all logs: fall back to full recalc.
     await recalculateStreaksForUser(user._id);
     return;
   }

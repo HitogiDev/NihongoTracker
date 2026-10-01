@@ -1125,7 +1125,7 @@ export async function getJitenDifficultyBackfillStatus(
   }
 }
 
-// PATCH /api/admin/media/:id — admin/mod edits a media document's fields.
+// PATCH /api/admin/media/:id: admin/mod edits a media document's fields.
 // Uses findById so the correct discriminator is hydrated and type-specific
 // fields (episodes, volumes, platforms, …) can be set.
 export async function adminUpdateMedia(
@@ -1197,7 +1197,7 @@ export async function adminUpdateMedia(
         .filter(Boolean);
     if (Array.isArray(body.description)) media.description = body.description;
 
-    // Type-specific numeric fields. Assigned dynamically; only ones present in
+    // Type-specific numeric fields. Assigned dynamically. Only ones present in
     // the hydrated discriminator's schema are persisted by Mongoose.
     const numericFields: (keyof IMediaDocument)[] = [
       'episodes',

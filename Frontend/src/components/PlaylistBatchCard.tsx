@@ -54,11 +54,11 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   const shouldUseAdminEndpoints = isAdmin && !isOwner;
 
   // ── Bulk delete mutation ────────────────────────────────────────────────────
-  // onSuccess receives (data, variables) — variables is the logIds array,
+  // onSuccess receives (data, variables): variables is the logIds array,
   // so we can always show the correct count in the toast without stale closures.
   const { mutate: bulkDeleteLogs, isPending: loadingBulkDelete } = useMutation({
     mutationFn: async (logIds: string[]) => {
-      // Single bulk-delete request — avoids concurrent Mongoose VersionError
+      // Single bulk-delete request: avoids concurrent Mongoose VersionError
       await (shouldUseAdminEndpoints
         ? adminDeleteLogsBulkFn(logIds)
         : deleteLogsBulkFn(logIds));
@@ -73,7 +73,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-      // variables = the logIds array passed to mutate() — always correct
+      // variables = the logIds array passed to mutate(): always correct
       const count = variables.length;
       toast.success(
         `${count} log${count !== 1 ? 's' : ''} deleted successfully!`
@@ -113,7 +113,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
     });
   }, []);
 
-  // Handle Escape key — prevent default so we control the close sequence
+  // Handle Escape key: prevent default so we control the close sequence
   useEffect(() => {
     const dialog = modalRef.current;
     if (!dialog) return;
@@ -236,7 +236,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Summary card ────────────────────────────────────────────────────── */}
       <article
         className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 border ${videoTypeConfig.borderColor} group rounded-t-none`}
         role="article"
@@ -342,14 +341,12 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
         </div>
       </article>
 
-      {/* ── Videos Modal ──────────────────────────────────────────────────────── */}
       <dialog
         ref={modalRef}
         className="modal modal-bottom sm:modal-middle"
         aria-labelledby="playlist-modal-title"
       >
         <div className="modal-box max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-          {/* Modal Header */}
           <div className="bg-base-200/70 backdrop-blur-sm border-b border-base-content/10 px-5 pt-5 pb-4 flex-shrink-0">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -430,7 +427,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             )}
           </div>
 
-          {/* Scrollable log list */}
           <div
             ref={scrollContainerRef}
             className="overflow-y-auto flex-1 p-4 space-y-2"
@@ -442,7 +438,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 ))
               : null}
 
-            {/* Log rows — only the current page slice */}
+            {/* Log rows: only the current page slice */}
             {isModalOpen && contentReady
               ? visibleLogs.map((log) => {
                   const isSelected = selectedLogIds.has(log._id);
@@ -465,7 +461,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                         if (canModerate) handleSelectLog(log._id);
                       }}
                     >
-                      {/* Custom checkbox */}
                       {canModerate && (
                         <div className="flex-shrink-0 pt-3.5 pl-1">
                           <div
@@ -495,7 +490,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                         </div>
                       )}
 
-                      {/* LogCard — stopPropagation so internal buttons
+                      {/* LogCard: stopPropagation so internal buttons
                           don't bubble up and accidentally toggle selection */}
                       <div
                         className="flex-1 min-w-0"
@@ -512,7 +507,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 })
               : null}
 
-            {/* Sentinel — triggers loading the next page when visible */}
+            {/* Sentinel: triggers loading the next page when visible */}
             {isModalOpen && contentReady && (
               <div ref={sentinelRef} className="py-1">
                 {hasMore && (
@@ -524,7 +519,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
               </div>
             )}
 
-            {/* Empty state */}
             {isModalOpen && contentReady && logs.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-base-content/50">
                 <ListVideo className="w-10 h-10 mb-3 opacity-40" />
@@ -533,7 +527,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             )}
           </div>
 
-          {/* Footer: loaded count indicator */}
           {isModalOpen && contentReady && logs.length > 0 && (
             <div className="flex-shrink-0 border-t border-base-content/10 px-5 py-2 text-xs text-base-content/40 text-center">
               Showing {Math.min(visibleCount, logs.length)} of {logs.length}{' '}
@@ -542,7 +535,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
           )}
         </div>
 
-        {/* Backdrop */}
         <div className="modal-backdrop" onClick={closeModal} />
       </dialog>
 
@@ -554,7 +546,6 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
         onUpdated={() => setSelectedLogIds(new Set())}
       />
 
-      {/* ── Bulk Delete Confirmation Modal ─────────────────────────────────────── */}
       <dialog
         ref={deleteConfirmModalRef}
         className="modal modal-bottom sm:modal-middle"
@@ -568,10 +559,10 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             </div>
             <div>
               {/*
-               * Use selectedLogIds.size directly — it's live React state so
-               * it's always correct when this dialog opens.
+               * Use selectedLogIds.size directly: it is live React state so
+               * it is always correct when this dialog opens.
                * (The old pendingDeleteCountRef was a plain ref whose mutation
-               *  didn't trigger a re-render, so the dialog always showed
+               *  did not trigger a re-render, so the dialog always showed
                *  the previous value.)
                */}
               <h3

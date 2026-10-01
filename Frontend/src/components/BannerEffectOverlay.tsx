@@ -5,7 +5,7 @@ import { BANNER_EFFECT_PARTICLES } from '../utils/customization';
 
 interface BannerEffectOverlayProps {
   effect?: BannerEffect | null;
-  /** Stable seed so the particle layout doesn't reshuffle on every render. */
+  /** Stable seed so the particle layout does not reshuffle on every render. */
   seed?: string;
 }
 

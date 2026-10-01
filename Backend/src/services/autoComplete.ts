@@ -52,7 +52,7 @@ export async function evaluateAutoCompleteForUserMedia(
       if (Number.isFinite(c) && c > 0) mediaCharTotal = c;
     }
 
-    // If we don't have chars but this is a char-based type, try Jiten
+    // If we do not have chars but this is a char-based type, try Jiten
     if (
       mediaCharTotal === null &&
       ['light-novel', 'reading', 'manga', 'vn', 'game', 'book'].includes(
@@ -64,7 +64,7 @@ export async function evaluateAutoCompleteForUserMedia(
         if (jitenURL) {
           const LinkType = LinkTypeObject[normalizedType] ?? null;
           if (LinkType) {
-            // Jiten links books by their raw Google Books volume id; strip our
+            // Jiten links books by their raw Google Books volume id. Strip our
             // `gbooks-` namespace prefix so the lookup matches.
             const jitenLinkId =
               normalizedType === 'book'
@@ -96,7 +96,7 @@ export async function evaluateAutoCompleteForUserMedia(
           }
         }
       } catch (err) {
-        // Ignore Jiten errors, absence of chars means we can't auto-complete by chars
+        // Ignore Jiten errors, absence of chars means we cannot auto-complete by chars
         console.debug(
           'Jiten lookup failed for',
           mediaId,

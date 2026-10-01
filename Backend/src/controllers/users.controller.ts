@@ -135,7 +135,7 @@ function isOwner(user: Partial<IUser> | null | undefined, ownerId: unknown) {
 }
 
 /**
- * Cosmetics carried by ranking rows — only what a row renders (name effect and
+ * Cosmetics carried by ranking rows: only what a row renders (name effect and
  * avatar frame), not the whole customization document.
  */
 const RANKING_COSMETICS_PROJECTION = {
@@ -147,7 +147,7 @@ const RANKING_COSMETICS_PROJECTION = {
 
 /**
  * Aggregations bypass the model, so paid cosmetics have to be re-checked here
- * the same way `getUser` does it — otherwise an expired supporter would keep a
+ * the same way `getUser` does it: otherwise an expired supporter would keep a
  * glowing name in the rankings.
  */
 function sanitizeRankingCosmetics<
@@ -590,7 +590,7 @@ export async function updateUser(
         );
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
-        // Don't throw error - user update should still succeed
+        // Do not throw error - user update should still succeed
       }
     }
 
@@ -1402,7 +1402,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     // Expose layout publicly so all visitors see the owner's preferred order
     statsLayout: userFound.settings?.statsLayout ?? [],
     profileLayout: userFound.settings?.profileLayout ?? [],
-    // Favorites are meant to be showcased — public, no privacy gate
+    // Favorites are meant to be showcased: public, no privacy gate
     favorites: await hydrateFavorites(userFound.favorites ?? []),
     // Cosmetics are public by definition: they exist to be seen by visitors.
     // Sanitized on read so an expired supporter stops rendering paid effects
@@ -2879,7 +2879,7 @@ export async function getImmersionList(
       const mediaWithStatus = group.media
         .filter((media) => {
           const key = `${mediaType}:${media.contentId}`;
-          // Tracked either way, so hidden entries aren't re-added below
+          // Tracked either way, so hidden entries are not re-added below
           mediaKeysFromLogs.add(key);
           // Removed from the list by the user while keeping its logs
           return !statusMap.get(key)?.hiddenFromList;
@@ -3155,13 +3155,9 @@ export async function updateMediaCompletionStatus(
 
 /**
  * Remove a media entry from the authenticated user's immersion list.
- *
- * The list is derived from logs (see getImmersionList), so there are two ways to
- * remove an entry, selected with the `deleteLogs` query param:
- *   - `deleteLogs=false` (default): keep the logs and their XP, and flag the
- *     entry as `hiddenFromList` so it stops showing up in the list.
- *   - `deleteLogs=true`: delete every log for that media plus its status row,
- *     then recalculate XP and streaks.
+ * The list comes from logs. Set `deleteLogs` to choose how to remove an entry:
+ * - `false` (default): Keep the logs and XP. Hide the entry from the list.
+ * - `true`: Delete the logs and status. Recalculate XP and streaks.
  */
 export async function removeMediaFromImmersionList(
   req: Request,
@@ -3207,7 +3203,7 @@ export async function removeMediaFromImmersionList(
     };
 
     if (!deleteLogs) {
-      // Keep the logs (and their XP); just hide the entry from the list
+      // Keep the logs (and their XP). Just hide the entry from the list
       const logCount = await Log.countDocuments(statusFilter);
       const existingStatus = await UserMediaStatus.findOne(statusFilter).lean();
 
@@ -3220,7 +3216,7 @@ export async function removeMediaFromImmersionList(
       }
 
       if (logCount === 0) {
-        // Nothing to keep — a status-only entry is removed outright
+        // Nothing to keep: a status-only entry is removed outright
         await UserMediaStatus.deleteOne(statusFilter);
 
         return res.status(200).json({
@@ -3617,7 +3613,7 @@ export async function getGanttData(
     const startParam = req.query.start as string | undefined; // YYYY-MM-DD
     const endParam = req.query.end as string | undefined; // YYYY-MM-DD
 
-    // Build base match — always exclude private logs and logs without a mediaId
+    // Build base match: always exclude private logs and logs without a mediaId
     const baseMatch: Record<string, unknown> = {
       user: user._id,
       private: { $ne: true },

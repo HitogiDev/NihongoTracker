@@ -4,7 +4,7 @@
  * All sounds are short synthesized chimes in the spirit of Duolingo's
  * feedback: bright, quick, and non-intrusive. The AudioContext is created
  * lazily on first play (browsers require a user gesture before audio can
- * start) and every call is safe to make unconditionally — muted or
+ * start) and every call is safe to make unconditionally: muted or
  * unsupported environments simply no-op.
  */
 
@@ -37,7 +37,7 @@ export function setSfxMuted(muted: boolean) {
   try {
     localStorage.setItem(MUTE_KEY, String(muted));
   } catch {
-    // localStorage unavailable — mute state just won't persist.
+    // localStorage unavailable: mute state just will not persist.
   }
 }
 
@@ -93,7 +93,7 @@ export function playLogSuccess() {
 
 let lastTick = 0;
 
-/** Short tick for XP count-up; throttled so rapid updates don't stack. */
+/** Short tick for XP count-up. Throttled so rapid updates do not stack. */
 export function playXpTick() {
   const now = performance.now();
   if (now - lastTick < 45) return;
@@ -154,7 +154,7 @@ export function playOvertake() {
 
 type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'secret';
 
-/** Chord that scales with achievement rarity — richer the rarer. */
+/** Chord that scales with achievement rarity: richer the rarer. */
 export function playAchievement(rarity: Rarity = 'common') {
   const chords: Record<Rarity, number[]> = {
     common: [659.25, 987.77],

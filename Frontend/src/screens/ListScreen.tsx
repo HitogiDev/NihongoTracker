@@ -291,7 +291,7 @@ function ListScreen() {
   const removeMediaMutation = useMutation({
     mutationFn: removeMediaFromImmersionListFn,
     onSuccess: (data) => {
-      // Logs were deleted, so XP/streaks/stats change too — refresh broadly
+      // Logs were deleted, so XP/streaks/stats change too: refresh broadly
       void queryClient.invalidateQueries({
         predicate: (query) =>
           Array.isArray(query.queryKey) &&
@@ -503,7 +503,6 @@ function ListScreen() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-base-200">
-        {/* Skeleton header area */}
         <div className="bg-base-100 border-b border-base-300 sticky top-0 z-30">
           <div className="container mx-auto px-4 py-4">
             <div className="skeleton h-8 w-48 mb-3 rounded-lg" />
@@ -515,9 +514,7 @@ function ListScreen() {
           </div>
         </div>
 
-        {/* Skeleton grid */}
         <div className="container mx-auto px-4 py-6">
-          {/* Group header skeleton */}
           <div className="flex items-center gap-3 pb-2 mb-4 border-b border-base-300">
             <div className="skeleton w-9 h-9 rounded-lg" />
             <div>
@@ -538,7 +535,6 @@ function ListScreen() {
             ))}
           </div>
 
-          {/* Second group skeleton */}
           <div className="flex items-center gap-3 pb-2 mb-4 border-b border-base-300">
             <div className="skeleton w-9 h-9 rounded-lg" />
             <div>
@@ -775,7 +771,6 @@ function ListScreen() {
           <div className="card surface relative z-50">
             <div className="card-body p-6">
               <div className="flex flex-col gap-4">
-                {/* Search Bar */}
                 <div className="w-full">
                   <label className="input flex items-center gap-2">
                     <Search className="w-5 h-5 opacity-70" />
@@ -789,9 +784,7 @@ function ListScreen() {
                   </label>
                 </div>
 
-                {/* Filters Row */}
                 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center sm:justify-between">
-                  {/* Filter and Sort Dropdowns */}
                   <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 min-w-0">
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
                       <div
@@ -999,7 +992,6 @@ function ListScreen() {
                     </div>
                   </div>
 
-                  {/* View Mode + Group Toggle */}
                   <div className="flex gap-2 shrink-0">
                     <div className="join flex-1 sm:flex-none">
                       <button
@@ -1470,7 +1462,6 @@ function MediaCard({
           </div>
         )}
 
-        {/* Status badge — bottom left */}
         {statusCfg && (
           <div className="absolute bottom-2 left-2">
             <div className={`badge ${statusCfg.badgeClass} badge-sm gap-1`}>
@@ -1671,7 +1662,6 @@ function MediaListItem({
       <div className="card-body p-3 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
-            {/* Thumbnail */}
             <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-16">
               {media.contentImage || media.coverImage ? (
                 <img

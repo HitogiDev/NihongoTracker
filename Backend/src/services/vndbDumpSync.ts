@@ -286,7 +286,7 @@ async function buildImageRatingMap(
     const {id} = row;
     if (!id) continue;
 
-    // Only interested in cover images (prefix 'cv') — skip character/screenshot images
+    // Only interested in cover images (prefix 'cv'): skip character/screenshot images
     if (!id.startsWith('cv')) continue;
 
     const raw = row.c_sexual_avg;
@@ -322,7 +322,7 @@ async function buildReleaseVnSets(
   const releaseYears = new Map<string, number>();
   const vnReleaseYears = new Map<string, number>();
 
-  // --- Pass 1: single scan of `releases` — collect adult and Japanese release ids ---
+  // --- Pass 1: single scan of `releases`: collect adult and Japanese release ids ---
   const relHeaders = await readHeaderFile(path.join(dbDir, 'releases.header'));
   for await (const row of streamTsvRows(
     path.join(dbDir, 'releases'),
@@ -405,7 +405,7 @@ async function buildReleaseVnSets(
  *   - romaji: latin transcription of the original-language title
  *   - english: official English title (lang == 'en')
  *
- * Since we don't know olang here, we store ALL titles keyed by lang so the
+ * Since we do not know olang here, we store ALL titles keyed by lang so the
  * vn-processing pass can look up the right native title.
  */
 async function buildTitleMap(
@@ -499,7 +499,7 @@ function normalizeVnRow(
   const contentImage = buildVndbImageUrl(imageId);
 
   // isAdultImage: look up the cover image's community sexual rating.
-  // If the image isn't in the map (unvoted / no cover), default to false.
+  // If the image is not in the map (unvoted / no cover), default to false.
   const isAdultImage = imageId ? (imageRatingMap.get(imageId) ?? false) : false;
 
   const rawDescription = row.description;

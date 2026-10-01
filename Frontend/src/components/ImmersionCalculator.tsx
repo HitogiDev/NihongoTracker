@@ -30,7 +30,6 @@ const TYPES = [
   { value: 'movie', key: 'calculator.types.movie' },
   { value: 'tv show', key: 'calculator.types.tvShow' },
   { value: 'audio', key: 'calculator.types.audio' },
-  { value: 'other', key: 'calculator.types.other' },
 ] as const;
 const READING: ILog['type'][] = ['reading', 'light-novel', 'manga', 'vn', 'game', 'book'];
 const PAGES: ILog['type'][] = ['reading', 'light-novel', 'manga', 'book'];
@@ -67,12 +66,12 @@ function ImmersionCalculator() {
   const supportsPages = PAGES.includes(type);
   const supportsEpisodes = EPISODES.includes(type);
   const units = useMemo(() => {
-    const available: XpCalculatorUnit[] = type === 'other' ? [] : ['time'];
+    const available: XpCalculatorUnit[] = ['time'];
     if (isReading) available.push('chars');
     if (supportsPages) available.push('pages');
     if (supportsEpisodes) available.push('episodes');
     return available;
-  }, [isReading, supportsEpisodes, supportsPages, type]);
+  }, [isReading, supportsEpisodes, supportsPages]);
   useEffect(() => {
     if (!units.includes(unit)) setUnit(units[0] ?? 'time');
   }, [unit, units]);
@@ -105,7 +104,7 @@ function ImmersionCalculator() {
   }), [contextMode, difficulty, history, isReading, level, mode, selectedMedia, speed, supportsEpisodes, supportsPages, targetXp, type, unit, values]);
   const debouncedRequest = useDebounce(request, 350);
   const hasDirectInput = units.some((item) => (numberOrUndefined(values[item]) ?? 0) > 0);
-  const enabled = type !== 'other' && (mode === 'direct' ? hasDirectInput : (numberOrUndefined(targetXp) ?? 0) > 0);
+  const enabled = mode === 'direct' ? hasDirectInput : (numberOrUndefined(targetXp) ?? 0) > 0;
   const calculation = useQuery({
     queryKey: ['xp-calculator', debouncedRequest],
     queryFn: () => calculateXpScenarioFn(debouncedRequest),
@@ -171,8 +170,7 @@ function ImmersionCalculator() {
           {units.map((item) => <Field key={item} label={t(`calculator.units.${item}`)} hint={item === 'time' ? t('calculator.timeHint') : item === 'chars' ? t('calculator.charsHint') : undefined}>{(id) => <input id={id} type="number" min="0" className="input focus:input-primary w-full" value={values[item]} onChange={(event) => updateValue(item, event.target.value)} />}</Field>)}
         </div>}
 
-        {type === 'other' && <div role="alert" className="alert alert-info">{t('calculator.otherNoXp')}</div>}
-        {mode === 'inverse' && type !== 'other' && <p className="text-sm text-base-content/60">{t('calculator.fixedContext')}</p>}
+        {mode === 'inverse' && <p className="text-sm text-base-content/60">{t('calculator.fixedContext')}</p>}
         {calculation.isFetching && enabled && <div className="flex justify-center py-5"><Spinner label={t('calculator.calculating')} /></div>}
         {calculation.isError && enabled && <div role="alert" className="alert alert-error">{t('calculator.calculationError')}</div>}
         {result && !calculation.isFetching && <div className="surface-raised p-5">

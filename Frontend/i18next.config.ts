@@ -16,7 +16,7 @@ export default defineConfig({
     // of a blank until they are translated.
     defaultValue: '',
     // Keys the extractor cannot see because they are passed to `t()` through a
-    // variable — route titles, validation results, achievement/error catalogues.
+    // variable: route titles, validation results, achievement/error catalogues.
     // Without these, `removeUnusedKeys` (on by default) silently deletes them.
     preservePatterns: [
       'achievements:items.*',

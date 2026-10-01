@@ -43,7 +43,6 @@ export default function UserAchievementFeed({
             key={String(item.userAchievementId)}
             className="flex items-center gap-3 rounded-xl px-3 py-2 bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
           >
-            {/* Icon */}
             <div className="shrink-0">
               {a.iconSlug ? (
                 <Icon
@@ -57,7 +56,6 @@ export default function UserAchievementFeed({
               )}
             </div>
 
-            {/* Text */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold truncate">
                 {a.name ?? t('secretName')}
@@ -73,7 +71,6 @@ export default function UserAchievementFeed({
               )}
             </div>
 
-            {/* Rarity badge */}
             <span
               className="shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full border capitalize"
               style={{

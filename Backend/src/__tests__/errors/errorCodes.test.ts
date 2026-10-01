@@ -31,7 +31,7 @@ function resolve(source: Record<string, unknown>, dotted: string): unknown {
 }
 
 /**
- * A code is translated if the key exists, or — for pluralised messages — if
+ * A code is translated if the key exists, or: for pluralised messages: if
  * i18next's `_one` / `_other` variants exist instead. i18next never stores the
  * bare key for a plural.
  */

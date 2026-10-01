@@ -1,7 +1,7 @@
 /**
  * AniList automatic logging.
  *
- * A linked account is polled for its list activity feed; every "watched
+ * A linked account is polled for its list activity feed. Every "watched
  * episode" entry becomes an anime log, dated at the moment the user updated
  * their AniList list. Logs carry `anilistActivityId`, which is what makes the
  * whole thing idempotent: re-running a sync, or overlapping a backfill with an
@@ -37,7 +37,7 @@ const anilist = new GraphQLClient(ANILIST_GRAPHQL_URL);
 /** AniList currently permits 30 requests/minute per IP. */
 const PAGE_DELAY_MS = 2100;
 const PER_PAGE = 50;
-/** Safety valve so one account can't spend the whole rate budget. */
+/** Safety valve so one account cannot spend the whole rate budget. */
 const MAX_PAGES_INCREMENTAL = 10;
 const MAX_PAGES_BACKFILL = 60;
 
@@ -250,7 +250,7 @@ async function resolveAnimeMedia(
       }
     }
   } catch (error) {
-    // A media lookup failure must not lose the activity — the log is still
+    // A media lookup failure must not lose the activity: the log is still
     // written with the AniList id and can be matched later.
     console.error('AniList sync: media lookup failed', error);
   }
@@ -366,7 +366,7 @@ function mediaTitle(media?: IMediaDocument): string {
  * Pull new list activity for a linked account and turn it into logs.
  *
  * `backfill` ignores both the stored watermark and the link date and walks the
- * whole feed; the activity id dedupe means it is safe to run at any time.
+ * whole feed. The activity id dedupe means it is safe to run at any time.
  */
 export async function syncAnilistForUser(
   userId: Types.ObjectId | string,
@@ -402,7 +402,7 @@ export async function syncAnilistForUser(
     // Hitting the page cap moves the watermark to the newest activity seen, so
     // an account that piled up more than the cap between runs skips the excess
     // rather than re-scanning it every 30 minutes. "Import full history"
-    // recovers anything skipped that way — it ignores the watermark entirely.
+    // recovers anything skipped that way: it ignores the watermark entirely.
     const maxPages = backfill ? MAX_PAGES_BACKFILL : MAX_PAGES_INCREMENTAL;
 
     const collected: IAnilistListActivity[] = [];
@@ -628,7 +628,7 @@ export async function syncAnilistForUser(
         continue;
       }
 
-      // Reuse the first absorbed log as the merged one; drop any others.
+      // Reuse the first absorbed log as the merged one. Drop any others.
       const [keep, ...remove] = superseded;
       await Log.updateOne(
         { user: user._id, anilistActivityId: keep.anilistActivityId },
@@ -669,7 +669,7 @@ export async function syncAnilistForUser(
         // `ordered: false` keeps inserting past a duplicate, and a concurrent
         // run hitting the same activity is expected rather than exceptional.
         // Count what actually landed instead of trusting the driver's error
-        // shape; a batch where nothing landed is a real failure and propagates.
+        // shape. A batch where nothing landed is a real failure and propagates.
         result.created = await Log.countDocuments({
           user: user._id,
           anilistActivityId: { $in: insertIds },
@@ -681,7 +681,7 @@ export async function syncAnilistForUser(
     if (result.created > 0 || result.updated > 0) {
       await recalculateUserXpFromLogs(user._id);
       await recalculateStreaksForUser(user._id);
-      // Left unnotified on purpose: the user isn't watching a request here, so
+      // Left unnotified on purpose: the user is not watching a request here, so
       // the client reveals these on its next /achievements/me/pending drain.
       await checkAchievements(user._id, { trigger: 'log' });
       await checkAchievements(user._id, { trigger: 'streak' });

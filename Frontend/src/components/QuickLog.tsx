@@ -120,7 +120,7 @@ function QuickLog({
   const vt = useValidationText();
   const { user } = useUserDataStore();
   // `allowedTypes` narrows the list for callers that log into a fixed context
-  // (a club media, a playlist); it keeps the canonical display order.
+  // (a club media, a playlist). It keeps the canonical display order.
   const logTypeOptions = useMemo(
     () =>
       allowedTypes
@@ -232,7 +232,7 @@ function QuickLog({
         setLoggedVolume(undefined);
       }
 
-      // If it's anime, set episode duration (from API or default to 24 minutes)
+      // If it is anime, set episode duration (from API or default to 24 minutes)
       if (media.type === 'anime') {
         setDefaultDuration(media.episodeDuration || 24);
       }
@@ -285,13 +285,13 @@ function QuickLog({
     if (logType !== 'manga' && logType !== 'light-novel' && logType !== 'book') {
       setPages(0);
     }
-    // Volumes are a series concept — books are standalone
+    // Volumes are a series concept: books are standalone
     if (logType !== 'manga' && logType !== 'light-novel') {
       setLoggedVolume(undefined);
       setSeriesVolumes(undefined);
     }
     if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
-      // Don't reset time for anime as it's auto-calculated
+      // Do not reset time for anime as it is auto-calculated
     } else if (
       logType !== 'video' &&
       logType !== 'audio' &&
@@ -302,7 +302,7 @@ function QuickLog({
       logType !== 'vn' &&
       logType !== 'game'
     ) {
-      // Reset manual time for types that don't typically use it
+      // Reset manual time for types that do not typically use it
       setHours(0);
       setMinutes(0);
     }
@@ -593,7 +593,7 @@ function QuickLog({
         setDefaultDuration(24);
         setCustomDuration(undefined);
       } else if (logType === 'tv show') {
-        // No episodeDuration available — show the custom duration field
+        // No episodeDuration available: show the custom duration field
         setShowTime(true);
       }
 
@@ -702,7 +702,6 @@ function QuickLog({
                           ></textarea>
                         </Field>
 
-                        {/* Media-specific input fields */}
                         {(logType === 'anime' || logType === 'tv show') && (
                           <Field label={t('quick.episodesWatched')}>
                             <input
@@ -809,7 +808,6 @@ function QuickLog({
                                   </Field>
                                 )}
 
-                                {/* Auto-calculated time display */}
                                 {episodes > 0 && (
                                   <div className="alert alert-success mt-2">
                                     <svg
@@ -849,7 +847,6 @@ function QuickLog({
                           </Field>
                         )}
 
-                        {/* Pages field for Manga, Reading */}
                         {(logType === 'manga' || logType === 'light-novel') && (
                           <Field label={t('quick.volume')}>
                             <div className="flex items-center gap-2">
@@ -996,7 +993,6 @@ function QuickLog({
                   )}
                 </div>
 
-                {/* Show validation errors */}
                 {Object.keys(errors).length > 0 && (
                   <div className="alert alert-error">
                     <svg

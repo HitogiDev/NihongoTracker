@@ -262,7 +262,7 @@ export default function VotingSystem({
     });
   })();
 
-  // Reset carousel index if it's out of bounds and navigate to shared voting if provided
+  // Reset carousel index if it is out of bounds and navigate to shared voting if provided
   useEffect(() => {
     if (openVotings.length === 0) {
       if (currentVotingIndex !== 0) {
@@ -342,7 +342,6 @@ export default function VotingSystem({
 
   return (
     <>
-      {/* Open Votings Section */}
       <div className="space-y-6">
         {openVotings.length === 0 ? (
           <div className="card surface">
@@ -358,7 +357,6 @@ export default function VotingSystem({
           </div>
         ) : (
           <>
-            {/* Carousel Navigation */}
             {openVotings.length > 1 && (
               <div className="flex items-center justify-between mb-4">
                 <button
@@ -396,7 +394,6 @@ export default function VotingSystem({
               </div>
             )}
 
-            {/* Display Current Open Voting */}
             {openVotings[currentVotingIndex] && (
               <VotingCard voting={openVotings[currentVotingIndex]} />
             )}
@@ -489,7 +486,6 @@ export default function VotingSystem({
           </div>
         )}
 
-        {/* Member Suggestion Section */}
         {suggestionVotings.length > 0 && (
           <div className="card surface">
             <div className="card-body">
@@ -511,7 +507,6 @@ export default function VotingSystem({
           </div>
         )}
 
-        {/* Management Section */}
         {canManageVoting && showManagement && (
           <div className="card surface">
             <div className="card-body">
@@ -543,7 +538,6 @@ export default function VotingSystem({
         )}
       </div>
 
-      {/* Modals */}
       {showCreateWizard && (
         <CreateVotingWizard
           isOpen={showCreateWizard}
@@ -698,7 +692,6 @@ export default function VotingSystem({
             </div>
           )}
 
-          {/* Candidates Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {voting.candidates.map((candidate, index) => {
               const candidateVotes = candidate.votes.length;
@@ -783,7 +776,6 @@ export default function VotingSystem({
             })}
           </div>
 
-          {/* Vote Button */}
           {canVote && selectedCandidate !== null && (
             <div className="mt-6 text-center">
               <button
@@ -1199,7 +1191,6 @@ export default function VotingSystem({
             </div>
           </div>
 
-          {/* Show existing suggestions */}
           {voting.candidates.length > 0 && (
             <div className="mt-4 pt-4 border-t border-base-300">
               <h5 className="font-medium text-sm mb-2">

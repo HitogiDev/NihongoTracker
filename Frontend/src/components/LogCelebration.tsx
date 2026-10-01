@@ -222,7 +222,6 @@ export default function LogCelebration({
         if (e.target === e.currentTarget) handleAdvance();
       }}
     >
-      {/* Mute toggle */}
       <button
         onClick={() => setMuted(toggleSfx())}
         className="btn btn-ghost btn-sm btn-circle absolute top-4 right-4 text-white/60 hover:text-white"
@@ -235,7 +234,6 @@ export default function LogCelebration({
         )}
       </button>
 
-      {/* Step dots */}
       {steps.length > 1 && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2">
           {steps.map((s) => (
@@ -252,7 +250,6 @@ export default function LogCelebration({
       <div className="flex flex-col items-center gap-5 px-4 max-w-md w-full text-center">
         {step === 'xp' && (
           <>
-            {/* Success check */}
             <div
               ref={checkRef}
               className="w-20 h-20 rounded-full bg-success flex items-center justify-center shadow-lg shadow-success/40"
@@ -280,7 +277,6 @@ export default function LogCelebration({
               </div>
             </div>
 
-            {/* Counter + level progress */}
             <div className="w-full max-w-sm">
               <div className="flex items-baseline justify-center gap-2">
                 <span
@@ -348,7 +344,6 @@ export default function LogCelebration({
               {t('celebration.monthlyRanking')}
             </div>
 
-            {/* Overtaken avatars */}
             <div className="flex -space-x-3">
               {shownOvertaken.map((u) => (
                 <div
@@ -384,7 +379,6 @@ export default function LogCelebration({
               !
             </div>
 
-            {/* Rank change */}
             <div className="flex items-baseline gap-3 text-3xl font-black">
               <span ref={rankFromRef} className="text-base-content/40">
                 #{rank.previousRank}

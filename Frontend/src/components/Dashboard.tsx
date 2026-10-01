@@ -209,7 +209,7 @@ function Dashboard() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch live user profile for streak — this query key ['user', username]
+  // Fetch live user profile for streak: this query key ['user', username]
   // gets invalidated by LogCard's delete/update mutations, so the streak
   // updates reactively without relying on the stale auth store.
   const { data: liveUserProfile } = useQuery({
@@ -333,7 +333,7 @@ function Dashboard() {
 
       // Playlist-batch logs share the channel as their media, so a single
       // channel tile would quick-log the whole channel instead of the
-      // playlist. Skip them — playlists aren't re-logged from here.
+      // playlist. Skip them: playlists are not re-logged from here.
       if (log.playlistBatchId) {
         continue;
       }
@@ -437,7 +437,7 @@ function Dashboard() {
     setQuickLogOpen(true);
   }
 
-  // XP/level feedback itself comes from the global LogCelebrationHost —
+  // XP/level feedback itself comes from the global LogCelebrationHost:
   // here we only refresh the stored user so the dashboard numbers update.
   async function handleQuickLogSuccess() {
     if (!user?.username) return;
@@ -467,7 +467,7 @@ function Dashboard() {
     }
   }
 
-  // Use live profile data for streak (reactive to log mutations);
+  // Use live profile data for streak (reactive to log mutations).
   // fall back to auth store while query is loading.
   const streak =
     liveUserProfile?.stats?.currentStreak ?? user.stats?.currentStreak ?? 0;
@@ -861,7 +861,6 @@ function Dashboard() {
 
           <div className="card surface">
             <div className="card-body space-y-4">
-              {/* Header */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <h2 className={DASHBOARD_CARD_TITLE_CLASS}>

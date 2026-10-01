@@ -4,7 +4,7 @@
  * Anime episodes are commonly logged without a duration, and the rest of the
  * app (profile stats, club rankings) treats those as 24 minutes per episode.
  * The achievement evaluators used to sum `time` alone and additionally filter
- * on `time > 0`, so those episode-only logs were dropped entirely — a user
+ * on `time > 0`, so those episode-only logs were dropped entirely: a user
  * whose profile proudly showed 2,000 hours could be far short of the
  * "2,000 hours" achievement. Keep this in sync with the stats aggregation in
  * users.controller.ts.
