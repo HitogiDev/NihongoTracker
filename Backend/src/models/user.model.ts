@@ -329,6 +329,12 @@ const UserSchema = new Schema<IUser>(
       longestStreak: { type: Number, required: true, default: 0 },
       lastStreakDate: { type: Date, default: null },
     },
+    manualImmersion: {
+      time: { type: Number, min: 0, default: 0 },
+      readingTime: { type: Number, min: 0, default: 0 },
+      listeningTime: { type: Number, min: 0, default: 0 },
+      chars: { type: Number, min: 0, default: 0 },
+    },
     clubs: [{ type: Schema.Types.ObjectId, ref: 'Club' }],
     verified: { type: Boolean, required: true, default: false },
     verificationToken: { type: String, default: null, select: false },

@@ -278,6 +278,20 @@
     "matchSubtitle": "Empareja logs sin seguimiento con su contenido",
     "title": "Gestión de logs"
   },
+  "manualImmersion": {
+    "add": "Añadir totales anteriores",
+    "characters": "Caracteres anteriores",
+    "description": "Añade tus totales de inmersión de antes de empezar a usar NihongoTracker.",
+    "error": "No se pudieron añadir los totales. Revisa los valores e inténtalo de nuevo.",
+    "listeningHours": "Horas de escucha",
+    "mode": "Modo para añadir inmersión pasada",
+    "rankingNote": "Estos totales solo actualizan tus estadísticas generales. No cuentan para las clasificaciones.",
+    "readingHours": "Horas de lectura",
+    "splitMode": "Lectura y escucha",
+    "title": "Añadir totales de inmersión anteriores",
+    "totalHours": "Horas totales",
+    "totalMode": "Horas totales, sin desglose"
+  },
   "markdown": {
     "a11y": {
       "bold": "Insertar texto en negrita",

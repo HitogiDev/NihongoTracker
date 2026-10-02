@@ -2911,6 +2911,27 @@ export async function getUserStats(
     totals.dailyAverageChars =
       daysPeriod > 0 ? totals.totalChars / daysPeriod : 0;
 
+    if (
+      timeRange === 'total' &&
+      type === 'all' &&
+      !startParam &&
+      !endParam &&
+      !includedTagsParam &&
+      !excludedTagsParam
+    ) {
+      const manualReadingHours =
+        (user.manualImmersion?.readingTime ?? 0) / 60;
+      const manualListeningHours =
+        (user.manualImmersion?.listeningTime ?? 0) / 60;
+      totals.readingHours += manualReadingHours;
+      totals.listeningHours += manualListeningHours;
+      totals.totalTimeHours +=
+        ((user.manualImmersion?.time ?? 0) / 60) +
+        manualReadingHours +
+        manualListeningHours;
+      totals.totalChars += user.manualImmersion?.chars ?? 0;
+    }
+
     totals.dayCount = daysPeriod;
 
     const completeStats: IStatByType[] = logTypes.map((mediaType) => {

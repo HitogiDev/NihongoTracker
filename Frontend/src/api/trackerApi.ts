@@ -713,6 +713,25 @@ export async function deleteLongTermGoalFn(goalId: string) {
   return data;
 }
 
+export async function addManualImmersionFn(
+  payload:
+    | { mode: 'total'; totalHours: number; chars: number }
+    | {
+        mode: 'split';
+        readingHours: number;
+        listeningHours: number;
+        chars: number;
+      }
+) {
+  const { data } = await api.post<{
+    time: number;
+    readingTime: number;
+    listeningTime: number;
+    chars: number;
+  }>('users/me/immersion-totals', payload);
+  return data;
+}
+
 export async function followUserFn(
   username: string
 ): Promise<{ relationship: ISocialSummary }> {

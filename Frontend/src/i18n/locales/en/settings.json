@@ -278,6 +278,20 @@
     "matchSubtitle": "Match untracked logs with media",
     "title": "Log Management"
   },
+  "manualImmersion": {
+    "add": "Add past totals",
+    "characters": "Past characters",
+    "description": "Add your immersion totals from before you started using NihongoTracker.",
+    "error": "Could not add these totals. Check the values and try again.",
+    "listeningHours": "Listening hours",
+    "mode": "Past immersion entry mode",
+    "rankingNote": "These totals update your all-time stats only. They do not count toward rankings.",
+    "readingHours": "Reading hours",
+    "splitMode": "Reading and listening",
+    "title": "Add past immersion totals",
+    "totalHours": "Total hours",
+    "totalMode": "Total hours, no breakdown"
+  },
   "markdown": {
     "a11y": {
       "bold": "Insert bold text",

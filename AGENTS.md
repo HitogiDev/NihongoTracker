@@ -151,6 +151,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - Meilisearch integration is under `services/meilisearch/`. Keep document/index shape changes aligned with Mongoose models.
 - VNDB and IGDB metadata use scheduled dump synchronization; AniList and YouTube also have live lookup paths.
 - Socket.IO texthooker behavior is split between the Socket.IO section of `Backend/src/index.ts` and `Frontend/src/screens/HookerScreen.tsx`. Treat event names and payloads as a shared wire contract.
+- Desktop LunaHook input reaches the browser through `NativeHookBridge` and a loopback WebSocket URL in the `ntdc` fragment. Validate it with `nativeBridgeUrl`, match every line to the reader's content ID, and preserve line IDs for server deduplication. This mode disables the external hooker WebSocket. Hook selection is saved by the desktop bridge. Keep the bridge token out of API requests and persisted settings.
 - Texthooker room state is stored in `TextSession` with a 24-hour TTL. Socket authentication parses the JWT cookie separately from Express middleware.
 - Swagger UI is mounted at `/api/docs`.
 

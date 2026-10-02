@@ -513,7 +513,6 @@ function StatsScreen() {
   const [localGroups, setLocalGroups] = useState<StatsGroupLayout[] | null>(
     null
   );
-
   const { data: profileData } = useQuery({
     queryKey: ['user', username],
     queryFn: () => getUserFn(username!),

@@ -16,6 +16,7 @@ import {
   updateHiddenRecentMedia,
   getHiddenRecentMedia,
   updateStatsLayout,
+  addManualImmersion,
   updateProfileLayout,
   updateSocialPrivacy,
   updateFavorites,
@@ -65,6 +66,7 @@ router.get('/me', protect, getCurrentUser);
 router.get('/me/customization', protect, getCustomizationOptions);
 router.patch('/me/customization', protect, updateCustomization);
 router.put('/me/custom-themes', protect, updateCustomThemes);
+router.post('/me/immersion-totals', protect, addManualImmersion);
 router.put('/me/immersion-presence', protect, updateCompanionPresence);
 router.get('/friends/immersion-presence', protect, getFriendsCompanionPresence);
 

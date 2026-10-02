@@ -781,6 +781,110 @@ const VALID_GROUP_IDS = new Set<StatsGroupId>([
   'chartReading',
 ]);
 
+export async function addManualImmersion(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const {
+      mode,
+      totalHours,
+      readingHours,
+      listeningHours,
+      hours: legacyHours,
+      chars,
+    } = req.body as {
+      mode?: unknown;
+      totalHours?: unknown;
+      readingHours?: unknown;
+      listeningHours?: unknown;
+      hours?: unknown;
+      chars?: unknown;
+    };
+    const validNumber = (value: unknown): value is number =>
+      typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+    const nextMode = mode ?? (legacyHours !== undefined ? 'total' : undefined);
+    const nextTotalHours = mode === undefined ? legacyHours : totalHours;
+    const isTotalMode = nextMode === 'total';
+    const isSplitMode = nextMode === 'split';
+    const totalHoursValue = validNumber(nextTotalHours)
+      ? nextTotalHours
+      : null;
+    const readingHoursValue = validNumber(readingHours) ? readingHours : null;
+    const listeningHoursValue = validNumber(listeningHours)
+      ? listeningHours
+      : null;
+    const charsValue = validNumber(chars) ? chars : null;
+    const validChars =
+      charsValue !== null &&
+      Number.isInteger(charsValue) &&
+      charsValue <= 10_000_000_000;
+    const hasSplitHours =
+      readingHoursValue !== null &&
+      listeningHoursValue !== null &&
+      readingHoursValue + listeningHoursValue <= 100_000;
+    const hasTotalHours =
+      totalHoursValue !== null && totalHoursValue <= 100_000;
+    const mixedModes =
+      (isTotalMode &&
+        (readingHours !== undefined || listeningHours !== undefined)) ||
+      (isSplitMode &&
+        (totalHours !== undefined || legacyHours !== undefined)) ||
+      (mode !== undefined && legacyHours !== undefined);
+    const hasValue = isTotalMode
+      ? (totalHoursValue !== null && totalHoursValue > 0) ||
+        (charsValue !== null && charsValue > 0)
+      : (hasSplitHours &&
+          (readingHoursValue ?? 0) + (listeningHoursValue ?? 0) > 0) ||
+        (charsValue !== null && charsValue > 0);
+
+    if (
+      (!isTotalMode && !isSplitMode) ||
+      mixedModes ||
+      !validChars ||
+      (isTotalMode && !hasTotalHours) ||
+      (isSplitMode && !hasSplitHours) ||
+      !hasValue
+    ) {
+      return res.status(400).json({ message: 'Invalid immersion totals' });
+    }
+
+    const increments: Record<string, number> = {
+      'manualImmersion.chars': charsValue ?? 0,
+    };
+    if (isTotalMode) {
+      increments['manualImmersion.time'] = Math.round(
+        (totalHoursValue ?? 0) * 60
+      );
+    } else {
+      increments['manualImmersion.readingTime'] = Math.round(
+        (readingHoursValue ?? 0) * 60
+      );
+      increments['manualImmersion.listeningTime'] = Math.round(
+        (listeningHoursValue ?? 0) * 60
+      );
+    }
+
+    const user = await User.findByIdAndUpdate(
+      (res.locals.user as IUser)._id,
+      { $inc: increments },
+      { new: true, runValidators: true }
+    ).select('manualImmersion');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json({
+      time: user.manualImmersion?.time ?? 0,
+      readingTime: user.manualImmersion?.readingTime ?? 0,
+      listeningTime: user.manualImmersion?.listeningTime ?? 0,
+      chars: user.manualImmersion?.chars ?? 0,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function updateStatsLayout(
   req: Request,
   res: Response,
