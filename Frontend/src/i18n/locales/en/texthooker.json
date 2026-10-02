@@ -239,7 +239,19 @@
     "currentSession": "Current Session",
     "charsPerHour": "chars/h",
     "logged": "Logged!",
-    "logSession": "Log Session"
+    "logSession": "Log Session",
+    "native": {
+      "name": "LunaHook",
+      "connected": "LunaHook connected",
+      "waiting": "Waiting for LunaHook. Advance the game dialogue to detect hooks.",
+      "choose": "Choose a LunaHook text hook",
+      "description": "Choose the dialogue source. NTDC will remember this hook for the next time you open the game.",
+      "save": "Save hook",
+      "saveFailed": "The hook could not be saved. Try again.",
+      "cancel": "Cancel",
+      "close": "Close",
+      "websocketDisabled": "External WebSocket disabled while using LunaHook"
+    }
   },
   "mediaSession": {
     "enter": "Enter",

@@ -63,7 +63,24 @@ app.use(express.urlencoded({ extended: true }));
 // records plus deduplicated media metadata. Keep the limit bounded but large
 // enough for that authenticated import payload.
 app.use(express.json({ limit: '2mb' }));
-app.use(morgan('dev'));
+morgan.token('cf-ip', (req) =>
+  JSON.stringify(req.headers['cf-connecting-ip'] ?? null)
+);
+morgan.token('cf-ray', (req) => JSON.stringify(req.headers['cf-ray'] ?? null));
+morgan.token('forwarded-for', (req) =>
+  JSON.stringify(req.headers['x-forwarded-for'] ?? null)
+);
+morgan.token('request-ua', (req) =>
+  JSON.stringify(req.headers['user-agent'] ?? null)
+);
+morgan.token('request-origin', (req) =>
+  JSON.stringify(req.headers.origin ?? null)
+);
+app.use(
+  morgan(
+    ':method :url :status :response-time ms - :res[content-length] remote=:remote-addr cf-ip=:cf-ip cf-ray=:cf-ray xff=:forwarded-for ua=:request-ua origin=:request-origin'
+  )
+);
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);

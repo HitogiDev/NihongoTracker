@@ -80,6 +80,7 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
 import CustomizationSettings from '../components/settings/CustomizationSettings';
+import ManualImmersionSettings from '../components/settings/ManualImmersionSettings';
 import SocialPrivacySettings from '../components/settings/SocialPrivacySettings';
 import { PercentCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
@@ -3993,6 +3994,7 @@ function SettingsScreen() {
                     </div>
 
                     <div className="space-y-8">
+                      <ManualImmersionSettings />
                       <div>
                         <h3 className="font-semibold mb-3 text-base-content flex items-center gap-2">
                           <CloudUpload className="h-4 w-4 text-info" />

@@ -503,6 +503,12 @@ export interface IUser extends Document {
   discordId?: string;
   clubs?: Types.ObjectId[];
   stats: IStats;
+  manualImmersion?: {
+    time: number;
+    readingTime: number;
+    listeningTime: number;
+    chars: number;
+  };
   titles: string[];
   roles: userRoles[];
   firstImport?: boolean;
