@@ -1064,6 +1064,29 @@
         "effects": "Name effects",
         "avatarAlt": "{{username}} avatar"
       },
+      "cosmetics": {
+        "title": "Try the profile effects",
+        "description": "Pick a frame and combine it with a banner and name effect. The preview shows how they look together.",
+        "preview": "This demo only changes the preview.",
+        "categoryLabel": "Effect category",
+        "selected": "{{name}} · {{access}}",
+        "level": "Free · Level {{level}}",
+        "categories": {
+          "frames": "Frames",
+          "banners": "Banners",
+          "names": "Name"
+        },
+        "hints": {
+          "frames": "You unlock the metal frames by leveling up. The others depend on your Patreon tier.",
+          "banners": "Add stars, fireflies, petals, or snow over your banner image. Enthusiast and Consumer include all four effects.",
+          "names": "Donator includes gradient and glow. Enthusiast and Consumer add shimmer and rainbow aura. You can choose the colors in Settings."
+        },
+        "tiers": {
+          "donator": "Donator and above",
+          "enthusiast": "Enthusiast and Consumer",
+          "consumer": "Consumer only"
+        }
+      },
       "themes": {
         "badge": "Premium themes",
         "title": "Make NihongoTracker feel like yours",
@@ -1129,7 +1152,7 @@
             "Animated GIF avatars and banners",
             "Custom text in the profile donator badge",
             "Animated avatar frames and ambient banner effects",
-            "Shimmer name effect and a profile accent color of your own",
+            "Shimmer and rainbow aura name effects, plus a profile accent color of your own",
             "Create, save, and use up to 10 custom themes",
             "Increase maximum log tags to 15",
             "Increase maximum club members to 250"
@@ -1138,7 +1161,7 @@
         "consumer": {
           "description": "For people who want to make a larger contribution to NihongoTracker. This tier helps cover development and server costs so the project can grow sustainably.",
           "benefits": [
-            "Exclusive avatar frames, including Aura, Starlight and Crimson Sigil",
+            "Exclusive frames such as Constellations, Electroshock, Crystal, and Petals",
             "Custom donator badge color (rainbow included)",
             "Site-wide donator badge",
             "Show one of your custom themes on your public profile",

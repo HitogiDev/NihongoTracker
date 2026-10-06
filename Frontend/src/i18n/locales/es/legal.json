@@ -1064,6 +1064,29 @@
         "effects": "Efectos de nombre",
         "avatarAlt": "Avatar de {{username}}"
       },
+      "cosmetics": {
+        "title": "Prueba los efectos de tu perfil",
+        "description": "Elige un marco y combínalo con un efecto de banner y de nombre. La vista previa muestra cómo quedan juntos.",
+        "preview": "Esta prueba solo cambia la vista previa.",
+        "categoryLabel": "Tipo de efecto",
+        "selected": "{{name}} · {{access}}",
+        "level": "Gratis · Nivel {{level}}",
+        "categories": {
+          "frames": "Marcos",
+          "banners": "Banners",
+          "names": "Nombre"
+        },
+        "hints": {
+          "frames": "Los marcos metálicos se desbloquean al subir de nivel. Los demás dependen de tu nivel de Patreon.",
+          "banners": "Añade estrellas, luciérnagas, pétalos o nieve sobre la imagen de tu banner. Todos están incluidos en Enthusiast y Consumer.",
+          "names": "Donator incluye degradado y resplandor. Enthusiast y Consumer añaden brillo animado y aura arcoíris. Puedes elegir los colores en Ajustes."
+        },
+        "tiers": {
+          "donator": "Donator y superiores",
+          "enthusiast": "Enthusiast y Consumer",
+          "consumer": "Solo Consumer"
+        }
+      },
       "themes": {
         "badge": "Temas premium",
         "title": "Haz que NihongoTracker sea más tuyo",
@@ -1129,7 +1152,7 @@
             "Avatares y banners GIF animados",
             "Texto personalizado en la insignia de mecenas del perfil",
             "Marcos de avatar animados y efectos ambientales en la cabecera",
-            "Efecto de nombre con brillo animado y color de acento propio",
+            "Efectos de nombre con brillo animado y aura arcoíris, y color de acento propio",
             "Crea, guarda y usa hasta 10 temas personalizados",
             "Amplía el máximo de etiquetas por log a 15",
             "Amplía el máximo de miembros por club a 250"
@@ -1138,7 +1161,7 @@
         "consumer": {
           "description": "Para quienes quieren hacer un aporte mayor a NihongoTracker. Este nivel ayuda a cubrir los costes de desarrollo y servidor para que el proyecto crezca de forma sostenible.",
           "benefits": [
-            "Marcos de avatar exclusivos, como Aura, Starlight y Crimson Sigil",
+            "Marcos exclusivos como Constelaciones, Electrochoque, Cristal y Pétalos",
             "Color personalizado en la insignia de mecenas (arcoíris incluido)",
             "Insignia de mecenas en todo el sitio",
             "Muestra uno de tus temas personalizados en tu perfil público",
