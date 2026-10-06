@@ -444,14 +444,16 @@ export default function CustomizationSettings() {
           </div>
           {FRAME_COLOR_DEFAULTS[draft.avatarFrame ?? 'none'] && (
             <div className="mt-4 flex flex-wrap items-end gap-4">
-              {(draft.avatarFrame === 'sweep' || draft.avatarFrame === 'text'
+              {(draft.avatarFrame === 'sweep' || draft.avatarFrame === 'text' || draft.avatarFrame === 'constellations'
                 ? (['frameColor1'] as const)
                 : (['frameColor1', 'frameColor2', 'frameColor3'] as const)).map(
                 (field, index) => (
                   <Field
                     key={field}
                     className="gap-0 p-0 [&>.fieldset-legend]:mb-1 [&>.fieldset-legend]:p-0 [&>.fieldset-legend]:font-normal"
-                    label={t('customization.frameColor', { number: index + 1 })}
+                    label={draft.avatarFrame === 'constellations'
+                      ? t('customization.constellationColor')
+                      : t('customization.frameColor', { number: index + 1 })}
                   >
                     {(id) => (
                       <input

@@ -21,6 +21,7 @@ import {
   observeAvatarCanvasResolution,
   resizeAvatarCanvas,
 } from '../utils/avatarCanvas';
+import { getConstellationColor } from '../utils/constellationColors';
 
 type FrameScene = Awaited<
   ReturnType<typeof mountAvatarFrameLayers | typeof mountCanvasAvatarFrame>
@@ -45,6 +46,9 @@ export default function AvatarFrame({
   const overlay = useRef<HTMLSpanElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const textPathId = useId();
+  const constellationColor = frame === 'constellations'
+    ? getConstellationColor(customization?.frameColor1)
+    : undefined;
 
   useEffect(() => {
     const host = overlay.current;
@@ -134,7 +138,7 @@ export default function AvatarFrame({
     if (host && (isDecorativeFrame(frame) || isCanvasAvatarFrame(frame)))
       void (
         isCanvasAvatarFrame(frame)
-          ? mountCanvasAvatarFrame(host)
+          ? mountCanvasAvatarFrame(host, constellationColor)
           : mountAvatarFrameLayers(host, frame)
       )
         .then((mounted: FrameScene) => {
@@ -167,7 +171,7 @@ export default function AvatarFrame({
       delete container.dataset.frameActive;
       if (host) host.hidden = false;
     };
-  }, [frame, preview]);
+  }, [frame, preview, constellationColor]);
 
   if (!hasAvatarFrame(frame)) return <>{children}</>;
 

@@ -1,6 +1,7 @@
 import constellations from '../assets/avatar-frames/constellations.svg?raw';
 import type { AvatarFrame } from '../types';
 import { resizeAvatarCanvas } from './avatarCanvas';
+import { DEFAULT_CONSTELLATION_COLOR, getConstellationColor } from './constellationColors';
 
 const turn = Math.PI * 2;
 const starInterval = 0.28;
@@ -117,8 +118,13 @@ function smoothStep(value: number): number {
 function drawConstellations(
   ctx: CanvasRenderingContext2D,
   art: Artwork,
-  time: number
+  time: number,
+  color?: string
 ) {
+  const starColor = color ?? DEFAULT_CONSTELLATION_COLOR;
+  const lineColor = color ?? '#b6d9ff';
+  const glowColor = color ?? '#85bfff';
+  const constellationPulse = 0.5 + 0.5 * Math.sin(time * turn / 3);
   for (const ring of art.rings) {
     ctx.globalAlpha = ring.opacity;
     ctx.strokeStyle = ring.color;
@@ -160,15 +166,15 @@ function drawConstellations(
       size: star.cluster ? star.size : i % 4 === 0 ? 1 : 0.55 + alpha * 0.2,
       alpha,
       cluster: star.cluster,
+      glowPulse: star.cluster ? constellationPulse : 0.5 + 0.5 * Math.sin(phase),
     };
   });
-  ctx.strokeStyle = '#b6d9ff';
-  ctx.lineWidth = 0.85;
+  ctx.strokeStyle = lineColor;
   for (const connection of art.connections) {
     const a = points[connection.from];
     const b = points[connection.to];
     if (a.alpha === 0 || b.alpha === 0) continue;
-    ctx.globalAlpha =
+    const alpha =
       Math.min(
         constellationLineAlpha[connection.from],
         constellationLineAlpha[connection.to]
@@ -176,6 +182,14 @@ function drawConstellations(
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
+    ctx.lineWidth = 3 + constellationPulse * 2;
+    ctx.globalAlpha = alpha * (0.12 + constellationPulse * 0.18);
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 3 + constellationPulse * 4;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 0.85;
+    ctx.globalAlpha = alpha;
     ctx.stroke();
   }
   points.forEach((point) => {
@@ -184,15 +198,17 @@ function drawConstellations(
     ctx.translate(point.x, point.y);
     const scale = point.size;
     ctx.scale(scale, scale);
-    ctx.globalAlpha = point.alpha;
-    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 6);
-    glow.addColorStop(0, 'rgba(133, 191, 255, 0.45)');
-    glow.addColorStop(1, 'rgba(133, 191, 255, 0)');
+    const glowRadius = 6 + point.glowPulse * 4;
+    ctx.globalAlpha = point.alpha * (0.3 + point.glowPulse * 0.45);
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+    glow.addColorStop(0, glowColor);
+    glow.addColorStop(1, `${glowColor}00`);
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(0, 0, 6, 0, turn);
+    ctx.arc(0, 0, glowRadius, 0, turn);
     ctx.fill();
-    ctx.fillStyle = '#f4f8ff';
+    ctx.globalAlpha = point.alpha;
+    ctx.fillStyle = starColor;
     ctx.fill(art.star);
     ctx.beginPath();
     ctx.arc(0, 0, 1.1, 0, turn);
@@ -202,8 +218,9 @@ function drawConstellations(
   ctx.globalAlpha = 1;
 }
 
-export async function mountCanvasAvatarFrame(host: HTMLElement) {
+export async function mountCanvasAvatarFrame(host: HTMLElement, starColor?: string) {
   const art = loadArtwork();
+  const color = getConstellationColor(starColor);
   const root = document.createElement('canvas');
   root.className = 'avatar-frame-canvas';
   root.setAttribute('aria-hidden', 'true');
@@ -216,7 +233,7 @@ export async function mountCanvasAvatarFrame(host: HTMLElement) {
   const draw = () => {
     ctx.setTransform(root.width / 240, 0, 0, root.height / 240, 0, 0);
     ctx.clearRect(0, 0, 240, 240);
-    drawConstellations(ctx, art, elapsed);
+    drawConstellations(ctx, art, elapsed, color);
   };
   const tick = (now: number) => {
     if (!playing) return;

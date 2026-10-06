@@ -180,7 +180,7 @@
 }
 
 .avatar-frame--constellations::before {
-  background-image: url('./assets/avatar-frames/constellations.svg?no-inline');
+  background-image: var(--frame-constellations-background, url('./assets/avatar-frames/constellations.svg?no-inline'));
 }
 
 .avatar-frame--hearts > *,
