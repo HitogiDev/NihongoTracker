@@ -194,6 +194,7 @@
     },
     "color1": "Color 1",
     "frameColor": "Color del marco {{number}}",
+    "constellationColor": "Color de las estrellas",
     "frameText": "Texto circular",
     "frameTextHint": "Hasta 48 caracteres. Déjalo vacío para usar el texto japonés predeterminado.",
     "color2": "Color 2",

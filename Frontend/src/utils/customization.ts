@@ -1,5 +1,10 @@
 import type { CSSProperties } from 'react';
 import type { ParseKeys } from 'i18next';
+import {
+  DEFAULT_CONSTELLATION_COLOR,
+  getConstellationBackground,
+  getConstellationColor,
+} from './constellationColors';
 import type {
   AvatarFrame,
   ProfileAccent,
@@ -90,6 +95,7 @@ export const FRAME_COLOR_DEFAULTS: Partial<Record<AvatarFrame, readonly string[]
   segmented: ['#00ffcc', '#ffe600', '#ff0055'],
   sweep: ['#00f2fe'],
   text: ['#c084fc'],
+  constellations: [DEFAULT_CONSTELLATION_COLOR],
 };
 
 export function getAvatarFrameStyle(
@@ -101,6 +107,10 @@ export function getAvatarFrameStyle(
     .slice(0, defaults.length)
     .map((color, index) => color && /^#[0-9a-f]{6}$/i.test(color) ? color : defaults[index]);
   const style: Record<string, string> = {};
+  const constellationColor = getConstellationColor(customization?.frameColor1);
+  if (frame === 'constellations' && constellationColor) {
+    style['--frame-constellations-background'] = getConstellationBackground(constellationColor);
+  }
   if (frame === 'gradient') {
     style['--frame-gradient'] = `conic-gradient(${colors.join(', ')}, ${colors[0]})`;
   }

@@ -262,6 +262,18 @@ describe('resolveCustomizationUpdate', () => {
 
     expect(next.nameColor1).toBe('#aabbcc');
   });
+
+  it('preserves the constellation color when saving and displaying a Consumer frame', async () => {
+    const user = makeUser({ tier: 'consumer', isActive: true });
+    const next = await resolveCustomizationUpdate(user, {
+      avatarFrame: 'constellations',
+      frameColor1: '#FF80B5',
+    });
+    const visible = sanitizeCustomizationForDisplay(next, getDisplayCapabilities(user));
+
+    expect(visible.avatarFrame).toBe('constellations');
+    expect(visible.frameColor1).toBe('#ff80b5');
+  });
 });
 
 describe('sanitizeCustomizationForDisplay', () => {
@@ -365,7 +377,13 @@ describe('sanitizeCustomizationForDisplay', () => {
       nameEffect: 'none',
       nameColor1: '',
       nameColor2: '',
+      namePulseIntensity: 60,
+      namePulseSpeed: 3,
       avatarFrame: 'none',
+      frameColor1: '',
+      frameColor2: '',
+      frameColor3: '',
+      frameText: '',
       profileAccent: 'default',
       accentColor: '',
       signatureStat: 'none',

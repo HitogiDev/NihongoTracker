@@ -194,6 +194,7 @@
     },
     "color1": "Color 1",
     "frameColor": "Frame color {{number}}",
+    "constellationColor": "Star color",
     "frameText": "Circular text",
     "frameTextHint": "Up to 48 characters. Leave empty to use the default Japanese text.",
     "color2": "Color 2",

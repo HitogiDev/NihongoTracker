@@ -12,7 +12,7 @@
   </defs>
   <circle cx="120" cy="120" r="82" stroke="#7b9bd7" stroke-width="1.2" opacity=".6"/>
   <circle cx="120" cy="120" r="84" stroke="#c1d8ff" stroke-width=".4" opacity=".4"/>
-  <g data-canvas-layer="connections" stroke="#b6d9ff" stroke-width=".85" opacity=".65">
+  <g data-canvas-layer="connections" stroke="#b6d9ff" stroke-width=".85" opacity=".65" filter="url(#starlight)">
     <path data-constellation="orion" data-stars="orion-meissa orion-betelgeuse orion-bellatrix orion-meissa" d="M83.8 56.2 L66.8 64.8 L92.2 68.6 L83.8 56.2"/>
     <path data-constellation="orion" data-stars="orion-betelgeuse orion-alnitak orion-alnilam orion-mintaka orion-bellatrix" d="M66.8 64.8 L78.6 96.8 L82.8 94.2 L86.6 91.4 L92.2 68.6"/>
     <path data-constellation="orion" data-stars="orion-alnitak orion-saiph" d="M78.6 96.8 L72.6 123.2"/>
