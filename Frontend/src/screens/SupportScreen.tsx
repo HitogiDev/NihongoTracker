@@ -25,6 +25,7 @@ import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { multiSearchMediaFn } from '../api/trackerApi';
 import BannerEffectOverlay from '../components/BannerEffectOverlay';
+import SupportCustomizationShowcase from '../components/SupportCustomizationShowcase';
 import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
 import type { IUserCustomization } from '../types';
@@ -165,9 +166,9 @@ interface PremiumProfileCombination {
 const PREMIUM_PROFILE_COMBINATIONS: PremiumProfileCombination[] = [
   {
     customization: {
-      avatarFrame: 'aura',
+      avatarFrame: 'constellations',
       bannerEffect: 'stars',
-      nameEffect: 'shimmer',
+      nameEffect: 'aura',
       nameColor1: '#7dd3fc',
       nameColor2: '#c084fc',
       profileAccent: 'ocean',
@@ -177,7 +178,7 @@ const PREMIUM_PROFILE_COMBINATIONS: PremiumProfileCombination[] = [
   },
   {
     customization: {
-      avatarFrame: 'sakura',
+      avatarFrame: 'petals',
       bannerEffect: 'sakura',
       nameEffect: 'glow',
       nameColor1: '#f9a8d4',
@@ -189,7 +190,7 @@ const PREMIUM_PROFILE_COMBINATIONS: PremiumProfileCombination[] = [
   },
   {
     customization: {
-      avatarFrame: 'neon',
+      avatarFrame: 'electric',
       bannerEffect: 'fireflies',
       nameEffect: 'gradient',
       nameColor1: '#6ef2ff',
@@ -201,7 +202,7 @@ const PREMIUM_PROFILE_COMBINATIONS: PremiumProfileCombination[] = [
   },
   {
     customization: {
-      avatarFrame: 'rainbow',
+      avatarFrame: 'crystal',
       bannerEffect: 'snow',
       nameEffect: 'shimmer',
       nameColor1: '#fde68a',
@@ -756,6 +757,8 @@ function SupportScreen() {
               </div>
             </div>
           </div>
+
+          <SupportCustomizationShowcase />
 
           <div className="card card-border mt-6 bg-base-100 shadow-sm">
             <div className="card-body p-6 sm:p-8">
