@@ -269,7 +269,10 @@ describe('resolveCustomizationUpdate', () => {
       avatarFrame: 'constellations',
       frameColor1: '#FF80B5',
     });
-    const visible = sanitizeCustomizationForDisplay(next, getDisplayCapabilities(user));
+    const visible = sanitizeCustomizationForDisplay(
+      next,
+      getDisplayCapabilities(user.patreon)
+    );
 
     expect(visible.avatarFrame).toBe('constellations');
     expect(visible.frameColor1).toBe('#ff80b5');

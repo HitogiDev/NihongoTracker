@@ -8,7 +8,9 @@ export function getConstellationColor(color?: string): string | undefined {
 
 export function getConstellationBackground(color: string): string {
   const svg = constellations
-    .replaceAll(DEFAULT_CONSTELLATION_COLOR, color)
-    .replaceAll('#b6d9ff', color);
+    .split(DEFAULT_CONSTELLATION_COLOR)
+    .join(color)
+    .split('#b6d9ff')
+    .join(color);
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
