@@ -14,19 +14,21 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { getAchievementName } from '../../utils/achievementText';
 import {
   ACCENT_PRESET_COLORS,
-  getAvatarFrameClass,
+  DEFAULT_FRAME_COLORS,
+  FRAME_COLOR_DEFAULTS,
   getHeatmapCellColor,
   getNameEffectRender,
   getProfileAccentStyle,
   getSignatureStatValue,
-  hasAvatarFrame,
   resolveAccentColor,
 } from '../../utils/customization';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { usePatreonBadgeText } from '../../hooks/usePatreonBadgeText';
 import { getPatreonBadgeProps } from '../../utils/patreonBadge';
-import { getAvatarInitials } from '../../utils/avatar';
 import BannerEffectOverlay from '../BannerEffectOverlay';
+import AvatarFrameDecoration from '../AvatarFrame';
+import UserAvatar from '../UserAvatar';
+import Field from '../ui/Field';
 import type {
   AvatarFrame,
   BannerEffect,
@@ -74,7 +76,13 @@ export default function CustomizationSettings() {
         nameEffect: data.customization.nameEffect ?? 'none',
         nameColor1: data.customization.nameColor1 ?? '',
         nameColor2: data.customization.nameColor2 ?? '',
+        namePulseIntensity: data.customization.namePulseIntensity ?? 60,
+        namePulseSpeed: data.customization.namePulseSpeed ?? 3,
         avatarFrame: data.customization.avatarFrame ?? 'none',
+        frameColor1: data.customization.frameColor1 ?? '',
+        frameColor2: data.customization.frameColor2 ?? '',
+        frameColor3: data.customization.frameColor3 ?? '',
+        frameText: data.customization.frameText ?? '',
         profileAccent: data.customization.profileAccent ?? 'default',
         accentColor: data.customization.accentColor ?? '',
         signatureStat: data.customization.signatureStat ?? 'none',
@@ -228,25 +236,15 @@ export default function CustomizationSettings() {
             />
             <div className="relative z-[1] flex h-full flex-col justify-end bg-linear-to-t from-black/60 to-40% p-4">
               <div className="flex items-end gap-3">
-                <div
-                  className={
-                    hasAvatarFrame(draft.avatarFrame)
-                      ? getAvatarFrameClass(draft.avatarFrame)
-                      : undefined
-                  }
-                >
-                  <div className="avatar">
-                    <div className="w-16 rounded-full">
-                      {user?.avatar ? (
-                        <img src={user.avatar} alt="" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-base-300 font-semibold">
-                          {getAvatarInitials(user?.username)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <UserAvatar
+                  username={user?.username}
+                  avatar={user?.avatar}
+                  alt=""
+                  frame={draft.avatarFrame}
+                  customization={draft}
+                  containerClassName="w-16 h-16 rounded-full"
+                  textClassName="font-semibold"
+                />
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
@@ -303,8 +301,8 @@ export default function CustomizationSettings() {
                 t(`customization.nameEffects.${option.value}`),
                 (draft.nameEffect ?? 'none') === option.value,
                 () =>
-                  setDraft((prev) => ({ ...prev, nameEffect: option.value }))
-              )
+                  setDraft((prev) => ({ ...prev, nameEffect: option.value })),
+              ),
             )}
           </div>
 
@@ -365,6 +363,54 @@ export default function CustomizationSettings() {
               )}
             </div>
           )}
+          {draft.nameEffect === 'aura' && (
+            <div className="mt-4 grid max-w-xl gap-4 sm:grid-cols-2">
+              <Field
+                label={t('customization.namePulseIntensity')}
+                aside={`${draft.namePulseIntensity ?? 60}%`}
+              >
+                {(id) => (
+                  <input
+                    id={id}
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    className="range range-primary range-sm"
+                    value={draft.namePulseIntensity ?? 60}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        namePulseIntensity: event.target.valueAsNumber,
+                      }))
+                    }
+                  />
+                )}
+              </Field>
+              <Field
+                label={t('customization.namePulseSpeed')}
+                aside={`${(draft.namePulseSpeed ?? 3).toFixed(1)} s`}
+              >
+                {(id) => (
+                  <input
+                    id={id}
+                    type="range"
+                    min={0.5}
+                    max={6}
+                    step={0.5}
+                    className="range range-primary range-sm"
+                    value={draft.namePulseSpeed ?? 3}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        namePulseSpeed: event.target.valueAsNumber,
+                      }))
+                    }
+                  />
+                )}
+              </Field>
+            </div>
+          )}
         </div>
       </div>
 
@@ -384,18 +430,90 @@ export default function CustomizationSettings() {
                 (draft.avatarFrame ?? 'none') === option.value,
                 () =>
                   setDraft((prev) => ({ ...prev, avatarFrame: option.value })),
-                <span
-                  className={
-                    hasAvatarFrame(option.value)
-                      ? getAvatarFrameClass(option.value)
-                      : 'inline-flex p-[3px]'
-                  }
-                >
-                  <span className="block h-8 w-8 rounded-full bg-base-300" />
-                </span>
-              )
+                <span className="flex h-16 w-16 items-center justify-center">
+                  <AvatarFrameDecoration
+                    frame={option.value}
+                    customization={draft}
+                    preview
+                  >
+                    <span className="block h-10 w-10 rounded-full bg-base-300" />
+                  </AvatarFrameDecoration>
+                </span>,
+              ),
             )}
           </div>
+          {FRAME_COLOR_DEFAULTS[draft.avatarFrame ?? 'none'] && (
+            <div className="mt-4 flex flex-wrap items-end gap-4">
+              {(draft.avatarFrame === 'sweep' || draft.avatarFrame === 'text'
+                ? (['frameColor1'] as const)
+                : (['frameColor1', 'frameColor2', 'frameColor3'] as const)).map(
+                (field, index) => (
+                  <Field
+                    key={field}
+                    className="gap-0 p-0 [&>.fieldset-legend]:mb-1 [&>.fieldset-legend]:p-0 [&>.fieldset-legend]:font-normal"
+                    label={t('customization.frameColor', { number: index + 1 })}
+                  >
+                    {(id) => (
+                      <input
+                        id={id}
+                        type="color"
+                        className="h-10 w-20 cursor-pointer surface disabled:cursor-not-allowed"
+                        value={
+                          draft[field] ||
+                          FRAME_COLOR_DEFAULTS[draft.avatarFrame ?? 'none']?.[index] ||
+                          DEFAULT_FRAME_COLORS[index]
+                        }
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            [field]: event.target.value,
+                          }))
+                        }
+                      />
+                    )}
+                  </Field>
+                ),
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm self-end"
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    frameColor1: '',
+                    frameColor2: '',
+                    frameColor3: '',
+                  }))
+                }
+              >
+                {t('customization.resetColors')}
+              </button>
+            </div>
+          )}
+          {draft.avatarFrame === 'text' && (
+            <Field
+              className="mt-4 max-w-md"
+              label={t('customization.frameText')}
+              hint={t('customization.frameTextHint')}
+            >
+              {(id) => (
+                <input
+                  id={id}
+                  type="text"
+                  maxLength={48}
+                  className="input w-full focus:input-primary"
+                  value={draft.frameText || ''}
+                  placeholder="日本語を楽しもう"
+                  onChange={(event) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      frameText: event.target.value,
+                    }))
+                  }
+                />
+              )}
+            </Field>
+          )}
         </div>
       </div>
 
@@ -446,8 +564,11 @@ export default function CustomizationSettings() {
                 t(`customization.signatureStats.${option.value}`),
                 (draft.signatureStat ?? 'none') === option.value,
                 () =>
-                  setDraft((prev) => ({ ...prev, signatureStat: option.value }))
-              )
+                  setDraft((prev) => ({
+                    ...prev,
+                    signatureStat: option.value,
+                  })),
+              ),
             )}
           </div>
         </div>
@@ -492,13 +613,13 @@ export default function CustomizationSettings() {
                                 ? draft.accentColor || DEFAULT_ACCENT_COLOR
                                 : '',
                           },
-                          level
+                          level,
                         ),
                       }}
                     />
                   ))}
-                </span>
-              )
+                </span>,
+              ),
             )}
           </div>
 
@@ -586,8 +707,8 @@ export default function CustomizationSettings() {
                 t(`customization.bannerEffects.${option.value}`),
                 (draft.bannerEffect ?? 'none') === option.value,
                 () =>
-                  setDraft((prev) => ({ ...prev, bannerEffect: option.value }))
-              )
+                  setDraft((prev) => ({ ...prev, bannerEffect: option.value })),
+              ),
             )}
           </div>
         </div>

@@ -60,7 +60,22 @@
 
 @plugin "daisyui" {
   themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, valentine, halloween, garden, forest, dracula, cmyk, night, winter, dim, sunset, abyss;
+  exclude: properties;
 }
+
+/* Keep daisyUI property registrations outside layers for the CSS optimizer. */
+@property --radialprogress {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+@property --aura-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui/theme" {

@@ -10,6 +10,7 @@ import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { effectiveLogMinutes } from '../utils/immersionTime';
 import { useTranslation } from 'react-i18next';
 import { getLogTypeLabelKey } from '../utils/logTypes';
+import { useUserDataStore } from '../store/userData';
 
 interface LocalDateInfo {
   iso: string;
@@ -101,6 +102,9 @@ export default function ProgressChart({
   chartType = 'line',
   showTitle = true,
 }: ProgressChartProps) {
+  const weekStartsOn = useUserDataStore(
+    (state) => state.user?.settings?.weekStartsOn ?? 1,
+  );
   const { t } = useTranslation('stats');
   const { t: tCommon } = useTranslation('common');
   const { timezone } = useTimezone();
@@ -405,7 +409,9 @@ export default function ProgressChart({
         return logDateInUserTz.toDateString() === nowInUserTz.toDateString();
       } else if (timeframe === 'week') {
         const startOfWeek = new Date(nowInUserTz);
-        startOfWeek.setDate(nowInUserTz.getDate() - nowInUserTz.getDay());
+        const daysSinceWeekStart =
+          (nowInUserTz.getDay() - weekStartsOn + 7) % 7;
+        startOfWeek.setDate(nowInUserTz.getDate() - daysSinceWeekStart);
         startOfWeek.setHours(0, 0, 0, 0);
         return logDateInUserTz >= startOfWeek;
       } else if (timeframe === 'month') {

@@ -127,16 +127,17 @@ cp Backend/.env.example Backend/.env
 # Edit Backend/.env with your configuration
 
 # Pull latest images (optional but recommended)
-docker compose pull
+docker compose --env-file Backend/.env pull
 
 # Start app + MongoDB + Meilisearch
-docker compose up -d
+docker compose --env-file Backend/.env up -d
 ```
 
 For Docker, make sure these values are correct in `Backend/.env`:
 
 ```env
 DATABASE_URL=mongodb://mongo:27017/nihongotracker
+MEILISEARCH_API_KEY=replace-with-a-unique-random-key-at-least-16-bytes
 BACKEND_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:3000
 ```
@@ -144,13 +145,20 @@ FRONTEND_URL=http://localhost:3000
 Services will be available at:
 
 - **App + API:** `http://localhost:3000`
-- **Meilisearch:** `http://localhost:7700`
-- **MongoDB:** `mongodb://localhost:27017`
+- MongoDB and Meilisearch are accessible only on the container network. They do not publish host ports.
+
+Use `--env-file Backend/.env` so Compose reads the required search key during configuration.
+The nginx variant connects only the app to the proxy network. Data services use a separate internal network.
+
+When using a reverse proxy, set `TRUST_PROXY` to its actual IP or CIDR so request limits use the client IP.
+Do not trust arbitrary forwarding headers. Authentication and image request limits apply per process.
+Password reset links use random 256-bit tokens with hashes stored in MongoDB. Old six-digit links must be requested again.
+The average-color endpoint accepts HTTPS images only from the supported cover CDNs and Firebase Storage. Downloads are limited to 5 MB and five seconds per request.
 
 #### Optional: Run Production Index Migration
 
 ```bash
-docker compose --profile migration up migration
+docker compose --env-file Backend/.env --profile migration up migration
 ```
 
 #### Optional: Use nginx external network compose
@@ -159,7 +167,7 @@ If you're running behind an existing nginx reverse proxy network:
 
 ```bash
 docker network create nginx_default
-docker compose -f docker-compose.nginx.yml up -d
+docker compose --env-file Backend/.env -f docker-compose.nginx.yml up -d
 ```
 
 ### Manual Setup (for Development)
@@ -244,8 +252,9 @@ Create a `Backend/.env` file with the following variables:
 | `ANILIST_CLIENT_SECRET`         | No       | AniList OAuth client secret                                           |
 | `MAILTRAP_TOKEN`                | No       | Mailtrap API token for transactional email                            |
 | `MAILTRAP_INBOX_DOMAIN`         | No       | Mailtrap inbox domain                                                 |
-| `MEILISEARCH_HOST`              | No       | Meilisearch host URL                                                  |
-| `MEILISEARCH_API_KEY`           | No       | Meilisearch admin/search API key                                      |
+| `MEILISEARCH_HOST`              | Yes      | Meilisearch host URL                                                  |
+| `TRUST_PROXY`                   | No       | Trusted reverse proxy IPs or CIDRs, comma-separated. Default: none.    |
+| `MEILISEARCH_API_KEY`           | Yes      | Meilisearch admin/search API key                                      |
 
 **Example `.env` file:**
 

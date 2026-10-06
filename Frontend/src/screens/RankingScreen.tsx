@@ -1317,6 +1317,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondGlobalUser?.username}
                               avatar={secondGlobalUser?.avatar}
+                              customization={secondGlobalUser?.customization}
                               frame={
                                 secondGlobalUser?.customization?.avatarFrame
                               }
@@ -1383,6 +1384,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstGlobalUser?.username}
                               avatar={firstGlobalUser?.avatar}
+                              customization={firstGlobalUser?.customization}
                               frame={
                                 firstGlobalUser?.customization?.avatarFrame
                               }
@@ -1459,6 +1461,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdGlobalUser?.username}
                               avatar={thirdGlobalUser?.avatar}
+                              customization={thirdGlobalUser?.customization}
                               frame={
                                 thirdGlobalUser?.customization?.avatarFrame
                               }
@@ -1532,6 +1535,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondMediumUser?.username}
                               avatar={secondMediumUser?.avatar}
+                              customization={secondMediumUser?.customization}
                               frame={
                                 secondMediumUser?.customization?.avatarFrame
                               }
@@ -1598,6 +1602,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstMediumUser?.username}
                               avatar={firstMediumUser?.avatar}
+                              customization={firstMediumUser?.customization}
                               frame={
                                 firstMediumUser?.customization?.avatarFrame
                               }
@@ -1674,6 +1679,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdMediumUser?.username}
                               avatar={thirdMediumUser?.avatar}
+                              customization={thirdMediumUser?.customization}
                               frame={
                                 thirdMediumUser?.customization?.avatarFrame
                               }
@@ -1833,6 +1839,7 @@ function RankingScreen() {
                                     username={user.username}
                                     avatar={user.avatar}
                                     frame={user?.customization?.avatarFrame}
+                                    customization={user?.customization}
                                     alt={t('avatarAlt', {
                                       username: user.username,
                                     })}

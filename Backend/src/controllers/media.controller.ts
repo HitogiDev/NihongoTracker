@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import fac from 'fast-average-color-node';
+import { downloadAverageColorImage } from '../services/remoteImage.js';
 import {
   Anime,
   Manga,
@@ -52,16 +53,17 @@ export async function getAverageColor(
 ) {
   try {
     const { imageUrl } = req.query as { imageUrl: string };
-    if (!imageUrl) {
+    if (typeof imageUrl !== 'string' || !imageUrl) {
       return res.status(400).json({ message: 'Image URL is required' });
     }
 
-    const color = await fac.getAverageColor(imageUrl, {
-      algorithm: 'simple',
-      mode: 'speed',
-      width: 50,
-      height: 50,
-    });
+    const color = await fac.getAverageColor(
+      await downloadAverageColorImage(imageUrl),
+      {
+        algorithm: 'simple',
+        mode: 'speed',
+      }
+    );
 
     return res.status(200).json(color);
   } catch (error) {

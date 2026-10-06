@@ -7,7 +7,7 @@ services:
       - Backend/.env
     environment:
       MEILISEARCH_HOST: http://meilisearch:7700
-      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:?Set MEILISEARCH_API_KEY in Backend/.env and use --env-file Backend/.env}
     depends_on:
       mongo:
         condition: service_healthy
@@ -17,17 +17,16 @@ services:
       - ./Backend/.env:/app/Backend/.env:ro
     networks:
       - nginx_default
+      - data
     restart: always
 
   mongo:
     image: mongo:7
     restart: always
-    ports:
-      - '27017:27017'
     volumes:
       - mongo-data:/data/db
     networks:
-      - nginx_default
+      - data
     healthcheck:
       test:
         [
@@ -40,18 +39,16 @@ services:
       start_period: 60s
 
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.51.0
     restart: always
-    ports:
-      - '7700:7700'
     environment:
       MEILI_ENV: production
       MEILI_NO_ANALYTICS: 'true'
-      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:?Set MEILISEARCH_API_KEY in Backend/.env and use --env-file Backend/.env}
     volumes:
       - meilisearch-data:/meili_data
     networks:
-      - nginx_default
+      - data
 
   migration:
     profiles: ['migration']
@@ -69,12 +66,14 @@ services:
              echo 'Migration completed successfully'"
     restart: 'no'
     networks:
-      - nginx_default
+      - data
 
 volumes:
   mongo-data:
   meilisearch-data:
 
 networks:
+  data:
+    internal: true
   nginx_default:
     external: true

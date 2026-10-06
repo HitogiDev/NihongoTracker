@@ -97,11 +97,9 @@ export async function calculateEditedLogXp(
   const mediaId = body.mediaId ?? existing.mediaId;
   const existingUsesV3 = existing.xpBreakdown?.version === XP_FORMULA_VERSION;
   const sameMedia = (mediaId ?? null) === (existing.mediaId ?? null);
-  const difficulty = existingUsesV3 && sameMedia
-    ? (existing.xpBreakdown?.difficulty ?? null)
-    : mediaId
-      ? ((await difficultiesByContentId([mediaId])).get(mediaId) ?? null)
-      : null;
+  let difficulty: number | null = null;
+  if (existingUsesV3 && sameMedia) difficulty = existing.xpBreakdown?.difficulty ?? null;
+  else if (mediaId) difficulty = (await difficultiesByContentId([mediaId])).get(mediaId) ?? null;
   const sameCategory = getLogCategory(existing.type) === getLogCategory(type);
   const storedComfort = existingUsesV3 && sameCategory
     ? (existing.xpBreakdown?.comfortAt ?? null)

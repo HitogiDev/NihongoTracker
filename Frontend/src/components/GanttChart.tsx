@@ -14,6 +14,7 @@ import { IGanttMediaItem } from '../types';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { getLocale } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
+import { useUserDataStore } from '../store/userData';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -45,16 +46,16 @@ function endOfLocalDay(date: Date): Date {
   return next;
 }
 
-function startOfWeek(date: Date): Date {
+function startOfWeek(date: Date, weekStartsOn: 0 | 1): Date {
   const next = startOfLocalDay(date);
   const day = next.getDay();
-  const diff = (day + 6) % 7;
+  const diff = (day - weekStartsOn + 7) % 7;
   next.setDate(next.getDate() - diff);
   return next;
 }
 
-function endOfWeek(date: Date): Date {
-  const start = startOfWeek(date);
+function endOfWeek(date: Date, weekStartsOn: 0 | 1): Date {
+  const start = startOfWeek(date, weekStartsOn);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   return endOfLocalDay(end);
@@ -158,6 +159,9 @@ export default function GanttChart({
   customStart,
   customEnd,
 }: GanttChartProps) {
+  const weekStartsOn = useUserDataStore(
+    (state) => state.user?.settings?.weekStartsOn ?? 1,
+  );
   const { t } = useTranslation('stats');
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -274,7 +278,10 @@ export default function GanttChart({
     }
 
     if (timeFilter === 'week') {
-      return { start: startOfWeek(now), end: endOfWeek(now) };
+      return {
+        start: startOfWeek(now, weekStartsOn),
+        end: endOfWeek(now, weekStartsOn),
+      };
     }
 
     if (timeFilter === 'month') {
@@ -303,7 +310,7 @@ export default function GanttChart({
     }
 
     return { start, end };
-  }, [allTimeBounds, timeFilter, customStart, customEnd]);
+  }, [allTimeBounds, timeFilter, customStart, customEnd, weekStartsOn]);
 
   const rangeStart = range.start;
   const rangeEnd = range.end;

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <style>
+    .beat { transform-box: fill-box; transform-origin: center; animation: beat 2.8s ease-in-out infinite; }
+    .rise { animation: rise 3.2s linear infinite; }
+    @keyframes beat { 0%,100% { transform: scale(.86); } 50% { transform: scale(1.16); } }
+    @keyframes rise { 0% { transform: translate(0,5px); opacity: 0; } 25% { opacity: .55; } 75% { opacity: .4; } 100% { transform: translate(3px,-17px); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <defs>
+    <path id="heart" d="M0 10C-3 7-10 1-10-5-10-13-2-14 0-7 2-14 10-13 10-5 10 1 3 7 0 10Z" />
+    <filter id="soft" x="-100%" y="-100%" width="300%" height="300%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="1.1" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="120" cy="120" r="82" stroke="#f2c1da" stroke-width="4.2" />
+  <circle cx="120" cy="120" r="80" stroke="#ffdfec" stroke-width=".9" opacity=".75" />
+  <g fill="#e968b6" filter="url(#soft)">
+    <g transform="translate(78 53)">
+      <g class="beat" style="animation-duration:2.6s;animation-delay:-0s">
+        <use href="#heart" />
+      </g>
+    </g>
+    <g transform="translate(199 129) rotate(16) scale(.76)">
+      <g class="beat" style="animation-duration:3.1s;animation-delay:-0.8s">
+        <use href="#heart" />
+      </g>
+    </g>
+    <g transform="translate(67 178) rotate(-12) scale(.64)">
+      <g class="beat" style="animation-duration:2.3s;animation-delay:-1.7s">
+        <use href="#heart" />
+      </g>
+    </g>
+    <g transform="translate(51 150) rotate(-20) scale(.43)">
+      <g class="beat" style="animation-duration:2.9s;animation-delay:-0.3s">
+        <use href="#heart" opacity=".72" />
+      </g>
+    </g>
+    <g transform="translate(187 153) rotate(12) scale(.46)">
+      <g class="beat" style="animation-duration:3.5s;animation-delay:-1.2s">
+        <use href="#heart" opacity=".88" />
+      </g>
+    </g>
+    <g transform="translate(81 189) rotate(-10) scale(.55)">
+      <g class="beat" style="animation-duration:2.5s;animation-delay:-2.1s">
+        <use href="#heart" opacity=".8" />
+      </g>
+    </g>
+  </g>
+  <g fill="#f7a2cd">
+    <g transform="translate(69 50) scale(.37)">
+      <g class="rise" style="animation-delay:-.7s">
+        <g class="beat" style="animation-duration:2.20s;animation-delay:-0.00s">
+          <use href="#heart" />
+        </g>
+      </g>
+    </g>
+    <g transform="translate(153 38) scale(.39)">
+      <g class="rise" style="animation-delay:-1.8s">
+        <g class="beat" style="animation-duration:2.45s;animation-delay:-0.47s">
+          <use href="#heart" />
+        </g>
+      </g>
+    </g>
+    <g transform="translate(36 151) scale(.38)">
+      <g class="rise" style="animation-delay:-1s">
+        <g class="beat" style="animation-duration:2.70s;animation-delay:-0.94s">
+          <use href="#heart" />
+        </g>
+      </g>
+    </g>
+    <g transform="translate(194 143) scale(.33)">
+      <g class="rise" style="animation-delay:-2.6s">
+        <g class="beat" style="animation-duration:2.95s;animation-delay:-1.41s">
+          <use href="#heart" />
+        </g>
+      </g>
+    </g>
+    <g transform="translate(116 208) scale(.3)">
+      <g class="rise" style="animation-delay:-2.1s">
+        <g class="beat" style="animation-duration:3.20s;animation-delay:-1.88s">
+          <use href="#heart" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

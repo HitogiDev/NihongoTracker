@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react';
 import type { ParseKeys } from 'i18next';
 import type {
   AvatarFrame,
-  BannerEffect,
   ProfileAccent,
   IUserCustomization,
   NameEffect,
@@ -13,9 +12,8 @@ import type {
  * Presentation layer for profile cosmetics.
  *
  * The backend decides what a user may equip. This module only knows how each
- * equipped value looks. Every visual lives in a hand-written CSS class (see
- * `index.css`) rather than a Tailwind utility, because the class names are
- * built at runtime and would otherwise be purged from the bundle.
+ * equipped value looks. CSS classes select the styles and animated SVG assets.
+ * These classes are defined in `customization.css` because their names are built at runtime.
  */
 
 /** Fallback gradient when the user has not picked custom colors. */
@@ -42,6 +40,8 @@ export function getNameEffectRender(
   const style = {
     '--name-color-1': color1,
     '--name-color-2': color2,
+    '--name-pulse-glow': `${(customization?.namePulseIntensity ?? 60) * 0.18}px`,
+    '--name-pulse-speed': `${customization?.namePulseSpeed ?? 3}s`,
   } as CSSProperties;
 
   switch (effect) {
@@ -51,6 +51,8 @@ export function getNameEffectRender(
       return { className: 'name-effect name-effect--glow', style };
     case 'shimmer':
       return { className: 'name-effect name-effect--shimmer', style };
+    case 'aura':
+      return { className: 'name-effect name-effect--aura', style };
     default:
       return { className: '', style: {} };
   }
@@ -71,13 +73,43 @@ export function getNameEffectRender(
 const AURA_FRAME_CLASS = 'aura aura-rainbow avatar-frame--aura';
 
 export function getAvatarFrameClass(frame?: AvatarFrame | null): string {
-  if (!frame || frame === 'none') return '';
+  if (!hasAvatarFrame(frame)) return '';
   if (frame === 'aura') return AURA_FRAME_CLASS;
   return `avatar-frame avatar-frame--${frame}`;
 }
 
 export function hasAvatarFrame(frame?: AvatarFrame | null): boolean {
-  return Boolean(frame && frame !== 'none');
+  return Boolean(
+    frame && frame !== 'none' && !['sumi', 'koi', 'flames'].includes(frame)
+  );
+}
+
+export const DEFAULT_FRAME_COLORS = ['#a855f7', '#ec4899', '#3b82f6'] as const;
+export const FRAME_COLOR_DEFAULTS: Partial<Record<AvatarFrame, readonly string[]>> = {
+  gradient: DEFAULT_FRAME_COLORS,
+  segmented: ['#00ffcc', '#ffe600', '#ff0055'],
+  sweep: ['#00f2fe'],
+  text: ['#c084fc'],
+};
+
+export function getAvatarFrameStyle(
+  frame: AvatarFrame | null | undefined,
+  customization?: IUserCustomization | null
+): CSSProperties {
+  const defaults = FRAME_COLOR_DEFAULTS[frame ?? 'none'] ?? DEFAULT_FRAME_COLORS;
+  const colors = [customization?.frameColor1, customization?.frameColor2, customization?.frameColor3]
+    .slice(0, defaults.length)
+    .map((color, index) => color && /^#[0-9a-f]{6}$/i.test(color) ? color : defaults[index]);
+  const style: Record<string, string> = {};
+  if (frame === 'gradient') {
+    style['--frame-gradient'] = `conic-gradient(${colors.join(', ')}, ${colors[0]})`;
+  }
+  if (frame === 'segmented' || frame === 'sweep' || frame === 'text') {
+    colors.forEach((color, index) => {
+      style[`--frame-color-${index + 1}`] = color;
+    });
+  }
+  return style as CSSProperties;
 }
 
 /**
@@ -179,15 +211,6 @@ export function getHeatmapCellColor(
     ? color
     : `color-mix(in oklab, ${color} ${strength}%, transparent)`;
 }
-
-/** Number of floating particles rendered per ambient banner effect. */
-export const BANNER_EFFECT_PARTICLES: Record<BannerEffect, number> = {
-  none: 0,
-  sakura: 14,
-  snow: 20,
-  stars: 18,
-  fireflies: 12,
-};
 
 export type SignatureStatValue = {
   /** i18n key under the `profile` namespace for the label. */

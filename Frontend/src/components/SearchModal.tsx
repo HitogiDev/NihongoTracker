@@ -385,6 +385,7 @@ function SearchModal({
   const navigate = useNavigate();
   const { user } = useUserDataStore();
   const blurAdult = user?.settings?.blurAdultContent ?? false;
+  const hideAdultFromSearch = user?.settings?.hideAdultFromSearch ?? false;
 
   const debouncedQuery = useDebounce(query, 300);
 
@@ -452,8 +453,11 @@ function SearchModal({
                 if (!controller.signal.aborted) {
                   // DB results first (cross-index relevance ranked), then AniList results
                   const allMedia = [...dbResults, ...anilistResults.flat()];
+                  const visibleMedia = hideAdultFromSearch
+                    ? allMedia.filter((item) => !item.isAdult)
+                    : allMedia;
                   const seen = new Set<string>();
-                  const unique = allMedia.filter((item) => {
+                  const unique = visibleMedia.filter((item) => {
                     // Dedupe by contentId + type to handle same content from DB and AniList
                     const key = `${item.type}:${item.contentId}`;
                     if (seen.has(key)) return false;
@@ -479,7 +483,7 @@ function SearchModal({
 
     performSearch();
     return () => controller.abort();
-  }, [debouncedQuery, activeTab]);
+  }, [debouncedQuery, activeTab, hideAdultFromSearch]);
 
   // Build combined results list for keyboard navigation
   const normalizedQuery = normalizeSearchValue(debouncedQuery);

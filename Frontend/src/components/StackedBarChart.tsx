@@ -17,6 +17,7 @@ import { useThemeColors } from '../hooks/useThemeColors';
 import { useTimezone } from '../hooks/useTimezone';
 import { convertToUserTimezone } from '../utils/timezone';
 import { getLogTypeLabelKey } from '../utils/logTypes';
+import { useUserDataStore } from '../store/userData';
 
 ChartJS.register(
   CategoryScale,
@@ -78,6 +79,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   const lineColors = useThemeColors(1);
   const fillColors = useThemeColors(0.16);
   const { timezone } = useTimezone();
+  const weekStartsOn = useUserDataStore(
+    (state) => state.user?.settings?.weekStartsOn ?? 1,
+  );
 
   const chartData = (() => {
     if (!statsData || statsData.length === 0) return null;
@@ -103,7 +107,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     const getWeekStartKey = (local: LocalDateInfo): string => {
       const weekStart = toUtcDate(local);
       const dayIndex = weekStart.getUTCDay();
-      const diff = dayIndex === 0 ? -6 : 1 - dayIndex; // Monday start
+      const diff = -((dayIndex - weekStartsOn + 7) % 7);
       weekStart.setUTCDate(weekStart.getUTCDate() + diff);
       return `${weekStart.getUTCFullYear()}-${pad(weekStart.getUTCMonth() + 1)}-${pad(weekStart.getUTCDate())}`;
     };

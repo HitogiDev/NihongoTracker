@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { hashPassword } from '../libs/password.js';
 import {
   IUser,
   userRoles,
@@ -84,8 +85,10 @@ const SettingsSchema = new Schema<IUserSettings>(
       default: undefined,
     },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
+    hideAdultFromSearch: { type: Boolean, default: false },
     hideRankingFeatures: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
+    weekStartsOn: { type: Number, enum: [0, 1], default: 1 },
     language: { type: String, enum: SUPPORTED_LANGUAGES, default: 'en' },
     hiddenRecentMedia: { type: [String], default: [] },
     statsLayout: { type: [Schema.Types.Mixed], default: [] },
@@ -247,7 +250,14 @@ const CustomizationSchema = new Schema<IUserCustomization>(
     nameEffect: { type: String, enum: NAME_EFFECTS, default: 'none' },
     nameColor1: { type: String, default: '' },
     nameColor2: { type: String, default: '' },
-    avatarFrame: { type: String, enum: AVATAR_FRAMES, default: 'none' },
+    namePulseIntensity: { type: Number, min: 0, max: 100, default: 60 },
+    namePulseSpeed: { type: Number, min: 0.5, max: 6, default: 3 },
+    // Accept retired frames so existing profiles can still save unrelated fields.
+    avatarFrame: { type: String, enum: [...AVATAR_FRAMES, 'sumi', 'koi', 'flames'], default: 'none' },
+    frameColor1: { type: String, default: '' },
+    frameColor2: { type: String, default: '' },
+    frameColor3: { type: String, default: '' },
+    frameText: { type: String, default: '', maxlength: 48 },
     profileAccent: {
       type: String,
       enum: PROFILE_ACCENTS,
@@ -376,8 +386,7 @@ const UserSchema = new Schema<IUser>(
 
 UserSchema.pre('save', async function (next) {
   if (this.isModified('password')) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await hashPassword(this.password);
   }
   next();
 });

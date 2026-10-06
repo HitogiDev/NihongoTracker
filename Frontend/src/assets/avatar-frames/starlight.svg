@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <style>
+    .orbit { transform-origin: 120px 120px; animation: orbit 36s linear infinite; }
+    .stars { animation-duration: 40s; }
+    .twinkle { transform-box: fill-box; transform-origin: center; animation: twinkle 2.6s ease-in-out infinite; }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+    @keyframes twinkle {
+      0%,12%,100% { opacity: 0; transform: scale(.55); }
+      34%,60% { opacity: 1; transform: scale(1); }
+      85% { opacity: 0; transform: scale(.7); }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <defs>
+    <path id="star" d="M0-10 2.8-2.8 10 0 2.8 2.8 0 10-2.8 2.8-10 0-2.8-2.8Z" />
+    <filter id="soft" x="-100%" y="-100%" width="300%" height="300%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="1.6" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="120" cy="120" r="85" stroke="#c675dc" stroke-width="2.2" filter="url(#soft)" />
+  <circle cx="120" cy="120" r="82" stroke="#713184" stroke-width=".7" opacity=".65" />
+  <g class="orbit stars" fill="#b870e8" stroke="#e2a3ff" stroke-width=".85" filter="url(#soft)">
+    <g transform="translate(75 48) scale(0.74)">
+      <use href="#star" />
+    </g>
+    <g transform="translate(201 148) scale(1.05)">
+      <use href="#star" />
+    </g>
+    <g transform="translate(60 181) scale(0.82)">
+      <use href="#star" />
+    </g>
+    <g transform="translate(47 165) scale(0.5)">
+      <use href="#star" />
+    </g>
+    <g transform="translate(199 173) scale(0.58)">
+      <use href="#star" />
+    </g>
+  </g>
+  <g class="orbit" fill="#cd8ded" filter="url(#soft)">
+    <g transform="translate(197.37 55.08) scale(0.35)">
+      <g class="twinkle" style="animation-duration:2.60s;animation-delay:-0.00s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(87.55 20.14) scale(0.27)">
+      <g class="twinkle" style="animation-duration:3.08s;animation-delay:-0.61s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(216.63 128.45) scale(0.24)">
+      <g class="twinkle" style="animation-duration:3.56s;animation-delay:-1.22s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(150.28 213.20) scale(0.27)">
+      <g class="twinkle" style="animation-duration:4.04s;animation-delay:-1.83s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(24.50 158.58) scale(0.36)">
+      <g class="twinkle" style="animation-duration:4.52s;animation-delay:-2.44s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(26.31 94.89) scale(0.26)">
+      <g class="twinkle" style="animation-duration:2.60s;animation-delay:-0.45s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(70.72 198.87) scale(0.28)">
+      <g class="twinkle" style="animation-duration:3.08s;animation-delay:-0.58s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(38.08 62.64) scale(0.23)">
+      <g class="twinkle" style="animation-duration:3.56s;animation-delay:-0.71s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(61.02 41.73) scale(0.18)">
+      <g class="twinkle" style="animation-duration:4.04s;animation-delay:-0.84s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(132.55 17.77) scale(0.22)">
+      <g class="twinkle" style="animation-duration:4.52s;animation-delay:-0.97s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(170.91 28.16) scale(0.24)">
+      <g class="twinkle" style="animation-duration:2.60s;animation-delay:-0.90s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(215.63 94.38) scale(0.21)">
+      <g class="twinkle" style="animation-duration:3.08s;animation-delay:-0.55s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(211.54 162.68) scale(0.22)">
+      <g class="twinkle" style="animation-duration:3.56s;animation-delay:-0.20s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(190.25 195.33) scale(0.18)">
+      <g class="twinkle" style="animation-duration:4.04s;animation-delay:-3.89s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(107.69 220.25) scale(0.2)">
+      <g class="twinkle" style="animation-duration:4.52s;animation-delay:-4.02s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(41.86 185.56) scale(0.2)">
+      <g class="twinkle" style="animation-duration:2.60s;animation-delay:-1.35s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(20.24 126.98) scale(0.23)">
+      <g class="twinkle" style="animation-duration:3.08s;animation-delay:-0.52s">
+        <use href="#star" />
+      </g>
+    </g>
+    <g transform="translate(46.63 49.14) scale(0.18)">
+      <g class="twinkle" style="animation-duration:3.56s;animation-delay:-3.25s">
+        <use href="#star" />
+      </g>
+    </g>
+  </g>
+</svg>

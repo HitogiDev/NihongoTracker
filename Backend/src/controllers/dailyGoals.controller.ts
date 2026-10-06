@@ -8,6 +8,7 @@ import { IDailyGoal, IDailyGoalProgress, IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { isValidGoalMediaType } from '../services/goalMediaType.js';
+import { requireGoalVisibility } from '../services/goalVisibility.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -60,6 +61,7 @@ export async function getDailyGoals(
       throw apiError('user.notFound', 404, 'User not found');
     }
     const foundUserId = foundUser._id;
+    await requireGoalVisibility(foundUser, res.locals.user);
 
     // Get user's goals
     const goals = await DailyGoal.find({ user: foundUserId }).sort({

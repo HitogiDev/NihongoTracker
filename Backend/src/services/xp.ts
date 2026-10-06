@@ -32,6 +32,8 @@ export const MIN_PLAUSIBLE_SPEED_CPH = 800;
 
 /** Rough chars-per-page estimate used when a log only carries pages. */
 export const CHARS_PER_PAGE = 250;
+/** Average chars per manga page, derived from average chars and pages per volume. */
+export const MANGA_CHARS_PER_PAGE = 86;
 /** Minutes credited per episode when an anime/tv show log has no time. */
 export const EPISODE_MINUTES = 24;
 /** Game time is partially non-language gameplay unless chars prove otherwise. */
@@ -230,6 +232,11 @@ function isPositive(value?: number | null): value is number {
   return typeof value === 'number' && value > 0;
 }
 
+function estimateCharsFromPages(type: ILog['type'], pages: number): number {
+  const charsPerPage = type === 'manga' ? MANGA_CHARS_PER_PAGE : CHARS_PER_PAGE;
+  return pages * charsPerPage;
+}
+
 function estimateMinutesFromChars(
   chars: number,
   personalSpeedCph?: number | null
@@ -295,7 +302,7 @@ function creditedMinutes(
       type === 'manga' ||
       type === 'book')
   ) {
-    const estimatedChars = input.pages * CHARS_PER_PAGE;
+    const estimatedChars = estimateCharsFromPages(type, input.pages);
     return {
       minutes: estimateMinutesFromChars(
         estimatedChars,
@@ -359,7 +366,11 @@ export function roughLogMinutes(input: IXpComputationInput): number {
       input.type === 'manga' ||
       input.type === 'book')
   ) {
-    return ((input.pages * CHARS_PER_PAGE) / FALLBACK_READING_SPEED_CPH) * 60;
+    return (
+      (estimateCharsFromPages(input.type, input.pages) /
+        FALLBACK_READING_SPEED_CPH) *
+      60
+    );
   }
   return 0;
 }

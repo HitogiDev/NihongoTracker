@@ -151,12 +151,14 @@ export interface IUser {
   updatedAt?: Date;
   settings?: {
     blurAdultContent: boolean;
+    hideAdultFromSearch?: boolean;
     customTheme?: ICustomTheme;
     customThemes?: ISavedCustomTheme[];
     profileThemeId?: string | null;
     hideUnmatchedLogsAlert?: boolean;
     hideRankingFeatures?: boolean;
     timezone?: string;
+    weekStartsOn?: 0 | 1;
     language?: 'en' | 'es';
     statsLayout?: StatsGroupLayout[];
     profileLayout?: ProfileWidgetLayout[];
@@ -329,7 +331,7 @@ export interface IActivityComment {
 }
 
 /** Mirrors Backend/src/types.ts: keep both lists in sync. */
-export type NameEffect = 'none' | 'gradient' | 'glow' | 'shimmer';
+export type NameEffect = 'none' | 'gradient' | 'glow' | 'shimmer' | 'aura';
 export type AvatarFrame =
   | 'none'
   | 'bronze'
@@ -338,8 +340,19 @@ export type AvatarFrame =
   | 'sakura'
   | 'neon'
   | 'rainbow'
-  /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
-  | 'aura';
+  | 'hearts'
+  | 'petals'
+  | 'starlight'
+  | 'sigil'
+  | 'fireflies'
+  | 'constellations'
+  | 'aura'
+  | 'segmented'
+  | 'gradient'
+  | 'sweep'
+  | 'electric'
+  | 'text'
+  | 'crystal';
 export type ProfileAccent =
   | 'default'
   | 'sakura'
@@ -362,7 +375,13 @@ export interface IUserCustomization {
   nameEffect?: NameEffect;
   nameColor1?: string;
   nameColor2?: string;
+  namePulseIntensity?: number;
+  namePulseSpeed?: number;
   avatarFrame?: AvatarFrame;
+  frameColor1?: string;
+  frameColor2?: string;
+  frameColor3?: string;
+  frameText?: string;
   profileAccent?: ProfileAccent;
   /** Hex color backing `profileAccent: 'custom'`. */
   accentColor?: string;
@@ -857,7 +876,9 @@ export interface IRankingResponse {
   /** Only the cosmetics a ranking row renders. */
   customization?: Pick<
     IUserCustomization,
-    'nameEffect' | 'nameColor1' | 'nameColor2' | 'avatarFrame'
+    'nameEffect' | 'nameColor1' | 'nameColor2' | 'namePulseIntensity' |
+    'namePulseSpeed' | 'avatarFrame' | 'frameColor1' |
+    'frameColor2' | 'frameColor3' | 'frameText'
   >;
 }
 

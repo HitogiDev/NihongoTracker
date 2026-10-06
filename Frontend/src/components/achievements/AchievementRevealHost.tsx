@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import AchievementRevealModal from './AchievementRevealModal';
+const AchievementRevealModal = lazy(() => import('./AchievementRevealModal'));
 import {
   refreshNotificationsAfterReveal,
   useAchievementRevealStore,
@@ -131,5 +131,5 @@ export default function AchievementRevealHost() {
 
   if (suspended || queue.length === 0) return null;
 
-  return <AchievementRevealModal achievements={queue} onClose={close} />;
+  return <Suspense fallback={null}><AchievementRevealModal achievements={queue} onClose={close} /></Suspense>;
 }

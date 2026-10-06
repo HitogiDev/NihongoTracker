@@ -252,6 +252,7 @@ function PremiumProfilePreview({
               avatar={user?.avatar}
               alt={tf('support.showcase.profile.avatarAlt', { username })}
               frame={customization.avatarFrame}
+              customization={customization}
               containerClassName="size-20 rounded-full sm:size-24"
               imageClassName="size-full rounded-full object-cover"
               fallbackClassName="flex size-full items-center justify-center rounded-full bg-base-100 text-base-content"

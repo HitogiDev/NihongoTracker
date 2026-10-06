@@ -1895,15 +1895,6 @@ export async function updateShowcaseFn(showcaseIds: string[]) {
   return data;
 }
 
-export async function getAchievementFeedFn(
-  limit = 20
-): Promise<IPendingAchievement[]> {
-  const { data } = await api.get<IPendingAchievement[]>('achievements/feed', {
-    params: { limit },
-  });
-  return data;
-}
-
 export async function getUserAchievementActivityFn(
   username: string,
   limit = 10

@@ -258,6 +258,9 @@ function TextHooker() {
   }>();
   const contentId = paramContentId || mediaId;
   const nativeBridge = nativeBridgeUrl(location.hash, contentId);
+  const [nativeSource, setNativeSource] = useState<'lunahook' | 'websocket'>('lunahook');
+  const nativeInput = Boolean(nativeBridge) && nativeSource === 'lunahook';
+  useEffect(() => { setNativeSource('lunahook'); }, [nativeBridge]);
   const queryClient = useQueryClient();
   const user = useUserDataStore((state) => state.user);
   const hasPatreonAccess =
@@ -1280,10 +1283,10 @@ function TextHooker() {
   }, [pauseOnDisconnect]);
 
   useEffect(() => {
-    if (!nativeBridge && pauseOnDisconnect && connectionStatus === 'disconnected') {
+    if (!nativeInput && pauseOnDisconnect && connectionStatus === 'disconnected') {
       setIsTimerActive(false);
     }
-  }, [pauseOnDisconnect, connectionStatus, nativeBridge]);
+  }, [pauseOnDisconnect, connectionStatus, nativeInput]);
 
   useEffect(() => {
     localStorage.setItem('texthooker_customCss', customCss);
@@ -1532,7 +1535,7 @@ function TextHooker() {
   );
 
   const attemptConnect = useCallback(() => {
-    if (nativeBridge) return;
+    if (nativeInput) return;
     if (
       socketRef.current?.readyState === WebSocket.OPEN ||
       socketRef.current?.readyState === WebSocket.CONNECTING
@@ -1581,7 +1584,7 @@ function TextHooker() {
       console.error('WebSocket error:', error);
       setConnectionStatus('error');
     }
-  }, [websocketUrl, handleSocketMessage, nativeBridge]);
+  }, [websocketUrl, handleSocketMessage, nativeInput]);
 
   useEffect(() => {
     if (socketRef.current) {
@@ -1646,12 +1649,13 @@ function TextHooker() {
   }, [attemptConnect, continuousReconnect, disconnectSocket]);
 
   useEffect(() => {
-    if (nativeBridge) disconnectSocket();
-  }, [nativeBridge, disconnectSocket]);
+    if (nativeInput) disconnectSocket();
+    else if (nativeBridge) attemptConnect();
+  }, [nativeInput, nativeBridge, disconnectSocket, attemptConnect]);
 
   useEffect(() => {
     if (
-      !nativeBridge &&
+      !nativeInput &&
       continuousReconnect &&
       !isManualSocketDisconnectRef.current &&
       connectionStatus !== 'connected' &&
@@ -1667,11 +1671,11 @@ function TextHooker() {
           }
         }, 3000);
       }
-    } else if (!continuousReconnect && reconnectIntervalRef.current) {
+    } else if ((nativeInput || !continuousReconnect) && reconnectIntervalRef.current) {
       clearInterval(reconnectIntervalRef.current);
       reconnectIntervalRef.current = null;
     }
-  }, [continuousReconnect, connectionStatus, attemptConnect, nativeBridge]);
+  }, [continuousReconnect, connectionStatus, attemptConnect, nativeInput]);
 
   useEffect(() => {
     return () => {
@@ -2577,12 +2581,23 @@ function TextHooker() {
             ></div>
           )}
 
-          <button
+          {nativeBridge && contentId ? <NativeHookBridge
+            url={nativeBridge}
+            contentId={contentId}
+            websocketStatus={connectionStatus}
+            onToggleWebsocket={toggleSocket}
+            onSourceChange={setNativeSource}
+            onLine={(line: NativeLine) => {
+              if (!nativeInput) return;
+              if (!isTimerActive && !allowNewLineDuringPause) return;
+              if (autostartTimerByLine) setIsTimerActive(true);
+              appendIncomingLine({ id: line.id, text: line.text, japaneseCount: line.chars, createdAt: line.created_at, elapsedSeconds: secondsRef.current });
+            }}
+          /> : <button
             type="button"
             onClick={toggleSocket}
-            disabled={Boolean(nativeBridge)}
             className={`${topbarIconBtnClass} transition-colors duration-300 ${
-              nativeBridge ? 'opacity-40' : connectionStatus === 'connected'
+              nativeInput ? 'opacity-40' : connectionStatus === 'connected'
                 ? 'text-success'
                 : connectionStatus === 'error'
                   ? 'text-error'
@@ -2590,20 +2605,14 @@ function TextHooker() {
                     ? 'text-warning'
                     : 'opacity-40'
             }`}
-            title={nativeBridge ? t('hooker.native.websocketDisabled') : `WebSocket Status: ${connectionStatus}`}
+            title={nativeInput ? t('hooker.native.websocketDisabled') : `WebSocket Status: ${connectionStatus}`}
           >
-            {!nativeBridge && connectionStatus === 'connected' ? (
+            {!nativeInput && connectionStatus === 'connected' ? (
               <Link className="w-4 h-4" />
             ) : (
               <Unlink className="w-4 h-4" />
             )}
-          </button>
-
-          {nativeBridge && contentId && <NativeHookBridge url={nativeBridge} contentId={contentId} onLine={(line: NativeLine) => {
-            if (!isTimerActive && !allowNewLineDuringPause) return;
-            if (autostartTimerByLine) setIsTimerActive(true);
-            appendIncomingLine({ id: line.id, text: line.text, japaneseCount: line.chars, createdAt: line.created_at, elapsedSeconds: secondsRef.current });
-          }} />}
+          </button>}
 
           <button
             type="button"

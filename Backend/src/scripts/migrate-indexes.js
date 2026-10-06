@@ -7,7 +7,7 @@
  * It is designed to run safely in production environments.
  *
  * Usage:
- *   NODE_ENV=production npm run migrate:indexes
+ *   npm run migrate:indexes:prod
  *
  * Environment Variables Required:
  *   - DATABASE_URL or MONGODB_URI: MongoDB connection string
@@ -16,8 +16,10 @@
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { pathToFileURL } from 'node:url';
 
 dotenv.config();
+if (process.argv.includes('--production')) process.env.NODE_ENV = 'production';
 
 const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -493,10 +495,10 @@ async function main() {
   try {
     const result = await createProductionIndexes();
     console.log('\n✅ Migration successful:', result);
-    process.exit(0);
+    process.exitCode = 0;
   } catch (error) {
     console.error('\n💥 Migration failed:', error.message);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
     if (mongoose.connection.readyState === 1) {
       console.log('\n🔄 Closing database connection...');
@@ -507,7 +509,7 @@ async function main() {
 }
 
 // Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
 

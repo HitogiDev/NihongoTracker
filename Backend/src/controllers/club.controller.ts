@@ -7,7 +7,7 @@ import { ClubMediaVoting } from '../models/clubMediaVoting.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import Log from '../models/log.model.js';
-import uploadFile, { uploadFileWithCleanup } from '../services/uploadFile.js';
+import uploadFile, { FileUploadBatch } from '../services/uploadFile.js';
 import {
   ICreateClubRequest,
   IClubResponse,
@@ -710,6 +710,7 @@ export async function updateClub(
   res: Response,
   next: NextFunction
 ): Promise<Response<IClub> | void> {
+  const uploads = new FileUploadBatch();
   try {
     const { clubId } = req.params;
     const userId = res.locals.user._id;
@@ -812,7 +813,7 @@ export async function updateClub(
         };
 
         if (files.avatar?.[0]) {
-          const file = await uploadFileWithCleanup(
+          const file = await uploads.upload(
             files.avatar[0],
             club.avatar
           );
@@ -820,13 +821,14 @@ export async function updateClub(
         }
 
         if (files.banner?.[0]) {
-          const file = await uploadFileWithCleanup(
+          const file = await uploads.upload(
             files.banner[0],
             club.banner
           );
           updateData.banner = file.downloadURL;
         }
       } catch (error) {
+        await uploads.rollback();
         if (error instanceof customError) {
           return next(error);
         }
@@ -860,6 +862,7 @@ export async function updateClub(
     });
 
     await club.save();
+    await uploads.commit();
     if (updateData.clubGoals !== undefined) {
       await syncLegacyClubObjectives(club);
     }
@@ -870,6 +873,7 @@ export async function updateClub(
 
     return res.status(200).json(updatedClub || club);
   } catch (error) {
+    await uploads.rollback();
     return next(error as customError);
   }
 }

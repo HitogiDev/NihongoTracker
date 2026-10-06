@@ -89,7 +89,7 @@ const AchievementSchema = new Schema<IAchievement>(
   { timestamps: true }
 );
 
-AchievementSchema.index({ key: 1 }, { unique: true });
+
 AchievementSchema.index({ isActive: 1, category: 1 });
 AchievementSchema.index({ rarity: 1, isActive: 1 });
 

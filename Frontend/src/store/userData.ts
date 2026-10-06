@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import queryClient from '../queryClient';
+import { useAchievementRevealStore } from './achievementReveal';
+import { useLogCelebrationStore } from './logCelebration';
 import { ILoginResponse } from '../types';
 import {
   applyAppTheme,
@@ -9,6 +12,12 @@ import {
 
 const FREE_THEMES = new Set(['light', 'dark', 'system']);
 const FREE_TEXTHOOKER_THEMES = new Set(['', 'light', 'dark', 'system']);
+
+function clearAccountState() {
+  queryClient.clear();
+  useAchievementRevealStore.setState({ queue: [], suspended: false });
+  useLogCelebrationStore.setState({ pending: null });
+}
 
 const resolveThemeForDocument = (theme: string) => {
   if (theme === 'system') {
@@ -63,7 +72,7 @@ function mergeUserState(
   currentUser: ILoginResponse | null,
   incomingUser: ILoginResponse,
 ): ILoginResponse {
-  if (!currentUser) {
+  if (!currentUser || currentUser._id !== incomingUser._id) {
     return incomingUser;
   }
 
@@ -90,6 +99,7 @@ export const useUserDataStore = create(
     (set) => ({
       user: null,
       setUser: (user: ILoginResponse) => {
+        if (useUserDataStore.getState().user?._id !== user._id) clearAccountState();
         // Preserve current theme when setting user data
         const currentTheme = localStorage.getItem('theme') || 'system';
         set((state) => ({ user: mergeUserState(state.user, user) }));
@@ -114,11 +124,13 @@ export const useUserDataStore = create(
         }
       },
       logout: () => {
+        clearAccountState();
         set({ user: null });
         resetThemesForLoggedOutUser();
         useUserDataStore.persist.clearStorage();
       },
       handleTokenExpiration: () => {
+        clearAccountState();
         set({ user: null });
         resetThemesForLoggedOutUser();
         useUserDataStore.persist.clearStorage();

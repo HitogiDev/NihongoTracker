@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { ILogCelebration } from '../types';
-import LogCelebration from './LogCelebration';
+const LogCelebration = lazy(() => import('./LogCelebration'));
 import { useLogCelebrationStore } from '../store/logCelebration';
 import {
   suspendAchievementReveal,
@@ -56,5 +56,5 @@ export default function LogCelebrationHost() {
 
   if (!pending) return null;
 
-  return <LogCelebration celebration={pending} onClose={close} />;
+  return <Suspense fallback={null}><LogCelebration celebration={pending} onClose={close} /></Suspense>;
 }

@@ -1,11 +1,13 @@
-import { ILog, IMediaDocument } from '../types';
-import { useState, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { assignMediaFn, getUserLogsFn } from '../api/trackerApi';
+import { useMatchingSelection } from '../hooks/useMatchingSelection';
+import { useMediaAssignment } from '../hooks/useMediaAssignment';
+import { IMediaDocument } from '../types';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getUserLogsFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import useSearch from '../hooks/useSearch';
-import { useUserDataStore } from '../store/userData';
+
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
@@ -18,17 +20,12 @@ interface MovieLogsProps {
 
 function MovieLogs({ username, isActive = true }: MovieLogsProps) {
   const { t } = useTranslation(['logs', 'common']);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedMovie, setSelectedMovie] = useState<
-    IMediaDocument | undefined
-  >(undefined);
-  const [selectedLogs, setSelectedLogs] = useState<ILog[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
-  const [assignedLogs, setAssignedLogs] = useState<ILog[]>([]);
-  const [shouldSearch, setShouldSearch] = useState<boolean>(true);
-
-  const { user } = useUserDataStore();
-  const currentUsername = user?.username;
+  const {
+    searchQuery, setSearchQuery, selectedMedia: selectedMovie, setSelectedMedia: setSelectedMovie,
+    selectedLogs, selectedGroup, assignedLogs,
+    shouldSearch, setShouldSearch,
+    handleCheckboxChange, handleOpenGroup, handleLogsDismissed, resetState,
+  } = useMatchingSelection();
 
   const {
     data: movieResult,
@@ -49,36 +46,10 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const queryClient = useQueryClient();
 
   if (searchMovieError && searchMovieError instanceof AxiosError) {
     toast.error(searchMovieError.response?.data.message);
   }
-
-  const handleCheckboxChange = useCallback((log: ILog) => {
-    setSelectedLogs((prevSelectedLogs) =>
-      prevSelectedLogs.includes(log)
-        ? prevSelectedLogs.filter((selectedLog) => selectedLog !== log)
-        : [...prevSelectedLogs, log]
-    );
-  }, []);
-
-  const handleLogsDismissed = useCallback(() => {
-    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-    setSelectedLogs([]);
-    setSelectedGroup(null);
-  }, [selectedLogs]);
-
-  const handleOpenGroup = useCallback(
-    (group: ILog[] | null, title: string, groupIndex: number) => {
-      if (!group) return;
-      setSelectedGroup(groupIndex);
-      setSelectedLogs(group);
-      setSearchQuery(title);
-      setShouldSearch(true);
-    },
-    []
-  );
 
   const groupedLogs = useGroupLogs(logs, 'video');
 
@@ -88,47 +59,8 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
     assignedLogs
   );
 
-  const { mutate: assignMedia, isPending: isAssigning } = useMutation({
-    mutationFn: (
-      data: {
-        logsId: string[];
-        contentMedia: IMediaDocument;
-      }[]
-    ) => assignMediaFn(data),
-    onSuccess: () => {
-      setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-      setSelectedLogs([]);
-      setSelectedMovie(undefined);
-      setSearchQuery('');
-      setSelectedGroup(null);
-
-      // Comprehensive query invalidation to update all related data
-      queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
-      queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
-      queryClient.invalidateQueries({
-        queryKey: ['ImmersionList', currentUsername],
-      });
-      // Invalidate user stats to update experience points and statistics
-      queryClient.invalidateQueries({
-        queryKey: ['userStats', currentUsername],
-      });
-      // Invalidate user profile data to update overall stats
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['user', 'ranking'].includes(query.queryKey[0] as string),
-      });
-      // Invalidate daily goals as XP changes affect goal progress
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-
-      toast.success(t('video.convertedToMovies'));
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
-      } else {
-        toast.error(t('matcher.assignError'));
-      }
-    },
+  const { mutate: assignMedia, isPending: isAssigning } = useMediaAssignment({
+    username, type: 'movie', onAssigned: resetState, successMessage: t('video.convertedToMovies'),
   });
 
   const handleAssignMedia = useCallback(() => {
@@ -164,7 +96,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
       },
     ]);
     setShouldSearch(false);
-  }, [selectedMovie, selectedLogs, assignMedia, t]);
+  }, [selectedMovie, selectedLogs, assignMedia, setShouldSearch, t]);
 
   if (isLoadingLogs) {
     return (
@@ -297,7 +229,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
                                 <input
                                   type="checkbox"
                                   className="checkbox checkbox-primary checkbox-sm"
-                                  checked={selectedLogs.includes(log)}
+                                  checked={selectedLogs.some((selected) => selected._id === log._id)}
                                   onChange={(e) => {
                                     e.stopPropagation();
                                     handleCheckboxChange(log);

@@ -36,11 +36,48 @@
   animation: name-shimmer 4s linear infinite;
 }
 
+.name-effect--aura {
+  background-image: linear-gradient(
+    90deg,
+    var(--name-color-1),
+    #ffcc4d,
+    #63e6a5,
+    #4fc8ff,
+    #a78bfa,
+    var(--name-color-2),
+    var(--name-color-1)
+  );
+  background-size: 200% 100%;
+  background-repeat: repeat-x;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  animation:
+    name-aura-cycle 6s linear infinite,
+    name-aura-pulse var(--name-pulse-speed, 3s) ease-in-out infinite;
+}
+
+@keyframes name-aura-cycle {
+  from { background-position: 0% 50%; }
+  to { background-position: 200% 50%; }
+}
+
+@keyframes name-aura-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 var(--name-color-1));
+  }
+  50% {
+    filter: drop-shadow(0 0 var(--name-pulse-glow, 10.8px) var(--name-color-2));
+  }
+}
+
 .name-effect--glow {
   color: var(--name-color-1);
   text-shadow:
-    0 0 6px color-mix(in oklab, var(--name-color-1) 70%, transparent),
-    0 0 18px color-mix(in oklab, var(--name-color-1) 45%, transparent);
+    0 0 6px color-mix(in oklab, var(--name-color-2) 70%, transparent),
+    0 0 18px color-mix(in oklab, var(--name-color-2) 45%, transparent);
 }
 
 @keyframes name-shimmer {
@@ -59,6 +96,8 @@
 
 .avatar-frame {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   /* Inside a flex parent (the header's avatar button) the ring would shrink
      while its fixed-width child does not, clipping the ring left and right. */
   flex: none;
@@ -79,6 +118,7 @@
    frame now sits between `.avatar` and it. Without this the inner box has no
    height of its own and collapses. */
 .avatar-frame > * {
+  flex: none;
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 9999px;
@@ -96,29 +136,339 @@
   background: linear-gradient(135deg, #fff0a6, #ffd700 45%, #b8860b);
 }
 
+.avatar-frame--hearts,
+.avatar-frame--starlight,
+.avatar-frame--sigil,
+.avatar-frame--constellations,
+.avatar-frame--fireflies {
+  position: relative;
+  background: transparent;
+  padding: 0;
+}
+
+.avatar-frame--hearts::before,
+.avatar-frame--starlight::before,
+.avatar-frame--sigil::before,
+.avatar-frame--constellations::before,
+.avatar-frame--fireflies::before {
+  position: absolute;
+  /* A 240-unit effect surrounds the reference's 160-unit avatar. */
+  inset: -25%;
+  z-index: 1;
+  border-radius: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: '';
+  pointer-events: none;
+}
+
+.avatar-frame--hearts::before {
+  background-image: url('./assets/avatar-frames/hearts.svg?no-inline');
+}
+
+.avatar-frame--starlight::before {
+  background-image: url('./assets/avatar-frames/starlight.svg?no-inline');
+}
+
+.avatar-frame--sigil::before {
+  background-image: url('./assets/avatar-frames/sigil.svg?no-inline');
+}
+
+.avatar-frame--fireflies::before {
+  background-image: url('./assets/avatar-frames/fireflies.svg?no-inline');
+}
+
+.avatar-frame--constellations::before {
+  background-image: url('./assets/avatar-frames/constellations.svg?no-inline');
+}
+
+.avatar-frame--hearts > *,
+.avatar-frame--starlight > *,
+.avatar-frame--sigil > *,
+.avatar-frame--constellations > *,
+.avatar-frame--fireflies > * {
+  position: relative;
+  z-index: 0;
+}
+
+.avatar-frame[data-frame-layers='ready']::before {
+  display: none;
+}
+
+.avatar-frame > .avatar-frame-overlay {
+  position: absolute;
+  inset: -25%;
+  z-index: 1;
+  aspect-ratio: auto;
+  border-radius: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.avatar-frame-overlay[hidden] {
+  display: none;
+}
+
+.avatar-frame-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-frame-scene,
+.avatar-frame-motion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 240px;
+  transform-origin: 0 0;
+}
+
+.avatar-frame-scene--playing .avatar-frame-motion {
+  will-change: transform, opacity;
+}
+
+:is(.avatar-frame, .avatar-frame--aura)[data-frame-active='false'],
+:is(.avatar-frame, .avatar-frame--aura)[data-frame-active='false']::before,
+:is(.avatar-frame, .avatar-frame--aura)[data-frame-active='false']::after,
+:is(.avatar-frame, .avatar-frame--aura)[data-frame-active='false'] > * {
+  animation-play-state: paused;
+}
+
+.avatar-frame--rainbow[data-frame-active='true']::before,
+.avatar-frame--rainbow[data-frame-active='true']::after,
+:is(.avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep)[data-frame-active='true']::before,
+:is(.avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep)[data-frame-active='true']::after,
+.avatar-frame--text[data-frame-active='true'] > .avatar-frame-text {
+  will-change: transform;
+}
+
+.avatar-frame--sakura[data-frame-active='true']::before,
+.avatar-frame--sakura[data-frame-active='true']::after,
+.avatar-frame--neon[data-frame-active='true']::before,
+.avatar-frame--neon[data-frame-active='true']::after {
+  will-change: opacity;
+}
+
 .avatar-frame--sakura {
   background: linear-gradient(135deg, #ffe3ef, #f79ac0 50%, #d94f8a);
-  animation: frame-breathe 3.2s ease-in-out infinite;
+  --frame-glow-duration: 3.2s;
 }
 
 .avatar-frame--neon {
   background: linear-gradient(135deg, #6ef2ff, #2f7bff 55%, #a855f7);
-  animation: frame-neon 2s ease-in-out infinite;
+  --frame-glow-duration: 2s;
+}
+
+.avatar-frame--sakura,
+.avatar-frame--neon {
+  position: relative;
+  isolation: isolate;
+}
+
+.avatar-frame--sakura::before,
+.avatar-frame--sakura::after,
+.avatar-frame--neon::before,
+.avatar-frame--neon::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+  animation: frame-glow var(--frame-glow-duration) ease-in-out infinite;
+}
+
+.avatar-frame--sakura::before,
+.avatar-frame--neon::before {
+  animation-delay: calc(var(--frame-glow-duration) * -0.5);
+}
+
+.avatar-frame--sakura::after,
+.avatar-frame--neon::after {
+  opacity: 0;
+}
+
+.avatar-frame--sakura::before {
+  box-shadow: 0 0 8px 1px rgba(217, 79, 138, 0.45);
+}
+
+.avatar-frame--sakura::after {
+  box-shadow: 0 0 16px 4px rgba(247, 154, 192, 0.7);
+}
+
+.avatar-frame--neon::before {
+  box-shadow: 0 0 10px 1px rgba(110, 242, 255, 0.6);
+}
+
+.avatar-frame--neon::after {
+  box-shadow: 0 0 20px 5px rgba(168, 85, 247, 0.7);
+}
+
+:is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal) {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  --frame-period: 3s;
+}
+
+:is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal)::before,
+:is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal)::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+  transform-origin: center;
+  background: var(--frame-gradient);
+  animation: frame-spin var(--frame-period) linear infinite;
+}
+
+:is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal)::after {
+  z-index: -2;
+  filter: blur(var(--frame-glow-radius, 12px));
+  opacity: 0.9;
 }
 
 .avatar-frame--rainbow {
-  background: conic-gradient(
-    from 0deg,
-    #ff4d4d,
-    #ffa24d,
-    #ffe14d,
-    #6bff4d,
-    #4de1ff,
-    #6b4dff,
-    #ff4de1,
-    #ff4d4d
-  );
-  animation: frame-spin 5s linear infinite;
+  --frame-gradient: conic-gradient(#ff0055, #ff5500, #ffcc00, #00ff66, #00ffff, #0066ff, #9900ff, #ff00aa, #ff0055);
+}
+
+.avatar-frame--segmented {
+  --frame-gradient: conic-gradient(var(--frame-color-1, #00ffcc) 0% 35%, var(--frame-color-2, #ffe600) 35% 65%, var(--frame-color-3, #ff0055) 65% 100%);
+  --frame-period: 2.5s;
+}
+
+.avatar-frame--segmented::after {
+  filter: none;
+  opacity: 0;
+}
+
+.avatar-frame--gradient {
+  --frame-gradient: conic-gradient(#a855f7, #ec4899, #3b82f6, #a855f7);
+}
+
+.avatar-frame--sweep {
+  --frame-gradient: conic-gradient(transparent 0deg 180deg, var(--frame-color-1, #00f2fe) 360deg);
+  --frame-period: 2s;
+}
+
+.avatar-frame--crystal {
+  background: #45c9ff;
+}
+
+.avatar-frame--crystal::before,
+.avatar-frame--crystal::after {
+  animation: none;
+}
+
+.avatar-frame--crystal::before {
+  background: #45c9ff;
+  border: 2px solid #e8fbff;
+  box-shadow: inset 0 0 0 2px #078cc7;
+}
+
+.avatar-frame--crystal::after {
+  background: #28baf4;
+  filter: blur(7px);
+  opacity: 0.8;
+}
+
+.avatar-frame > .avatar-frame-glass {
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+  background: none;
+}
+
+.avatar-frame-glass::before {
+  position: absolute;
+  top: 34%;
+  left: -70%;
+  width: 240%;
+  height: 32%;
+  content: '';
+  background: #fff;
+  animation: frame-glass-shine 2.5s ease-in-out infinite;
+}
+
+.avatar-frame--crystal[data-frame-active='true'] .avatar-frame-glass::before {
+  will-change: transform, opacity;
+}
+
+.avatar-frame[data-frame-active='false'] .avatar-frame-glass::before {
+  animation-play-state: paused;
+}
+
+@keyframes frame-glass-shine {
+  0%, 12% { transform: translate(-115%, -45%) rotate(45deg); opacity: 0; }
+  22% { opacity: 1; }
+  68% { transform: translate(115%, 45%) rotate(45deg); opacity: 1; }
+  82%, 100% { transform: translate(115%, 45%) rotate(45deg); opacity: 0; }
+}
+
+.avatar-frame--electric,
+.avatar-frame--petals,
+.avatar-frame--text {
+  position: relative;
+  isolation: isolate;
+  padding: 0;
+  background: transparent;
+}
+
+:is(.avatar-frame--electric, .avatar-frame--petals)::before {
+  position: absolute;
+  inset: -3.33%;
+  z-index: -1;
+  border: 1.5px solid var(--frame-tint);
+  border-radius: inherit;
+  box-shadow: 0 0 8px var(--frame-tint);
+  content: '';
+  pointer-events: none;
+}
+
+.avatar-frame--electric { --frame-tint: rgb(0 242 254 / 25%); }
+.avatar-frame--petals { --frame-tint: #ff94c2; }
+
+.avatar-frame > .avatar-frame-canvas,
+.avatar-frame > .avatar-frame-text {
+  position: absolute;
+  inset: -25%;
+  width: 150%;
+  height: 150%;
+  z-index: 2;
+  border-radius: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.avatar-frame[data-frame-active='true'] > .avatar-frame-canvas {
+  will-change: transform;
+}
+
+.avatar-frame-text {
+  animation: frame-spin 8s linear infinite;
+  transform-origin: center;
+  fill: var(--frame-color-1, #c084fc);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  dominant-baseline: central;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal)::before,
+  :is(.avatar-frame--rainbow, .avatar-frame--segmented, .avatar-frame--gradient, .avatar-frame--sweep, .avatar-frame--crystal)::after,
+  .avatar-frame-text,
+  .avatar-frame-glass::before { animation: none; }
+  .avatar-frame-glass::before { opacity: 0; }
 }
 
 /* The Consumer-tier frame is daisyUI's `aura`, not a ring we draw. It only
@@ -127,6 +477,9 @@
    other frames undo above. Everything else — the conic gradient, the blurred
    ::before/::after halos, the reduced-motion slowdown — comes from daisyUI. */
 .avatar-frame--aura {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   --aura-radius: 9999px;
   /* Rotation period. daisyUI reads `--tw-duration` for it, falling back to 6s,
      which on a ring this small reads as a still gradient. Set here instead of
@@ -141,6 +494,7 @@
 }
 
 .avatar-frame--aura > * {
+  flex: none;
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 9999px;
@@ -148,51 +502,24 @@
 
 @keyframes frame-spin {
   from {
-    rotate: 0deg;
+    transform: rotate(0deg);
   }
   to {
-    rotate: 360deg;
+    transform: rotate(360deg);
   }
 }
 
-/* Counter-rotate the avatar so only the ring spins. */
-.avatar-frame--rainbow > * {
-  animation: frame-spin-reverse 5s linear infinite;
-}
-
-@keyframes frame-spin-reverse {
-  from {
-    rotate: 0deg;
-  }
-  to {
-    rotate: -360deg;
-  }
-}
-
-@keyframes frame-breathe {
+@keyframes frame-glow {
   0%,
   100% {
-    box-shadow: 0 0 8px 1px rgba(217, 79, 138, 0.45);
+    opacity: 0;
   }
   50% {
-    box-shadow: 0 0 16px 4px rgba(247, 154, 192, 0.7);
+    opacity: 1;
   }
 }
 
-@keyframes frame-neon {
-  0%,
-  100% {
-    box-shadow: 0 0 10px 1px rgba(110, 242, 255, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 20px 5px rgba(168, 85, 247, 0.7);
-  }
-}
-
-/* ─── Ambient banner effects ─────────────────────────────────────────────────
-   A full-bleed overlay of small particles above the profile banner. Each
-   particle gets its position/delay/duration inline from the component; the
-   class only describes the shape and the motion. */
+/* Canvas animation uses SVG artwork for static fallback. */
 
 .banner-effect {
   position: absolute;
@@ -204,103 +531,30 @@
   z-index: 1;
 }
 
-.banner-particle {
+.banner-effect-canvas,
+.banner-effect-fallback {
   position: absolute;
-  will-change: transform, opacity;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.banner-particle--sakura {
-  width: 10px;
-  height: 10px;
-  background: radial-gradient(circle at 30% 30%, #ffd6e7, #f28ab8);
-  border-radius: 60% 10% 60% 10%;
-  /* Banners are busy and the header's darkening gradient sits on top of the
-     lower 40%, so anything translucent reads as dirt on the screen. */
+.banner-effect-canvas {
+  opacity: 0;
+}
+
+.banner-effect-vector {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+}
+
+.banner-effect[data-canvas-ready='true'] .banner-effect-canvas {
   opacity: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
-  animation: particle-fall linear infinite;
 }
 
-.banner-particle--snow {
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 9999px;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
-  animation: particle-fall linear infinite;
-}
-
-.banner-particle--stars {
-  top: auto;
-  width: 3px;
-  height: 3px;
-  background: #fff;
-  border-radius: 9999px;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
-  animation: particle-twinkle ease-in-out infinite;
-}
-
-.banner-particle--fireflies {
-  top: auto;
-  width: 5px;
-  height: 5px;
-  background: #ffe9a3;
-  border-radius: 9999px;
-  box-shadow: 0 0 10px 2px rgba(255, 214, 102, 0.8);
-  animation: particle-drift ease-in-out infinite alternate;
-}
-
-/* `top` rather than a translate in px: the overlay's height is set by the
-   banner, which differs between the profile header and the settings preview.
-   `--drift`/`--spin` come in per particle so they don't all trace the same
-   path; the sway at 50% is what breaks up the straight-line look. */
-@keyframes particle-fall {
-  0% {
-    top: -12%;
-    transform: translateX(0) rotate(0deg);
-    opacity: 0;
-  }
-  6% {
-    opacity: 1;
-  }
-  50% {
-    transform: translateX(calc(var(--drift, 28px) * -0.35))
-      rotate(calc(var(--spin, 320deg) * 0.5));
-  }
-  92% {
-    opacity: 1;
-  }
-  100% {
-    top: 108%;
-    transform: translateX(var(--drift, 28px)) rotate(var(--spin, 320deg));
-    opacity: 0.6;
-  }
-}
-
-@keyframes particle-twinkle {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.4);
-  }
-}
-
-@keyframes particle-drift {
-  0% {
-    transform: translate3d(0, 0, 0);
-    opacity: 0.65;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(var(--drift, 28px), -26px, 0);
-    opacity: 0.7;
-  }
+.banner-effect[data-canvas-ready='true'] .banner-effect-fallback {
+  visibility: hidden;
 }
 
 /* Motion-sensitive visitors get the cosmetics without the movement. */
@@ -309,14 +563,23 @@
    the aura frame and its two halo pseudo-elements are stopped with the rest. */
 @media (prefers-reduced-motion: reduce) {
   .name-effect--shimmer,
+  .name-effect--aura,
   .avatar-frame--sakura,
   .avatar-frame--neon,
+  .avatar-frame--sakura::before,
+  .avatar-frame--sakura::after,
+  .avatar-frame--neon::before,
+  .avatar-frame--neon::after,
   .avatar-frame--rainbow,
-  .avatar-frame--rainbow > *,
+  .avatar-frame--rainbow::before,
   .avatar-frame--aura,
   .avatar-frame--aura::before,
-  .avatar-frame--aura::after,
-  .banner-particle {
+  .avatar-frame--aura::after {
     animation: none !important;
+  }
+
+  .avatar-frame--sakura::after,
+  .avatar-frame--neon::after {
+    opacity: 0;
   }
 }

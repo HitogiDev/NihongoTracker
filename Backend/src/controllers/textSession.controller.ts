@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
-import axios from 'axios';
+import { fetchJitenDetail } from '../services/jiten.js';
 import TextSession from '../models/textSession.model.js';
 import { MediaBase as Media } from '../models/media.model.js';
 import { apiError } from '../i18n/errorCodes.js';
@@ -66,84 +66,12 @@ export const checkRoomExists = async (
 ) => {
   try {
     const { roomId } = req.params;
-    const session = await TextSession.findOne({ roomId });
+    const session = await TextSession.findOne({ roomId, expireAt: { $gt: new Date() } });
     res.status(200).json({ exists: !!session });
   } catch (error) {
     next(error);
   }
 };
-
-const LinkTypeObject = {
-  vn: 1,
-  manga: 2,
-  reading: 3,
-} as const;
-
-interface IJitenDeckLink {
-  linkId: number;
-  linkType: number;
-  url: string;
-  deckId: number;
-}
-
-interface IJitenDeck {
-  deckId: number;
-  creationDate: string;
-  releaseDate: string | null;
-  coverName: string;
-  mediaType: number;
-  originalTitle: string;
-  romajiTitle: string | null;
-  englishTitle: string | null;
-  description: string;
-  characterCount: number;
-  wordCount: number;
-  uniqueWordCount: number;
-  uniqueWordUsedOnceCount: number;
-  uniqueKanjiCount: number;
-  uniqueKanjiUsedOnceCount: number;
-  difficulty: number;
-  difficultyRaw: number;
-  difficultyOverride: number;
-  difficultyAlgorithmic: number;
-  sentenceCount: number;
-  speechDuration: number;
-  speechMoraCount: number;
-  speechSpeed: number;
-  averageSentenceLength: number;
-  parentDeckId: number | null;
-  links: IJitenDeckLink[];
-  aliases: string[];
-  childrenDeckCount: number;
-  selectedWordOccurrences: number;
-  dialoguePercentage: number;
-  hideDialoguePercentage: boolean;
-  coverage: number;
-  uniqueCoverage: number;
-  youngCoverage: number;
-  youngUniqueCoverage: number;
-  externalRating: number;
-  exampleSentence: string | null;
-  genres: number[];
-  tags: unknown[];
-  relationships: unknown[];
-  status: string | null;
-  isFavourite: boolean | null;
-  isIgnored: boolean | null;
-  distinctVoterCount: number;
-  userAdjustment: number;
-}
-
-interface IJitenResponse {
-  data: {
-    parentDeck: IJitenDeck | null;
-    mainDeck: IJitenDeck;
-    subDecks: IJitenDeck[];
-  };
-  totalItems: number;
-  pageSize: number;
-  currentOffset: number;
-}
 
 interface IAddSessionHistoryBody {
   loggedAt?: string;
@@ -288,46 +216,8 @@ export const getSessionByContentId = async (
       );
     }
 
-    // Get Jiten data if available
-    const jitenURL = process.env.JITEN_API_URL;
-    let jitenData = null;
-
-    if (jitenURL && ['vn', 'manga', 'light-novel'].includes(mediaDoc.type)) {
-      try {
-        const LinkType: number | null = mediaDoc.type
-          ? (LinkTypeObject[mediaDoc.type as keyof typeof LinkTypeObject] ??
-            null)
-          : null;
-
-        if (LinkType) {
-          const jitenDeck = await axios.get(
-            `${jitenURL}/media-deck/by-link-id/${LinkType}/${contentId}`,
-            {
-              validateStatus: (status) => status === 200 || status === 404,
-            }
-          );
-
-          if (
-            jitenDeck.status === 200 &&
-            jitenDeck.data &&
-            jitenDeck.data.length > 0
-          ) {
-            const jitenDetailResponse = await axios.get(
-              `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
-              {
-                validateStatus: (status) => status === 200 || status === 404,
-              }
-            );
-
-            if (jitenDetailResponse.status === 200) {
-              jitenData = (jitenDetailResponse.data as IJitenResponse).data;
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('Error fetching Jiten data:', error);
-      }
-    }
+    const jiten = await fetchJitenDetail(mediaDoc.type, contentId);
+    const jitenData = jiten?.data ?? null;
 
     const response = sessionResponseForUser(session, res.locals.user);
     if (typeof response.mediaId === 'object' && response.mediaId !== null) {

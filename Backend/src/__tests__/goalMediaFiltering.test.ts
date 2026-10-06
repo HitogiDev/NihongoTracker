@@ -28,7 +28,7 @@ vi.mock('../models/user.model.js', () => ({
 vi.mock('../models/media.model.js', () => ({ Anime: { find: vi.fn() } }));
 
 function response() {
-  const res = { status: vi.fn(), json: vi.fn() };
+  const res = { status: vi.fn(), json: vi.fn(), locals: {} };
   res.status.mockReturnValue(res);
   return res;
 }
