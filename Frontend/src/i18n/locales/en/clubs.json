@@ -291,8 +291,6 @@
     "statusInProgress": "In progress",
     "statusContributed": "Contributed",
     "statusNoContribution": "No contribution",
-    "statusContributed": "Contributed",
-    "statusNoContribution": "No contribution",
     "sortParticipants": "Sort by",
     "sortProgressDesc": "Highest progress",
     "sortProgressAsc": "Lowest progress",

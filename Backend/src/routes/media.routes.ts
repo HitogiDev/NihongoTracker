@@ -14,13 +14,14 @@ import {
   googleBooksSearchProxy,
 } from '../controllers/media.controller.js';
 import { optionalProtect, protect } from '../middlewares/authMiddleware.js';
+import { requestRateLimit } from '../middlewares/requestRateLimit.js';
 import { getCommunity } from '../controllers/mediaSocial.controller.js';
 
 import { searchYouTubeVideo, searchYouTubePlaylist } from '../services/searchYoutube.js';
 
 const router = Router();
 
-router.get('/utils/avgcolor', getAverageColor);
+router.get('/utils/avgcolor', requestRateLimit(100, 600_000), getAverageColor);
 router.get('/anilist/search', anilistSearchProxy);
 router.get('/googlebooks/search', googleBooksSearchProxy);
 router.get('/search', searchMedia);

@@ -89,6 +89,15 @@ export interface IJitenResponse {
   currentOffset: number;
 }
 
+const JITEN_DETAIL_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const JITEN_MISS_CACHE_TTL_MS = 5 * 60 * 1000;
+const JITEN_DETAIL_CACHE_MAX_ENTRIES = 5000;
+const jitenDetailCache = new Map<
+  string,
+  { expiresAt: number; value: IJitenResponse | null }
+>();
+const pendingJitenDetails = new Map<string, Promise<IJitenResponse | null>>();
+
 /** Collapse whitespace (incl. fullwidth U+3000) and punctuation for fuzzy title matching. */
 function normalizeTitleForMatch(title: string): string {
   return title
@@ -154,7 +163,7 @@ async function findJitenBookDeckIdByTitle(
  * when Jiten is not configured, the type has no link mapping, or no deck
  * matches. `title` is only used for the book title fallback.
  */
-export async function fetchJitenDetail(
+async function fetchJitenDetailUncached(
   type: string,
   contentId: string,
   title?: string | null,
@@ -207,6 +216,56 @@ export async function fetchJitenDetail(
   }
 
   return null;
+}
+
+/** Cache repeated detail lookups from sessions and comparison requests. */
+export async function fetchJitenDetail(
+  type: string,
+  contentId: string,
+  title?: string | null,
+  manualDeckId?: number | null
+): Promise<IJitenResponse | null> {
+  const jitenURL = process.env.JITEN_API_URL;
+  if (!jitenURL) return null;
+
+  const normalizedType = String(type).toLowerCase();
+  const linkType = JitenLinkTypeByMediaType[normalizedType] ?? null;
+  if (!linkType) return null;
+  const jitenLinkId =
+    normalizedType === 'book' ? contentId.replace(/^gbooks-/, '') : contentId;
+  const key = JSON.stringify([
+    jitenURL,
+    linkType,
+    jitenLinkId,
+    normalizedType === 'book' ? title ?? null : null,
+    manualDeckId ?? null,
+  ]);
+  const cached = jitenDetailCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) jitenDetailCache.delete(key);
+
+  const pending = pendingJitenDetails.get(key);
+  if (pending) return pending;
+
+  const request = fetchJitenDetailUncached(type, contentId, title, manualDeckId)
+    .then((value) => {
+      if (jitenDetailCache.size >= JITEN_DETAIL_CACHE_MAX_ENTRIES) {
+        const oldestKey = jitenDetailCache.keys().next().value;
+        if (oldestKey !== undefined) jitenDetailCache.delete(oldestKey);
+      }
+      jitenDetailCache.set(key, {
+        expiresAt:
+          Date.now() +
+          (value ? JITEN_DETAIL_CACHE_TTL_MS : JITEN_MISS_CACHE_TTL_MS),
+        value,
+      });
+      return value;
+    })
+    .finally(() => {
+      pendingJitenDetails.delete(key);
+    });
+  pendingJitenDetails.set(key, request);
+  return request;
 }
 
 /** Fetch and validate a specific Jiten deck. */

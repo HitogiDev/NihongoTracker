@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <style>
+    .orbit { transform-origin: 120px 120px; animation: orbit 34.3s linear infinite; }
+    .petals-fast { animation-duration: 28s; }
+    .petals-slow { animation-duration: 42s; }
+    .flutter { transform-box: fill-box; transform-origin: center; animation: flutter 3s ease-in-out infinite; }
+    .twinkle { animation: twinkle 2.5s ease-in-out infinite; }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+    @keyframes flutter { 0%,100% { transform: rotate(-12deg) scale(.9); } 50% { transform: rotate(12deg) scale(1); } }
+    @keyframes twinkle { 0%,100% { opacity: .3; } 50% { opacity: .9; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="rim" x1="40" y1="40" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe3ee" />
+      <stop offset=".5" stop-color="#f4b3d3" />
+      <stop offset="1" stop-color="#e99ec2" />
+    </linearGradient>
+    <path id="petal" d="M-7 0C-4-3 0-4 4-2L5-1 7-1C6 3 1 4-3 3Z" />
+    <filter id="soft" x="-100%" y="-100%" width="300%" height="300%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="1" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="120" cy="120" r="82" stroke="url(#rim)" stroke-width="2.4" filter="url(#soft)" />
+  <circle cx="120" cy="120" r="84.5" stroke="#e79bbb" stroke-width=".7" opacity=".75" />
+  <g class="orbit petals-fast" fill="#f2aacd">
+    <g transform="translate(32.10 106.08) rotate(25) scale(0.72)">
+      <use class="flutter" href="#petal" style="animation-delay:-0.00s" />
+    </g>
+    <g transform="translate(88.53 42.12) rotate(-5) scale(0.55)">
+      <use class="flutter" href="#petal" style="animation-delay:-0.62s" />
+    </g>
+    <g transform="translate(175.36 37.93) rotate(105) scale(0.64)">
+      <use class="flutter" href="#petal" style="animation-delay:-1.24s" />
+    </g>
+    <g transform="translate(210.32 131.09) rotate(70) scale(0.56)">
+      <use class="flutter" href="#petal" style="animation-delay:-1.86s" />
+    </g>
+    <g transform="translate(139.84 199.56) rotate(-35) scale(0.67)">
+      <use class="flutter" href="#petal" style="animation-delay:-2.48s" />
+    </g>
+    <g transform="translate(40.94 179.58) rotate(130) scale(0.65)">
+      <use class="flutter" href="#petal" style="animation-delay:-3.10s" />
+    </g>
+  </g>
+  <g class="orbit petals-slow" fill="#f2aacd">
+    <g transform="translate(48.86 77.25) rotate(60) scale(0.82)">
+      <use class="flutter" href="#petal" style="animation-delay:-0.31s" />
+    </g>
+    <g transform="translate(146.61 32.98) rotate(85) scale(0.8)">
+      <use class="flutter" href="#petal" style="animation-delay:-0.93s" />
+    </g>
+    <g transform="translate(214.54 103.33) rotate(-15) scale(0.85)">
+      <use class="flutter" href="#petal" style="animation-delay:-1.55s" />
+    </g>
+    <g transform="translate(181.56 188.37) rotate(10) scale(0.83)">
+      <use class="flutter" href="#petal" style="animation-delay:-2.17s" />
+    </g>
+    <g transform="translate(65.92 194.43) rotate(-15) scale(0.91)">
+      <use class="flutter" href="#petal" style="animation-delay:-2.79s" />
+    </g>
+    <g transform="translate(29.64 145.91) rotate(135) scale(0.64)">
+      <use class="flutter" href="#petal" style="animation-delay:-3.41s" />
+    </g>
+  </g>
+  <g class="orbit" fill="#fce7ee" opacity=".6">
+    <circle class="twinkle" cx="118.32" cy="24.01" r=".9" style="animation-delay:-0.00s" />
+    <circle class="twinkle" cx="199.52" cy="48.40" r=".9" style="animation-delay:-0.40s" />
+    <circle class="twinkle" cx="209.99" cy="165.85" r=".9" style="animation-delay:-0.80s" />
+    <circle class="twinkle" cx="83.80" cy="214.29" r=".9" style="animation-delay:-1.20s" />
+    <circle class="twinkle" cx="19.86" cy="160.46" r=".9" style="animation-delay:-1.60s" />
+    <circle class="twinkle" cx="17.14" cy="114.61" r=".9" style="animation-delay:-2.00s" />
+  </g>
+</svg>

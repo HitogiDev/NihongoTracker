@@ -62,6 +62,11 @@ export function errorHandler(
   let {message} = error;
   let {code} = error;
 
+  if (err.name === 'MulterError') {
+    statusCode = 'code' in err && err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    message = statusCode === 413 ? 'File is too large' : 'Invalid file upload';
+  }
+
   // Manejo específico de errores de MongoDB
   if (err.name === 'CastError' && 'kind' in err && err.kind === 'ObjectId') {
     statusCode = 404;

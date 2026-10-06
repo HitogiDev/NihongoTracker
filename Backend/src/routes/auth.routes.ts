@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requestRateLimit } from '../middlewares/requestRateLimit.js';
 import {
   login,
   register,
@@ -25,13 +26,13 @@ router.post('/logout', logout);
 
 router.get('/verify', requireSessionAuth, protect, verifyToken);
 
-router.post('/verify-email', verifyEmail);
+router.post('/verify-email', requestRateLimit(20, 600_000), verifyEmail);
 
 router.post('/resend-verification', protect, resendVerificationEmail);
 
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', requestRateLimit(5, 600_000), forgotPassword);
 
-router.post('/reset-password/:token', resetPassword);
+router.post('/reset-password/:token', requestRateLimit(20, 600_000), resetPassword);
 
 router.get('/stats', getPublicStats);
 

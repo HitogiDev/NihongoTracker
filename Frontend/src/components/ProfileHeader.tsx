@@ -27,16 +27,14 @@ import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
-import { getAvatarInitials } from '../utils/avatar';
 import {
-  getAvatarFrameClass,
   getNameEffectRender,
   getProfileAccentStyle,
   getSignatureStatValue,
-  hasAvatarFrame,
 } from '../utils/customization';
 import { getAchievementName } from '../utils/achievementText';
 import BannerEffectOverlay from './BannerEffectOverlay';
+import UserAvatar from './UserAvatar';
 import { useUserDataStore } from '../store/userData';
 import Spinner from './ui/Spinner';
 import {
@@ -80,7 +78,6 @@ export default function ProfileHeader() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useUserDataStore((state) => state.user);
-  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   const {
@@ -149,10 +146,6 @@ export default function ProfileHeader() {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
-  useEffect(() => {
-    setAvatarLoadFailed(false);
-  }, [user?.avatar]);
-
   if (isPrivateProfile) {
     return <PrivateProfileNotice username={username} />;
   }
@@ -188,31 +181,15 @@ export default function ProfileHeader() {
               {isLoadingUser ? (
                 <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
               ) : (
-                <div
-                  className={
-                    hasAvatarFrame(customization?.avatarFrame)
-                      ? `w-24 h-24 ${getAvatarFrameClass(customization?.avatarFrame)}`
-                      : undefined
-                  }
-                >
-                  <div className="avatar">
-                    <div className={`${hasAvatarFrame(customization?.avatarFrame) ? 'w-full h-full' : 'w-24'} rounded-full`}>
-                      {user?.avatar && !avatarLoadFailed ? (
-                        <img
-                          src={user.avatar}
-                          alt={t('header.avatarAlt', {
-                            username: user.username ?? '',
-                          })}
-                          onError={() => setAvatarLoadFailed(true)}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-base-300 flex items-center justify-center text-xl font-semibold">
-                          {getAvatarInitials(user?.username)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <UserAvatar
+                  username={user?.username}
+                  avatar={user?.avatar}
+                  alt={t('header.avatarAlt', { username: user?.username ?? '' })}
+                  frame={customization?.avatarFrame}
+                  customization={customization}
+                  containerClassName="w-24 h-24 rounded-full"
+                  textClassName="text-xl font-semibold"
+                />
               )}
             </div>
             <div className="py-2 sm:py-22px px-25px w-full sm:w-auto text-center sm:text-left">

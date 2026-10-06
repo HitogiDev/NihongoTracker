@@ -2,10 +2,12 @@ import {
   Children,
   isValidElement,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   ButtonHTMLAttributes,
   ChangeEvent,
@@ -20,11 +22,19 @@ interface DropdownOption {
   disabled?: boolean;
 }
 
+interface MenuPosition {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+}
+
 type DropdownSelectProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   'children' | 'defaultValue' | 'onChange' | 'value'
 > & {
   children: ReactNode;
+  optionClassName?: string;
   value?: string | number;
   defaultValue?: string | number;
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
@@ -79,6 +89,7 @@ function getDropdownLayoutClasses(className = '') {
 
 export default function DropdownSelect({
   children,
+  optionClassName,
   value,
   defaultValue,
   onChange,
@@ -96,6 +107,9 @@ export default function DropdownSelect({
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
   const selectedValue = value === undefined ? internalValue : String(value);
   const selectedOption =
     options.find((option) => option.value === selectedValue) ?? options[0];
@@ -111,7 +125,11 @@ export default function DropdownSelect({
     if (!isOpen) return undefined;
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!dropdownRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !dropdownRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         setIsOpen(false);
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
@@ -119,9 +137,73 @@ export default function DropdownSelect({
       }
     };
 
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target as Node;
+      if (
+        !dropdownRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('focusin', handleFocusIn);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('focusin', handleFocusIn);
+    };
   }, [isOpen]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setMenuPosition(null);
+      return undefined;
+    }
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const viewportPadding = 8;
+      const width = Math.min(
+        Math.max(rect.width, 192),
+        window.innerWidth - viewportPadding * 2,
+      );
+      const left = Math.max(
+        viewportPadding,
+        Math.min(rect.left, window.innerWidth - width - viewportPadding),
+      );
+      const desiredHeight = Math.min(
+        menuRef.current?.scrollHeight ?? options.length * 40 + 16,
+        288,
+      );
+      const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+      const spaceAbove = rect.top - viewportPadding;
+      const openAbove = spaceBelow < desiredHeight && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(
+        96,
+        Math.min(desiredHeight, openAbove ? spaceAbove : spaceBelow),
+      );
+      const top = openAbove
+        ? Math.max(viewportPadding, rect.top - maxHeight - 4)
+        : Math.min(
+            window.innerHeight - maxHeight - viewportPadding,
+            rect.bottom + 4,
+          );
+
+      setMenuPosition({ top, left, width, maxHeight });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, options.length]);
 
   const handleSelect = (nextValue: string) => {
     if (disabled) return;
@@ -136,14 +218,10 @@ export default function DropdownSelect({
     <div
       ref={dropdownRef}
       className={`dropdown dropdown-bottom dropdown-start ${layoutClasses || 'w-fit max-w-full'} ${isOpen ? 'dropdown-open' : ''}`}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-          setIsOpen(false);
-        }
-      }}
     >
       <button
         {...buttonProps}
+        ref={triggerRef}
         type="button"
         id={id}
         aria-haspopup="listbox"
@@ -160,27 +238,43 @@ export default function DropdownSelect({
         <span className="truncate">{selectedOption?.label}</span>
         <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
-      <ul
-        tabIndex={0}
-        role="listbox"
-        aria-hidden={!isOpen}
-        className={`dropdown-content menu menu-vertical flex-nowrap surface-raised z-[100] mt-1 max-h-72 w-full min-w-48 start-0 end-auto top-full bottom-auto overflow-x-hidden overflow-y-auto p-2 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none invisible'}`}
-      >
-        {options.map((option) => (
-          <li key={option.value}>
-            <button
-              type="button"
-              role="option"
-              aria-selected={selectedValue === option.value}
-              className={selectedValue === option.value ? 'active' : ''}
-              disabled={option.disabled}
-              onClick={() => handleSelect(option.value)}
-            >
-              {option.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {isOpen && menuPosition && createPortal(
+        <ul
+          ref={menuRef}
+          tabIndex={0}
+          role="listbox"
+          className="menu menu-vertical flex-nowrap surface-raised z-[1000] overflow-x-hidden overflow-y-auto p-2"
+          style={{
+            position: 'fixed',
+            top: menuPosition.top,
+            left: menuPosition.left,
+            width: menuPosition.width,
+            maxHeight: menuPosition.maxHeight,
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setIsOpen(false);
+          }}
+        >
+          {options.map((option) => (
+            <li key={option.value}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={selectedValue === option.value}
+                className={[
+                  optionClassName,
+                  selectedValue === option.value ? 'active' : '',
+                ].filter(Boolean).join(' ')}
+                disabled={option.disabled}
+                onClick={() => handleSelect(option.value)}
+              >
+                {option.label}
+              </button>
+            </li>
+          ))}
+        </ul>,
+        document.body,
+      )}
       {name && (
         <input
           type="hidden"

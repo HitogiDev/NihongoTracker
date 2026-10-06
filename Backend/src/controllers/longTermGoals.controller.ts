@@ -13,6 +13,7 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { isValidGoalMediaType } from '../services/goalMediaType.js';
 import { goalTodayKey, isGoalTargetDatePast } from '../services/goalPeriod.js';
+import { requireGoalVisibility } from '../services/goalVisibility.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -32,6 +33,8 @@ export async function getLongTermGoals(
     if (!foundUser) {
       throw apiError('user.notFound', 404, 'User not found');
     }
+
+    await requireGoalVisibility(foundUser, res.locals.user);
 
     // Get user's long-term goals
     const goals = await LongTermGoal.find({ user: foundUser._id }).sort({

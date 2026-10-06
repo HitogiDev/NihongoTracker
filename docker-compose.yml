@@ -7,7 +7,7 @@ services:
       - Backend/.env
     environment:
       MEILISEARCH_HOST: http://meilisearch:7700
-      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:?Set MEILISEARCH_API_KEY in Backend/.env and use --env-file Backend/.env}
     depends_on:
       mongo:
         condition: service_healthy
@@ -20,8 +20,6 @@ services:
   mongo:
     image: mongo:7
     restart: always
-    ports:
-      - '27017:27017'
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -38,13 +36,11 @@ services:
   meilisearch:
     image: getmeili/meilisearch:v1.51.0
     restart: always
-    ports:
-      - '7700:7700'
     environment:
       MEILI_UPGRADE_DB: 'true'
       MEILI_ENV: production
       MEILI_NO_ANALYTICS: 'true'
-      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:?Set MEILISEARCH_API_KEY in Backend/.env and use --env-file Backend/.env}
     volumes:
       - meilisearch-data:/meili_data
 

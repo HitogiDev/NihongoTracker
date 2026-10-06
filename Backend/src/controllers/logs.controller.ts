@@ -19,7 +19,6 @@ import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import updateStats, {
-  updateLevelAndXp,
   recalculateUserXpFromLogs,
 } from '../services/updateStats.js';
 import {
@@ -1307,6 +1306,16 @@ export async function deleteLog(
   }
 }
 
+async function recomputeDeletedMedia(logs: Pick<ILog, 'user' | 'mediaId' | 'type'>[]) {
+  const affected = new Map<string, Pick<ILog, 'user' | 'mediaId' | 'type'>>();
+  for (const log of logs) {
+    if (log.mediaId) affected.set(JSON.stringify([String(log.user), log.mediaId, log.type]), log);
+  }
+  for (const log of affected.values()) {
+    await evaluateAutoCompleteForUserMedia(String(log.user), String(log.mediaId), log.type);
+  }
+}
+
 /**
  * Bulk-delete multiple logs belonging to the authenticated user.
  * All logs are deleted first, then stats are recalculated ONCE to avoid
@@ -1332,7 +1341,7 @@ export async function deleteLogsBulk(
       _id: { $in: ids },
       user: userId,
     })
-      .select('_id')
+      .select('_id user mediaId type')
       .lean();
 
     // Delete all requested logs that belong to this user in one query
@@ -1354,6 +1363,7 @@ export async function deleteLogsBulk(
 
     // Recalculate streaks once after all deletions
     await recalculateStreaksForUser(userId);
+    await recomputeDeletedMedia(ownedLogs);
     await deleteActivitiesBySource(
       'log',
       ownedLogs.map((log) => new Types.ObjectId(String(log._id)))
@@ -1385,7 +1395,7 @@ export async function adminDeleteLogsBulk(
 
     // Find the logs first to know which user(s) to update stats for
     const logsToDelete = await Log.find({ _id: { $in: ids } })
-      .select('_id user xp type')
+      .select('_id user xp type mediaId')
       .lean();
 
     if (logsToDelete.length === 0) {
@@ -1407,63 +1417,11 @@ export async function adminDeleteLogsBulk(
       const user = await User.findById(uid);
       if (!user?.stats) continue;
 
-      const allUserLogs = await Log.aggregate([
-        { $match: { user: user._id } },
-        {
-          $group: {
-            _id: null,
-            totalXp: { $sum: '$xp' },
-            listeningXp: {
-              $sum: {
-                $cond: [
-                  {
-                    $in: [
-                      '$type',
-                      ['anime', 'video', 'movie', 'tv show', 'audio'],
-                    ],
-                  },
-                  '$xp',
-                  0,
-                ],
-              },
-            },
-            readingXp: {
-              $sum: {
-                $cond: [
-                  {
-                    $in: [
-                      '$type',
-                      ['manga', 'light-novel', 'reading', 'vn', 'game'],
-                    ],
-                  },
-                  '$xp',
-                  0,
-                ],
-              },
-            },
-          },
-        },
-      ]);
-
-      const totals = allUserLogs[0] ?? {
-        totalXp: 0,
-        listeningXp: 0,
-        readingXp: 0,
-      };
-
-      user.stats.userXp = Math.max(0, totals.totalXp);
-      user.stats.listeningXp = Math.max(0, totals.listeningXp);
-      user.stats.readingXp = Math.max(0, totals.readingXp);
-
-      updateLevelAndXp(user.stats, 'user');
-      updateLevelAndXp(user.stats, 'listening');
-      updateLevelAndXp(user.stats, 'reading');
-
-      user.markModified('stats');
-      await user.save();
+      await recalculateUserXpFromLogs(user._id);
       await recalculateStreaksForUser(user._id);
     }
 
+    await recomputeDeletedMedia(logsToDelete);
     return res.status(200).json({ deletedCount: logsToDelete.length });
   } catch (error) {
     return next(error as customError);
@@ -3856,9 +3814,8 @@ export async function getRecentMediaLogs(
 ) {
   try {
     const { mediaId, type } = req.query;
-    const limit = req.query.limit
-      ? Number.parseInt(req.query.limit as string, 10)
-      : 50;
+    const requestedLimit = Number(req.query.limit ?? 50);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(1, Math.trunc(requestedLimit))) : 50;
 
     if (!mediaId || !type) {
       return res.status(400).json({ message: 'MediaId and type are required' });

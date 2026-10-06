@@ -1,11 +1,14 @@
-import { ILog, IMediaDocument } from '../types';
-import { useState, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { assignMediaFn, getUserLogsFn, searchMediaFn } from '../api/trackerApi';
+import { useAutoMatch } from '../hooks/useAutoMatch';
+import { useMatchingSelection } from '../hooks/useMatchingSelection';
+import { useMediaAssignment } from '../hooks/useMediaAssignment';
+import { IMediaDocument } from '../types';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getUserLogsFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import useSearch from '../hooks/useSearch';
-import { useUserDataStore } from '../store/userData';
+
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
@@ -18,17 +21,12 @@ interface BookLogsProps {
 
 function BookLogs({ username, isActive = true }: BookLogsProps) {
   const { t } = useTranslation(['logs', 'common']);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedBook, setSelectedBook] = useState<IMediaDocument | undefined>(
-    undefined
-  );
-  const [selectedLogs, setSelectedLogs] = useState<ILog[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
-  const [assignedLogs, setAssignedLogs] = useState<ILog[]>([]);
-  const [shouldSearch, setShouldSearch] = useState<boolean>(true);
-
-  const { user } = useUserDataStore();
-  const currentUsername = user?.username;
+  const {
+    searchQuery, setSearchQuery, selectedMedia: selectedBook, setSelectedMedia: setSelectedBook,
+    selectedLogs, selectedGroup, assignedLogs, setAssignedLogs,
+    shouldSearch, setShouldSearch,
+    handleCheckboxChange, handleOpenGroup, handleLogsDismissed, resetState, clearSelection,
+  } = useMatchingSelection();
 
   const {
     data: bookResult,
@@ -48,36 +46,11 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const queryClient = useQueryClient();
+
 
   if (searchBookError && searchBookError instanceof AxiosError) {
     toast.error(searchBookError.response?.data.message);
   }
-
-  const handleCheckboxChange = useCallback((log: ILog) => {
-    setSelectedLogs((prevSelectedLogs) =>
-      prevSelectedLogs.includes(log)
-        ? prevSelectedLogs.filter((selectedLog) => selectedLog !== log)
-        : [...prevSelectedLogs, log]
-    );
-  }, []);
-
-  const handleLogsDismissed = useCallback(() => {
-    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-    setSelectedLogs([]);
-    setSelectedGroup(null);
-  }, [selectedLogs]);
-
-  const handleOpenGroup = useCallback(
-    (group: ILog[] | null, title: string, groupIndex: number) => {
-      if (!group) return;
-      setSelectedGroup(groupIndex);
-      setSelectedLogs(group);
-      setSearchQuery(title);
-      setShouldSearch(true);
-    },
-    []
-  );
 
   const groupedLogs = useGroupLogs(logs, 'book');
 
@@ -87,43 +60,8 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
     assignedLogs
   );
 
-  const { mutate: assignMedia, isPending: isAssigning } = useMutation({
-    mutationFn: (
-      data: {
-        logsId: string[];
-        contentMedia: IMediaDocument;
-      }[]
-    ) => assignMediaFn(data),
-    onSuccess: () => {
-      setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-      setSelectedLogs([]);
-      setSelectedBook(undefined);
-      setSearchQuery('');
-      setSelectedGroup(null);
-
-      queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
-      queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
-      queryClient.invalidateQueries({
-        queryKey: ['ImmersionList', currentUsername],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['userStats', currentUsername],
-      });
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['user', 'ranking'].includes(query.queryKey[0] as string),
-      });
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-
-      toast.success(t('matcher.assignSuccess'));
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
-      } else {
-        toast.error(t('matcher.assignError'));
-      }
-    },
+  const { mutate: assignMedia, isPending: isAssigning } = useMediaAssignment({
+    username, type: 'book', onAssigned: resetState, successMessage: t('matcher.assignSuccess'),
   });
 
   const handleAssignMedia = useCallback(() => {
@@ -165,123 +103,11 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
       },
     ]);
     setShouldSearch(false);
-  }, [selectedBook, selectedLogs, assignMedia, t]);
+  }, [selectedBook, selectedLogs, assignMedia, setShouldSearch, t]);
 
-  const [isAutoMatching, setIsAutoMatching] = useState(false);
-  const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
-
-  const performAutoMatch = useCallback(async () => {
-    setShowAutoMatchModal(false);
-    setIsAutoMatching(true);
-    try {
-      const matches: Array<{
-        logsId: string[];
-        contentMedia: IMediaDocument;
-      }> = [];
-
-      for (const [groupName, logsGroup] of Object.entries(
-        filteredGroupedLogs
-      )) {
-        try {
-          const dbResults = await searchMediaFn({
-            type: 'book',
-            search: groupName,
-            perPage: 5,
-          });
-
-          if (dbResults && dbResults.length > 0) {
-            const exactMatch = dbResults.find((book) => {
-              const titles = [
-                book.title.contentTitleRomaji,
-                book.title.contentTitleEnglish,
-                book.title.contentTitleNative,
-                ...(book.synonyms || []),
-              ].filter(Boolean);
-
-              return titles.some(
-                (title) => title?.toLowerCase() === groupName.toLowerCase()
-              );
-            });
-
-            if (exactMatch) {
-              matches.push({
-                logsId: logsGroup.map((log) => log._id),
-                contentMedia: exactMatch,
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`Search failed for: ${groupName}`, error);
-        }
-      }
-
-      if (matches.length > 0) {
-        const BATCH_SIZE = 50;
-        const batches = [];
-        for (let i = 0; i < matches.length; i += BATCH_SIZE) {
-          batches.push(matches.slice(i, i + BATCH_SIZE));
-        }
-
-        let totalProcessed = 0;
-        for (const batch of batches) {
-          await new Promise<void>((resolve, reject) => {
-            assignMedia(batch, {
-              onSuccess: () => {
-                totalProcessed += batch.reduce(
-                  (toUpdateCount, toUpdate) =>
-                    toUpdateCount + toUpdate.logsId.length,
-                  0
-                );
-                resolve();
-              },
-              onError: (error) => {
-                reject(error);
-              },
-            });
-          });
-        }
-
-        const assignedLogIds = matches.flatMap((m) => m.logsId);
-        const newlyAssignedLogs =
-          logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
-        setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
-
-        queryClient.invalidateQueries({
-          queryKey: ['bookLogs', username, 'book'],
-        });
-
-        toast.success(
-          t('matcher.autoMatchedSuccess', {
-            count: totalProcessed,
-            matches: matches.length,
-            type: t('common:mediaTypesPlural.book'),
-          })
-        );
-      } else {
-        toast.info(t('matcher.noExactMatches'));
-      }
-    } catch (error) {
-      console.error('Auto-match error:', error);
-      toast.error(t('matcher.autoMatchFailed'));
-    } finally {
-      setIsAutoMatching(false);
-    }
-  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username, t]);
-
-  const handleAutoMatch = useCallback(async () => {
-    if (Object.keys(filteredGroupedLogs).length === 0) {
-      toast.info(t('matcher.noGroups'));
-      return;
-    }
-
-    const groupCount = Object.keys(filteredGroupedLogs).length;
-    if (groupCount > 20) {
-      setShowAutoMatchModal(true);
-      return;
-    }
-
-    await performAutoMatch();
-  }, [filteredGroupedLogs, performAutoMatch, t]);
+  const { isAutoMatching, showAutoMatchModal, setShowAutoMatchModal, performAutoMatch, handleAutoMatch } = useAutoMatch({
+    type: 'book', username, groups: filteredGroupedLogs, logs, setAssignedLogs, onAssigned: clearSelection,
+  });
 
   if (isLoadingLogs) {
     return (
@@ -426,7 +252,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
                                 <input
                                   type="checkbox"
                                   className="checkbox checkbox-primary checkbox-sm"
-                                  checked={selectedLogs.includes(log)}
+                                  checked={selectedLogs.some((selected) => selected._id === log._id)}
                                   onChange={(e) => {
                                     e.stopPropagation();
                                     handleCheckboxChange(log);

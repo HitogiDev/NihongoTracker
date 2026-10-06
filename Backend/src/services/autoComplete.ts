@@ -1,18 +1,9 @@
-import axios from 'axios';
 import { Types } from 'mongoose';
+import { fetchJitenDetail } from './jiten.js';
 import Log from '../models/log.model.js';
 import { MediaBase } from '../models/media.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { IMediaDocument } from '../types.js';
-
-const LinkTypeObject: Record<string, number> = {
-  vn: 2,
-  anime: 4,
-  manga: 4,
-  reading: 4,
-  movie: 4,
-  book: 6, // GoogleBooks
-};
 
 export async function evaluateAutoCompleteForUserMedia(
   userId: Types.ObjectId | string,
@@ -59,50 +50,9 @@ export async function evaluateAutoCompleteForUserMedia(
         normalizedType
       )
     ) {
-      try {
-        const jitenURL = process.env.JITEN_API_URL;
-        if (jitenURL) {
-          const LinkType = LinkTypeObject[normalizedType] ?? null;
-          if (LinkType) {
-            // Jiten links books by their raw Google Books volume id. Strip our
-            // `gbooks-` namespace prefix so the lookup matches.
-            const jitenLinkId =
-              normalizedType === 'book'
-                ? String(mediaId).replace(/^gbooks-/, '')
-                : mediaId;
-            const byLink = await axios.get(
-              `${jitenURL}/media-deck/by-link-id/${LinkType}/${jitenLinkId}`,
-              { validateStatus: (s) => s === 200 || s === 404 }
-            );
-            if (
-              byLink.status === 200 &&
-              byLink.data &&
-              byLink.data.length > 0
-            ) {
-              const detail = await axios.get(
-                `${jitenURL}/media-deck/${byLink.data[0]}/detail`,
-                { validateStatus: (s) => s === 200 || s === 404 }
-              );
-              if (detail.status === 200 && detail.data) {
-                const parsedCount = Number(
-                  detail.data?.data?.mainDeck?.characterCount
-                );
-                mediaCharTotal =
-                  Number.isFinite(parsedCount) && parsedCount > 0
-                    ? parsedCount
-                    : null;
-              }
-            }
-          }
-        }
-      } catch (err) {
-        // Ignore Jiten errors, absence of chars means we cannot auto-complete by chars
-        console.debug(
-          'Jiten lookup failed for',
-          mediaId,
-          (err instanceof Error ? err.message : err)
-        );
-      }
+      const detail = await fetchJitenDetail(normalizedType, mediaId);
+      const parsedCount = Number(detail?.data.mainDeck.characterCount);
+      mediaCharTotal = Number.isFinite(parsedCount) && parsedCount > 0 ? parsedCount : null;
     }
 
     let shouldComplete: boolean | null = null;

@@ -11,7 +11,7 @@ import {
   getDailyGoals,
   updateDailyGoal,
 } from '../controllers/dailyGoals.controller.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { optionalProtect, protect } from '../middlewares/authMiddleware.js';
 import {
   createImmersionForecast,
   deleteImmersionForecast,
@@ -23,6 +23,8 @@ import {
 
 const router = Router();
 
+router.get('/long-term/:username', optionalProtect, getLongTermGoals);
+router.get('/daily/:username', optionalProtect, getDailyGoals);
 router.use(protect);
 
 router.get('/forecasts', getImmersionForecasts);
@@ -33,13 +35,11 @@ router.patch('/forecasts/:forecastId', updateImmersionForecast);
 router.delete('/forecasts/:forecastId', deleteImmersionForecast);
 
 // Long-term goals routes
-router.get('/long-term/:username', getLongTermGoals);
 router.post('/long-term', createLongTermGoal);
 router.patch('/long-term/:goalId', updateLongTermGoal);
 router.delete('/long-term/:goalId', deleteLongTermGoal);
 
 // Daily goals routes
-router.get('/daily/:username', getDailyGoals);
 router.post('/daily', createDailyGoal);
 router.patch('/daily/:goalId', updateDailyGoal);
 router.delete('/daily/:goalId', deleteDailyGoal);

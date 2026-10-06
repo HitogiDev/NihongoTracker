@@ -100,10 +100,8 @@ async function authenticateRequest(
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.TOKEN_SECRET!);
-    const user = await loadAndValidateUser(
-      (decoded as decodedJWT).id.toString()
-    );
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET!) as decodedJWT;
+    const user = await loadAndValidateUser(decoded.id.toString());
     return user;
   } catch (error) {
     res.clearCookie('jwt');

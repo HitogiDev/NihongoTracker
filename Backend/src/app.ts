@@ -33,6 +33,9 @@ import swaggerRoutes from './swagger.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY.split(',').map((address) => address.trim()).filter(Boolean));
+}
 
 app.use(
   '/api/patreon/webhook',
@@ -156,12 +159,5 @@ app.get('*', (req: Request, res: Response, next: NextFunction) => {
 // Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-const globalErrorHandler = function (err: Error): void {
-  console.error('Uncaught Exception', err);
-};
-
-process.on('unhandledRejection', globalErrorHandler);
-process.on('uncaughtException', globalErrorHandler);
 
 export default app;

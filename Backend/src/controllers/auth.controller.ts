@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { FilterQuery } from 'mongoose';
+import { createHash, randomBytes } from 'node:crypto';
 import User from '../models/user.model.js';
 import generateToken from '../libs/jwt.js';
+import { hashPassword } from '../libs/password.js';
 import {
   ILogin,
   IRegister,
@@ -89,7 +91,7 @@ export async function register(
     }
 
     const verificationToken = normalizedEmail
-      ? Math.floor(100000 + Math.random() * 900000).toString()
+      ? randomBytes(32).toString('hex')
       : undefined;
 
     const user = await User.create({
@@ -116,12 +118,13 @@ export async function register(
 
     generateToken(res, user._id.toString());
 
-    if (normalizedEmail && user.verificationToken)
+    if (normalizedEmail && user.verificationToken) {
       await sendVerificationEmail(
         normalizedEmail,
         user.verificationToken,
         user.settings?.language
       );
+    }
 
     return res.status(201).json({
       _id: user._id,
@@ -142,7 +145,11 @@ export async function register(
   }
 }
 
-export async function login(req: Request, res: Response, next: NextFunction) {
+export async function login(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const { login: loginValue, password }: ILogin = req.body;
   try {
     if (!loginValue || !password)
@@ -176,8 +183,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         user.stats?.lastStreakDate ?? null,
         tz
       );
-      generateToken(res, user._id.toString());
-      return res.status(200).json({
+      const responseUser = {
         _id: user._id,
         username: user.username,
         email: user.email,
@@ -195,7 +201,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         patreon: user.patreon,
         moderation: user.moderation,
         customization: user.customization ?? {},
-      });
+      };
+      generateToken(res, user._id.toString());
+      return res.status(200).json(responseUser);
     }
     throw apiError(
       'auth.invalidCredentials',
@@ -231,7 +239,7 @@ export async function verifyEmail(
 ) {
   const { token } = req.body;
   try {
-    if (!token) {
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
       throw apiError('auth.tokenRequired', 400, 'Token is required');
     }
     const user = await User.findOne({
@@ -297,9 +305,8 @@ export async function forgotPassword(
       strength: 2,
     });
     if (user) {
-      user.resetPasswordToken = Math.floor(
-        100000 + Math.random() * 900000
-      ).toString();
+      const resetToken = randomBytes(32).toString('hex');
+      user.resetPasswordToken = createHash('sha256').update(resetToken).digest('hex');
       user.resetPasswordTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
       await user.save();
 
@@ -309,7 +316,7 @@ export async function forgotPassword(
         'http://localhost:5173';
       await sendPasswordResetEmail(
         email,
-        `${baseUrl}/reset-password/${user.resetPasswordToken}`,
+        `${baseUrl}/reset-password/${resetToken}`,
         user.settings?.language
       );
     }
@@ -331,10 +338,10 @@ export async function resetPassword(
   const { password, passwordConfirmation } = req.body;
 
   try {
-    if (!token) {
+    if (!token || !/^[a-f0-9]{64}$/.test(token)) {
       throw apiError('auth.tokenRequired', 400, 'Token is required');
     }
-    if (!password || !passwordConfirmation) {
+    if (typeof password !== 'string' || !password || typeof passwordConfirmation !== 'string' || !passwordConfirmation) {
       throw apiError(
         'auth.passwordConfirmationRequired',
         400,
@@ -345,7 +352,7 @@ export async function resetPassword(
       throw apiError('auth.passwordMismatch', 400, 'Passwords do not match');
     }
     const user = await User.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: createHash('sha256').update(token).digest('hex'),
       resetPasswordTokenExpiry: { $gt: new Date() },
     });
     if (!user) {
@@ -353,11 +360,20 @@ export async function resetPassword(
     }
     if (!user.email)
       throw apiError('auth.noEmailSet', 400, 'User does not have an email set');
-    user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordTokenExpiry = undefined;
-    await user.save();
-    sendPasswordResetSuccessEmail(user.email, user.settings?.language);
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        resetPasswordToken: createHash('sha256').update(token).digest('hex'),
+        resetPasswordTokenExpiry: { $gt: new Date() },
+      },
+      {
+        $set: { password: await hashPassword(password) },
+        $unset: { resetPasswordToken: '', resetPasswordTokenExpiry: '' },
+      },
+      { runValidators: true }
+    );
+    if (!updatedUser) throw apiError('auth.invalidResetToken', 400, 'Invalid or expired token');
+    void sendPasswordResetSuccessEmail(user.email, user.settings?.language).catch((error) => console.error('Password reset confirmation email failed:', error));
     res.status(200).json({ message: 'Password has been reset successfully!' });
   } catch (error) {
     return next(error as customError);
@@ -408,8 +424,7 @@ export async function resendVerificationEmail(
     }
 
     // Generate new verification token
-    const crypto = await import('crypto');
-    user.verificationToken = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = randomBytes(32).toString('hex');
     user.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     user.lastVerificationEmailSent = new Date();
 

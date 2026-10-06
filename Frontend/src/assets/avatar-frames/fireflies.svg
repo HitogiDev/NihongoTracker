@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <style>
+    .orbit { transform-origin: 120px 120px; animation: orbit 30s linear infinite; }
+    .orbit-reverse { animation-direction: reverse; }
+    .drift { animation: drift 3.2s ease-in-out infinite; }
+    .flicker { animation: flicker 2.1s ease-in-out infinite; }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+    @keyframes drift { 0%,100% { transform: translate(0,-3px); } 50% { transform: translate(3px,3px); } }
+    @keyframes flicker { 0%,100% { opacity: .5; } 45% { opacity: 1; } 70% { opacity: .78; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <defs>
+    <filter id="halo" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7" />
+    </filter>
+    <radialGradient id="light">
+      <stop stop-color="#72ff76" stop-opacity=".9" />
+      <stop offset=".3" stop-color="#53f66b" stop-opacity=".55" />
+      <stop offset="1" stop-color="#36e353" stop-opacity="0" />
+    </radialGradient>
+    <g id="fly">
+      <circle r="11" fill="url(#light)" />
+      <circle r="2.8" fill="#8bff9c" />
+      <circle r="1.4" fill="#d7ffd3" />
+    </g>
+  </defs>
+  <circle cx="120" cy="120" r="85" stroke="#43d553" stroke-width="13" opacity=".32" filter="url(#halo)" />
+  <g class="orbit" style="animation-duration:18s">
+    <g transform="translate(99.53 31.33) scale(1)">
+      <g class="drift" style="animation-delay:-0.00s;animation-duration:2.70s">
+        <use class="flicker" href="#fly" style="animation-delay:-0.00s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit orbit-reverse" style="animation-duration:28s">
+    <g transform="translate(191.88 174.16) scale(0.8)">
+      <g class="drift" style="animation-delay:-0.41s;animation-duration:2.93s">
+        <use class="flicker" href="#fly" style="animation-delay:-0.53s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit" style="animation-duration:24s">
+    <g transform="translate(133.22 214.08) scale(0.75)">
+      <g class="drift" style="animation-delay:-0.82s;animation-duration:3.16s">
+        <use class="flicker" href="#fly" style="animation-delay:-1.06s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit orbit-reverse" style="animation-duration:36s">
+    <g transform="translate(45.43 164.81) scale(0.75)">
+      <g class="drift" style="animation-delay:-1.23s;animation-duration:3.39s">
+        <use class="flicker" href="#fly" style="animation-delay:-1.59s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit orbit-reverse" style="animation-duration:20s">
+    <g transform="translate(213.56 136.50) scale(0.48)">
+      <g class="drift" style="animation-delay:-1.64s;animation-duration:3.62s">
+        <use class="flicker" href="#fly" style="animation-delay:-2.12s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit" style="animation-duration:32s">
+    <g transform="translate(158.04 201.57) scale(0.6)">
+      <g class="drift" style="animation-delay:-2.05s;animation-duration:3.85s">
+        <use class="flicker" href="#fly" style="animation-delay:-2.65s" />
+      </g>
+    </g>
+  </g>
+  <g class="orbit" style="animation-duration:24s" fill="#92ec98">
+    <circle class="flicker" cx="209.00" cy="120.00" r="0.65" opacity=".5" style="animation-delay:-0.00s" />
+    <circle class="flicker" cx="128.45" cy="23.37" r="1.15" opacity=".5" style="animation-delay:-0.58s" />
+    <circle class="flicker" cx="32.35" cy="104.55" r="0.9" opacity=".5" style="animation-delay:-1.16s" />
+    <circle class="flicker" cx="94.89" cy="213.69" r="0.65" opacity=".5" style="animation-delay:-1.74s" />
+    <circle class="flicker" cx="203.63" cy="150.44" r="1.15" opacity=".5" style="animation-delay:-2.32s" />
+    <circle class="flicker" cx="160.99" cy="32.09" r="0.9" opacity=".5" style="animation-delay:-2.90s" />
+    <circle class="flicker" cx="42.92" cy="75.50" r="0.65" opacity=".5" style="animation-delay:-3.48s" />
+  </g>
+  <g class="orbit orbit-reverse" style="animation-duration:39s" fill="#92ec98">
+    <circle class="flicker" cx="51.43" cy="182.83" r="0.9" opacity=".5" style="animation-delay:-0.29s" />
+    <circle class="flicker" cx="181.48" cy="200.13" r="0.65" opacity=".5" style="animation-delay:-0.87s" />
+    <circle class="flicker" cx="198.44" cy="70.03" r="1.15" opacity=".5" style="animation-delay:-1.45s" />
+    <circle class="flicker" cx="73.36" cy="30.41" r="0.9" opacity=".5" style="animation-delay:-2.03s" />
+    <circle class="flicker" cx="34.08" cy="155.59" r="0.65" opacity=".5" style="animation-delay:-2.61s" />
+    <circle class="flicker" cx="150.37" cy="216.33" r="1.15" opacity=".5" style="animation-delay:-3.19s" />
+    <circle class="flicker" cx="210.80" cy="99.87" r="0.9" opacity=".5" style="animation-delay:-3.77s" />
+  </g>
+</svg>

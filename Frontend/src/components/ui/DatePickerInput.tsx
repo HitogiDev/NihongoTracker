@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { formatDateValue, parseDateValue } from '../../utils/dateInput';
+import { useUserDataStore } from '../../store/userData';
 import 'react-day-picker/style.css';
 
 interface DatePickerInputProps {
@@ -53,6 +54,9 @@ export default function DatePickerInput({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedValue = value ?? internalValue;
+  const weekStartsOn = useUserDataStore(
+    (state) => state.user?.settings?.weekStartsOn ?? 1,
+  );
   const selectedDate = parseDateValue(selectedValue);
   const minDate = parseDateValue(min);
   const maxDate = parseDateValue(max);
@@ -120,6 +124,7 @@ export default function DatePickerInput({
           className="rdp-themed"
           components={{ Chevron: DayPickerChevron }}
           mode="single"
+          weekStartsOn={weekStartsOn}
           selected={selectedDate}
           defaultMonth={selectedDate ?? minDate ?? maxDate ?? new Date()}
           startMonth={minDate}

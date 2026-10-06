@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { ILog } from '../types.js';
 
 const LOG_SCREEN_QUERY_KEYS: Partial<Record<ILog['type'], string[]>> = {
+  'light-novel': ['readingLogs'],
   anime: ['animeLogs'],
   manga: ['mangaLogs'],
   reading: ['readingLogs'],
@@ -12,6 +13,22 @@ const LOG_SCREEN_QUERY_KEYS: Partial<Record<ILog['type'], string[]>> = {
   'tv show': ['tvShowLogs'],
   book: ['bookLogs'],
 };
+
+export function invalidateGoalQueries(queryClient: QueryClient, username?: string) {
+  void queryClient.invalidateQueries({ predicate: (query) =>
+    ['dailyGoals', 'longTermGoals'].includes(String(query.queryKey[1])) &&
+    (!username || query.queryKey[0] === username),
+  });
+}
+
+export function invalidateMediaAssignmentQueries(queryClient: QueryClient, type: ILog['type'], username?: string) {
+  invalidateLogScreenQueries(queryClient, type, username);
+  invalidateGoalQueries(queryClient, username);
+  for (const key of ['logsAssign', 'logs', 'userStats']) {
+    void queryClient.invalidateQueries({ queryKey: username && key !== 'logsAssign' ? [key, username] : [key] });
+  }
+  void queryClient.invalidateQueries({ predicate: (query) => ['user', 'ranking'].includes(String(query.queryKey[0])) });
+}
 
 export const invalidateLogScreenQueries = (
   queryClient: QueryClient,

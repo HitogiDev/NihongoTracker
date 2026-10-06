@@ -7,13 +7,6 @@ export interface decodedJWT {
   exp: number;
 }
 
-export interface IRanking extends Document {
-  _id: Types.ObjectId;
-  month: number;
-  year: number;
-  users?: Types.ObjectId[];
-}
-
 export enum userRoles {
   admin = 'admin',
   user = 'user',
@@ -91,7 +84,7 @@ export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
  * rules and is the only place allowed to decide what a user may equip. The
  * stored value is always re-validated on write, never trusted from the client.
  */
-export const NAME_EFFECTS = ['none', 'gradient', 'glow', 'shimmer'] as const;
+export const NAME_EFFECTS = ['none', 'gradient', 'glow', 'shimmer', 'aura'] as const;
 export type NameEffect = (typeof NAME_EFFECTS)[number];
 
 export const AVATAR_FRAMES = [
@@ -102,8 +95,19 @@ export const AVATAR_FRAMES = [
   'sakura',
   'neon',
   'rainbow',
-  /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
-  'aura'
+  'hearts',
+  'petals',
+  'starlight',
+  'sigil',
+  'fireflies',
+  'constellations',
+  'aura',
+  'segmented',
+  'gradient',
+  'sweep',
+  'electric',
+  'text',
+  'crystal'
 ] as const;
 export type AvatarFrame = (typeof AVATAR_FRAMES)[number];
 
@@ -144,11 +148,20 @@ export type BannerEffect = (typeof BANNER_EFFECTS)[number];
 
 export interface IUserCustomization {
   nameEffect?: NameEffect;
-  /** Hex color, start of the gradient / glow tint. Empty means "theme color". */
+  /** Primary name color in hex. Empty selects the theme color. */
   nameColor1?: string;
-  /** Hex color, end of the gradient. Ignored by non-gradient effects. */
+  /** Secondary gradient color or Glow halo color in hex. */
   nameColor2?: string;
+  /** Strength from zero to one hundred for the animated name aura. */
+  namePulseIntensity?: number;
+  /** Pulse duration in seconds. */
+  namePulseSpeed?: number;
   avatarFrame?: AvatarFrame;
+  /** Optional outline and glow color around the avatar frame. */
+  frameColor1?: string;
+  frameColor2?: string;
+  frameColor3?: string;
+  frameText?: string;
   profileAccent?: ProfileAccent;
   /** Hex color backing `profileAccent: 'custom'`. Ignored by the presets. */
   accentColor?: string;
@@ -170,8 +183,10 @@ export interface IUserSettings {
     accent: string;
   };
   hideUnmatchedLogsAlert?: boolean;
+  hideAdultFromSearch?: boolean;
   hideRankingFeatures?: boolean;
   timezone?: string;
+  weekStartsOn?: 0 | 1;
   language?: SupportedLanguage;
   hiddenRecentMedia?: string[];
   statsLayout?: StatsGroupLayout[];
@@ -976,10 +991,12 @@ export interface IUpdateRequest {
   newPasswordConfirm?: string;
   discordId?: string;
   blurAdultContent?: string;
+  hideAdultFromSearch?: string;
   hideUnmatchedLogsAlert?: string;
   hideRankingFeatures?: string;
   hiddenRecentMedia?: string;
   timezone?: string;
+  weekStartsOn?: string;
   // string, not SupportedLanguage: PUT /users is multipart/form-data
   language?: string;
   about?: string;
@@ -1706,6 +1723,7 @@ export interface IClientToServerEvents {
 }
 
 export interface ISocketData {
+  hostRooms?: Record<string, string>;
   user?: {
     userId?: string;
     username: string;

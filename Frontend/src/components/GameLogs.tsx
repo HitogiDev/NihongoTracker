@@ -1,13 +1,14 @@
+import { useAutoMatch } from '../hooks/useAutoMatch';
+import { useMatchingSelection } from '../hooks/useMatchingSelection';
+import { useMediaAssignment } from '../hooks/useMediaAssignment';
 import { useQuery } from '@tanstack/react-query';
-import { getUserLogsFn, searchMediaFn } from '../api/trackerApi';
+import { getUserLogsFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { ILog, IMediaDocument } from '../types';
-import { useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { assignMediaFn } from '../api/trackerApi';
+import { useCallback } from 'react';
+
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
-import { useUserDataStore } from '../store/userData';
+
 import useSearch from '../hooks/useSearch';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
@@ -20,17 +21,12 @@ interface GameLogsProps {
 
 function GameLogs({ username, isActive = true }: GameLogsProps) {
   const { t } = useTranslation(['logs', 'common']);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedGame, setSelectedGame] = useState<IMediaDocument | undefined>(
-    undefined
-  );
-  const [selectedLogs, setSelectedLogs] = useState<ILog[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
-  const [assignedLogs, setAssignedLogs] = useState<ILog[]>([]);
-  const [shouldSearch, setShouldSearch] = useState<boolean>(true);
-
-  const { user } = useUserDataStore();
-  const currentUsername = user?.username;
+  const {
+    searchQuery, setSearchQuery, selectedMedia: selectedGame, setSelectedMedia: setSelectedGame,
+    selectedLogs, selectedGroup, assignedLogs, setAssignedLogs,
+    shouldSearch, setShouldSearch,
+    handleCheckboxChange, handleOpenGroup, handleLogsDismissed, resetState, clearSelection,
+  } = useMatchingSelection();
 
   const {
     data: logs,
@@ -44,7 +40,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const queryClient = useQueryClient();
+
 
   const {
     data: searchResult,
@@ -56,31 +52,6 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
     toast.error(searchError.response?.data.message);
   }
 
-  const handleCheckboxChange = useCallback((log: ILog) => {
-    setSelectedLogs((prevSelectedLogs) =>
-      prevSelectedLogs.includes(log)
-        ? prevSelectedLogs.filter((selectedLog) => selectedLog !== log)
-        : [...prevSelectedLogs, log]
-    );
-  }, []);
-
-  const handleLogsDismissed = useCallback(() => {
-    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-    setSelectedLogs([]);
-    setSelectedGroup(null);
-  }, [selectedLogs]);
-
-  const handleOpenGroup = useCallback(
-    (group: ILog[] | null, title: string, groupIndex: number) => {
-      if (!group) return;
-      setSelectedGroup(groupIndex);
-      setSelectedLogs(group);
-      setSearchQuery(title);
-      setShouldSearch(true);
-    },
-    []
-  );
-
   const groupedLogs = useGroupLogs(logs, 'game');
 
   const filteredGroupedLogs = useFilteredGroupedLogs(
@@ -89,47 +60,8 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
     assignedLogs
   );
 
-  const { mutate: assignMedia, isPending: isAssigning } = useMutation({
-    mutationFn: (
-      data: {
-        logsId: string[];
-        contentMedia: IMediaDocument;
-      }[]
-    ) => assignMediaFn(data),
-    onSuccess: () => {
-      setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-      setSelectedLogs([]);
-      setSelectedGame(undefined);
-      setSearchQuery('');
-      setSelectedGroup(null);
-
-      // Comprehensive query invalidation to update all related data
-      queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
-      queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
-      queryClient.invalidateQueries({
-        queryKey: ['ImmersionList', currentUsername],
-      });
-      // Invalidate user stats to update experience points and statistics
-      queryClient.invalidateQueries({
-        queryKey: ['userStats', currentUsername],
-      });
-      // Invalidate user profile data to update overall stats
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['user', 'ranking'].includes(query.queryKey[0] as string),
-      });
-      // Invalidate daily goals as XP changes affect goal progress
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-
-      toast.success(t('matcher.assignSuccess'));
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
-      } else {
-        toast.error(t('matcher.assignError'));
-      }
-    },
+  const { mutate: assignMedia, isPending: isAssigning } = useMediaAssignment({
+    username, type: 'game', onAssigned: resetState, successMessage: t('matcher.assignSuccess'),
   });
 
   const handleAssignMedia = useCallback(() => {
@@ -150,125 +82,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       },
     ]);
     setShouldSearch(false);
-  }, [selectedGame, selectedLogs, assignMedia, t]);
+  }, [selectedGame, selectedLogs, assignMedia, setShouldSearch, t]);
 
-  const [isAutoMatching, setIsAutoMatching] = useState(false);
-  const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
-
-  const performAutoMatch = useCallback(async () => {
-    setShowAutoMatchModal(false);
-    setIsAutoMatching(true);
-    try {
-      const matches: Array<{
-        logsId: string[];
-        contentMedia: IMediaDocument;
-      }> = [];
-
-      // For games, only search in our database
-      for (const [groupName, logsGroup] of Object.entries(
-        filteredGroupedLogs
-      )) {
-        try {
-          const dbResults = await searchMediaFn({
-            type: 'game',
-            search: groupName,
-            perPage: 5,
-          });
-
-          if (dbResults && dbResults.length > 0) {
-            const exactMatch = dbResults.find((vn) => {
-              const titles = [
-                vn.title.contentTitleRomaji,
-                vn.title.contentTitleEnglish,
-                vn.title.contentTitleNative,
-                ...(vn.synonyms || []),
-              ].filter(Boolean);
-
-              return titles.some(
-                (title) => title?.toLowerCase() === groupName.toLowerCase()
-              );
-            });
-
-            if (exactMatch) {
-              matches.push({
-                logsId: logsGroup.map((log) => log._id),
-                contentMedia: exactMatch,
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`DB search failed for: ${groupName}`, error);
-        }
-      }
-
-      if (matches.length > 0) {
-        // Split large batches to avoid "Request entity too large" errors
-        const BATCH_SIZE = 50; // Process 50 assignments at a time
-        const batches = [];
-        for (let i = 0; i < matches.length; i += BATCH_SIZE) {
-          batches.push(matches.slice(i, i + BATCH_SIZE));
-        }
-
-        let totalProcessed = 0;
-        for (const batch of batches) {
-          await new Promise<void>((resolve, reject) => {
-            assignMedia(batch, {
-              onSuccess: () => {
-                totalProcessed += batch.reduce(
-                  (sum, m) => sum + m.logsId.length,
-                  0
-                );
-                resolve();
-              },
-              onError: (error) => {
-                reject(error);
-              },
-            });
-          });
-        }
-
-        // Update assigned logs after all batches are processed
-        const assignedLogIds = matches.flatMap((m) => m.logsId);
-        const newlyAssignedLogs =
-          logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
-        setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
-
-        queryClient.invalidateQueries({
-          queryKey: ['gameLogs', username, 'game'],
-        });
-
-        toast.success(
-          t('matcher.autoMatchedSuccess', {
-            count: totalProcessed,
-            matches: matches.length,
-            type: t('common:mediaTypesPlural.game'),
-          })
-        );
-      } else {
-        toast.info(t('matcher.noExactMatchesDb'));
-      }
-    } catch (error) {
-      console.error('Auto-match error:', error);
-      toast.error(t('matcher.autoMatchFailed'));
-    } finally {
-      setIsAutoMatching(false);
-    }
-  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username, t]);
-
-  const handleAutoMatch = useCallback(async () => {
-    if (Object.keys(filteredGroupedLogs).length === 0) {
-      toast.info(t('matcher.noGroups'));
-      return;
-    }
-
-    const groupCount = Object.keys(filteredGroupedLogs).length;
-    if (groupCount > 20) {
-      setShowAutoMatchModal(true);
-      return;
-    }
-
-    await performAutoMatch();
-  }, [filteredGroupedLogs, performAutoMatch, t]);
+  const { isAutoMatching, showAutoMatchModal, setShowAutoMatchModal, performAutoMatch, handleAutoMatch } = useAutoMatch({
+    type: 'game', username, groups: filteredGroupedLogs, logs, setAssignedLogs, onAssigned: clearSelection,
+  });
 
   if (isLoadingLogs) {
     return (
@@ -469,7 +287,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                                 <input
                                   type="checkbox"
                                   className="checkbox checkbox-primary checkbox-sm"
-                                  checked={selectedLogs.includes(log)}
+                                  checked={selectedLogs.some((selected) => selected._id === log._id)}
                                   onChange={(e) => {
                                     e.stopPropagation();
                                     handleCheckboxChange(log);

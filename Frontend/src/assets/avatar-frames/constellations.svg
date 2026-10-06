@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <title>Orion, Capricornus, and Lyra</title>
+  <style>@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }</style>
+  <defs>
+    <filter id="starlight" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation=".6"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <g id="star" fill="#f4f8ff" filter="url(#starlight)">
+      <path d="M0 -4.5 L1 -1 4.5 0 1 1 0 4.5 -1 1 -4.5 0 -1 -1Z"/>
+      <circle r="1.2"/>
+    </g>
+  </defs>
+  <circle cx="120" cy="120" r="82" stroke="#7b9bd7" stroke-width="1.2" opacity=".6"/>
+  <circle cx="120" cy="120" r="84" stroke="#c1d8ff" stroke-width=".4" opacity=".4"/>
+  <g data-canvas-layer="connections" stroke="#b6d9ff" stroke-width=".85" opacity=".65">
+    <path data-constellation="orion" data-stars="orion-meissa orion-betelgeuse orion-bellatrix orion-meissa" d="M83.8 56.2 L66.8 64.8 L92.2 68.6 L83.8 56.2"/>
+    <path data-constellation="orion" data-stars="orion-betelgeuse orion-alnitak orion-alnilam orion-mintaka orion-bellatrix" d="M66.8 64.8 L78.6 96.8 L82.8 94.2 L86.6 91.4 L92.2 68.6"/>
+    <path data-constellation="orion" data-stars="orion-alnitak orion-saiph" d="M78.6 96.8 L72.6 123.2"/>
+    <path data-constellation="orion" data-stars="orion-mintaka orion-rigel" d="M86.6 91.4 L101.4 118.4"/>
+    <path data-constellation="orion" data-stars="orion-alnilam orion-theta orion-iota" d="M82.8 94.2 L83.2 107.2 L83.2 112.6"/>
+    <path data-constellation="capricorn" data-stars="capricorn-algedi capricorn-theta capricorn-gamma capricorn-delta capricorn-zeta capricorn-omega capricorn-psi capricorn-dabih capricorn-algedi" d="M117.92 146.64 L85.6 158.64 L63.04 158 L58.24 156.72 L72.48 173.2 L94.4 185.36 L98.08 180.88 L115.36 152.72 L117.92 146.64"/>
+    <path data-constellation="lyra" data-stars="lyra-vega lyra-epsilon lyra-zeta lyra-vega" d="M170.48 73.4 L158.96 66.92 L158.6 83.48 L170.48 73.4"/>
+    <path data-constellation="lyra" data-stars="lyra-zeta lyra-delta lyra-gamma lyra-beta lyra-zeta" d="M158.6 83.48 L143.12 89.24 L134.48 123.44 L149.96 118.04 L158.6 83.48"/>
+  </g>
+  <g data-canvas-layer="stars">
+    <use href="#star" x="210" y="120"/><use href="#star" x="216" y="146"/><use href="#star" x="197" y="165"/><use href="#star" x="187" y="187"/>
+    <use href="#star" x="165" y="204"/><use href="#star" x="146" y="216"/><use href="#star" x="120" y="210"/><use href="#star" x="94" y="216"/>
+    <use href="#star" x="75" y="197"/><use href="#star" x="53" y="187"/><use href="#star" x="36" y="165"/><use href="#star" x="24" y="146"/>
+    <use href="#star" x="30" y="120"/><use href="#star" x="24" y="94"/><use href="#star" x="43" y="75"/><use href="#star" x="53" y="53"/>
+    <use href="#star" x="75" y="36"/><use href="#star" x="94" y="24"/><use href="#star" x="120" y="30"/><use href="#star" x="146" y="24"/>
+    <use href="#star" x="165" y="43"/><use href="#star" x="187" y="53"/><use href="#star" x="204" y="75"/><use href="#star" x="216" y="94"/>
+
+    <use id="orion-meissa" href="#star" x="83.8" y="56.2" data-cluster="1" data-size="0.55" transform="translate(83.8 56.2) scale(0.55) translate(-83.8 -56.2)"/>
+    <use id="orion-betelgeuse" href="#star" x="66.8" y="64.8" data-cluster="1" data-size="0.9" transform="translate(66.8 64.8) scale(0.9) translate(-66.8 -64.8)"/>
+    <use id="orion-bellatrix" href="#star" x="92.2" y="68.6" data-cluster="1" data-size="0.7" transform="translate(92.2 68.6) scale(0.7) translate(-92.2 -68.6)"/>
+    <use id="orion-mintaka" href="#star" x="86.6" y="91.4" data-cluster="1" data-size="0.45" transform="translate(86.6 91.4) scale(0.45) translate(-86.6 -91.4)"/>
+    <use id="orion-alnilam" href="#star" x="82.8" y="94.2" data-cluster="1" data-size="0.45" transform="translate(82.8 94.2) scale(0.45) translate(-82.8 -94.2)"/>
+    <use id="orion-alnitak" href="#star" x="78.6" y="96.8" data-cluster="1" data-size="0.45" transform="translate(78.6 96.8) scale(0.45) translate(-78.6 -96.8)"/>
+    <use id="orion-saiph" href="#star" x="72.6" y="123.2" data-cluster="1" data-size="0.7" transform="translate(72.6 123.2) scale(0.7) translate(-72.6 -123.2)"/>
+    <use id="orion-rigel" href="#star" x="101.4" y="118.4" data-cluster="1" data-size="0.9" transform="translate(101.4 118.4) scale(0.9) translate(-101.4 -118.4)"/>
+    <use id="orion-theta" href="#star" x="83.2" y="107.2" data-cluster="1" data-size="0.4" transform="translate(83.2 107.2) scale(0.4) translate(-83.2 -107.2)"/>
+    <use id="orion-iota" href="#star" x="83.2" y="112.6" data-cluster="1" data-size="0.4" transform="translate(83.2 112.6) scale(0.4) translate(-83.2 -112.6)"/>
+    <use id="capricorn-algedi" href="#star" x="117.92" y="146.64" data-cluster="2" data-size="0.7" transform="translate(117.92 146.64) scale(0.7) translate(-117.92 -146.64)"/>
+    <use id="capricorn-dabih" href="#star" x="115.36" y="152.72" data-cluster="2" data-size="0.7" transform="translate(115.36 152.72) scale(0.7) translate(-115.36 -152.72)"/>
+    <use id="capricorn-theta" href="#star" x="85.6" y="158.64" data-cluster="2" data-size="0.55" transform="translate(85.6 158.64) scale(0.55) translate(-85.6 -158.64)"/>
+    <use id="capricorn-gamma" href="#star" x="63.04" y="158" data-cluster="2" data-size="0.6" transform="translate(63.04 158) scale(0.6) translate(-63.04 -158)"/>
+    <use id="capricorn-delta" href="#star" x="58.24" y="156.72" data-cluster="2" data-size="0.9" transform="translate(58.24 156.72) scale(0.9) translate(-58.24 -156.72)"/>
+    <use id="capricorn-zeta" href="#star" x="72.48" y="173.2" data-cluster="2" data-size="0.55" transform="translate(72.48 173.2) scale(0.55) translate(-72.48 -173.2)"/>
+    <use id="capricorn-omega" href="#star" x="94.4" y="185.36" data-cluster="2" data-size="0.55" transform="translate(94.4 185.36) scale(0.55) translate(-94.4 -185.36)"/>
+    <use id="capricorn-psi" href="#star" x="98.08" y="180.88" data-cluster="2" data-size="0.55" transform="translate(98.08 180.88) scale(0.55) translate(-98.08 -180.88)"/>
+    <use id="lyra-vega" href="#star" x="170.48" y="73.4" data-cluster="3" data-size="1" transform="translate(170.48 73.4) scale(1) translate(-170.48 -73.4)"/>
+    <use id="lyra-epsilon" href="#star" x="158.96" y="66.92" data-cluster="3" data-size="0.55" transform="translate(158.96 66.92) scale(0.55) translate(-158.96 -66.92)"/>
+    <use id="lyra-zeta" href="#star" x="158.6" y="83.48" data-cluster="3" data-size="0.6" transform="translate(158.6 83.48) scale(0.6) translate(-158.6 -83.48)"/>
+    <use id="lyra-delta" href="#star" x="143.12" y="89.24" data-cluster="3" data-size="0.6" transform="translate(143.12 89.24) scale(0.6) translate(-143.12 -89.24)"/>
+    <use id="lyra-gamma" href="#star" x="134.48" y="123.44" data-cluster="3" data-size="0.7" transform="translate(134.48 123.44) scale(0.7) translate(-134.48 -123.44)"/>
+    <use id="lyra-beta" href="#star" x="149.96" y="118.04" data-cluster="3" data-size="0.65" transform="translate(149.96 118.04) scale(0.65) translate(-149.96 -118.04)"/>
+  </g>
+</svg>

@@ -2027,13 +2027,24 @@ const swaggerDocument = {
                 properties: {
                   nameEffect: {
                     type: 'string',
-                    enum: ['none', 'gradient', 'glow', 'shimmer'],
+                    enum: ['none', 'gradient', 'glow', 'shimmer', 'aura'],
                   },
                   nameColor1: {
                     type: 'string',
                     description: '#rrggbb hex, or empty for the theme color',
                   },
                   nameColor2: { type: 'string' },
+                  namePulseIntensity: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                  },
+                  namePulseSpeed: {
+                    type: 'number',
+                    minimum: 0.5,
+                    maximum: 6,
+                    description: 'Pulse duration in seconds',
+                  },
                   avatarFrame: {
                     type: 'string',
                     enum: [

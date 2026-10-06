@@ -37,33 +37,39 @@ import {
   Clock,
   Ban,
   Star,
-  ChevronDown,
   Plus,
   Filter,
-  Check,
   Trash2,
 } from 'lucide-react';
 
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
-import {
-  getMediaTypeColor,
-  MEDIA_TYPE_CLASSES,
-} from '../constants/mediaColors';
+import Button from '../components/ui/Button';
+import DropdownSelect from '../components/ui/DropdownSelect';
+import Spinner from '../components/ui/Spinner';
+import { getMediaTypeColor, MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
 import { getLogTypeLabelKey } from '../utils/logTypes';
 import type { ParseKeys } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import MultiSelectDropdown from '../components/ui/MultiSelectDropdown';
+import ImmersionListBatchActions from '../components/ImmersionListBatchActions';
+import {
+  STATUS_FILTERS,
+  getMediaStatus,
+  mediaSelectionKey,
+  parseStatusFilters,
+  type StatusFilter,
+} from '../utils/immersionList';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
 
-type StatusFilter =
-  | 'all'
-  | 'completed'
-  | 'in_progress'
-  | 'dropped'
-  | 'paused'
-  | 'planning';
+interface MediaSelectionProps {
+  selectionMode: boolean;
+  selectedKeys: Set<string>;
+  onToggleSelection: (media: IMediaDocument) => void;
+  batchBusy: boolean;
+}
 
 type MediaStatusPayload = {
   mediaId: string;
@@ -76,34 +82,52 @@ const STATUS_CONFIG: Record<
   {
     labelKey: ParseKeys<'media'>;
     badgeClass: string;
+    buttonClass: string;
     icon: React.FC<{ className?: string }>;
   }
 > = {
   completed: {
     labelKey: 'list.status.completed',
     badgeClass: 'badge-success',
+    buttonClass: 'btn-success',
     icon: CircleCheck,
   },
   dropped: {
     labelKey: 'list.status.dropped',
     badgeClass: 'badge-error',
+    buttonClass: 'btn-error',
     icon: Ban,
   },
   paused: {
     labelKey: 'list.status.paused',
     badgeClass: 'badge-warning',
+    buttonClass: 'btn-warning',
     icon: Clock,
   },
   planning: {
     labelKey: 'list.status.planning',
     badgeClass: 'badge-info',
+    buttonClass: 'btn-info',
     icon: Star,
   },
   in_progress: {
     labelKey: 'list.status.inProgress',
     badgeClass: 'badge-primary',
+    buttonClass: 'btn-primary',
     icon: Play,
   },
+};
+
+const MEDIA_TYPE_ICONS: Record<string, typeof Play> = {
+  anime: Play,
+  manga: Book,
+  'light-novel': Book,
+  vn: Gamepad,
+  game: Gamepad,
+  video: Video,
+  movie: Clapperboard,
+  'tv show': MonitorPlay,
+  book: Book,
 };
 
 function ListScreen() {
@@ -131,14 +155,6 @@ function ListScreen() {
   ];
   const sortOptions: SortOption[] = ['title', 'type', 'recent'];
   const viewOptions: ViewMode[] = ['grid', 'list'];
-  const statusOptions: StatusFilter[] = [
-    'all',
-    'completed',
-    'in_progress',
-    'planning',
-    'paused',
-    'dropped',
-  ];
 
   const initialQuery = searchParams.get('q') ?? '';
   const initialSort = searchParams.get('sort');
@@ -147,7 +163,7 @@ function ListScreen() {
   const initialGrouped = searchParams.get('grouped');
 
   const initialFilterStr = searchParams.get('type');
-  const initialTypes = initialFilterStr
+  const initialTypes = initialFilterStr !== null
     ? initialFilterStr.split(',').filter((t) => MEDIA_TYPES.includes(t))
     : MEDIA_TYPES;
 
@@ -156,18 +172,27 @@ function ListScreen() {
   const [sortBy, setSortBy] = useState<SortOption>(
     sortOptions.includes(initialSort as SortOption)
       ? (initialSort as SortOption)
-      : 'title'
+      : 'title',
   );
   const [viewMode, setViewMode] = useState<ViewMode>(
     viewOptions.includes(initialView as ViewMode)
       ? (initialView as ViewMode)
-      : 'grid'
+      : 'grid',
   );
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
-    statusOptions.includes(initialProgress as StatusFilter)
-      ? (initialProgress as StatusFilter)
-      : 'all'
+  const [selectedStatuses, setSelectedStatuses] = useState<StatusFilter[]>(() =>
+    parseStatusFilters(initialProgress),
   );
+  const SelectedTypeIcon = selectedTypes.length === 1
+    ? MEDIA_TYPE_ICONS[selectedTypes[0]] ?? Filter
+    : Filter;
+  const SelectedStatusIcon = selectedStatuses.length === 1
+    ? selectedStatuses[0] === 'unset'
+      ? Circle
+      : STATUS_CONFIG[selectedStatuses[0]].icon
+    : CircleCheck;
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
   const [grouped, setGrouped] = useState<boolean>(initialGrouped !== 'false');
   const [isPendingGroup, startGroupTransition] = useTransition();
   const [showHideAlertModal, setShowHideAlertModal] = useState(false);
@@ -177,7 +202,7 @@ function ListScreen() {
     useState<IMediaDocument | null>(null);
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [mediaToRemove, setMediaToRemove] = useState<IMediaDocument | null>(
-    null
+    null,
   );
   const [removeWithLogs, setRemoveWithLogs] = useState(false);
 
@@ -187,10 +212,7 @@ function ListScreen() {
     if (searchQuery.trim()) {
       params.set('q', searchQuery);
     }
-    if (
-      selectedTypes.length > 0 &&
-      selectedTypes.length !== MEDIA_TYPES.length
-    ) {
+    if (selectedTypes.length !== MEDIA_TYPES.length) {
       params.set('type', selectedTypes.join(','));
     }
     if (sortBy !== 'title') {
@@ -199,8 +221,8 @@ function ListScreen() {
     if (viewMode !== 'grid') {
       params.set('view', viewMode);
     }
-    if (statusFilter !== 'all') {
-      params.set('progress', statusFilter);
+    if (selectedStatuses.length !== STATUS_FILTERS.length) {
+      params.set('progress', selectedStatuses.join(','));
     }
     if (!grouped) {
       params.set('grouped', 'false');
@@ -212,7 +234,7 @@ function ListScreen() {
       window.history.replaceState(
         null,
         '',
-        `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}`
+        `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}`,
       );
     }
   }, [
@@ -220,12 +242,34 @@ function ListScreen() {
     selectedTypes,
     sortBy,
     viewMode,
-    statusFilter,
+    selectedStatuses,
     grouped,
     MEDIA_TYPES.length,
   ]);
 
   const isOwnProfile = user?.username === username;
+
+  useEffect(() => {
+    setSelectedKeys(new Set());
+    setSelectionMode(false);
+  }, [username, user?._id]);
+
+  const onToggleSelection = (media: IMediaDocument) => {
+    if (!isOwnProfile || batchBusy) return;
+    const key = mediaSelectionKey(media);
+    setSelectedKeys((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const selectionProps = {
+    selectionMode,
+    selectedKeys,
+    onToggleSelection,
+    batchBusy,
+  };
 
   const {
     data: immersionList,
@@ -278,9 +322,9 @@ function ListScreen() {
 
   const handleSetStatus = (
     media: IMediaDocument,
-    newStatus: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+    newStatus: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
   ) => {
-    if (!isOwnProfile) return;
+    if (!isOwnProfile || batchBusy) return;
     updateStatusMutation.mutate({
       mediaId: media.contentId,
       type: media.type,
@@ -296,7 +340,8 @@ function ListScreen() {
         predicate: (query) =>
           Array.isArray(query.queryKey) &&
           query.queryKey.some(
-            (key) => key === 'logs' || key === 'user' || key === 'ImmersionList'
+            (key) =>
+              key === 'logs' || key === 'user' || key === 'ImmersionList',
           ),
       });
       if (username) {
@@ -311,7 +356,7 @@ function ListScreen() {
           ? `Removed from your list (${data.deletedLogs} log${
               data.deletedLogs === 1 ? '' : 's'
             } deleted)`
-          : 'Removed from your list. Your logs were kept.'
+          : 'Removed from your list. Your logs were kept.',
       );
       setMediaToRemove(null);
       setRemoveWithLogs(false);
@@ -321,13 +366,13 @@ function ListScreen() {
         mutationError instanceof AxiosError
           ? (mutationError.response?.data?.message ??
               'Failed to remove media from your list')
-          : 'Failed to remove media from your list'
+          : 'Failed to remove media from your list',
       );
     },
   });
 
   const handleRemoveMedia = (media: IMediaDocument) => {
-    if (!isOwnProfile) return;
+    if (!isOwnProfile || batchBusy) return;
     setRemoveWithLogs(false);
     setMediaToRemove(media);
   };
@@ -397,8 +442,8 @@ function ListScreen() {
           item.title.contentTitleEnglish?.toLowerCase().includes(query) ||
           item.title.contentTitleRomaji?.toLowerCase().includes(query) ||
           item.synonyms?.some((synonym) =>
-            synonym.toLowerCase().includes(query)
-          )
+            synonym.toLowerCase().includes(query),
+          ),
       );
     }
 
@@ -406,20 +451,17 @@ function ListScreen() {
       filtered = filtered.filter((item) => selectedTypes.includes(item.type));
     }
 
-    // Client-side status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((item) => {
-        const ms = item.mediaStatus;
-        if (statusFilter === 'completed') return item.isCompleted === true;
-        return ms === statusFilter;
-      });
+    if (selectedStatuses.length !== STATUS_FILTERS.length) {
+      filtered = filtered.filter((item) =>
+        selectedStatuses.includes(getMediaStatus(item)),
+      );
     }
 
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'title':
           return (a.title.contentTitleNative || '').localeCompare(
-            b.title.contentTitleNative || ''
+            b.title.contentTitleNative || '',
           );
         case 'type':
           return a.type.localeCompare(b.type);
@@ -483,6 +525,19 @@ function ListScreen() {
     const filteredCount = filteredAndSortedMedia.length;
     return { totalCount, filteredCount };
   })();
+
+  const selectedMedia = allMedia.filter((media) =>
+    selectedKeys.has(mediaSelectionKey(media)),
+  );
+  const visibleSelectedCount = filteredAndSortedMedia.filter((media) =>
+    selectedKeys.has(mediaSelectionKey(media)),
+  ).length;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedTypes(MEDIA_TYPES);
+    setSelectedStatuses([...STATUS_FILTERS]);
+  };
 
   const handleHideUnmatchedAlert = () => {
     const formData = new FormData();
@@ -670,8 +725,8 @@ function ListScreen() {
                     </div>
                   ) : (
                     <p className="text-sm text-base-content/70">
-                      Your logs and XP are kept; the media just stops showing
-                      in your list. Logging it again brings it back.
+                      Your logs and XP are kept; the media just stops showing in
+                      your list. Logging it again brings it back.
                     </p>
                   )}
                 </>
@@ -786,166 +841,89 @@ function ListScreen() {
 
                 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center sm:justify-between">
                   <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 min-w-0">
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
-                      >
-                        <Filter className="w-4 h-4" />
-                        {selectedTypes.length === 0
-                          ? t('list.noTypes')
-                          : selectedTypes.length === MEDIA_TYPES.length
-                            ? t('list.allTypes')
-                            : selectedTypes.length === 1
-                              ? mediaTypeLabel(selectedTypes[0])
-                              : t('list.typesCount', {
-                                  count: selectedTypes.length,
-                                })}
-                        <ChevronDown className="w-4 h-4 ml-1 hidden sm:block" />
-                      </div>
-                      <div
-                        tabIndex={0}
-                        className="immersion-filter-menu dropdown-content p-3 surface-raised w-full sm:w-64 z-50 mt-1"
-                      >
-                        <div className="flex gap-2 pb-3">
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
-                            onClick={() => setSelectedTypes(MEDIA_TYPES)}
-                          >
-                            {t('list.selectAll')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
-                            onClick={() => setSelectedTypes([])}
-                          >
-                            {t('list.selectNone')}
-                          </button>
-                        </div>
-                        <div className="divider my-1"></div>
-                        <div className="immersion-filter-options flex flex-col gap-1 max-h-[60vh] overflow-y-auto pr-1">
-                          {MEDIA_TYPES.map((type) => {
-                            const selected = selectedTypes.includes(type);
-                            const color = getMediaTypeColor(type);
-                            const label = mediaTypeLabel(type);
-
-                            return (
-                              <button
-                                type="button"
-                                key={type}
-                                className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-                                  selected
-                                    ? 'bg-base-200 font-medium'
-                                    : 'hover:bg-base-200/50'
-                                }`}
-                                onClick={() =>
-                                  setSelectedTypes((prev) =>
-                                    prev.includes(type)
-                                      ? prev.filter((t) => t !== type)
-                                      : [...prev, type]
-                                  )
-                                }
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span
-                                    className="w-3 h-3 rounded-full shrink-0"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  <span className="text-sm">{label}</span>
-                                </div>
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                                    selected
-                                      ? 'border-transparent'
-                                      : 'border-base-content/20'
-                                  }`}
-                                  style={
-                                    selected
-                                      ? { backgroundColor: color }
-                                      : undefined
-                                  }
-                                >
-                                  {selected && (
-                                    <Check className="w-3 h-3 text-white" />
-                                  )}
-                                </div>
-                              </button>
-                            );
+                    <MultiSelectDropdown
+                      label={
+                        <>
+                          <SelectedTypeIcon className="w-4 h-4 shrink-0" />
+                          {selectedTypes.length === 0
+                            ? t('list.noTypes')
+                            : selectedTypes.length === MEDIA_TYPES.length
+                              ? t('list.allTypes')
+                              : selectedTypes.length === 1
+                                ? mediaTypeLabel(selectedTypes[0])
+                                : t('list.typesCount', {
+                                    count: selectedTypes.length,
+                                  })}
+                        </>
+                      }
+                      value={selectedTypes}
+                      onChange={setSelectedTypes}
+                      options={MEDIA_TYPES.map((type) => {
+                        const TypeIcon = MEDIA_TYPE_ICONS[type] ?? Bookmark;
+                        return {
+                          value: type,
+                          checkboxColor: getMediaTypeColor(type),
+                          label: (
+                            <span className="flex items-center gap-3">
+                              <TypeIcon
+                                aria-hidden="true"
+                                className={`w-4 h-4 shrink-0 ${MEDIA_TYPE_CLASSES[type].color}`}
+                              />
+                              {mediaTypeLabel(type)}
+                            </span>
+                          ),
+                        };
+                      })}
+                      selectAllLabel={t('list.selectAll')}
+                      selectNoneLabel={t('list.selectNone')}
+                    />
+                    <MultiSelectDropdown
+                      label={
+                        <>
+                          <SelectedStatusIcon className="w-4 h-4 shrink-0" />
+                          {t('list.statusLabel', {
+                            status:
+                              selectedStatuses.length === 0
+                                ? t('list.noStatuses')
+                                : selectedStatuses.length ===
+                                    STATUS_FILTERS.length
+                                  ? t('list.status.all')
+                                  : selectedStatuses.length === 1
+                                    ? selectedStatuses[0] === 'unset'
+                                      ? t('list.status.unset')
+                                      : t(
+                                          STATUS_CONFIG[selectedStatuses[0]]
+                                            .labelKey,
+                                        )
+                                    : t('list.statusesCount', {
+                                        count: selectedStatuses.length,
+                                      }),
                           })}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
-                      >
-                        <CircleCheck className="w-4 h-4" />
-                        {t('list.statusLabel', {
-                          status:
-                            statusFilter === 'all'
-                              ? t('list.status.all')
-                              : t(STATUS_CONFIG[statusFilter].labelKey),
-                        })}
-                      </div>
-                      <ul
-                        tabIndex={0}
-                        className="dropdown-content z-50 menu p-2 surface-raised w-full sm:w-60"
-                      >
-                        {[
-                          {
-                            value: 'all',
-                            label: t('list.status.allStatuses'),
-                            icon: undefined,
-                          },
-                          {
-                            value: 'completed',
-                            label: t('list.status.completed'),
-                            icon: CircleCheck,
-                          },
-                          {
-                            value: 'in_progress',
-                            label: t('list.status.inProgress'),
-                            icon: Play,
-                          },
-                          {
-                            value: 'planning',
-                            label: t('list.status.planning'),
-                            icon: Star,
-                          },
-                          {
-                            value: 'paused',
-                            label: t('list.status.paused'),
-                            icon: Clock,
-                          },
-                          {
-                            value: 'dropped',
-                            label: t('list.status.dropped'),
-                            icon: Ban,
-                          },
-                        ].map((option) => (
-                          <li key={option.value}>
-                            <button
-                              className={
-                                statusFilter === option.value ? 'active' : ''
-                              }
-                              onClick={() =>
-                                setStatusFilter(option.value as StatusFilter)
-                              }
-                            >
-                              {option.icon && (
-                                <option.icon className="w-4 h-4 mr-1" />
-                              )}
-                              {option.label}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                        </>
+                      }
+                      value={selectedStatuses}
+                      onChange={(values) =>
+                        setSelectedStatuses(values as StatusFilter[])
+                      }
+                      options={STATUS_FILTERS.map((value) => {
+                        const StatusIcon = value === 'unset'
+                          ? Circle
+                          : STATUS_CONFIG[value].icon;
+                        return {
+                          value,
+                          label: (
+                            <span className="flex items-center gap-3">
+                              <StatusIcon aria-hidden="true" className="w-4 h-4 shrink-0" />
+                              {value === 'unset'
+                                ? t('list.status.unset')
+                                : t(STATUS_CONFIG[value].labelKey)}
+                            </span>
+                          ),
+                        };
+                      })}
+                      selectAllLabel={t('list.selectAll')}
+                      selectNoneLabel={t('list.selectNone')}
+                    />
 
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40 focus-within:z-[60]">
                       <div
@@ -996,6 +974,8 @@ function ListScreen() {
                     <div className="join flex-1 sm:flex-none">
                       <button
                         className={`join-item btn btn-sm flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-primary' : 'btn-outline'}`}
+                        aria-label={t('list.grid')}
+                        aria-pressed={viewMode === 'grid'}
                         onClick={() => setViewMode('grid')}
                       >
                         <LayoutGrid className="w-4 h-4" />
@@ -1003,6 +983,8 @@ function ListScreen() {
                       </button>
                       <button
                         className={`join-item btn btn-sm flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-primary' : 'btn-outline'}`}
+                        aria-label={t('list.list')}
+                        aria-pressed={viewMode === 'list'}
                         onClick={() => setViewMode('list')}
                       >
                         <LayoutList className="w-4 h-4" />
@@ -1038,6 +1020,77 @@ function ListScreen() {
                   {searchQuery && t('list.showingFor', { query: searchQuery })}
                 </p>
               </div>
+              {isOwnProfile && (
+                <div className="mt-4 space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      appearance="outline"
+                      size="sm"
+                      disabled={
+                        batchBusy ||
+                        updateStatusMutation.isPending ||
+                        removeMediaMutation.isPending
+                      }
+                      onClick={() => {
+                        setSelectionMode((previous) => !previous);
+                        setSelectedKeys(new Set());
+                      }}
+                    >
+                      {selectionMode
+                        ? t('list.batch.done')
+                        : t('list.batch.selectItems')}
+                    </Button>
+                    {selectionMode && (
+                      <>
+                        <Button
+                          appearance="outline"
+                          size="sm"
+                          disabled={
+                            batchBusy || filteredAndSortedMedia.length === 0
+                          }
+                          onClick={() =>
+                            setSelectedKeys(
+                              (previous) =>
+                                new Set([
+                                  ...previous,
+                                  ...filteredAndSortedMedia.map(
+                                    mediaSelectionKey,
+                                  ),
+                                ]),
+                            )
+                          }
+                        >
+                          {t('list.batch.selectVisible')}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  {selectionMode && (
+                    <ImmersionListBatchActions
+                      username={username!}
+                      selectedMedia={selectedMedia}
+                      hiddenCount={selectedMedia.length - visibleSelectedCount}
+                      statusOptions={Object.entries(STATUS_CONFIG).map(
+                        ([value, config]) => ({
+                          value: value as MediaStatusPayload['status'],
+                          label: t(config.labelKey),
+                        }),
+                      )}
+                      onComplete={(keys) =>
+                        setSelectedKeys(
+                          (previous) =>
+                            new Set(
+                              [...previous].filter(
+                                (key) => !keys.includes(key),
+                              ),
+                            ),
+                        )
+                      }
+                      onBusyChange={setBatchBusy}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1062,18 +1115,17 @@ function ListScreen() {
                     <p className="text-base-content/70">
                       {searchQuery
                         ? t('list.emptySearch', { query: searchQuery })
-                        : selectedTypes.length !== MEDIA_TYPES.length
-                          ? t('list.emptyTypes')
+                        : selectedTypes.length !== MEDIA_TYPES.length ||
+                            selectedStatuses.length !== STATUS_FILTERS.length
+                          ? t('list.emptyFilters')
                           : t('list.emptyLibrary')}
                     </p>
                     {(searchQuery ||
-                      selectedTypes.length !== MEDIA_TYPES.length) && (
+                      selectedTypes.length !== MEDIA_TYPES.length ||
+                      selectedStatuses.length !== STATUS_FILTERS.length) && (
                       <button
                         className="btn btn-outline"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedTypes(MEDIA_TYPES);
-                        }}
+                        onClick={clearFilters}
                       >
                         {t('list.clearFilters')}
                       </button>
@@ -1084,8 +1136,9 @@ function ListScreen() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                   {groupedMedia.ungrouped?.map((item) => (
                     <MediaCard
-                      key={item.contentId}
+                      key={mediaSelectionKey(item)}
                       media={item}
+                      {...selectionProps}
                       isOwnProfile={!!isOwnProfile}
                       onSetStatus={handleSetStatus}
                       pendingToggleId={pendingToggleId}
@@ -1098,8 +1151,9 @@ function ListScreen() {
                 <div className="space-y-3">
                   {groupedMedia.ungrouped?.map((item) => (
                     <MediaListItem
-                      key={item.contentId}
+                      key={mediaSelectionKey(item)}
                       media={item}
+                      {...selectionProps}
                       isOwnProfile={!!isOwnProfile}
                       onSetStatus={handleSetStatus}
                       pendingToggleId={pendingToggleId}
@@ -1118,8 +1172,17 @@ function ListScreen() {
                   </div>
                   <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                   <p className="text-base-content/70">
-                    {t('list.emptyLibrary')}
+                    {selectedTypes.length !== MEDIA_TYPES.length ||
+                    selectedStatuses.length !== STATUS_FILTERS.length
+                      ? t('list.emptyFilters')
+                      : t('list.emptyLibrary')}
                   </p>
+                  {(selectedTypes.length !== MEDIA_TYPES.length ||
+                    selectedStatuses.length !== STATUS_FILTERS.length) && (
+                    <Button appearance="outline" onClick={clearFilters}>
+                      {t('list.clearFilters')}
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1127,6 +1190,7 @@ function ListScreen() {
                 {Object.entries(groupedMedia).map(([type, mediaList]) => (
                   <MediaGroup
                     key={type}
+                    {...selectionProps}
                     type={type}
                     mediaList={mediaList}
                     viewMode={viewMode}
@@ -1158,7 +1222,8 @@ function MediaGroup({
   pendingToggleId,
   onLogMedia,
   onRemoveMedia,
-}: {
+  ...selectionProps
+}: MediaSelectionProps & {
   type: string;
   mediaList: (IMediaDocument & { category: string })[];
   viewMode: ViewMode;
@@ -1166,7 +1231,7 @@ function MediaGroup({
   isOwnProfile: boolean;
   onSetStatus: (
     media: IMediaDocument,
-    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
@@ -1246,8 +1311,9 @@ function MediaGroup({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           {mediaList.map((item) => (
             <MediaCard
-              key={item.contentId}
+              key={mediaSelectionKey(item)}
               media={item}
+              {...selectionProps}
               isOwnProfile={isOwnProfile}
               onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
@@ -1260,8 +1326,9 @@ function MediaGroup({
         <div className="space-y-3">
           {mediaList.map((item) => (
             <MediaListItem
-              key={item.contentId}
+              key={mediaSelectionKey(item)}
               media={item}
+              {...selectionProps}
               isOwnProfile={isOwnProfile}
               onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
@@ -1282,12 +1349,16 @@ function MediaCard({
   pendingToggleId,
   onLogMedia,
   onRemoveMedia,
-}: {
+  selectionMode,
+  selectedKeys,
+  onToggleSelection,
+  batchBusy,
+}: MediaSelectionProps & {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
   onSetStatus: (
     media: IMediaDocument,
-    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
@@ -1303,11 +1374,15 @@ function MediaCard({
   const navigate = useNavigate();
 
   const handleCardClick = () => {
+    if (isOwnProfile && selectionMode) {
+      onToggleSelection(media);
+      return;
+    }
     navigate(`/${media.type}/${media.contentId}/${username}`);
   };
 
   const toggleKey = `${media.type}:${media.contentId}`;
-  const isToggling = pendingToggleId === toggleKey;
+  const isToggling = batchBusy || pendingToggleId === toggleKey;
 
   const typeConfig = {
     anime: {
@@ -1375,11 +1450,28 @@ function MediaCard({
 
   return (
     <div
-      className={`card relative focus-within:z-30 bg-base-100 shadow-sm transition-all duration-300 group cursor-pointer border ${isStatusMenuOpen ? '' : 'hover:shadow-lg'} ${config.border}`}
+      className={`card relative focus-within:z-30 bg-base-100 shadow-sm transition-all duration-300 group cursor-pointer border ${isStatusMenuOpen ? '' : 'hover:shadow-lg'} ${config.border} ${selectionMode && selectedKeys.has(mediaSelectionKey(media)) ? 'ring-2 ring-primary' : ''}`}
       onClick={handleCardClick}
     >
+      {isOwnProfile && selectionMode && (
+        <label
+          className="absolute top-2 left-2 z-40 surface p-2 cursor-pointer"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={selectedKeys.has(mediaSelectionKey(media))}
+            disabled={batchBusy}
+            onChange={() => onToggleSelection(media)}
+            aria-label={t('list.batch.selectItem', {
+              title: media.title.contentTitleNative,
+            })}
+          />
+        </label>
+      )}
       {/* Status dropdown button at the top right */}
-      {isOwnProfile && (
+      {isOwnProfile && !selectionMode && (
         <div
           className="dropdown dropdown-end absolute top-2 right-2 z-40"
           onClick={(e) => e.stopPropagation()}
@@ -1446,7 +1538,6 @@ function MediaCard({
       )}
 
       <figure className="relative aspect-[3/4] overflow-hidden">
-
         {media.contentImage || media.coverImage ? (
           <img
             src={media.contentImage || media.coverImage}
@@ -1477,7 +1568,7 @@ function MediaCard({
         )} */}
 
         <div
-          className={`absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none ${isStatusMenuOpen ? '' : 'group-hover:opacity-100'}`}
+          className={`absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none ${isStatusMenuOpen || selectionMode ? '' : 'group-hover:opacity-100'}`}
         >
           <div className="text-white text-center p-4">
             <TrendingUp className="w-6 h-6 mx-auto mb-2" />
@@ -1485,7 +1576,7 @@ function MediaCard({
           </div>
         </div>
 
-        {isOwnProfile && (
+        {isOwnProfile && !selectionMode && (
           <button
             type="button"
             className={`btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm opacity-0 transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none' : 'group-hover:opacity-100'}`}
@@ -1539,12 +1630,16 @@ function MediaListItem({
   pendingToggleId,
   onLogMedia,
   onRemoveMedia,
-}: {
+  selectionMode,
+  selectedKeys,
+  onToggleSelection,
+  batchBusy,
+}: MediaSelectionProps & {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
   onSetStatus: (
     media: IMediaDocument,
-    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
@@ -1558,7 +1653,7 @@ function MediaListItem({
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const toggleKey = `${media.type}:${media.contentId}`;
-  const isToggling = pendingToggleId === toggleKey;
+  const isToggling = batchBusy || pendingToggleId === toggleKey;
 
   const descriptionText = (() => {
     if (!media.description || media.description.length === 0) {
@@ -1578,7 +1673,7 @@ function MediaListItem({
 
     const sourceWithoutQuoteMarkers = normalizedSource.replace(
       /(^|\n)\s*>+\s?/g,
-      '$1'
+      '$1',
     );
 
     if (!sourceWithoutQuoteMarkers.trim()) {
@@ -1589,7 +1684,7 @@ function MediaListItem({
 
     if (
       /\[(b|i|u|s|url|img|spoiler|quote|code|list|\*)\b/i.test(
-        sourceWithoutQuoteMarkers
+        sourceWithoutQuoteMarkers,
       )
     ) {
       formattedDescription = convertBBCodeToHtml(sourceWithoutQuoteMarkers);
@@ -1621,13 +1716,21 @@ function MediaListItem({
   })();
 
   const handleCardClick = () => {
+    if (isOwnProfile && selectionMode) {
+      onToggleSelection(media);
+      return;
+    }
     navigate(`/${media.type}/${media.contentId}/${username}`);
   };
 
   const typeConfig = {
     anime: { icon: Play, color: 'text-[#26b2f2]', bg: 'bg-[#26b2f2]/10' },
     manga: { icon: Book, color: 'text-[#ee4466]', bg: 'bg-[#ee4466]/10' },
-    'light-novel': { icon: Book, color: 'text-[#b34ce6]', bg: 'bg-[#b34ce6]/10' },
+    'light-novel': {
+      icon: Book,
+      color: 'text-[#b34ce6]',
+      bg: 'bg-[#b34ce6]/10',
+    },
     vn: { icon: Gamepad, color: 'text-[#3a70e4]', bg: 'bg-[#3a70e4]/10' },
     game: { icon: Gamepad, color: 'text-[#59c94e]', bg: 'bg-[#59c94e]/10' },
     video: { icon: Video, color: 'text-[#2cc9a4]', bg: 'bg-[#2cc9a4]/10' },
@@ -1656,11 +1759,28 @@ function MediaListItem({
 
   return (
     <div
-      className="card surface hover:shadow-lg transition-all duration-200 cursor-pointer"
+      className={`card surface hover:shadow-lg transition-all duration-200 cursor-pointer ${selectionMode && selectedKeys.has(mediaSelectionKey(media)) ? 'ring-2 ring-primary' : ''}`}
       onClick={handleCardClick}
     >
       <div className="card-body p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start">
+          {isOwnProfile && selectionMode && (
+            <label
+              className="self-start p-2 cursor-pointer"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary checkbox-sm"
+                checked={selectedKeys.has(mediaSelectionKey(media))}
+                disabled={batchBusy}
+                onChange={() => onToggleSelection(media)}
+                aria-label={t('list.batch.selectItem', {
+                  title: media.title.contentTitleNative,
+                })}
+              />
+            </label>
+          )}
           <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
             <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-16">
               {media.contentImage || media.coverImage ? (
@@ -1741,76 +1861,73 @@ function MediaListItem({
             </div>
           </div>
 
-          {isOwnProfile && (
+          {isOwnProfile && !selectionMode && (
             <div
-              className="grid w-full grid-cols-2 gap-2 sm:w-36 sm:flex-shrink-0 sm:flex sm:flex-col sm:items-end sm:gap-1"
+              className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2 border-t border-base-300 pt-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:flex lg:w-auto lg:shrink-0 lg:items-center lg:gap-1 lg:border-t-0 lg:pt-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                className="btn btn-primary btn-sm w-full justify-center gap-1 sm:btn-xs"
+              <Button
+                variant="primary"
+                className="h-12 min-h-12 w-full gap-2 lg:btn-sm lg:btn-square lg:h-9 lg:min-h-9 lg:w-9"
                 onClick={(e) => {
                   e.stopPropagation();
                   onLogMedia(media);
                 }}
                 title={t('list.quickLog')}
               >
-                <Plus className="h-3 w-3" /> {t('header.log')}
-              </button>
-              <div className="dropdown dropdown-end w-full sm:w-36">
-                <button
-                  type="button"
-                  tabIndex={0}
-                  disabled={isToggling}
-                  className={`btn btn-sm w-full justify-between gap-1 sm:btn-xs ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-outline'}`}
-                >
-                  {isToggling ? (
-                    <span className="loading loading-spinner loading-xs" />
-                  ) : statusCfg ? (
-                    <>
-                      <statusCfg.icon className="h-3 w-3" />{' '}
-                      {t(statusCfg.labelKey)}
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="h-3 w-3" /> {t('list.setStatus')}
-                    </>
-                  )}
-                  <ChevronDown className="ml-auto h-3 w-3" />
-                </button>
-                <ul
-                  tabIndex={0}
-                  className="dropdown-content menu surface-raised z-50 w-full p-1 text-sm sm:w-36"
-                >
-                  {(
-                    Object.entries(STATUS_CONFIG) as [
-                      keyof typeof STATUS_CONFIG,
-                      (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
-                    ][]
-                  ).map(([key, cfg]) => (
-                    <li key={key}>
-                      <button
-                        className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
-                        onClick={() => onSetStatus(media, key)}
-                      >
-                        <cfg.icon className="h-3 w-3" />
-                        {t(cfg.labelKey)}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm col-span-2 w-full justify-center gap-1 text-error sm:btn-xs sm:col-span-1"
+                <Plus className="h-4 w-4" />
+                <span className="lg:sr-only">{t('header.log')}</span>
+              </Button>
+              <DropdownSelect
+                value={currentStatus ?? ''}
+                disabled={isToggling}
+                aria-label={t('list.setStatus')}
+                aria-busy={isToggling}
+                className={`h-12 min-h-12 w-full min-w-0 gap-2 lg:btn-sm lg:h-9 lg:min-h-9 lg:w-44 ${statusCfg?.buttonClass ?? ''}`}
+                optionClassName="min-h-12 gap-2 lg:min-h-9"
+                onChange={(event) =>
+                  onSetStatus(
+                    media,
+                    event.target.value as MediaStatusPayload['status'],
+                  )
+                }
+              >
+                <option value="" disabled>
+                  <span className="flex items-center gap-2">
+                    {isToggling ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <Circle className="h-4 w-4 shrink-0" />
+                    )}
+                    {t('list.setStatus')}
+                  </span>
+                </option>
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                  <option key={key} value={key}>
+                    <span className="flex items-center gap-2">
+                      {isToggling && currentStatus === key ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <cfg.icon className="h-4 w-4 shrink-0" />
+                      )}
+                      {t(cfg.labelKey)}
+                    </span>
+                  </option>
+                ))}
+              </DropdownSelect>
+              <Button
+                variant="error"
+                appearance="ghost"
+                className="col-span-2 h-12 min-h-12 w-full gap-2 sm:col-span-1 lg:btn-sm lg:btn-square lg:h-9 lg:min-h-9 lg:w-9"
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemoveMedia(media);
                 }}
                 title={t('header.removeFromList')}
               >
-                <Trash2 className="h-3 w-3" /> {t('header.remove')}
-              </button>
+                <Trash2 className="h-4 w-4" />
+                <span className="lg:sr-only">{t('header.remove')}</span>
+              </Button>
             </div>
           )}
         </div>

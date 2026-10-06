@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import app from './app.js';
 import { connectDB } from './db.js';
-import TextSession from './models/textSession.model.js';
+import { registerTextSessionSockets } from './services/textSessionSocket.js';
 import User from './models/user.model.js';
 import {
   IServerToClientEvents,
@@ -26,7 +26,7 @@ import { initVndbDumpScheduler } from './services/vndbDumpScheduler.js';
 import { initAchievementCronScheduler } from './services/achievements/cronAchievements.service.js';
 import { initAnilistSyncScheduler } from './services/anilistSyncScheduler.js';
 
-connectDB();
+
 
 const MEILI_STARTUP_TIMEOUT_MS = 90000;
 const MEILI_RETRY_INTERVAL_MS = 3000;
@@ -67,15 +67,6 @@ async function bootstrapMeilisearch() {
   await syncApprovedRequestMedia();
 }
 
-bootstrapMeilisearch().catch((err) =>
-  console.error('Meilisearch init error:', err)
-);
-
-initIgdbDumpScheduler();
-initVndbDumpScheduler();
-initAchievementCronScheduler();
-initAnilistSyncScheduler();
-
 const httpServer = createServer(app);
 
 const corsOrigins: (string | boolean)[] = [];
@@ -89,9 +80,6 @@ if (
   corsOrigins.push(process.env.PROD_DOMAIN);
 }
 
-if (process.env.NODE_ENV === 'production') {
-  corsOrigins.push(true);
-}
 
 if (corsOrigins.length === 0) {
   corsOrigins.push('http://localhost:5173');
@@ -115,7 +103,6 @@ const io = new Server<
 io.use(async (socket, next) => {
   try {
     const cookies = socket.handshake.headers.cookie;
-
     let token = null;
     if (cookies) {
       const cookieArray = cookies.split(';').map((c) => c.trim());
@@ -129,8 +116,8 @@ io.use(async (socket, next) => {
       const decoded = jwt.verify(token, process.env.TOKEN_SECRET!) as {
         id: string;
       };
-      const user = await User.findById(decoded.id).select('username _id');
-      if (user) {
+      const user = await User.findById(decoded.id).select('username _id moderation.banned');
+      if (user && !user.moderation?.banned) {
         socket.data.user = {
           userId: user._id.toString(),
           username: user.username,
@@ -144,202 +131,20 @@ io.use(async (socket, next) => {
   }
 });
 
-io.on('connection', (socket) => {
-  socket.on('join_room', async (data) => {
-    const roomId = typeof data === 'string' ? data : data.roomId;
-    const role = typeof data === 'object' ? data.role : 'guest';
-    const token = typeof data === 'object' ? data.hostToken : null;
+registerTextSessionSockets(io);
 
-    if (!socket.data.user && typeof data === 'object' && data.username) {
-      socket.data.user = {
-        username: data.username,
-        userId: data.userId,
-      };
-    }
+async function startServer() {
+  await connectDB();
+  bootstrapMeilisearch().catch((error) => console.error('Meilisearch init error:', error));
+  initIgdbDumpScheduler();
+  initVndbDumpScheduler();
+  initAchievementCronScheduler();
+  initAnilistSyncScheduler();
+  const port = process.env.PORT || 3000;
+  httpServer.listen(port, () => console.log('Server on port:', port));
+}
 
-    try {
-      let session = await TextSession.findOne({ roomId });
-
-      if (role === 'host') {
-        if (session) {
-          if (session.hostToken === token) {
-            socket.join(roomId);
-            socket.data.role = 'host';
-            socket.emit('room_joined', { role: 'host', roomId });
-            if (session.lines.length > 0) {
-              const history = session.lines.map((line) => ({
-                id: line.id,
-                text: line.text,
-                japaneseCount: line.charsCount,
-                createdAt: line.createdAt,
-                elapsedSeconds: line.elapsedSeconds,
-              }));
-              socket.emit('load_history', history);
-            }
-          } else {
-            socket.emit(
-              'error_message',
-              'Room already exists. You are not the host.'
-            );
-          }
-        } else {
-          // Create room
-          const hostToken =
-            token ||
-            Math.random().toString(36).substring(2) + Date.now().toString(36);
-          session = await TextSession.create({
-            roomId,
-            hostToken,
-            lines: [],
-            expireAt: new Date(Date.now() + 86400000), // 24 hours
-          });
-          socket.join(roomId);
-          socket.data.role = 'host';
-          socket.emit('room_created', { roomId, hostToken });
-          socket.emit('room_joined', { role: 'host', roomId });
-        }
-      } else if (session) {
-        // Guest
-        socket.join(roomId);
-        socket.data.role = 'guest';
-        socket.emit('room_joined', { role: 'guest', roomId });
-        if (session.lines.length > 0) {
-          const history = session.lines.map((l) => ({
-            id: l.id,
-            text: l.text,
-            japaneseCount: l.charsCount,
-            createdAt: l.createdAt,
-            elapsedSeconds: l.elapsedSeconds,
-          }));
-          socket.emit('load_history', history);
-        }
-      } else {
-        socket.emit('error_message', 'Room does not exist.');
-      }
-
-      // Broadcast updated user list
-      if (socket.rooms.has(roomId)) {
-        const sockets = await io.in(roomId).fetchSockets();
-        const members = sockets.map((s) => ({
-          id: s.id,
-          role: s.data.role || 'guest',
-          username: s.data.user?.username,
-          userId: s.data.user?.userId,
-        }));
-        console.log('Emitting room_users_update:', members);
-        io.to(roomId).emit('room_users_update', members);
-      }
-    } catch (error) {
-      console.error('Error in join_room:', error);
-      socket.emit('error_message', 'Internal server error');
-    }
-  });
-
-  socket.on('send_line', async (data) => {
-    const { roomId, lineData } = data;
-
-    try {
-      if (!lineData?.id) {
-        return;
-      }
-
-      const dbLine = {
-        id: lineData.id,
-        text: lineData.text,
-        charsCount: lineData.japaneseCount,
-        createdAt: lineData.createdAt,
-        elapsedSeconds: lineData.elapsedSeconds,
-      };
-
-      const updateResult = await TextSession.updateOne(
-        { roomId, 'lines.id': { $ne: lineData.id } },
-        {
-          $push: { lines: dbLine },
-          $setOnInsert: {
-            roomId,
-            expireAt: new Date(Date.now() + 86400000),
-          },
-        },
-        { upsert: true }
-      );
-
-      if (updateResult.modifiedCount > 0 || updateResult.upsertedCount > 0) {
-        socket.to(roomId).emit('receive_line', lineData);
-      }
-    } catch {
-      // Ignore failed room updates. The client can retry.
-    }
-  });
-
-  socket.on('delete_lines', async (data) => {
-    const { roomId, lineIds } = data;
-    try {
-      if (socket.data.role !== 'host') return;
-      await TextSession.updateOne(
-        { roomId },
-        { $pull: { lines: { id: { $in: lineIds } } } }
-      );
-      socket.to(roomId).emit('lines_deleted', { lineIds });
-    } catch {
-      // Ignore failed room updates. The client can retry.
-    }
-  });
-
-  socket.on('restore_lines', async (data) => {
-    const { roomId, lines } = data;
-    try {
-      if (socket.data.role !== 'host') return;
-
-      const dbLines = lines.map((lineData) => ({
-        id: lineData.id,
-        text: lineData.text,
-        charsCount: lineData.japaneseCount,
-        createdAt: lineData.createdAt,
-        elapsedSeconds: lineData.elapsedSeconds,
-      }));
-
-      await TextSession.updateOne(
-        { roomId },
-        { $push: { lines: { $each: dbLines } } }
-      );
-      socket.to(roomId).emit('lines_restored', { lines });
-    } catch {
-      // Ignore failed room updates. The client can retry.
-    }
-  });
-
-  socket.on('disconnecting', async () => {
-    for (const roomId of socket.rooms) {
-      if (roomId !== socket.id) {
-        const sockets = await io.in(roomId).fetchSockets();
-        const remainingMembers = sockets.filter((s) => s.id !== socket.id);
-
-        if (remainingMembers.length === 0) {
-          try {
-            await TextSession.deleteOne({ roomId });
-            console.log(`Room ${roomId} deleted - no users remaining`);
-          } catch (error) {
-            console.error(`Error deleting room ${roomId}:`, error);
-          }
-        } else {
-          // Notify remaining members
-          const members = remainingMembers.map((s) => ({
-            id: s.id,
-            role: s.data.role || 'guest',
-            username: s.data.user?.username,
-            userId: s.data.user?.userId,
-          }));
-          io.to(roomId).emit('room_users_update', members);
-        }
-      }
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
-});
-
-httpServer.listen(process.env.PORT, () => {
-  console.log('🚀 Server on port:', process.env.PORT);
+startServer().catch((error) => {
+  console.error('Server startup failed:', error);
+  process.exit(1);
 });

@@ -104,21 +104,33 @@ async function uploadFile(
   }
 }
 
-// Function to upload a new file and automatically delete the old one
-export async function uploadFileWithCleanup(
-  file: Express.Multer.File,
-  oldFileUrl?: string,
-  options: UploadValidationOptions = {}
-): Promise<fileResponse> {
-  // Delete old file first if it exists
-  if (oldFileUrl) {
-    await deleteFile(oldFileUrl);
-  } else {
-    console.log('No old file URL provided, skipping deletion');
+export class FileUploadBatch {
+  private oldUrls: string[] = [];
+
+  private newUrls: string[] = [];
+
+  private committed = false;
+
+  remove(url?: string) {
+    if (url) this.oldUrls.push(url);
   }
 
-  // Upload new file
-  return uploadFile(file, options);
+  async upload(file: Express.Multer.File, oldUrl?: string, options: UploadValidationOptions = {}) {
+    const uploaded = await uploadFile(file, options);
+    this.newUrls.push(uploaded.downloadURL);
+    this.remove(oldUrl);
+    return uploaded;
+  }
+
+  // Call only after the database stores the new URLs.
+  async commit() {
+    this.committed = true;
+    await Promise.all(this.oldUrls.map(deleteFile));
+  }
+
+  async rollback() {
+    if (!this.committed) await Promise.all(this.newUrls.map(deleteFile));
+  }
 }
 
 // Function to delete a file from Firebase Storage
@@ -133,7 +145,7 @@ export async function deleteFile(fileUrl: string): Promise<void> {
     const url = new URL(fileUrl);
 
     // Check if it is a Firebase Storage URL
-    if (!url.hostname.includes('firebasestorage.googleapis.com')) {
+    if (url.hostname !== 'firebasestorage.googleapis.com') {
       console.warn('Not a Firebase Storage URL, skipping deletion:', fileUrl);
       return;
     }

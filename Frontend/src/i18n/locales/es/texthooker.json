@@ -254,7 +254,11 @@
       "saveFailed": "No se pudo guardar el hook. Inténtalo de nuevo.",
       "cancel": "Cancelar",
       "close": "Cerrar",
-      "websocketDisabled": "WebSocket externo desactivado mientras se usa LunaHook"
+      "websocketDisabled": "WebSocket externo desactivado mientras se usa LunaHook",
+      "inputSource": "Origen del texto",
+      "websocket": "WebSocket",
+      "websocketStatus": "WebSocket: {{status}}",
+      "sourceFailed": "No se pudo cambiar el origen del texto."
     }
   },
   "mediaSession": {

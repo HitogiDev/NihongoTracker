@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
-import axios from 'axios';
 import crypto from 'crypto';
+import { fetchJitenDetail } from '../services/jiten.js';
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import RankSnapshot from '../models/rankSnapshot.model.js';
@@ -42,7 +42,7 @@ import {
   getPublicProfileTheme,
   parseCustomThemes,
 } from '../services/customThemes.js';
-import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
+import { deleteFile, FileUploadBatch } from '../services/uploadFile.js';
 import {
   cropAnimatedGifBuffer,
   isGifFile,
@@ -142,7 +142,13 @@ const RANKING_COSMETICS_PROJECTION = {
   nameEffect: '$customization.nameEffect',
   nameColor1: '$customization.nameColor1',
   nameColor2: '$customization.nameColor2',
+  namePulseIntensity: '$customization.namePulseIntensity',
+  namePulseSpeed: '$customization.namePulseSpeed',
   avatarFrame: '$customization.avatarFrame',
+  frameColor1: '$customization.frameColor1',
+  frameColor2: '$customization.frameColor2',
+  frameColor3: '$customization.frameColor3',
+  frameText: '$customization.frameText',
 };
 
 /**
@@ -186,9 +192,11 @@ export async function updateUser(
     password,
     discordId,
     blurAdultContent,
+    hideAdultFromSearch,
     hideUnmatchedLogsAlert,
     hideRankingFeatures,
     timezone,
+    weekStartsOn,
     language,
     about,
     avatarCrop,
@@ -197,6 +205,7 @@ export async function updateUser(
     removeBanner,
   } = req.body as IUpdateRequest;
 
+  const uploads = new FileUploadBatch();
   try {
     const user = await User.findById(res.locals.user._id).select('+password');
     if (!user) {
@@ -403,7 +412,7 @@ export async function updateUser(
           };
         }
 
-        const file = await uploadFileWithCleanup(avatarFile, user.avatar, {
+        const file = await uploads.upload(avatarFile, user.avatar, {
           maxFileSizeBytes: avatarMaxFileSizeBytes,
         });
         user.avatar = file.downloadURL;
@@ -442,7 +451,7 @@ export async function updateUser(
           };
         }
 
-        const file = await uploadFileWithCleanup(bannerFile, user.banner, {
+        const file = await uploads.upload(bannerFile, user.banner, {
           maxFileSizeBytes: bannerMaxFileSizeBytes,
         });
         user.banner = file.downloadURL;
@@ -459,14 +468,14 @@ export async function updateUser(
 
     if (shouldRemoveAvatar) {
       if (user.avatar) {
-        await deleteFile(user.avatar);
+        uploads.remove(user.avatar);
       }
       user.avatar = '';
     }
 
     if (shouldRemoveBanner) {
       if (user.banner) {
-        await deleteFile(user.banner);
+        uploads.remove(user.banner);
       }
       user.banner = '';
     }
@@ -504,15 +513,21 @@ export async function updateUser(
 
     if (
       blurAdultContent !== undefined ||
+      hideAdultFromSearch !== undefined ||
       hideUnmatchedLogsAlert !== undefined ||
       hideRankingFeatures !== undefined ||
       timezone !== undefined ||
+      weekStartsOn !== undefined ||
       language !== undefined
     ) {
       const updatedSettings: any = { ...user.settings };
 
       if (blurAdultContent !== undefined) {
         updatedSettings.blurAdultContent = blurAdultContent === 'true';
+      }
+
+      if (hideAdultFromSearch !== undefined) {
+        updatedSettings.hideAdultFromSearch = hideAdultFromSearch === 'true';
       }
 
       if (hideUnmatchedLogsAlert !== undefined) {
@@ -532,6 +547,13 @@ export async function updateUser(
         } catch (error) {
           throw apiError('user.invalidTimezone', 400, 'Invalid timezone');
         }
+      }
+
+      if (weekStartsOn !== undefined) {
+        if (weekStartsOn !== '0' && weekStartsOn !== '1') {
+          throw apiError('common.validationError', 400, 'Invalid week start day');
+        }
+        updatedSettings.weekStartsOn = Number(weekStartsOn);
       }
 
       if (language !== undefined) {
@@ -556,6 +578,7 @@ export async function updateUser(
     }
 
     const updatedUser = await user.save();
+    await uploads.commit();
 
     if (
       !wasHidingRankingFeatures &&
@@ -610,6 +633,7 @@ export async function updateUser(
       customization: updatedUser.customization ?? {},
     });
   } catch (error) {
+    await uploads.rollback();
     return next(error as customError);
   }
 }
@@ -1352,7 +1376,10 @@ export async function getCustomizationOptions(
     ]);
 
     return res.status(200).json({
-      customization: user.customization ?? {},
+      customization: sanitizeCustomizationForDisplay(
+        user.customization,
+        getDisplayCapabilities(user.patreon)
+      ),
       options,
       // Real numbers so the settings preview matches the live profile.
       signatureValues,
@@ -3388,81 +3415,6 @@ export async function removeMediaFromImmersionList(
   }
 }
 
-// LinkType mapping for jiten API
-const LinkTypeObject = {
-  vn: 2, // VNDB
-  anime: 4, // Anilist
-  manga: 4, // Anilist
-  reading: 4, // Anilist
-  movie: 4, // Anilist for movies
-};
-
-interface IJitenDeckLink {
-  linkId: number;
-  linkType: number;
-  url: string;
-  deckId: number;
-}
-
-interface IJitenDeck {
-  deckId: number;
-  creationDate: string;
-  releaseDate: string | null;
-  coverName: string;
-  mediaType: number;
-  originalTitle: string;
-  romajiTitle: string | null;
-  englishTitle: string | null;
-  description: string;
-  characterCount: number;
-  wordCount: number;
-  uniqueWordCount: number;
-  uniqueWordUsedOnceCount: number;
-  uniqueKanjiCount: number;
-  uniqueKanjiUsedOnceCount: number;
-  difficulty: number;
-  difficultyRaw: number;
-  difficultyOverride: number;
-  difficultyAlgorithmic: number;
-  sentenceCount: number;
-  speechDuration: number;
-  speechMoraCount: number;
-  speechSpeed: number;
-  averageSentenceLength: number;
-  parentDeckId: number | null;
-  links: IJitenDeckLink[];
-  aliases: string[];
-  childrenDeckCount: number;
-  selectedWordOccurrences: number;
-  dialoguePercentage: number;
-  hideDialoguePercentage: boolean;
-  coverage: number;
-  uniqueCoverage: number;
-  youngCoverage: number;
-  youngUniqueCoverage: number;
-  externalRating: number;
-  exampleSentence: string | null;
-  genres: number[];
-  tags: unknown[];
-  relationships: unknown[];
-  status: string | null;
-  isFavourite: boolean | null;
-  isIgnored: boolean | null;
-  distinctVoterCount: number;
-  userAdjustment: number;
-}
-
-interface IJitenResponse {
-  data: {
-    parentDeck: IJitenDeck | null;
-    mainDeck: IJitenDeck;
-    subDecks: IJitenDeck[];
-  };
-  totalItems: number;
-  pageSize: number;
-  currentOffset: number;
-}
-
 interface IComparisonStats {
   totalXp: number;
   totalTime: number;
@@ -3549,54 +3501,9 @@ export async function compareUserStats(
       calculateUserMediaStats(userDoc2._id, mediaId as string, type as string),
     ]);
 
-    // Get media info for character count (if applicable)
-    let totalCharCount = 0;
-    if (
-      ['light-novel', 'reading', 'manga', 'vn', 'game'].includes(
-        type as string
-      )
-    ) {
-      try {
-        // Try to get character count from jiten API
-        const jitenURL = process.env.JITEN_API_URL;
-        if (jitenURL) {
-          const LinkType: number | null = type
-            ? (LinkTypeObject[type as keyof typeof LinkTypeObject] ?? null)
-            : null;
-
-          if (LinkType) {
-            const jitenDeck = await axios.get(
-              `${jitenURL}/media-deck/by-link-id/${LinkType}/${mediaId}`,
-              {
-                validateStatus: (status) => status === 200 || status === 404,
-              }
-            );
-
-            if (
-              jitenDeck.status === 200 &&
-              jitenDeck.data &&
-              jitenDeck.data.length > 0
-            ) {
-              const jitenDetailResponse = await axios.get(
-                `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
-                {
-                  validateStatus: (status) => status === 200 || status === 404,
-                }
-              );
-
-              if (jitenDetailResponse.status === 200) {
-                const jitenResponse =
-                  jitenDetailResponse.data as IJitenResponse;
-                totalCharCount = jitenResponse.data.mainDeck.characterCount;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('Error fetching jiten data for comparison:', error);
-        // Continue without character count
-      }
-    }
+    const jiten = ['light-novel', 'reading', 'manga', 'vn', 'game', 'book'].includes(type as string)
+      ? await fetchJitenDetail(type as string, mediaId as string) : null;
+    const totalCharCount = jiten?.data.mainDeck.characterCount ?? 0;
 
     // Calculate reading percentages if we have character count
     if (totalCharCount > 0) {

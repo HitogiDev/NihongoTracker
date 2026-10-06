@@ -582,6 +582,7 @@ function Header() {
                     username={user.username}
                     avatar={user.avatar}
                     frame={equippedFrame}
+                    customization={user?.customization}
                     containerClassName={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
                       user?.patreon?.isActive && !hasEquippedFrame
                         ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'

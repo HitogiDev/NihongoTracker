@@ -37,17 +37,25 @@ const FRAME_LEVEL_REQUIREMENTS: Partial<Record<AvatarFrame, number>> = {
 };
 
 /** Frames that animate: the paid-only ones. */
-const PREMIUM_PLUS_FRAMES: AvatarFrame[] = ['sakura', 'neon', 'rainbow'];
+const PREMIUM_PLUS_FRAMES: AvatarFrame[] = [
+  'sakura',
+  'neon',
+  'rainbow',
+  'hearts',
+  'segmented',
+  'gradient',
+  'sweep',
+  'text',
+];
 
-/**
- * Frames reserved for the top tier alone. Unlike `PREMIUM_PLUS_FRAMES`, an
- * Enthusiast does not get these: they are the one cosmetic that separates
- * Consumer from the tier below it.
- */
-const CONSUMER_ONLY_FRAMES: AvatarFrame[] = ['aura'];
+/** Frames that require active Consumer access. */
+const CONSUMER_ONLY_FRAMES: AvatarFrame[] = [
+  'constellations',
+  'aura', 'starlight', 'sigil', 'fireflies', 'electric', 'crystal', 'petals',
+];
 
 /** Gradient/glow need any active tier. Shimmer animates, so it costs more. */
-const PREMIUM_PLUS_NAME_EFFECTS: NameEffect[] = ['shimmer'];
+const PREMIUM_PLUS_NAME_EFFECTS: NameEffect[] = ['shimmer', 'aura'];
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -137,6 +145,10 @@ export async function getUnlockedTitles(
       rarity: entry.achievement.rarity ?? 'common',
       unlockedAt: entry.unlockedAt,
     }));
+}
+
+function normalizeAvatarFrame(frame?: string | null): AvatarFrame {
+  return AVATAR_FRAMES.find((option) => option === frame) ?? 'none';
 }
 
 function frameOption(
@@ -292,7 +304,13 @@ export async function resolveCustomizationUpdate(
     nameEffect: current.nameEffect ?? 'none',
     nameColor1: current.nameColor1 ?? '',
     nameColor2: current.nameColor2 ?? '',
-    avatarFrame: current.avatarFrame ?? 'none',
+    namePulseIntensity: current.namePulseIntensity ?? 60,
+    namePulseSpeed: current.namePulseSpeed ?? 3,
+    avatarFrame: normalizeAvatarFrame(current.avatarFrame),
+    frameColor1: current.frameColor1 ?? '',
+    frameColor2: current.frameColor2 ?? '',
+    frameColor3: current.frameColor3 ?? '',
+    frameText: current.frameText ?? '',
     profileAccent: current.profileAccent ?? 'default',
     accentColor: current.accentColor ?? '',
     signatureStat: current.signatureStat ?? 'none',
@@ -314,6 +332,77 @@ export async function resolveCustomizationUpdate(
     );
     assertUnlocked(option, 'avatarFrame', String(patch.avatarFrame));
     next.avatarFrame = patch.avatarFrame;
+  }
+
+  if (patch.namePulseIntensity !== undefined) {
+    if (
+      typeof patch.namePulseIntensity !== 'number' ||
+      !Number.isInteger(patch.namePulseIntensity) ||
+      patch.namePulseIntensity < 0 ||
+      patch.namePulseIntensity > 100
+    ) {
+      throw apiError(
+        'customization.invalidValue',
+        400,
+        'Name pulse intensity must be an integer from 0 to 100'
+      );
+    }
+    if (
+      patch.namePulseIntensity !== 60 &&
+      !options.nameEffects.find((option) => option.value === 'aura')?.unlocked
+    ) {
+      throw apiError('customization.locked', 403, 'Name aura settings require Enthusiast or Consumer access');
+    }
+    next.namePulseIntensity = patch.namePulseIntensity;
+  }
+
+  if (patch.namePulseSpeed !== undefined) {
+    if (
+      typeof patch.namePulseSpeed !== 'number' ||
+      !Number.isFinite(patch.namePulseSpeed) ||
+      patch.namePulseSpeed < 0.5 ||
+      patch.namePulseSpeed > 6
+    ) {
+      throw apiError(
+        'customization.invalidValue',
+        400,
+        'Name pulse speed must be from 0.5 to 6 seconds'
+      );
+    }
+    if (
+      patch.namePulseSpeed !== 3 &&
+      !options.nameEffects.find((option) => option.value === 'aura')?.unlocked
+    ) {
+      throw apiError('customization.locked', 403, 'Name aura settings require Enthusiast or Consumer access');
+    }
+    next.namePulseSpeed = Math.round(patch.namePulseSpeed * 10) / 10;
+  }
+
+  for (const field of ['frameColor1', 'frameColor2', 'frameColor3'] as const) {
+    if (patch[field] === undefined) continue;
+    const color = normalizeColor(patch[field], field);
+    if (color && !options.avatarFrames.find((entry) => entry.value === 'gradient')?.unlocked) {
+      throw apiError('customization.locked', 403, 'Frame colors require Enthusiast or Consumer access');
+    }
+    next[field] = color;
+  }
+
+  if (patch.frameText !== undefined) {
+    if (
+      typeof patch.frameText !== 'string' ||
+      patch.frameText.trim().length > 48 ||
+      Array.from(patch.frameText).some((character) => {
+        const code = character.charCodeAt(0);
+        return code < 32 || code === 127;
+      })
+    ) {
+      throw apiError('customization.invalidValue', 400, 'Frame text must contain at most 48 characters without control characters');
+    }
+    const text = patch.frameText.trim();
+    if (text && !options.avatarFrames.find((entry) => entry.value === 'text')?.unlocked) {
+      throw apiError('customization.locked', 403, 'Frame text requires Enthusiast or Consumer access');
+    }
+    next.frameText = text;
   }
 
   if (patch.profileAccent !== undefined) {
@@ -427,7 +516,13 @@ export function sanitizeCustomizationForDisplay(
     nameEffect: customization?.nameEffect ?? 'none',
     nameColor1: customization?.nameColor1 ?? '',
     nameColor2: customization?.nameColor2 ?? '',
-    avatarFrame: customization?.avatarFrame ?? 'none',
+    namePulseIntensity: customization?.namePulseIntensity ?? 60,
+    namePulseSpeed: customization?.namePulseSpeed ?? 3,
+    avatarFrame: normalizeAvatarFrame(customization?.avatarFrame),
+    frameColor1: customization?.frameColor1 ?? '',
+    frameColor2: customization?.frameColor2 ?? '',
+    frameColor3: customization?.frameColor3 ?? '',
+    frameText: customization?.frameText ?? '',
     profileAccent: customization?.profileAccent ?? 'default',
     accentColor: customization?.accentColor ?? '',
     signatureStat: customization?.signatureStat ?? 'none',
@@ -455,10 +550,22 @@ export function sanitizeCustomizationForDisplay(
     }
   }
 
+  if (!caps.isPremiumPlus) {
+    value.namePulseIntensity = 60;
+    value.namePulseSpeed = 3;
+  }
+
   // A custom accent is a higher-tier perk: a lapsed Consumer keeps a preset
   // accent (still paid-for at the lower tier) but loses their own color.
   if (!caps.isPremiumPlus && value.profileAccent === 'custom') {
     value.profileAccent = 'default';
+  }
+
+  if (!caps.isPremiumPlus) {
+    value.frameColor1 = '';
+    value.frameColor2 = '';
+    value.frameColor3 = '';
+    value.frameText = '';
   }
 
   if (value.profileAccent !== 'custom') {
@@ -473,8 +580,7 @@ export function sanitizeCustomizationForDisplay(
     value.avatarFrame = 'none';
   }
 
-  // Dropping from Consumer to Enthusiast keeps the animated frames but not the
-  // top-tier-only one.
+  // Hide Consumer frames when the owner no longer has Consumer access.
   if (
     !caps.isConsumer &&
     value.avatarFrame &&

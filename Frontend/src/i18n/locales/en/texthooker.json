@@ -250,7 +250,11 @@
       "saveFailed": "The hook could not be saved. Try again.",
       "cancel": "Cancel",
       "close": "Close",
-      "websocketDisabled": "External WebSocket disabled while using LunaHook"
+      "websocketDisabled": "External WebSocket disabled while using LunaHook",
+      "inputSource": "Text input source",
+      "websocket": "WebSocket",
+      "websocketStatus": "WebSocket: {{status}}",
+      "sourceFailed": "Could not change the text input source."
     }
   },
   "mediaSession": {

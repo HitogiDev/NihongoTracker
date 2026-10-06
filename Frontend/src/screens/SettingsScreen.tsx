@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import Field from '../components/ui/Field';
 import Button from '../components/ui/Button';
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { buttonClass } from '../components/ui/buttons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -506,6 +507,9 @@ function SettingsScreen() {
   const [blurAdult, setBlurAdult] = useState(
     user?.settings?.blurAdultContent || false,
   );
+  const [hideAdultFromSearch, setHideAdultFromSearch] = useState(
+    user?.settings?.hideAdultFromSearch ?? false,
+  );
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
     user?.settings?.hideUnmatchedLogsAlert || false,
   );
@@ -514,6 +518,9 @@ function SettingsScreen() {
   );
   const [timezone, setTimezone] = useState(
     user?.settings?.timezone || detectedTimezone,
+  );
+  const [weekStartsOn, setWeekStartsOn] = useState<0 | 1>(
+    user?.settings?.weekStartsOn ?? 1,
   );
   const [isInitialized, setIsInitialized] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string>('');
@@ -773,13 +780,17 @@ function SettingsScreen() {
 
   // Debounced function to update preferences automatically
   const debouncedUpdatePreferences = useCallback(
-    (prefType: string, value: string | boolean) => {
+    (prefType: string, value: string | boolean | number) => {
       const formData = new FormData();
 
       if (prefType === 'timezone') {
         formData.append('timezone', value as string);
+      } else if (prefType === 'weekStartsOn') {
+        formData.append('weekStartsOn', value.toString());
       } else if (prefType === 'blurAdultContent') {
         formData.append('blurAdultContent', value.toString());
+      } else if (prefType === 'hideAdultFromSearch') {
+        formData.append('hideAdultFromSearch', value.toString());
       } else if (prefType === 'hideUnmatchedLogsAlert') {
         formData.append('hideUnmatchedLogsAlert', value.toString());
       } else if (prefType === 'hideRankingFeatures') {
@@ -793,7 +804,11 @@ function SettingsScreen() {
 
   // Use refs to track timeouts for debouncing
   const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const weekStartsOnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const hideAdultFromSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -809,12 +824,34 @@ function SettingsScreen() {
       setDiscordId(user.discordId || '');
       setUsername(user.username || '');
       setBlurAdult(user.settings?.blurAdultContent || false);
+      setHideAdultFromSearch(user.settings?.hideAdultFromSearch ?? false);
       setHideUnmatchedAlert(user.settings?.hideUnmatchedLogsAlert || false);
       setHideRankingFeatures(user.settings?.hideRankingFeatures || false);
       setTimezone(user.settings?.timezone || detectedTimezone);
+      setWeekStartsOn(user.settings?.weekStartsOn ?? 1);
       setIsInitialized(true);
     }
   }, [user, isInitialized, detectedTimezone]);
+
+  useEffect(() => {
+    if (
+      isInitialized &&
+      (user?.settings?.weekStartsOn ?? 1) !== weekStartsOn
+    ) {
+      if (weekStartsOnTimeoutRef.current) {
+        clearTimeout(weekStartsOnTimeoutRef.current);
+      }
+      weekStartsOnTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('weekStartsOn', weekStartsOn);
+      }, 500);
+    }
+
+    return () => {
+      if (weekStartsOnTimeoutRef.current) {
+        clearTimeout(weekStartsOnTimeoutRef.current);
+      }
+    };
+  }, [weekStartsOn, user?.settings?.weekStartsOn, debouncedUpdatePreferences, isInitialized]);
 
   useEffect(() => {
     // Avoid wiping editor state when user is temporarily null (e.g. auth state transitions)
@@ -870,6 +907,31 @@ function SettingsScreen() {
   }, [
     blurAdult,
     user?.settings?.blurAdultContent,
+    debouncedUpdatePreferences,
+    isInitialized,
+  ]);
+
+  useEffect(() => {
+    if (
+      isInitialized &&
+      user?.settings?.hideAdultFromSearch !== hideAdultFromSearch
+    ) {
+      if (hideAdultFromSearchTimeoutRef.current) {
+        clearTimeout(hideAdultFromSearchTimeoutRef.current);
+      }
+      hideAdultFromSearchTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('hideAdultFromSearch', hideAdultFromSearch);
+      }, 500);
+    }
+
+    return () => {
+      if (hideAdultFromSearchTimeoutRef.current) {
+        clearTimeout(hideAdultFromSearchTimeoutRef.current);
+      }
+    };
+  }, [
+    hideAdultFromSearch,
+    user?.settings?.hideAdultFromSearch,
     debouncedUpdatePreferences,
     isInitialized,
   ]);
@@ -3022,6 +3084,26 @@ function SettingsScreen() {
 
                       <fieldset className="fieldset w-full p-0">
                         <legend className="fieldset-legend font-medium gap-2">
+                          {t('preferences.weekStartsOn')}
+                          {isPreferencesPending && (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          )}
+                        </legend>
+                        <DropdownSelect
+                          className="w-full"
+                          value={weekStartsOn}
+                          onChange={(event) =>
+                            setWeekStartsOn(Number(event.target.value) as 0 | 1)
+                          }
+                          disabled={isPending || isPreferencesPending}
+                        >
+                          <option value={1}>{t('preferences.monday')}</option>
+                          <option value={0}>{t('preferences.sunday')}</option>
+                        </DropdownSelect>
+                      </fieldset>
+
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium gap-2">
                           {t('preferences.timezone')}
                           {isPreferencesPending && (
                             <span className="loading loading-spinner loading-sm"></span>
@@ -3056,6 +3138,33 @@ function SettingsScreen() {
                               className="toggle toggle-accent"
                               checked={blurAdult}
                               onChange={(e) => setBlurAdult(e.target.checked)}
+                              disabled={isPreferencesPending}
+                            />
+                          </div>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
+                              {t('preferences.hideAdultFromSearch')}
+                            </span>
+                            <span className="text-sm text-base-content/60">
+                              {t('preferences.hideAdultFromSearchHint')}
+                            </span>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {isPreferencesPending && (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            )}
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-accent"
+                              checked={hideAdultFromSearch}
+                              onChange={(e) =>
+                                setHideAdultFromSearch(e.target.checked)
+                              }
                               disabled={isPreferencesPending}
                             />
                           </div>
