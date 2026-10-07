@@ -27,6 +27,8 @@ import {
   updateCustomThemes,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
+import { getUserMediaReviews } from '../controllers/media.controller.js';
+import { getUserMediaLists } from '../controllers/mediaList.controller.js';
 import {
   getDashboardHours,
   getRecentLogs,
@@ -95,6 +97,8 @@ router.post('/media/status', protect, updateMediaCompletionStatus);
 router.delete('/media/:type/:mediaId', protect, removeMediaFromImmersionList);
 
 router.get('/:username/logs', optionalProtect, getUserLogs);
+router.get('/:username/reviews', optionalProtect, getUserMediaReviews);
+router.get('/:username/lists', optionalProtect, getUserMediaLists);
 
 router.get('/:username/stats', optionalProtect, getUserStats);
 

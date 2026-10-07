@@ -799,6 +799,46 @@ export async function getMediaReviews(
   }
 }
 
+export async function getUserMediaReviews(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const owner = await User.findOne({ username: req.params.username })
+      .select('_id')
+      .lean();
+    if (!owner) {
+      throw new customError('User not found', 404);
+    }
+
+    const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+    const limit = Math.min(
+      Math.max(parseInt(String(req.query.limit ?? '20'), 10) || 20, 1),
+      50
+    );
+    const filter = { user: owner._id };
+    const [reviews, total] = await Promise.all([
+      MediaReview.find(filter)
+        .populate('user', 'username avatar')
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      MediaReview.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      reviews,
+      total,
+      page,
+      limit,
+      hasMore: page * limit < total,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function editMediaReview(
   req: Request,
   res: Response,
