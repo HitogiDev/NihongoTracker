@@ -412,7 +412,20 @@ const swaggerDocument = {
         type: 'object',
         properties: {
           _id: { type: 'string' },
-          user: { type: 'string' },
+          user: {
+            oneOf: [
+              { type: 'string' },
+              {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  username: { type: 'string' },
+                  avatar: { type: 'string' },
+                },
+              },
+            ],
+            nullable: true,
+          },
           mediaContentId: { type: 'string' },
           mediaType: { type: 'string' },
           summary: { type: 'string' },
@@ -421,6 +434,72 @@ const swaggerDocument = {
           hasSpoilers: { type: 'boolean' },
           likes: { type: 'array', items: { type: 'string' } },
           createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      UserMediaReview: {
+        allOf: [
+          { $ref: '#/components/schemas/MediaReview' },
+          {
+            type: 'object',
+            properties: {
+              user: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  _id: { type: 'string' },
+                  username: { type: 'string' },
+                  avatar: { type: 'string' },
+                },
+              },
+              editedAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        ],
+      },
+      MediaListSummary: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              _id: { type: 'string' },
+              username: { type: 'string' },
+              avatar: { type: 'string' },
+            },
+          },
+          title: { type: 'string' },
+          description: { type: 'string' },
+          isRanked: { type: 'boolean' },
+          isPublic: { type: 'boolean' },
+          entryCount: { type: 'integer' },
+          entryTypeCounts: {
+            type: 'object',
+            additionalProperties: { type: 'integer' },
+          },
+          likeCount: { type: 'integer' },
+          isLiked: { type: 'boolean' },
+          commentCount: { type: 'integer' },
+          clonedFrom: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          preview: {
+            type: 'array',
+            maxItems: 5,
+            items: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string' },
+                contentId: { type: 'string' },
+                type: { type: 'string' },
+                title: { type: 'object' },
+                contentImage: { type: 'string' },
+                coverImage: { type: 'string' },
+              },
+            },
+          },
         },
       },
       Tag: {
@@ -1716,6 +1795,66 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'User logs' },
+        },
+      },
+    },
+    '/users/{username}/reviews': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get reviews written by a user',
+        description: 'Returns public media reviews, newest first. Authentication is optional.',
+        security: [{}, { cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          { name: 'username', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
+        ],
+        responses: {
+          200: {
+            description: 'Paginated user reviews',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    reviews: { type: 'array', items: { $ref: '#/components/schemas/UserMediaReview' } },
+                    total: { type: 'integer' },
+                    page: { type: 'integer' },
+                    limit: { type: 'integer' },
+                    hasMore: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/lists': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get media lists created by a user',
+        description: 'Returns list summaries and up to five media previews per list, most recently updated first. Only the authenticated owner can see private lists. This is an alias of GET /lists/user/{username}.',
+        security: [{}, { cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          { name: 'username', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'User media lists',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    lists: { type: 'array', items: { $ref: '#/components/schemas/MediaListSummary' } },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: 'User not found' },
         },
       },
     },

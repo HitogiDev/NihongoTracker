@@ -172,6 +172,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - The browser bridge accepts `set-source` with `lunahook` or `websocket` and an optional `requestId`. The `source-changed` reply returns the request ID and confirmed hook status. Native status includes `websocket_selected` and can complete a pending source change. A compact daisyUI join selects one input for the session. Hook options appear only for LunaHook. WebSocket mode keeps the saved native hook and suppresses native lines until LunaHook is selected again. Failed or timed out requests release the controls.
 - Texthooker room state is stored in `TextSession` with a 24-hour TTL. Socket authentication parses the JWT cookie separately from Express middleware.
 - Swagger UI is mounted at `/api/docs`.
+- `GET /api/users/:username/reviews` returns public reviews written by a user, with `page` and `limit` pagination. `GET /api/users/:username/lists` reuses the media list controller and returns private lists only to their authenticated owner.
 
 ## Frontend architecture
 
