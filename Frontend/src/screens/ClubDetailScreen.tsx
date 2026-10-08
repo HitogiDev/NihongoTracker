@@ -1,6 +1,10 @@
+import OfflineImage from '../components/OfflineImage';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import Field from '../components/ui/Field';
+import { isMobileApp } from '../utils/nativeRuntime';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
 import LinkifiedText from '../components/ui/LinkifiedText';
 import DatePickerInput from '../components/ui/DatePickerInput';
 import React from 'react';
@@ -153,6 +157,8 @@ function serializeClubGoalDraft(goal: ClubGoalDraft): IClubGoal {
 
 function ClubDetailScreen() {
   const { t } = useTranslation(['clubs', 'common']);
+  const { t: nt } = useTranslation('nav');
+  const [nativeMoreOpen, setNativeMoreOpen] = useState(false);
   const badgeText = usePatreonBadgeText();
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
@@ -864,9 +870,9 @@ function ClubDetailScreen() {
   return (
     <div className="min-h-screen bg-base-200">
       <div className="relative">
-        <div className="h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
+        <div className="native-club-banner h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20 relative overflow-hidden">
           {club.banner && (
-            <img
+            <OfflineImage
               src={club.banner}
               alt={`${club.name} banner`}
               className="w-full h-full object-cover"
@@ -881,7 +887,7 @@ function ClubDetailScreen() {
               <div className="avatar">
                 <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-base-100 p-1 shadow-sm">
                   {club.avatar ? (
-                    <img
+                    <OfflineImage
                       src={club.avatar}
                       alt={club.name}
                       className="rounded-full w-full h-full object-cover"
@@ -916,12 +922,12 @@ function ClubDetailScreen() {
               </div>
 
               {/* Action buttons - Centered on mobile, right-aligned on desktop */}
-              <div className="flex gap-2 justify-center sm:justify-end mt-4 sm:mt-0">
+              <div className="native-club-actions flex gap-2 justify-center sm:justify-end mt-4 sm:mt-0">
                 {user && club.isUserMember && club.userStatus === 'active' ? (
                   <>
                     {canEditClubSettings && (
                       <button
-                        className="btn btn-secondary btn-sm"
+                        className="native-web-only btn btn-secondary btn-sm"
                         onClick={() => setIsEditClubModalOpen(true)}
                       >
                         <Pencil className="w-4 h-4" />
@@ -1010,13 +1016,13 @@ function ClubDetailScreen() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div role="tablist" className="tabs tabs-border mb-8 w-fit mx-auto">
+        <div role="tablist" className="native-club-tabs tabs tabs-border mb-8 w-fit mx-auto">
           <button
             className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             <Info className="mr-2 w-4 h-4" />
-            {t('tabs.overview')}
+            {isMobileApp() ? nt('native.activity') : t('tabs.overview')}
           </button>
           <button
             className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
@@ -1039,14 +1045,20 @@ function ClubDetailScreen() {
                 </span>
               )}
           </button>
-          {!hideRankingFeatures && <button
+          {(!hideRankingFeatures || isMobileApp()) && <button
             className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('rankings')}
+            onClick={() => isMobileApp() ? setNativeMoreOpen(true) : setActiveTab('rankings')}
           >
-            <BarChart className="mr-2 w-4 h-4" />
-            {t('tabs.rankings')}
+            {isMobileApp() ? <Ellipsis className="h-5 w-5" /> : <><BarChart className="mr-2 w-4 h-4" />{t('tabs.rankings')}</>}
+            {isMobileApp() && <span className="sr-only">{nt('native.more')}</span>}
           </button>}
         </div>
+        {isMobileApp() && <Modal open={nativeMoreOpen} onClose={() => setNativeMoreOpen(false)} title={nt('native.more')}>
+          <div className="flex flex-col gap-2">
+            {!hideRankingFeatures && <Button appearance="ghost" className="justify-start" onClick={() => { setActiveTab('rankings'); setNativeMoreOpen(false); }}><BarChart className="h-5 w-5" />{t('tabs.rankings')}</Button>}
+            {canEditClubSettings && <Button appearance="ghost" className="justify-start" onClick={() => { setNativeMoreOpen(false); setIsEditClubModalOpen(true); }}><Pencil className="h-5 w-5" />{t('common.edit')}</Button>}
+          </div>
+        </Modal>}
 
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1290,7 +1302,7 @@ function ClubDetailScreen() {
                         <figure className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
                           {media.mediaDocument?.contentImage ||
                           media.mediaDocument?.coverImage ? (
-                            <img
+                            <OfflineImage
                               src={
                                 media.mediaDocument.contentImage ||
                                 media.mediaDocument.coverImage
@@ -1815,7 +1827,7 @@ function ClubDetailScreen() {
                               onClick={() => handleSelectResult(result)}
                               className="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer rounded"
                             >
-                              <img
+                              <OfflineImage
                                 src={result.contentImage || ''}
                                 alt={
                                   result.title.contentTitleRomaji ||
@@ -2036,13 +2048,13 @@ function ClubDetailScreen() {
                   <div className="avatar">
                     <div className="w-24 h-24 rounded-full ring ring-base-300 ring-offset-2">
                       {editPreviews.avatar ? (
-                        <img
+                        <OfflineImage
                           src={editPreviews.avatar}
                           alt={t('edit.newAvatarAlt')}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : club?.avatar ? (
-                        <img
+                        <OfflineImage
                           src={club.avatar}
                           alt={t('edit.currentAvatarAlt')}
                           className="w-full h-full object-cover rounded-full"
@@ -2091,13 +2103,13 @@ function ClubDetailScreen() {
                 <div className="mb-4">
                   <div className="w-full h-32 rounded-lg overflow-hidden border-2 border-dashed border-base-300 bg-base-50 flex items-center justify-center">
                     {editPreviews.banner ? (
-                      <img
+                      <OfflineImage
                         src={editPreviews.banner}
                         alt={t('edit.newBannerAlt')}
                         className="w-full h-full object-cover"
                       />
                     ) : club?.banner ? (
-                      <img
+                      <OfflineImage
                         src={club.banner}
                         alt={t('edit.currentBannerAlt')}
                         className="w-full h-full object-cover"

@@ -1,3 +1,4 @@
+import OfflineImage from './OfflineImage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -108,7 +109,7 @@ function FavoriteCover({
       className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-base-300 ring-1 ring-base-content/10"
     >
       {cover ? (
-        <img
+        <OfflineImage
           src={cover}
           alt={mediaTitle(media)}
           loading="lazy"
@@ -306,7 +307,7 @@ function SortableFavorite({
       >
         <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-base-300 ring-1 ring-base-content/10">
           {cover ? (
-            <img
+            <OfflineImage
               src={cover}
               alt={mediaTitle(media)}
               loading="lazy"

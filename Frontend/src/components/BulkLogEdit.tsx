@@ -14,6 +14,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import DatePickerInput from './ui/DatePickerInput';
 import Field from './ui/Field';
 import TagSelector from './TagSelector';
+import { isMobileApp } from '../utils/nativeRuntime';
 
 type EditableField = 'description' | 'type' | 'date' | 'time' | 'episodes' | 'volume' | 'pages' | 'chars' | 'tags';
 type BulkEditRequest = { ids: string[]; updates: IUpdateLogRequest };
@@ -284,6 +285,9 @@ export function BulkLogToolbar({
 
   return (
     <>
+      {isMobileApp() && selectedIds.size === 0 && (
+        <p className="text-sm text-base-content/60">{t('bulk.holdToSelect')}</p>
+      )}
       {selectedIds.size > 0 && (
         <div className="surface-muted space-y-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -349,6 +353,73 @@ export function SelectableLogRow({
 }) {
   const { t } = useTranslation('logs');
   const selected = ids.every((id) => selectedIds.has(id));
+  const mobile = isMobileApp();
+  const selectionMode = selectedIds.size > 0;
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const held = useRef(false);
+  const cancelPress = () => {
+    if (pressTimer.current !== null) clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  };
+  useEffect(() => () => {
+    if (pressTimer.current !== null) clearTimeout(pressTimer.current);
+  }, []);
+  const toggleSelected = () => setSelectedIds((previous) => {
+    const next = new Set(previous);
+    const allSelected = ids.every((id) => previous.has(id));
+    ids.forEach((id) => allSelected ? next.delete(id) : next.add(id));
+    return next;
+  });
+  const isControl = (target: EventTarget | null) =>
+    target instanceof Element && Boolean(target.closest('button, input, textarea, select, dialog, [role="button"], [role="combobox"], [role="menu"]'));
+
+  if (mobile) return (
+    <div
+      className={selected
+        ? 'native-selectable-log min-w-0 select-none rounded-box ring-2 ring-primary'
+        : 'native-selectable-log min-w-0 select-none rounded-box'}
+      role="checkbox"
+      aria-label={t('bulk.selectEntry')}
+      aria-checked={selected ? true : ids.some((id) => selectedIds.has(id)) ? 'mixed' : false}
+      tabIndex={0}
+      onPointerDownCapture={(event) => {
+        cancelPress();
+        held.current = false;
+        if (!event.isPrimary || event.button !== 0 || isControl(event.target)) return;
+        pressStart.current = { x: event.clientX, y: event.clientY };
+        pressTimer.current = setTimeout(() => {
+          held.current = true;
+          toggleSelected();
+          cancelPress();
+        }, 500);
+      }}
+      onPointerMoveCapture={(event) => {
+        if (pressStart.current && Math.hypot(event.clientX - pressStart.current.x, event.clientY - pressStart.current.y) > 10) cancelPress();
+      }}
+      onPointerUpCapture={cancelPress}
+      onPointerCancelCapture={() => { cancelPress(); held.current = false; }}
+      onContextMenu={(event) => { if (!isControl(event.target)) event.preventDefault(); }}
+      onClickCapture={(event) => {
+        if (isControl(event.target)) return;
+        if (held.current || selectionMode) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!held.current) toggleSelected();
+          held.current = false;
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === ' ' || event.key === 'Enter')) {
+          event.preventDefault();
+          toggleSelected();
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
   return (
     <div className="flex items-start gap-2">
       <label className="pt-4 cursor-pointer">
@@ -357,11 +428,7 @@ export function SelectableLogRow({
           className="checkbox checkbox-primary checkbox-sm"
           aria-label={t('bulk.selectEntry')}
           checked={selected}
-          onChange={() => setSelectedIds((previous) => {
-            const next = new Set(previous);
-            ids.forEach((id) => selected ? next.delete(id) : next.add(id));
-            return next;
-          })}
+          onChange={toggleSelected}
         />
       </label>
       <div className="min-w-0 flex-1">{children}</div>

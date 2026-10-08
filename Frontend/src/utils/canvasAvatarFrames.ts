@@ -1,6 +1,7 @@
 import constellations from '../assets/avatar-frames/constellations.svg?raw';
 import type { AvatarFrame } from '../types';
 import { resizeAvatarCanvas } from './avatarCanvas';
+import { mountCanvasHeartFrame } from './canvasHeartFrame';
 import { DEFAULT_CONSTELLATION_COLOR, getConstellationColor } from './constellationColors';
 
 const turn = Math.PI * 2;
@@ -44,8 +45,8 @@ let artwork: Artwork | undefined;
 
 export function isCanvasAvatarFrame(
   frame?: AvatarFrame | null
-): frame is 'constellations' {
-  return frame === 'constellations';
+): frame is 'constellations' | 'hearts' {
+  return frame === 'constellations' || frame === 'hearts';
 }
 
 function loadArtwork(): Artwork {
@@ -218,7 +219,8 @@ function drawConstellations(
   ctx.globalAlpha = 1;
 }
 
-export async function mountCanvasAvatarFrame(host: HTMLElement, starColor?: string) {
+export async function mountCanvasAvatarFrame(host: HTMLElement, frame: 'constellations' | 'hearts', starColor?: string) {
+  if (frame === 'hearts') return mountCanvasHeartFrame(host);
   const art = loadArtwork();
   const color = getConstellationColor(starColor);
   const root = document.createElement('canvas');

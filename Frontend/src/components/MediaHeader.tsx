@@ -1,3 +1,4 @@
+import OfflineImage from './OfflineImage';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   getAverageColorFn,
@@ -599,7 +600,7 @@ export default function MediaHeader() {
                 {isLoadingMedia ? (
                   <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 skeleton"></div>
                 ) : media?.contentImage ? (
-                  <img
+                  <OfflineImage
                     src={media.contentImage}
                     alt={media.title.contentTitleNative}
                     className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${

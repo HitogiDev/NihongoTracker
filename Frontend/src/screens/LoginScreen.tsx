@@ -15,6 +15,10 @@ import { useValidationText } from '../hooks/useValidationText';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { getLearnerCountKey } from '../utils/learnerCount';
 import { getApiErrorMessage } from '../utils/apiError';
+import { isMobileApp } from '../utils/nativeRuntime';
+import NativeAuthLayout from '../native/NativeAuthLayout';
+import Button from '../components/ui/Button';
+import { LogIn } from 'lucide-react';
 
 function LoginScreen() {
   const { t } = useTranslation('auth');
@@ -36,6 +40,7 @@ function LoginScreen() {
   const { data: stats } = useQuery({
     queryKey: ['publicStats'],
     queryFn: getPublicStatsFn,
+    enabled: !isMobileApp(),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
   });
@@ -52,6 +57,7 @@ function LoginScreen() {
 
   // GSAP entrance animation
   useEffect(() => {
+    if (isMobileApp()) return;
     const tl = gsap.timeline();
 
     // Set initial states
@@ -116,7 +122,7 @@ function LoginScreen() {
     if (field === 'password') setPassword(value);
   };
 
-  const { mutate, isPending, isSuccess } = useMutation({
+  const { mutate, isPending, isSuccess, error } = useMutation({
     mutationFn: loginUserFn,
     onSuccess: (data: ILoginResponse) => {
       setUser(data);
@@ -142,6 +148,7 @@ function LoginScreen() {
 
   useEffect(() => {
     if (isSuccess) {
+      if (isMobileApp()) { navigate('/', { replace: true }); return; }
       // Success animation
       gsap.to(cardRef.current, {
         duration: 0.3,
@@ -157,6 +164,25 @@ function LoginScreen() {
       }, 500);
     }
   }, [navigate, isSuccess, t]);
+
+  if (isMobileApp()) return <NativeAuthLayout title={t('login.form.title')} subtitle={t('login.form.subtitle')}>
+    <form onSubmit={handleSubmit}>
+      <Field label={t('login.form.login.label')} error={errors.usernameOrEmail && vt(errors.usernameOrEmail)}>
+        {(id) => <input id={id} className="input focus:input-primary w-full" value={usernameOrEmail} autoComplete="username" autoCapitalize="none" autoCorrect="off"
+          placeholder={t('login.form.login.placeholder')} onChange={(e) => handleFieldChange('login', e.target.value)} required />}
+      </Field>
+      <Field label={t('login.form.password.label')} error={errors.password && vt(errors.password)}>
+        {(id) => <input id={id} type="password" className="input focus:input-primary w-full" value={password} autoComplete="current-password"
+          placeholder={t('login.form.password.placeholder')} onChange={(e) => handleFieldChange('password', e.target.value)} required />}
+      </Field>
+      <Link className="link link-primary flex min-h-12 items-center self-end" to="/forgot-password">{t('login.form.forgotPassword')}</Link>
+      {error && <p role="alert" className="text-sm text-error">{getApiErrorMessage(error)}</p>}
+      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('login.form.submitting')} disabled={!isFormValid}>
+        <LogIn className="h-5 w-5" />{t('login.form.submit')}
+      </Button>
+      <Link to="/register" className="btn btn-outline w-full">{t('register.form.submit')}</Link>
+    </form>
+  </NativeAuthLayout>;
 
   return (
     <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">

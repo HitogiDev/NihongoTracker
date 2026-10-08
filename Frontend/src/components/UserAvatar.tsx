@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAvatarInitials } from '../utils/avatar';
 import AvatarFrame from './AvatarFrame';
+import OfflineImage from './OfflineImage';
 import type { AvatarFrame as Frame, IUserCustomization } from '../types';
 
 interface UserAvatarProps {
@@ -40,7 +41,7 @@ export default function UserAvatar({
   const inner = (
     <div className={containerClassName}>
       {shouldShowImage ? (
-        <img
+        <OfflineImage
           src={avatar}
           alt={alt ?? `${username ?? 'User'} avatar`}
           className={imageClassName}

@@ -1,3 +1,4 @@
+import OfflineImage from '../components/OfflineImage';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Field from '../components/ui/Field';
 import DatePickerInput from '../components/ui/DatePickerInput';
@@ -42,6 +43,9 @@ import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
 import { useTimezone } from '../hooks/useTimezone';
 import { pickedDayToUtc } from '../utils/timezone';
 import LogPrivacyToggle from '../components/LogPrivacyToggle';
+import { useNavigate } from 'react-router-dom';
+import { isMobileApp } from '../utils/nativeRuntime';
+import { useNativeUnsavedChanges } from '../native/NativeDirtyContext';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -206,9 +210,15 @@ function LogScreen() {
     createInitialLogState()
   );
   const [dateInput, setDateInput] = useState('');
+  const navigate = useNavigate();
+  const [nativeDirty, setNativeDirty] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isAdvancedOptions, setIsAdvancedOptions] = useState<boolean>(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const clearNativeDirty = useNativeUnsavedChanges(nativeDirty || Boolean(
+    logData.mediaId || logData.mediaName || logData.hours || logData.minutes ||
+    logData.watchedEpisodes || logData.readChars || logData.readPages || selectedTags.length
+  ));
   const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -434,6 +444,8 @@ function LogScreen() {
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
+      clearNativeDirty();
+      setNativeDirty(false);
       const pendingVolume = pendingVolumeRef.current;
       if (
         pendingVolume?.mediaId &&
@@ -534,6 +546,7 @@ function LogScreen() {
           console.error('Error fetching user data:', e);
         }
       }
+      if (isMobileApp()) navigate('/records', { replace: true });
     },
     onError: (error) => {
       const errorMessage =
@@ -877,7 +890,7 @@ function LogScreen() {
     <>
       <div className="pt-28 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
         <div className="w-full max-w-6xl">
-          <form onSubmit={logSubmit} className="space-y-8">
+          <form onSubmit={logSubmit} className="native-log-form space-y-8" onChangeCapture={() => { if (isMobileApp()) setNativeDirty(true); }}>
             <div className="text-center">
               <h1 className="text-4xl font-bold mb-2">{t('create.title')}</h1>
               <p className="text-base-content/70">{t('create.subtitle')}</p>
@@ -1020,7 +1033,7 @@ function LogScreen() {
                                             <div
                                               className={`${isYouTubeResult ? 'w-16 h-12' : 'w-12 h-12'} rounded-lg`}
                                             >
-                                              <img
+                                              <OfflineImage
                                                 src={group.contentImage}
                                                 alt={
                                                   group.title.contentTitleNative
@@ -1578,6 +1591,7 @@ function LogScreen() {
                               <DatePickerInput
                                 value={dateInput}
                                 onChange={(nextValue) => {
+                                  setNativeDirty(true);
                                   setDateInput(nextValue);
                                   const parsedDate = parseDateValue(nextValue);
                                   handleInputChange(
@@ -1614,7 +1628,7 @@ function LogScreen() {
                       <div className="flex flex-col items-center justify-center min-h-[300px] surface-muted p-4">
                         {logData.img ? (
                           <div className="w-full text-center">
-                            <img
+                            <OfflineImage
                               src={logData.img}
                               alt={t('create.selectedMediaAlt')}
                               className={`max-h-64 mx-auto rounded-lg shadow-lg mb-4 ${
@@ -1674,7 +1688,7 @@ function LogScreen() {
             )}
 
             {logData.type && (
-              <div className="card surface">
+              <div className="native-log-submit card surface">
                 <div className="card-body items-center text-center">
                   <h2 className="card-title">{t('create.stepReady')}</h2>
                   <p>{t('create.reviewHint')}</p>

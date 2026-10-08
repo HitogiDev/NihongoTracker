@@ -21,7 +21,8 @@ export function drawProceduralFrame(
 }
 
 function drawElectric(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+  // Use normal compositing to preserve transparency on Chromium GPU paths.
+  const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
@@ -182,7 +183,8 @@ function updateSakuraCanvas(
   colors: string[],
   orbitRadius = 66,
 ) {
-  const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+  // Use normal compositing to preserve transparency on Chromium GPU paths.
+  const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -2,6 +2,7 @@ import { Link, useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import PlaylistBatchCard from '../components/PlaylistBatchCard';
 import { BulkLogToolbar, SelectableLogRow } from '../components/BulkLogEdit';
+import { isMobileApp } from '../utils/nativeRuntime';
 import ProgressBar from '../components/ProgressBar';
 import ProfileStatsBand from '../components/ProfileStatsBand';
 import ImmersionGoals from '../components/ImmersionGoals';
@@ -1443,6 +1444,7 @@ function ProfileScreen() {
                         key={entry.logs[0]._id}
                         log={entry.logs[0]}
                         user={username}
+                        selectionMode={isMobileApp() && selectedLogIds.size > 0}
                       />
                     );
                     return canBulkEditLogs ? (

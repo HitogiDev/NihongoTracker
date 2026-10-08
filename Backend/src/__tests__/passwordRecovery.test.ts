@@ -11,10 +11,12 @@ const mocks = vi.hoisted(() => ({
   findOne: vi.fn(),
   findOneAndUpdate: vi.fn(),
   resetEmail: vi.fn(),
+  revokeMobileSessions: vi.fn(),
 }));
 vi.mock('../models/user.model.js', () => ({
   default: { findOne: mocks.findOne, findOneAndUpdate: mocks.findOneAndUpdate },
 }));
+vi.mock('../models/mobileSession.model.js', () => ({ default: { deleteMany: mocks.revokeMobileSessions } }));
 vi.mock('../mailtrap/emails.js', () => ({
   sendPasswordResetEmail: mocks.resetEmail,
   sendPasswordResetSuccessEmail: vi.fn(async () => {}),
@@ -117,6 +119,8 @@ describe('password recovery tokens', () => {
     expect(
       [firstNext.mock.calls.length, secondNext.mock.calls.length].sort()
     ).toEqual([0, 1]);
+    expect(mocks.revokeMobileSessions).toHaveBeenCalledOnce();
+    expect(mocks.revokeMobileSessions).toHaveBeenCalledWith({ user: 'user-id' });
     expect(mocks.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ resetPasswordToken: expect.any(String) }),
       expect.objectContaining({

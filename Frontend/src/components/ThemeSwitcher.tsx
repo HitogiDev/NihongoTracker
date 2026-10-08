@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import api from '../api/axiosConfig';
+import { saveOfflineSetting } from '../offline/offlineQueue';
 import type { ICustomTheme, ISavedCustomTheme } from '../types';
 import { useUserDataStore } from '../store/userData';
 import {
@@ -122,6 +123,7 @@ export default function ThemeSwitcher() {
   ) {
     setSaving(true);
     try {
+      const data = await saveOfflineSetting('customThemes', { themes: nextThemes, profileThemeId: nextProfileId }, async () => {
       const { data } = await api.put<{
         themes: ISavedCustomTheme[];
         profileThemeId: string | null;
@@ -129,6 +131,8 @@ export default function ThemeSwitcher() {
         themes: nextThemes,
         profileThemeId: nextProfileId,
       });
+      return data;
+      }, { themes: nextThemes, profileThemeId: nextProfileId });
       if (user) {
         setUser({
           ...user,

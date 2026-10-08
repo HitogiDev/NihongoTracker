@@ -57,6 +57,9 @@ import {
 import ActivityCard from './social/ActivityCard';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 import GettingStartedModal from './GettingStartedModal';
+import ImmersionGoals from './ImmersionGoals';
+import { isMobileApp } from '../utils/nativeRuntime';
+import { useNativePageState } from '../native/useNativePageState';
 
 type DashboardActivityScope = Exclude<ActivityFeedScope, 'user'>;
 type DashboardLayout = 'classic' | 'compact';
@@ -111,6 +114,7 @@ function getStoredDashboardLayout(): DashboardLayout {
 
 function Dashboard() {
   const { t } = useTranslation('home');
+  const { t: nt } = useTranslation('nav');
   const { user, setUser } = useUserDataStore();
   const hideRankingFeatures = useHideRankingFeatures();
   const username = user?.username;
@@ -137,7 +141,7 @@ function Dashboard() {
   const [selectedMedia, setSelectedMedia] = useState<
     IMediaDocument | undefined
   >();
-  const [activityScope, setActivityScope] = useState<DashboardActivityScope>(() =>
+  const [activityScope, setActivityScope] = useNativePageState<DashboardActivityScope>('home:feed', () =>
     requestedFeed === 'following' ||
     requestedFeed === 'clubs' ||
     requestedFeed === 'global'
@@ -188,7 +192,7 @@ function Dashboard() {
     },
   });
 
-  const { data: hours } = useQuery({
+  const { data: hours, isPending: hoursPending, isError: hoursError, refetch: refetchHours } = useQuery({
     queryKey: ['logsHero', username],
     queryFn: () => getDashboardHoursFn(username),
     staleTime: Infinity,
@@ -254,7 +258,7 @@ function Dashboard() {
     ) {
       setActivityScope(requestedFeed);
     }
-  }, [requestedFeed]);
+  }, [requestedFeed, setActivityScope]);
 
   useEffect(() => {
     if (!focusedActivityId) return;
@@ -543,7 +547,29 @@ function Dashboard() {
         }}
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      {isMobileApp() && <div className="space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0"><p className="text-sm text-base-content/65">{t('dashboard.welcomeBack')}</p><h2 className="truncate text-2xl font-bold">{user.username}</h2></div>
+          <span className="badge badge-secondary gap-1"><Flame className="h-4 w-4" />{streak}</span>
+        </div>
+        <Link to="/log" state={{ nativeFrom: '/' }} className="btn btn-primary w-full"><Plus className="h-5 w-5" />{nt('native.createLog')}</Link>
+        <section className="card surface"><div className="card-body space-y-3">
+          <h2 className="font-semibold">{nt('native.thisMonth')}</h2>
+          {hoursPending ? <div className="skeleton h-16" /> : hoursError ? <div role="alert" className="text-sm space-y-2"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void refetchHours()}>{nt('native.retry')}</Button></div> : <div className="grid grid-cols-3 gap-2">
+            {(['reading', 'listening', 'total'] as const).map((key) => <div key={key} className="min-w-0"><p className="text-xs text-base-content/65">{t(`dashboard.stats.${key}`)}</p><p className="text-xl font-bold">{immersionStats.currentMonth[key]}<span className="text-sm font-normal text-base-content/65"> h</span></p></div>)}
+          </div>}
+        </div></section>
+        <ImmersionGoals username={user.username} />
+        <RecentMediaRail allLogs={recentMediaHighlights} limit={recentMediaLimit} onQuickLog={handleQuickLogOpen} onRemove={handleRemoveMedia} onManage={() => setManageHiddenOpen(true)} />
+        <section className="space-y-3">
+          <h2 className="font-semibold">{nt('native.activity')}</h2>
+          <div className="join flex w-full">{ACTIVITY_SCOPES.map(({ value, icon: Icon }) => <Button key={value} className="join-item flex-1" variant={activityScope === value ? 'primary' : 'default'} appearance={activityScope === value ? 'solid' : 'outline'} aria-pressed={activityScope === value} onClick={() => setActivityScope(value)}><Icon className="h-4 w-4" /><span className="text-xs">{t(`dashboard.feed.scopes.${value}`)}</span></Button>)}</div>
+          {activityLoading ? <div className="skeleton h-28" /> : activityError ? <div role="alert" className="alert flex flex-col items-start"><p>{navigator.onLine ? t('dashboard.feed.loadError') : nt('native.offline')}</p><Button onClick={() => void refetchActivity()}>{nt('native.retry')}</Button></div> : socialActivities.length ? socialActivities.map((activity) => <ActivityCard key={activity._id} activity={activity} highlighted={activity._id === focusedActivityId} />) : <p className="surface-muted p-4 text-sm text-base-content/65">{t(`dashboard.feed.emptyScopes.${activityScope}`)}</p>}
+          {hasNextActivityPage && <Button block loading={isFetchingNextActivityPage} onClick={() => void fetchNextActivityPage()}>{nt('native.loadMore')}</Button>}
+        </section>
+      </div>}
+
+      {!isMobileApp() && <><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-primary font-semibold">
             {t('dashboard.welcomeBack')}
@@ -957,9 +983,11 @@ function Dashboard() {
         </div>
       </div>
 
+      </>}
       <dialog
         className="modal modal-bottom sm:modal-middle"
         open={mediaToRemove !== null}
+        onCancel={(event) => { event.preventDefault(); setMediaToRemove(null); }}
       >
         <div className="modal-box">
           <h3 className="font-bold text-lg">{t('dashboard.hideTitle')}</h3>

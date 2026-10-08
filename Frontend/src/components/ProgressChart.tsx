@@ -11,6 +11,7 @@ import { effectiveLogMinutes } from '../utils/immersionTime';
 import { useTranslation } from 'react-i18next';
 import { getLogTypeLabelKey } from '../utils/logTypes';
 import { useUserDataStore } from '../store/userData';
+import { isMobileApp } from '../utils/nativeRuntime';
 
 interface LocalDateInfo {
   iso: string;
@@ -102,6 +103,7 @@ export default function ProgressChart({
   chartType = 'line',
   showTitle = true,
 }: ProgressChartProps) {
+  const mobile = isMobileApp();
   const weekStartsOn = useUserDataStore(
     (state) => state.user?.settings?.weekStartsOn ?? 1,
   );
@@ -501,18 +503,18 @@ export default function ProgressChart({
           : selectedType;
 
   return (
-    <div className="w-full h-full">
-      <div className="h-full w-full">
+    <div className="w-full h-full min-w-0">
+      <div className="h-full w-full min-w-0">
         {(showTitle || !externalTimeframe) && (
-          <div className="flex items-center justify-between mb-6 px-4">
-          <div>
+          <div className={mobile ? 'flex flex-wrap items-start justify-between gap-3 mb-4' : 'flex items-center justify-between mb-6 px-4'}>
+          <div className="min-w-0">
             {showTitle && (
               <h2 className="text-2xl font-bold text-primary mb-2">
                 {t('progress.activity')}
               </h2>
             )}
             {showTitle && hasData ? (
-              <p className="text-sm text-base-content mb-4">
+              <p className="text-sm text-base-content mb-4 break-words">
                 {typeLabel} -
                 {timeframe === 'today'
                   ? ` Hourly ${metric === 'xp' ? 'XP' : 'Time'} - Today`
@@ -527,7 +529,7 @@ export default function ProgressChart({
             ) : null}
           </div>
           {!externalTimeframe && (
-            <div>
+            <div className={mobile ? 'ml-auto' : undefined}>
               <DropdownSelect
                 value={timeframe}
                 onChange={(e) =>
@@ -553,11 +555,12 @@ export default function ProgressChart({
           </div>
         )}
         {chartType === 'line' ? (
-          <LineChart data={lineData} />
+          <LineChart data={lineData} compact={mobile} />
         ) : (
-          <div className="w-full" style={{ height: '350px' }}>
+          <div className={mobile ? 'relative h-72 w-full min-w-0' : 'relative h-[350px] w-full'}>
             <BarChart
               data={barData}
+              compact={mobile}
               options={{
                 interaction: { mode: 'index', intersect: false },
                 plugins: {

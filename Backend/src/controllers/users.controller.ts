@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import crypto from 'crypto';
 import { fetchJitenDetail } from '../services/jiten.js';
 import User from '../models/user.model.js';
+import MobileSession from '../models/mobileSession.model.js';
 import Log from '../models/log.model.js';
 import RankSnapshot from '../models/rankSnapshot.model.js';
 import {
@@ -579,6 +580,7 @@ export async function updateUser(
 
     const updatedUser = await user.save();
     await uploads.commit();
+    if (newPassword) await MobileSession.deleteMany({ user: updatedUser._id });
 
     if (
       !wasHidingRankingFeatures &&

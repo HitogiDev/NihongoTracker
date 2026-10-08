@@ -1,4 +1,8 @@
 import axiosInstance from './axiosConfig';
+import { isOfflineMutationError, queueOfflineMutation } from '../offline/offlineQueue';
+import { isNativeApp } from '../utils/nativeRuntime';
+import { getOfflineOperations } from '../offline/offlineStore';
+import { useUserDataStore } from '../store/userData';
 import { revealAchievements } from '../store/achievementReveal';
 import {
   IClubListResponse,
@@ -44,6 +48,12 @@ export async function getClubsFn(params: {
 // Get a specific club by ID
 export async function getClubFn(clubId: string): Promise<IClubResponse> {
   const { data } = await api.get<IClubResponse>(`/clubs/${clubId}`);
+  const userId = useUserDataStore.getState().user?._id;
+  if (isNativeApp() && userId) {
+    const operations = await getOfflineOperations(userId);
+    const membership = operations.filter((operation) => operation.status === 'pending' && operation.payload.clubId === clubId && ['joinClub', 'leaveClub'].includes(operation.type)).slice(-1)[0];
+    if (membership) return { ...data, isUserMember: membership.type === 'joinClub', userStatus: membership.type === 'joinClub' ? (data.isPublic ? 'active' : 'pending') : undefined };
+  }
   return data;
 }
 
@@ -86,18 +96,34 @@ export async function createClubFn(
 
 // Join a club
 export async function joinClubFn(clubId: string): Promise<{ message: string }> {
-  const { data } = await api.post<{ message: string }>(`/clubs/${clubId}/join`);
-  return data;
+  if (isNativeApp()) return queueOfflineMutation('joinClub', { clubId }, () => ({ message: 'Saved for sync' }));
+  try {
+    const { data } = await api.post<{ message: string }>(`/clubs/${clubId}/join`);
+    return data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    return queueOfflineMutation('joinClub', { clubId }, () => ({
+      message: 'Club join saved for sync.',
+    }));
+  }
 }
 
 // Leave a club
 export async function leaveClubFn(
   clubId: string
 ): Promise<{ message: string }> {
-  const { data } = await api.post<{ message: string }>(
-    `/clubs/${clubId}/leave`
-  );
-  return data;
+  if (isNativeApp()) return queueOfflineMutation('leaveClub', { clubId }, () => ({ message: 'Saved for sync' }));
+  try {
+    const { data } = await api.post<{ message: string }>(
+      `/clubs/${clubId}/leave`
+    );
+    return data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    return queueOfflineMutation('leaveClub', { clubId }, () => ({
+      message: 'Club leave saved for sync.',
+    }));
+  }
 }
 
 // Update club (leaders only)

@@ -1,4 +1,15 @@
 import axiosInstance from './axiosConfig';
+import { isNativeApp } from '../utils/nativeRuntime';
+import { loginMobile, logoutMobile } from '../offline/mobileSession';
+import {
+  getPendingOfflineLogs,
+  isOfflineMutationError,
+  queueOfflineMutation,
+  saveOfflineSetting,
+} from '../offline/offlineQueue';
+import { useUserDataStore } from '../store/userData';
+import { readCachedApiResponse } from '../offline/offlineStore';
+import { queuedLog, matchesLog, profileFields, followingSummary, overlayUser } from '../offline/offlineViews';
 import { revealAchievements } from '../store/achievementReveal';
 import { celebrateLog } from '../store/logCelebration';
 import { fetchAnilistSyncPayload } from './anilistApi';
@@ -78,10 +89,14 @@ export async function registerUserFn(
   }, new URLSearchParams());
 
   const { data } = await api.post<ILoginResponse>('auth/register', userParams);
+  if (isNativeApp()) {
+    return loginMobile(user.username, user.password);
+  }
   return data;
 }
 
 export async function loginUserFn(user: ILoginInput): Promise<ILoginResponse> {
+  if (isNativeApp()) return loginMobile(user.login, user.password);
   const userParams = Object.entries(user).reduce((params, [key, value]) => {
     params.append(key, value);
     return params;
@@ -92,6 +107,7 @@ export async function loginUserFn(user: ILoginInput): Promise<ILoginResponse> {
 }
 
 export async function logoutUserFn() {
+  if (isNativeApp()) return logoutMobile();
   const { data } = await api.post('auth/logout');
   return data;
 }
@@ -129,7 +145,7 @@ export async function getPublicStatsFn(): Promise<{
 
 export async function getUserFn(username: string): Promise<IUser> {
   const { data } = await api.get<IUser>(`users/${username}`);
-  return data;
+  return overlayUser(data);
 }
 
 export async function searchUsersFn(
@@ -141,13 +157,40 @@ export async function searchUsersFn(
   return data;
 }
 
-export async function updateUserFn(updateValues: FormData) {
-  const { data } = await api.put<IUser>(`/users`, updateValues, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return data;
+export async function updateUserFn(updateValues: FormData): Promise<ILoginResponse> {
+  const allowed = new Set(['about', 'timezone', 'weekStartsOn', 'language', 'blurAdultContent', 'hideAdultFromSearch', 'hideUnmatchedLogsAlert', 'hideRankingFeatures']);
+  const safeFields: Record<string, string> = {};
+  let safe = true;
+  for (const [key, value] of updateValues.entries()) {
+    if (!allowed.has(key) || typeof value !== 'string') safe = false;
+    else safeFields[key] = value;
+  }
+  const owner = useUserDataStore.getState().user;
+  if (isNativeApp() && safe && owner) {
+    return queueOfflineMutation('profile', { fields: safeFields }, () => profileFields(owner, safeFields));
+  }
+  try {
+    const { data } = await api.put<ILoginResponse>(`/users`, updateValues, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    const fields: Record<string, string> = {};
+    for (const [key, value] of updateValues.entries()) {
+      if (typeof value !== 'string' || !allowed.has(key)) {
+        throw error;
+      }
+      fields[key] = value;
+    }
+    const currentUser = useUserDataStore.getState().user;
+    if (!currentUser) throw error;
+    return queueOfflineMutation('profile', { fields }, () => {
+      return profileFields(currentUser, fields);
+    });
+  }
 }
 
 export async function clearUserDataFn(username: string) {
@@ -368,8 +411,22 @@ export async function assignMediaFn(assignData: Array<IAssignData>) {
 }
 
 export async function getUserLogsFn(username: string, params?: ILogsParams) {
-  const { data } = await api.get<ILog[]>(`users/${username}/logs`, { params });
-  return data;
+  const currentUser = useUserDataStore.getState().user;
+  let data: ILog[];
+  try { data = (await api.get<ILog[]>(`users/${username}/logs`, { params })).data; }
+  catch (error) {
+    if (!isOfflineMutationError(error) || !currentUser || currentUser.username.toLowerCase() !== username.toLowerCase() || (params?.page ?? 1) !== 1) throw error;
+    const cached = await readCachedApiResponse(currentUser._id, api.getUri({ url: `users/${username}/logs`, params: { page: 1, limit: 20 } }));
+    data = Array.isArray(cached) ? (cached as ILog[]).filter((log) => matchesLog(log, params)) : [];
+  }
+  if (!isNativeApp() || !currentUser || currentUser.username.toLowerCase() !== username.toLowerCase()) {
+    return data;
+  }
+  const queuedLogs = await getPendingOfflineLogs(currentUser._id);
+  return [
+    ...queuedLogs.map((operation) => queuedLog(operation, currentUser)).filter((log) => matchesLog(log, params)),
+    ...data,
+  ];
 }
 
 export async function createLogFn(logValues: ICreateLog) {
@@ -382,12 +439,30 @@ export async function createLogFn(logValues: ICreateLog) {
         : logValues.date
       : new Date().toISOString(),
   };
-  const { data } = await api.post<
-    ILog & {
-      newAchievements?: IAchievement[];
-      celebration?: ILogCelebration;
-    }
-  >(`logs`, logData);
+  const operationId = isNativeApp() ? crypto.randomUUID() : undefined;
+  if (operationId) {
+    const result = await queueOfflineMutation('log', { log: logData },
+      (id) => queuedLog({ id, userId: useUserDataStore.getState().user!._id, type: 'log', payload: { log: logData }, createdAt: Date.now(), status: 'pending' }, useUserDataStore.getState().user!), operationId);
+    celebrateLog((result as ILog & { celebration?: ILogCelebration }).celebration);
+    revealAchievements((result as ILog & { newAchievements?: IAchievement[] }).newAchievements);
+    return result;
+  }
+  let data: ILog & {
+    newAchievements?: IAchievement[];
+    celebration?: ILogCelebration;
+  };
+  try {
+    const response = await api.post<typeof data>(`logs`, logData);
+    data = response.data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    return queueOfflineMutation(
+      'log',
+      { log: logData },
+      (queuedId) => queuedLog({ id: queuedId, userId: useUserDataStore.getState().user!._id, type: 'log', payload: { log: logData }, createdAt: Date.now(), status: 'pending' }, useUserDataStore.getState().user!),
+      operationId
+    );
+  }
   // Celebrate/reveal here rather than per-caller so every log entry point
   // (log screen, quick log, texthooker, shared log, playlist batches) gets
   // the full feedback sequence.
@@ -537,10 +612,14 @@ export async function getRecentLogsFn(username: string | undefined) {
   if (!username) {
     throw new Error('Username is required to fetch recent logs');
   }
-  const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`, {
-    params: { limit: 10 },
-  });
-  return data;
+  const currentUser = useUserDataStore.getState().user;
+  const owner = isNativeApp() && currentUser?.username.toLowerCase() === username.toLowerCase();
+  let data: ILog[];
+  try { data = (await api.get<ILog[]>(`users/${username}/recentlogs`, { params: { limit: 10 } })).data; }
+  catch (error) { if (!owner || !isOfflineMutationError(error)) throw error; data = []; }
+  if (!owner || !currentUser) return data;
+  const operations = await getPendingOfflineLogs(currentUser._id);
+  return [...operations.map((operation) => queuedLog(operation, currentUser)), ...data].slice(0, 10);
 }
 
 export async function getRankingSummaryFn(username: string, timezone?: string) {
@@ -735,17 +814,39 @@ export async function addManualImmersionFn(
 export async function followUserFn(
   username: string
 ): Promise<{ relationship: ISocialSummary }> {
-  const { data } = await api.post(`users/${encodeURIComponent(username)}/follow`);
-  return data;
+  if (isNativeApp()) {
+    const target = await getUserFn(username);
+    return queueOfflineMutation('follow', { username }, () => ({ relationship: followingSummary(target.social, true) }));
+  }
+  try {
+    const { data } = await api.post(`users/${encodeURIComponent(username)}/follow`);
+    return data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    return queueOfflineMutation('follow', { username }, () => ({
+      relationship: followingSummary(undefined, true),
+    }));
+  }
 }
 
 export async function unfollowUserFn(
   username: string
 ): Promise<{ relationship: NonNullable<IUser['social']> }> {
-  const { data } = await api.delete(
-    `users/${encodeURIComponent(username)}/follow`
-  );
-  return data;
+  if (isNativeApp()) {
+    const target = await getUserFn(username);
+    return queueOfflineMutation('unfollow', { username }, () => ({ relationship: followingSummary(target.social, false) }));
+  }
+  try {
+    const { data } = await api.delete(
+      `users/${encodeURIComponent(username)}/follow`
+    );
+    return data;
+  } catch (error) {
+    if (!isOfflineMutationError(error)) throw error;
+    return queueOfflineMutation('unfollow', { username }, () => ({
+      relationship: followingSummary(undefined, false),
+    }));
+  }
 }
 
 export async function getConnectionsFn(
@@ -1717,31 +1818,37 @@ export async function deleteApiKeyFn(id: string): Promise<{ message: string }> {
 export async function updateStatsLayoutFn(
   layout: StatsGroupLayout[]
 ): Promise<{ message: string; statsLayout: StatsGroupLayout[] }> {
+  return saveOfflineSetting('statsLayout', { layout }, async () => {
   const { data } = await api.patch<{
     message: string;
     statsLayout: StatsGroupLayout[];
   }>('users/settings/stats-layout', { layout });
   return data;
+  }, { message: 'Saved for sync', statsLayout: layout });
 }
 
 export async function updateProfileLayoutFn(
   layout: ProfileWidgetLayout[]
 ): Promise<{ message: string; profileLayout: ProfileWidgetLayout[] }> {
+  return saveOfflineSetting('profileLayout', { layout }, async () => {
   const { data } = await api.patch<{
     message: string;
     profileLayout: ProfileWidgetLayout[];
   }>('users/settings/profile-layout', { layout });
   return data;
+  }, { message: 'Saved for sync', profileLayout: layout });
 }
 
 export async function updateSocialPrivacyFn(
   socialPrivacy: ISocialPrivacySettings
 ): Promise<{ message: string; socialPrivacy: typeof socialPrivacy }> {
+  return saveOfflineSetting('socialPrivacy', { socialPrivacy }, async () => {
   const { data } = await api.patch<{
     message: string;
     socialPrivacy: typeof socialPrivacy;
   }>('users/settings/social-privacy', { socialPrivacy });
   return data;
+  }, { message: 'Saved for sync', socialPrivacy });
 }
 
 export interface IStatsCardTiles {
@@ -1791,11 +1898,13 @@ export async function getCustomizationFn(): Promise<ICustomizationOptionsRespons
 export async function updateCustomizationFn(
   patch: IUserCustomization
 ): Promise<{ customization: IUserCustomization }> {
+  return saveOfflineSetting('customization', { ...patch }, async () => {
   const { data } = await api.patch<{ customization: IUserCustomization }>(
     'users/me/customization',
     patch
   );
   return data;
+  }, { customization: { ...useUserDataStore.getState().user?.customization, ...patch } });
 }
 
 export async function getGanttDataFn(

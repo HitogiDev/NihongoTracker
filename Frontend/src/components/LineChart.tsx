@@ -33,15 +33,17 @@ ChartJS.register(
 
 function LineChart({
   data,
+  compact = false,
 }: {
   data: ChartData<'line', (number | Point | null)[]>;
+  compact?: boolean;
 }) {
   const { t } = useTranslation('common');
   const lineColors = useThemeColors(1);
   const fillColors = useThemeColors(0.16);
 
   return (
-    <div className="w-full h-full min-h-[350px]">
+    <div className={compact ? 'relative h-72 w-full min-w-0' : 'relative w-full h-full min-h-[350px]'}>
       {data ? (
         <Line
           options={{
@@ -50,14 +52,15 @@ function LineChart({
             interaction: { mode: 'index', intersect: false, axis: 'xy' },
             plugins: {
               legend: {
-                position: 'right',
+                position: compact ? 'bottom' : 'right',
                 labels: {
                   color: lineColors.baseContent,
                   font: { size: 12 },
+                  ...(compact && { usePointStyle: true, boxWidth: 8, boxHeight: 8 }),
                 },
               },
               zoom: {
-                pan: { enabled: true, mode: 'x' },
+                pan: { enabled: !compact, mode: 'x' },
                 zoom: {
                   wheel: { enabled: true },
                   pinch: { enabled: true },
@@ -72,7 +75,7 @@ function LineChart({
               x: {
                 title: { display: true, color: lineColors.baseContent },
                 grid: { display: false },
-                ticks: { color: lineColors.baseContent, maxTicksLimit: 10 },
+                ticks: { color: lineColors.baseContent, maxTicksLimit: compact ? 4 : 10, ...(compact && { maxRotation: 0 }) },
               },
               y: {
                 grid: { color: fillColors.baseContent },

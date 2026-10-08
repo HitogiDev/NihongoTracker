@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model.js';
 import ApiKey from '../models/apiKey.model.js';
+import MobileSession from '../models/mobileSession.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { decodedJWT } from '../types.js';
@@ -91,7 +92,8 @@ async function authenticateRequest(
   }
 
   // 2. Fall back to JWT cookie authentication
-  const token = req.cookies.jwt;
+  const bearerToken = req.headers.authorization?.match(/^Bearer (\S+)$/i)?.[1];
+  const token = bearerToken || req.cookies.jwt;
   if (!token) {
     if (failOnMissingCredentials) {
       throw apiError('auth.noToken', 401, 'Unauthorized, no token');
@@ -100,16 +102,43 @@ async function authenticateRequest(
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.TOKEN_SECRET!) as decodedJWT;
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET!) as decodedJWT & {
+      sid?: string;
+    };
+    if (bearerToken && !decoded.sid) {
+      throw apiError('auth.invalidToken', 401, 'Invalid mobile session');
+    }
+    if (decoded.sid) {
+      const activeSession = await MobileSession.exists({
+        _id: decoded.sid,
+        user: decoded.id,
+        expiresAt: { $gt: new Date() },
+      });
+      if (!activeSession) {
+        throw apiError('auth.invalidToken', 401, 'Mobile session expired');
+      }
+      res.locals.mobileSessionId = decoded.sid;
+    }
     const user = await loadAndValidateUser(decoded.id.toString());
     return user;
   } catch (error) {
-    res.clearCookie('jwt');
+    if (!bearerToken) res.clearCookie('jwt');
     if (failOnInvalidCredentials) {
       throw error;
     }
     return null;
   }
+}
+
+export function requireMobileSession(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  if (typeof res.locals.mobileSessionId !== 'string') {
+    return next(apiError('auth.invalidToken', 401, 'Mobile session required'));
+  }
+  return next();
 }
 
 export async function protect(req: Request, res: Response, next: NextFunction) {

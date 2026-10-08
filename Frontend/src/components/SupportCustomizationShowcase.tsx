@@ -248,7 +248,7 @@ export default function SupportCustomizationShowcase() {
                   onClick={() => setFrame(value)}
                 >
                   <div
-                    className="mb-4 flex h-32 w-full items-center justify-center rounded-box bg-base-content/20 text-base-content"
+                    className="mb-4 flex h-32 w-full items-center justify-center rounded-box bg-black text-white"
                     aria-hidden="true"
                   >
                     <UserAvatar
@@ -285,7 +285,7 @@ export default function SupportCustomizationShowcase() {
                   aria-pressed={banner === value}
                   onClick={() => setBanner(value)}
                 >
-                  <div className="relative mb-4 h-32 w-full overflow-hidden rounded-box bg-neutral">
+                  <div className="relative mb-4 h-32 w-full overflow-hidden rounded-box bg-black">
                     <BannerEffectOverlay
                       effect={value}
                       seed={`support-banner-${value}`}
@@ -321,7 +321,7 @@ export default function SupportCustomizationShowcase() {
                     onClick={() => setName(value)}
                   >
                     <span
-                      className="mb-4 flex h-28 w-full min-w-0 items-center justify-center rounded-box bg-neutral px-2 text-neutral-content"
+                      className="mb-4 flex h-28 w-full min-w-0 items-center justify-center rounded-box bg-black px-2 text-white"
                       aria-hidden="true"
                     >
                       <span

@@ -35,6 +35,7 @@ import {
 import { getAchievementName } from '../utils/achievementText';
 import BannerEffectOverlay from './BannerEffectOverlay';
 import UserAvatar from './UserAvatar';
+import { useOfflineImage } from '../hooks/useOfflineImage';
 import { useUserDataStore } from '../store/userData';
 import Spinner from './ui/Spinner';
 import {
@@ -90,6 +91,7 @@ export default function ProfileHeader() {
     staleTime: Infinity,
   });
   const isPrivateProfile = isPrivateProfileError(userError);
+  const banner = useOfflineImage(user?.banner);
 
   useLayoutEffect(() => {
     const profileTheme = isPrivateProfile ? undefined : user?.profileTheme;
@@ -160,11 +162,11 @@ export default function ProfileHeader() {
         : getProfileAccentStyle(customization)}
     >
       <div
-        className={`relative h-96 w-full bg-cover bg-center bg-no-repeat ${
+        className={`native-profile-banner relative h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingUser ? 'skeleton' : ''
         }`}
         style={{
-          backgroundImage: `url(${!isLoadingUser ? user?.banner : ''})`,
+          backgroundImage: `url(${!isLoadingUser ? banner ?? '' : ''})`,
         }}
       >
         {!isLoadingUser && (
@@ -176,7 +178,7 @@ export default function ProfileHeader() {
         {/* z-[1] ties with the particle overlay, and later siblings win: the
             avatar and name stay above the ambient effect. */}
         <div className="relative z-[1] flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover">
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-end sm:gap-4 min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
+          <div className="native-profile-identity flex flex-col items-center gap-2 sm:flex-row sm:items-end sm:gap-4 min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
             <div>
               {isLoadingUser ? (
                 <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>

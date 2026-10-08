@@ -1,4 +1,5 @@
 import './index.css';
+import './native/native.css';
 import '@fontsource-variable/inter';
 import 'react-image-crop/dist/ReactCrop.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -25,6 +26,9 @@ import {
   isCustomTheme,
 } from './utils/appTheme';
 import type { ICustomTheme } from './types';
+import { initializeMobileSession } from './offline/mobileSession';
+import { useUserDataStore } from './store/userData';
+import { isMobileApp } from './utils/nativeRuntime';
 
 function resolveInitialTheme() {
   if (typeof window === 'undefined') {
@@ -45,6 +49,7 @@ function resolveInitialTheme() {
 const initialLanguage = resolveInitialLanguage();
 
 if (typeof document !== 'undefined') {
+  if (isMobileApp()) document.documentElement.dataset.nativeApp = 'true';
   let palette: ICustomTheme | undefined;
   if (localStorage.getItem('theme') === 'custom') {
     try {
@@ -74,6 +79,7 @@ const App = lazy(() => import('./App.tsx'));
 const CalculatorScreen = lazy(() => import('./screens/CalculatorScreen.tsx'));
 const FeaturesScreen = lazy(() => import('./screens/FeaturesScreen.tsx'));
 const HomeScreen = lazy(() => import('./screens/HomeScreen.tsx'));
+const NativeRecordsScreen = lazy(() => import('./native/NativeRecordsScreen'));
 const ListScreen = lazy(() => import('./screens/ListScreen.tsx'));
 const LoginScreen = lazy(() => import('./screens/LoginScreen.tsx'));
 const LogScreen = lazy(() => import('./screens/LogScreen.tsx'));
@@ -220,6 +226,7 @@ const router = createBrowserRouter(
         </Route>
         <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>
+          {isMobileApp() && <Route path="records" element={<NativeRecordsScreen />} />}
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
@@ -258,6 +265,9 @@ document.addEventListener('click', (e) => {
 // English and no component has to suspend on a missing namespace.
 async function bootstrap() {
   await initI18n(initialLanguage);
+  if (!(await initializeMobileSession())) {
+    useUserDataStore.getState().logout();
+  }
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

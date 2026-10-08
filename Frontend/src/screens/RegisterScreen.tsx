@@ -26,6 +26,9 @@ import { useDateFormatting } from '../hooks/useDateFormatting';
 import { getLearnerCountKey } from '../utils/learnerCount';
 import { getApiErrorMessage } from '../utils/apiError';
 import { Rocket } from 'lucide-react';
+import { isMobileApp } from '../utils/nativeRuntime';
+import NativeAuthLayout from '../native/NativeAuthLayout';
+import Button from '../components/ui/Button';
 
 function RegisterScreen() {
   const { t } = useTranslation('auth');
@@ -56,6 +59,7 @@ function RegisterScreen() {
   const { data: stats } = useQuery({
     queryKey: ['publicStats'],
     queryFn: getPublicStatsFn,
+    enabled: !isMobileApp(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
@@ -85,6 +89,7 @@ function RegisterScreen() {
 
   // GSAP entrance animation
   useEffect(() => {
+    if (isMobileApp()) return;
     // Set initial state before animation
     gsap.set(cardRef.current, { y: 50, opacity: 0, scale: 0.95 });
     gsap.set(titleRef.current, { y: 20, opacity: 0 });
@@ -194,7 +199,7 @@ function RegisterScreen() {
     if (field === 'passwordConfirmation') setPasswordConfirmation(value);
   };
 
-  const { mutate, isPending, isSuccess } = useMutation({
+  const { mutate, isPending, isSuccess, error } = useMutation({
     mutationFn: registerUserFn,
     onSuccess: (data: ILoginResponse) => {
       setUser(data);
@@ -231,6 +236,7 @@ function RegisterScreen() {
 
   useEffect(() => {
     if (isSuccess) {
+      if (isMobileApp()) { navigate('/', { replace: true }); return; }
       // Success animation
       gsap.to(cardRef.current, {
         duration: 0.5,
@@ -258,6 +264,34 @@ function RegisterScreen() {
       formFieldsRef.current.push(el);
     }
   };
+
+  if (isMobileApp()) return <NativeAuthLayout title={t('register.form.title')} subtitle={t('register.form.subtitle')}>
+    <form onSubmit={handleSubmit}>
+      <Field label={t('register.form.username.label')} hint={t('register.usernameRequirements.validCharacters')} error={errors.username && vt(errors.username)}>
+        {(id) => <input id={id} className="input focus:input-primary w-full" value={username} autoComplete="username" autoCapitalize="none" autoCorrect="off" minLength={3} maxLength={20}
+          onChange={(e) => handleFieldChange('username', e.target.value)} required />}
+      </Field>
+      <Field label={t('register.form.email.label')} hint={t('register.form.email.hint')} error={errors.email && vt(errors.email)}>
+        {(id) => <input id={id} type="email" className="input focus:input-primary w-full" value={email} autoComplete="email" autoCapitalize="none"
+          onChange={(e) => handleFieldChange('email', e.target.value)} />}
+      </Field>
+      <Field label={t('register.form.password.label')} hint={t('register.passwordRequirements.minLength')} error={errors.password && vt(errors.password)}>
+        {(id) => <input id={id} type="password" className="input focus:input-primary w-full" value={password} autoComplete="new-password" minLength={8}
+          onChange={(e) => handleFieldChange('password', e.target.value)} required />}
+      </Field>
+      <Field label={t('register.form.passwordConfirmation.label')} error={errors.passwordConfirmation && vt(errors.passwordConfirmation)}>
+        {(id) => <input id={id} type="password" className="input focus:input-primary w-full" value={passwordConfirmation} autoComplete="new-password"
+          onChange={(e) => handleFieldChange('passwordConfirmation', e.target.value)} required />}
+      </Field>
+      <div className="flex min-h-12 items-center gap-3 text-sm">
+        <input id="native-register-terms" type="checkbox" className="checkbox checkbox-primary shrink-0" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} required />
+        <label htmlFor="native-register-terms"><Trans t={t} i18nKey="register.form.terms" components={{ terms: <Link className="link link-primary" to="/terms" />, privacy: <Link className="link link-primary" to="/privacy" /> }} /></label>
+      </div>
+      {error && <p role="alert" className="text-sm text-error">{getApiErrorMessage(error)}</p>}
+      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('register.form.submitting')} disabled={!isFormValid()}>{t('register.form.submit')}</Button>
+      <Link to="/login" className="btn btn-ghost w-full">{t('register.form.signIn')}</Link>
+    </form>
+  </NativeAuthLayout>;
 
   return (
     <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">

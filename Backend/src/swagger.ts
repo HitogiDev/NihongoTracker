@@ -54,6 +54,7 @@ const swaggerDocument = {
   ],
   components: {
     securitySchemes: {
+      mobileBearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Short-lived access token from POST /auth/mobile/login. Requires an active mobile session.' },
       cookieAuth: {
         type: 'apiKey',
         in: 'cookie',
@@ -705,6 +706,23 @@ const swaggerDocument = {
     },
   },
   paths: {
+    '/auth/mobile/login': {
+      post: {
+        tags: ['Auth'], summary: 'Sign in to a mobile session',
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['login', 'password'], properties: { login: { type: 'string' }, password: { type: 'string', format: 'password' } } } } } },
+        responses: { 200: { description: 'Authenticated user plus session accessToken, refreshToken, sessionId, and expiresAt. Access tokens last 15 minutes. Refresh sessions last 30 days.' }, 401: { description: 'Invalid credentials' }, 403: { description: 'Account banned' } },
+      },
+    },
+    '/auth/mobile/refresh': {
+      post: {
+        tags: ['Auth'], summary: 'Rotate a mobile refresh token',
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['sessionId', 'refreshToken'], properties: { sessionId: { type: 'string' }, refreshToken: { type: 'string' } } } } } },
+        responses: { 200: { description: 'Replacement session credentials. Store the new refresh token before further requests.' }, 401: { description: 'Invalid, expired, revoked, or already consumed refresh token' } },
+      },
+    },
+    '/auth/mobile/logout': {
+      post: { tags: ['Auth'], summary: 'Revoke the current mobile session', security: [{ mobileBearer: [] }], responses: { 200: { description: 'Session revoked' }, 401: { description: 'Mobile session required' } } },
+    },
     '/logs/calculate-xp': {
       post: {
         tags: ['Logs'],
@@ -2292,6 +2310,7 @@ const swaggerDocument = {
       post: {
         tags: ['Logs'],
         summary: 'Create a new log',
+        parameters: [{ name: 'Idempotency-Key', in: 'header', required: false, schema: { type: 'string', maxLength: 128, pattern: '^[a-zA-Z0-9._:-]+$' }, description: 'Stable operation identifier. Reuse the same key and body when retrying. Existing logs return 200 without repeating XP or achievement changes.' }],
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         requestBody: {
           required: true,
@@ -2302,6 +2321,7 @@ const swaggerDocument = {
           },
         },
         responses: {
+          200: { description: 'Previously created log returned for this operation' },
           201: {
             description: 'Log created',
             content: {
@@ -5021,6 +5041,15 @@ function isPathPubliclyHidden(pathname: string) {
   return PUBLICLY_HIDDEN_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
+}
+
+for (const path of Object.values(swaggerDocument.paths)) {
+  for (const method of Object.values(path)) {
+    const operation = method as { security?: Record<string, string[]>[] };
+    if (operation.security?.some((entry) => 'cookieAuth' in entry)) {
+      operation.security.push({ mobileBearer: [] });
+    }
+  }
 }
 
 function buildPublicSwaggerDocument() {

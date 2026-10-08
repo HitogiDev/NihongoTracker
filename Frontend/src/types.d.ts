@@ -803,6 +803,7 @@ export interface IXpCalculatorResponse {
 
 export interface ILog {
   _id: string;
+  offlineStatus?: 'pending' | 'failed';
   user: {
     _id: string;
     username: string;

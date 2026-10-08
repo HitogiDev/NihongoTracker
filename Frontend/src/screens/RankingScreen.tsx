@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
   Trophy,
+  Crown,
   BookOpen,
   Headphones,
   Zap,
@@ -36,6 +37,12 @@ import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
 import { getNameEffectRender } from '../utils/customization';
 import { getLogTypeLabelKey } from '../utils/logTypes';
+import { isMobileApp } from '../utils/nativeRuntime';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import Field from '../components/ui/Field';
+import DropdownSelect from '../components/ui/DropdownSelect';
+import DatePickerInput from '../components/ui/DatePickerInput';
 
 type RankedUser = {
   username: string;
@@ -183,6 +190,8 @@ const removeRankingDefaults = (userId?: string | null) => {
 
 function RankingScreen() {
   const { t } = useTranslation('ranking');
+  const { t: nt } = useTranslation('nav');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { t: tCommon } = useTranslation('common');
   const badgeText = usePatreonBadgeText();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -443,6 +452,8 @@ function RankingScreen() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError: rankingError,
+    refetch: refetchRanking,
   } = useInfiniteQuery({
     queryKey: [
       'ranking',
@@ -481,6 +492,8 @@ function RankingScreen() {
     hasNextPage: hasNextPageMedium,
     isFetchingNextPage: isFetchingNextPageMedium,
     isLoading: isLoadingMedium,
+    isError: mediumError,
+    refetch: refetchMedium,
   } = useInfiniteQuery({
     queryKey: [
       'ranking-medium',
@@ -815,6 +828,61 @@ function RankingScreen() {
       ? 'join-item btn btn-primary btn-sm flex-1 sm:flex-none'
       : 'join-item btn btn-outline btn-sm flex-1 sm:flex-none';
 
+  if (isMobileApp()) {
+    const people: RankedUser[] = (mode === 'global' ? rankedUsers?.pages.flat() : mediumUsers?.pages.flat()) ?? [];
+    const loading = mode === 'global' ? isLoading : isLoadingMedium;
+    const failed = mode === 'global' ? rankingError : mediumError;
+    const value = (person: RankedUser) => mode === 'global' ? getTopDisplayValue(person) : getTopDisplayValueMedium(person);
+    const podium = people.length >= 3;
+    return <section className="native-page space-y-4">
+      <div className="native-toolbar flex items-center justify-between gap-3">
+        <div className="min-w-0"><p className="font-semibold truncate">{mode === 'global' ? getFilterLabel() : getMediumTypeLabel(mediumType)}</p><p className="text-sm text-base-content/65">{getTimeFilterLabel()}</p></div>
+        <Button appearance="outline" onClick={() => setFiltersOpen(true)}><MoreHorizontal className="h-5 w-5" />{nt('native.filters')}</Button>
+      </div>
+      {loading && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-20" />)}</div>}
+      {failed && <div className="alert flex flex-col items-start" role="alert"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void (mode === 'global' ? refetchRanking() : refetchMedium())}>{nt('native.retry')}</Button></div>}
+      {!loading && !failed && !people.length && <p className="surface p-6 text-center text-base-content/65">{t('audience.empty')}</p>}
+      {podium && <div className="grid grid-cols-3 items-end gap-2 pt-6">{[1, 0, 2].map((index) => {
+        const person = people[index];
+        const rank = index + 1;
+        return <Link key={person.username} to={`/user/${encodeURIComponent(person.username)}`} className={rank === 1
+          ? 'surface relative flex min-w-0 flex-col items-center gap-2 border-warning px-2 py-5'
+          : 'surface flex min-w-0 flex-col items-center gap-2 px-2 py-3'}>
+          {rank === 1 && <Crown className="absolute -top-6 h-7 w-7 fill-warning text-warning" aria-hidden="true" />}
+          <span className={getRankColor(rank)}><Trophy className="h-4 w-4 inline" /> {rank}</span>
+          <UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-12 w-12 rounded-full" />
+          <span className="w-full truncate text-center text-sm font-semibold">{person.username}</span>
+          <span className="w-full break-words text-center text-xs text-base-content/65">{value(person)}</span>
+        </Link>;
+      })}</div>}
+      <div className="surface divide-y divide-base-300">{people.slice(podium ? 3 : 0).map((person, i) => {
+        const effect = getNameEffectRender(person.customization);
+        return <Link key={person.username} to={`/user/${encodeURIComponent(person.username)}`} className="flex min-h-20 items-center gap-3 px-3 py-4">
+          <span className="w-6 shrink-0 text-center text-sm text-base-content/60">{i + (podium ? 4 : 1)}</span>
+          <UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-10 w-10 rounded-full" />
+          <span className={`min-w-0 flex-1 truncate font-medium ${effect.className}`} style={effect.style}>{person.username}</span>
+          <span className="shrink-0 text-sm tabular-nums">{value(person)}</span>
+        </Link>;
+      })}</div>
+      {(mode === 'global' ? hasNextPage : hasNextPageMedium) && <Button block loading={mode === 'global' ? isFetchingNextPage : isFetchingNextPageMedium} onClick={() => void (mode === 'global' ? fetchNextPage() : fetchNextPageMedium())}>{nt('native.loadMore')}</Button>}
+      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title={nt('native.filters')} actions={<Button variant="primary" onClick={() => setFiltersOpen(false)}>{nt('native.apply')}</Button>}>
+        <div className="space-y-4">
+          <Field label={t('audience.label')}><DropdownSelect className="select w-full" value={audience} onChange={(e) => { if (isOneOf(e.target.value, VALID_AUDIENCES)) setAudience(e.target.value); }}>{VALID_AUDIENCES.map((option) => <option key={option} value={option}>{t(option === 'mutual' ? 'audience.mutuals' : `audience.${option}`)}</option>)}</DropdownSelect></Field>
+          <Field label={nt('titles.ranking')}><DropdownSelect className="select w-full" value={mode} onChange={(e) => { if (isOneOf(e.target.value, VALID_MODES)) setMode(e.target.value); }}>{VALID_MODES.map((option) => <option key={option} value={option}>{t(`modes.${option}`)}</option>)}</DropdownSelect></Field>
+          {mode === 'global' ? <>
+            <Field label={t('scope.total')}><DropdownSelect className="select w-full" value={xpFilter} onChange={(e) => { if (isOneOf(e.target.value, VALID_SCOPES)) setXpFilter(e.target.value); }}>{scopeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</DropdownSelect></Field>
+            {xpFilter !== 'currentStreak' && <Field label={t('metrics.xp')}><DropdownSelect className="select w-full" value={displayMode} onChange={(e) => { if (isOneOf(e.target.value, VALID_DISPLAY_MODES)) setDisplayMode(e.target.value); }}>{allowedMetricOptions().map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</DropdownSelect></Field>}
+          </> : <>
+            <Field label={nt('native.media')}><DropdownSelect className="select w-full" value={mediumType} onChange={(e) => { if (isOneOf(e.target.value, VALID_MEDIUM_TYPES)) { setMediumType(e.target.value); setMediumMetric(mediumMetricOptions[e.target.value][0].value); } }}>{VALID_MEDIUM_TYPES.map((option) => <option key={option} value={option}>{getMediumTypeLabel(option)}</option>)}</DropdownSelect></Field>
+            <Field label={t('metrics.xp')}><DropdownSelect className="select w-full" value={mediumMetric} onChange={(e) => { const option = mediumMetricOptions[mediumType].find((item) => item.value === e.target.value); if (option) setMediumMetric(option.value); }}>{mediumMetricOptions[mediumType].map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</DropdownSelect></Field>
+          </>}
+          {(mode === 'medium' || xpFilter !== 'currentStreak') && <Field label={getTimeFilterLabel()}><DropdownSelect className="select w-full" value={timeFilter} onChange={(e) => { if (isOneOf(e.target.value, VALID_TIME_FILTERS)) setTimeFilter(e.target.value); }}>{timeFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</DropdownSelect></Field>}
+          {timeFilter === 'custom' && <><Field label={nt('native.startDate')}><DatePickerInput value={startDate} onChange={setStartDate} max={endDate || undefined} ariaLabel={nt('native.startDate')} /></Field><Field label={nt('native.endDate')}><DatePickerInput value={endDate} onChange={setEndDate} min={startDate || undefined} ariaLabel={nt('native.endDate')} /></Field></>}
+          <Button block appearance="outline" onClick={handleSaveDefaults}><Bookmark className="h-4 w-4" />{t('defaults.save')}</Button>
+        </div>
+      </Modal>
+    </section>;
+  }
   return (
     <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">

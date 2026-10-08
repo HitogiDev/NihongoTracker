@@ -918,6 +918,8 @@ export interface ILog extends Document {
    */
   anilistProgressStart?: number;
   anilistProgressEnd?: number;
+    clientOperationId?: string;
+    clientOperationFinalized?: boolean;
   mediaTitle?: string;
   xp: number;
   private: boolean;
