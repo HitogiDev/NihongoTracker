@@ -53,6 +53,7 @@ import ReviewRatingSummary from '../components/ReviewRatingSummary';
 import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
 import { useTranslation } from 'react-i18next';
 import LinkifiedText from '../components/ui/LinkifiedText';
+import { isMobileApp } from '../utils/nativeRuntime';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -2247,7 +2248,7 @@ function MediaDetails() {
                   selectedType={mediaDocument?.type}
                   metric={chartMetric}
                   chartType={chartView}
-                  showTitle
+                  showTitle={!isMobileApp()}
                 />
               </div>
             </div>
@@ -2613,8 +2614,8 @@ function MediaDetails() {
                     <div className="space-y-3">
                       {canBulkEditLogs && (
                         <BulkLogToolbar
-                          shownIds={visibleLogs.map((log) => log._id)}
-                          loadAllIds={async () => filteredLogs.map((log) => log._id)}
+                          shownIds={visibleLogs.filter((log) => !log.offlineStatus).map((log) => log._id)}
+                          loadAllIds={async () => filteredLogs.filter((log) => !log.offlineStatus).map((log) => log._id)}
                           selectedIds={selectedLogIds}
                           setSelectedIds={setSelectedLogIds}
                           ownerUsername={username}
@@ -2625,14 +2626,14 @@ function MediaDetails() {
                         />
                       )}
                       {visibleLogs.map((log) => (
-                        canBulkEditLogs ? (
+                        canBulkEditLogs && !log.offlineStatus ? (
                           <SelectableLogRow
                             key={log._id}
                             ids={[log._id]}
                             selectedIds={selectedLogIds}
                             setSelectedIds={setSelectedLogIds}
                           >
-                            <LogCard log={log} user={username} />
+                            <LogCard log={log} user={username} selectionMode={isMobileApp() && selectedLogIds.size > 0} />
                           </SelectableLogRow>
                         ) : <LogCard key={log._id} log={log} user={username} />
                       ))}

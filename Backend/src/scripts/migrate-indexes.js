@@ -40,6 +40,13 @@ Time: ${new Date().toISOString()}
 // Indexes to ensure, grouped by collection.
 const MIGRATIONS = [
   {
+    collection: 'mobilesessions',
+    indexes: [
+      { key: { expiresAt: 1 }, name: 'expiresAt_1', expireAfterSeconds: 0, description: 'Remove expired mobile sessions' },
+      { key: { user: 1, createdAt: -1 }, name: 'user_1_createdAt_-1', description: 'Mobile sessions for an account' },
+    ],
+  },
+  {
     collection: 'livepresences',
     indexes: [
       {
@@ -320,6 +327,13 @@ const MIGRATIONS = [
           'One log per AniList list activity — makes AniList sync idempotent',
         unique: true,
         partialFilterExpression: { anilistActivityId: { $type: 'number' } },
+      },
+      {
+        key: { user: 1, clientOperationId: 1 },
+        name: 'user_1_clientOperationId_1',
+        description: 'One mobile-created log per client operation',
+        unique: true,
+        partialFilterExpression: { clientOperationId: { $type: 'string' } },
       },
     ],
   },

@@ -2,6 +2,8 @@ import { Outlet } from 'react-router-dom';
 import AchievementRevealHost from './achievements/AchievementRevealHost';
 import LanguageSync from './LanguageSync';
 import LogCelebrationHost from './LogCelebrationHost';
+import OfflineSyncStatus from './OfflineSyncStatus';
+import NativeAppLifecycle from './NativeAppLifecycle';
 
 /**
  * Outermost layout: sits above both the texthooker routes and the main
@@ -14,6 +16,8 @@ export default function RootLayout() {
       <LanguageSync />
       <LogCelebrationHost />
       <AchievementRevealHost />
+      <OfflineSyncStatus />
+      <NativeAppLifecycle />
       <Outlet />
     </>
   );

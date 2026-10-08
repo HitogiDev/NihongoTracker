@@ -138,7 +138,7 @@ export default function AvatarFrame({
     if (host && (isDecorativeFrame(frame) || isCanvasAvatarFrame(frame)))
       void (
         isCanvasAvatarFrame(frame)
-          ? mountCanvasAvatarFrame(host, constellationColor)
+          ? mountCanvasAvatarFrame(host, frame, constellationColor)
           : mountAvatarFrameLayers(host, frame)
       )
         .then((mounted: FrameScene) => {

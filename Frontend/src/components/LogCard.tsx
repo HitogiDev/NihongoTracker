@@ -1,4 +1,8 @@
 import DropdownSelect from './ui/DropdownSelect';
+import { isMobileApp } from '../utils/nativeRuntime';
+import OfflineImage from './OfflineImage';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 import { useMutation } from '@tanstack/react-query';
 import Field from './ui/Field';
 import DatePickerInput from './ui/DatePickerInput';
@@ -24,6 +28,7 @@ import {
   Pencil,
   Share2,
   Tag,
+  X,
 } from 'lucide-react';
 
 import {
@@ -157,7 +162,7 @@ function LogCard({
   user?: string;
   selectionMode?: boolean;
 }) {
-  const { t } = useTranslation(['logs', 'common']);
+  const { t } = useTranslation(['logs', 'common', 'nav']);
   const vt = useValidationText();
   const {
     description,
@@ -192,6 +197,13 @@ function LogCard({
       : t('card.minutesOnly', { minutes });
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
+  const { t: nt } = useTranslation('nav');
+  const [nativeEditDirty, setNativeEditDirty] = useState(false);
+  const [discardEditOpen, setDiscardEditOpen] = useState(false);
+  const requestEditClose = () => {
+    if (isMobileApp() && nativeEditDirty) setDiscardEditOpen(true);
+    else editModalRef.current?.close();
+  };
   const detailsModalRef = useRef<HTMLDialogElement>(null);
   const isOwner = logUser === user?.username;
   const isAdmin = user?.roles?.includes('admin');
@@ -241,7 +253,7 @@ function LogCard({
       : description || t('card.untitled');
 
   const displayTitle =
-    logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
+    !isMobileApp() && logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
 
   const { mutate: deleteLog, isPending: loadingDeleteLog } = useMutation({
     mutationFn: (id: string) =>
@@ -278,6 +290,7 @@ function LogCard({
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       toast.success(t('toast.updated'));
+      setNativeEditDirty(false);
       editModalRef.current?.close();
     },
     onError: (error) => {
@@ -286,6 +299,7 @@ function LogCard({
   });
 
   function openEditModal() {
+    setNativeEditDirty(false);
     setEditErrors({});
     setEditData(buildEditState());
     editModalRef.current?.showModal();
@@ -579,40 +593,47 @@ function LogCard({
       });
   }
 
+  const typeBadge = (
+    <div className={`native-log-type badge badge-outline ${typeConfig.color} gap-1 shrink-0`}>
+      <TypeIcon className="w-3 h-3 shrink-0" />
+      <span className="text-xs font-medium">{typeLabel}</span>
+    </div>
+  );
+
   return (
     <>
       <article
-        className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 border ${typeConfig.borderColor} group rounded-t-none`}
+        className={`native-log-card card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 border ${typeConfig.borderColor} group rounded-t-none`}
         role="article"
         aria-label={`Log entry: ${logTitle}`}
       >
         <div className={`h-1 w-full ${typeConfig.accentColor}`}></div>
 
         <div className="card-body p-4 space-y-3">
+          {log.offlineStatus && (
+            <span className="badge badge-warning badge-sm">{t(`nav:offline.${log.offlineStatus}`)}</span>
+          )}
           <header className="flex justify-between gap-3">
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div
-                className={`badge badge-outline ${typeConfig.color} gap-1 shrink-0`}
-              >
-                <TypeIcon className="w-3 h-3" />
-                <span className="text-xs font-medium">{typeLabel}</span>
-              </div>
+              {isMobileApp() && media?.contentImage && <OfflineImage src={media.contentImage} alt="" className="h-16 w-12 shrink-0 rounded-box object-cover" />}
+              {!isMobileApp() && typeBadge}
 
               <div className="min-w-0 flex-1">
+                {isMobileApp() && <div className="mb-2">{typeBadge}</div>}
                 {media &&
                 typeof media === 'object' &&
                 media.contentId &&
                 media.type ? (
                   <Link
                     to={`/${encodeURIComponent(media.type)}/${media.contentId}${logUser ? `/${encodeURIComponent(logUser)}` : ''}`}
-                    className="font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
+                    className="block break-words font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
                     title={logTitle}
                   >
                     {displayTitle}
                   </Link>
                 ) : (
                   <h2
-                    className="font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200"
+                    className="break-words font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200"
                     title={logTitle}
                   >
                     {displayTitle}
@@ -647,8 +668,8 @@ function LogCard({
               </div>
             </div>
 
-            {canModerateLog && !selectionMode && (
-              <div className="dropdown dropdown-end">
+            {canModerateLog && !selectionMode && !log.offlineStatus && (
+              <div className="dropdown dropdown-end shrink-0">
                 <button
                   tabIndex={0}
                   className="btn btn-ghost btn-sm btn-square opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
@@ -753,7 +774,7 @@ function LogCard({
                   className={`badge badge-outline ${typeConfig.color} gap-1`}
                 >
                   <TrendingUp className="w-3 h-3" />
-                  <span className="text-xs font-bold">{xp} XP</span>
+                  <span className="text-xs font-bold">{log.offlineStatus ? t('nav:offline.pending') : `${xp} XP`}</span>
                   {difficultyBonus > 0 && (
                     <span className="text-[0.65rem] font-semibold opacity-70">
                       {bonusMultiplier}
@@ -1274,7 +1295,7 @@ function LogCard({
         </form>
       </dialog>
 
-      <dialog ref={editModalRef} className="modal modal-bottom sm:modal-middle">
+      <dialog ref={editModalRef} className="modal modal-bottom sm:modal-middle" onCancel={(event) => { event.preventDefault(); requestEditClose(); }}>
         <div className="modal-box max-w-2xl">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
@@ -1290,12 +1311,10 @@ function LogCard({
                 </p>
               </div>
             </div>
-            <form method="dialog">
-              <button className="btn btn-ghost btn-sm btn-circle">✕</button>
-            </form>
+            <form method="dialog" onSubmit={(event) => { if (isMobileApp()) { event.preventDefault(); requestEditClose(); } }}><button className="btn btn-ghost btn-sm btn-circle" aria-label={t('common.a11y.closeModal')}><X className="w-4 h-4" /></button></form>
           </div>
 
-          <form onSubmit={handleEditSubmit} className="space-y-6">
+          <form onSubmit={handleEditSubmit} className="space-y-6" onChangeCapture={() => setNativeEditDirty(true)}>
             {Object.keys(editErrors).length > 0 && (
               <div className="alert alert-error">
                 <svg
@@ -1421,9 +1440,10 @@ function LogCard({
                   <Field label={t('edit.date')}>
                     <DatePickerInput
                       value={editData.date}
-                      onChange={(date) =>
-                        setEditData({ ...editData, date })
-                      }
+                      onChange={(date) => {
+                        setNativeEditDirty(true);
+                        setEditData({ ...editData, date });
+                      }}
                     />
                   </Field>
 
@@ -1591,12 +1611,13 @@ function LogCard({
                 </h4>
                 <TagSelector
                   selectedTags={editData.tags}
-                  onChange={(tags) =>
+                  onChange={(tags) => {
+                    setNativeEditDirty(true);
                     setEditData((prev) => ({
                       ...prev,
                       tags,
-                    }))
-                  }
+                    }));
+                  }}
                   label={t('logs:card.tagsLabel')}
                 />
               </div>
@@ -1627,7 +1648,7 @@ function LogCard({
               <button
                 type="button"
                 className="btn btn-outline w-full sm:w-auto order-1 sm:order-2"
-                onClick={() => editModalRef.current?.close()}
+                onClick={requestEditClose}
                 disabled={loadingUpdateLog}
               >
                 {t('common.cancel')}
@@ -1636,9 +1657,10 @@ function LogCard({
           </form>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label={t('common.a11y.closeModal')}>close</button>
+          <button type="button" onClick={requestEditClose} aria-label={t('common.a11y.closeModal')}>close</button>
         </form>
       </dialog>
+      <Modal open={discardEditOpen} onClose={() => setDiscardEditOpen(false)} title={nt('native.unsavedTitle')} actions={<><Button appearance="ghost" onClick={() => setDiscardEditOpen(false)}>{nt('native.keepEditing')}</Button><Button variant="error" onClick={() => { setNativeEditDirty(false); setDiscardEditOpen(false); editModalRef.current?.close(); }}>{nt('native.discard')}</Button></>}><p>{nt('native.unsavedMessage')}</p></Modal>
     </>
   );
 }

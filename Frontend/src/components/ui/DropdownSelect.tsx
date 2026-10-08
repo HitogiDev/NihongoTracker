@@ -273,7 +273,7 @@ export default function DropdownSelect({
             </li>
           ))}
         </ul>,
-        document.body,
+        triggerRef.current?.closest('dialog[open]') ?? document.body,
       )}
       {name && (
         <input

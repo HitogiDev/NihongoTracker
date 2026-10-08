@@ -26,6 +26,29 @@ export async function getNotificationListFn({
       params: { page, limit },
     }
   );
+  if (
+    !data ||
+    !Array.isArray(data.items) ||
+    !Number.isInteger(data.page) ||
+    data.page < 1 ||
+    !Number.isInteger(data.limit) ||
+    data.limit < 1 ||
+    !Number.isInteger(data.total) ||
+    data.total < 0 ||
+    typeof data.hasMore !== 'boolean' ||
+    data.items.some(
+      (item) =>
+        !item ||
+        typeof item.id !== 'string' ||
+        !item.id ||
+        typeof item.label !== 'string' ||
+        typeof item.isRead !== 'boolean' ||
+        !Number.isFinite(item.count) ||
+        typeof item.createdAt !== 'string'
+    )
+  ) {
+    throw new Error('Invalid notification list response');
+  }
   return data;
 }
 

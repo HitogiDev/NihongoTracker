@@ -621,6 +621,7 @@ function SearchModal({
     <dialog
       className="modal modal-bottom sm:modal-middle modal-open"
       onClick={onClose}
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
     >
       <div
         className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"

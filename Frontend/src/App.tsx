@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
+import NativeShell from './native/NativeShell';
+import { isMobileApp } from './utils/nativeRuntime';
 import MobileBottomNav from './components/MobileBottomNav';
 import { useUserDataStore } from './store/userData';
 import { useEffect, useLayoutEffect, useRef } from 'react';
@@ -201,6 +203,7 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
   }
   if (segments[0] === 'goals') return { key: 'titles.goals' };
   if (segments[0] === 'log') return { key: 'titles.createLog' };
+  if (segments[0] === 'records') return { key: 'native.records' };
   if (segments[0] === 'matchmedia') return { key: 'titles.matchMedia' };
   return { key: null };
 }
@@ -287,6 +290,8 @@ function ScrollToTop() {
 
 function App() {
   const user = useUserDataStore((state) => state.user);
+
+  if (isMobileApp()) return <><TitleManager /><NativeShell /></>;
 
   return (
     <div className={user ? 'app-shell mobile-nav-shell' : 'app-shell'}>

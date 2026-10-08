@@ -1,4 +1,54 @@
 {
+  "native": {
+    "achievements": "Achievements",
+    "mediaDetails": "Media",
+    "home": "Home", "records": "Logs", "profile": "Profile", "back": "Back",
+    "settingsProfile": "Edit profile", "customization": "Customization", "account": "Account",
+    "preferences": "Preferences", "privacy": "Privacy", "subscription": "Subscription", "advanced": "Advanced",
+    "help": "Help", "legal": "Help and legal documents", "refunds": "Refunds", "texthooker": "Texthooker", "sharedLog": "Shared log",
+    "unsavedTitle": "Unsaved changes", "unsavedMessage": "Leaving now will discard the changes in this form.",
+    "keepEditing": "Keep editing", "discard": "Discard", "createLog": "Create log",
+    "filters": "Filters", "apply": "Apply", "reset": "Reset", "searchLogs": "Search logs",
+    "emptyLogs": "No logs yet", "emptyLogsHint": "Save your first immersion session.",
+    "noResults": "No results for these filters", "loadMore": "Load more", "retry": "Retry",
+    "offline": "Offline. You can view data already saved by the app.", "unavailable": "This screen could not be loaded.",
+    "allTypes": "All media", "startDate": "From", "endDate": "Until", "createAccount": "Create an account",
+    "haveAccount": "I already have an account", "more": "More", "settings": "Settings", "signOut": "Sign out",
+    "dailyProgress": "Your immersion", "thisMonth": "This month", "goals": "Your goals", "activity": "Activity",
+    "yourClubs": "Your clubs", "exploreClubs": "Explore clubs", "members": "Members", "media": "Media"
+  },
+  "offline": {
+    "title": "Pending changes",
+    "explanation": "Changes are saved on this phone and sent when the connection returns. XP is confirmed after syncing.",
+    "pending": "Pending",
+    "failed": "Needs attention",
+    "attention": "Review changes",
+    "pendingCount": "Pending: {{count}}",
+    "offlineCount": "Offline: {{count}} pending",
+    "empty": "No changes are pending. You can browse data saved on this phone.",
+    "confirmFirst": "Retry this request before editing or discarding it. The server may have received it.",
+    "edit": "Edit log",
+    "discard": "Discard",
+    "retry": "Retry",
+    "save": "Save",
+    "description": "Description",
+    "types": {
+      "log": "Log",
+      "profile": "Profile",
+      "settings": "Customization and settings",
+      "follow": "Follow user",
+      "unfollow": "Unfollow user",
+      "joinClub": "Join club",
+      "leaveClub": "Leave club"
+    },
+    "units": {
+      "episodes": "Episodes",
+      "pages": "Pages",
+      "chars": "Characters",
+      "time": "Minutes",
+      "volume": "Volume"
+    }
+  },
   "a11y": {
     "notifications": "Notifications",
     "primaryNavigation": "Primary navigation",

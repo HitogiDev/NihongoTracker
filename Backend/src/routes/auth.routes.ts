@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requestRateLimit } from '../middlewares/requestRateLimit.js';
 import {
   login,
+  loginMobile,
   register,
   logout,
   verifyToken,
@@ -12,8 +13,13 @@ import {
   getPublicStats,
 } from '../controllers/auth.controller.js';
 import {
+  logoutMobile,
+  refreshMobileSession,
+} from '../controllers/mobileAuth.controller.js';
+import {
   protect,
   requireSessionAuth,
+  requireMobileSession,
 } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -21,6 +27,10 @@ const router = Router();
 router.post('/register', register);
 
 router.post('/login', login);
+
+router.post('/mobile/login', requestRateLimit(10, 600_000), loginMobile);
+router.post('/mobile/refresh', requestRateLimit(30, 600_000), refreshMobileSession);
+router.post('/mobile/logout', protect, requireMobileSession, logoutMobile);
 
 router.post('/logout', logout);
 

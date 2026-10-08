@@ -207,6 +207,7 @@
     "onlyChecked": "Solo se cambiarán los campos marcados. Se aplicará el mismo valor a todos los logs seleccionados.",
     "selectAll": "Seleccionar todos los resultados",
     "selectEntry": "Seleccionar log",
+    "holdToSelect": "Mantén pulsado un log para seleccionarlo. Luego toca otros logs para añadirlos.",
     "selectShown": "Seleccionar los mostrados",
     "selectionTitle": "Selección de logs",
     "selected_many": "{{count}} logs seleccionados",

@@ -25,24 +25,31 @@ ChartJS.register(
 interface BarChartProps {
   data: ChartData<'bar', number[]>;
   options?: Partial<ChartOptions<'bar'>>;
+  compact?: boolean;
 }
 
-function BarChart({ data, options }: BarChartProps) {
+function BarChart({ data, options, compact = false }: BarChartProps) {
   const lineColors = useThemeColors(1);
   const fillColors = useThemeColors(0.16);
+  const { plugins: pluginOptions, ...otherOptions } = options ?? {};
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: {
+      ...pluginOptions,
       legend: {
-        position: 'top' as const,
+        ...pluginOptions?.legend,
+        position: compact ? 'bottom' as const : pluginOptions?.legend?.position ?? 'top' as const,
         labels: {
           color: lineColors.baseContent,
           font: { size: 12 },
+          ...pluginOptions?.legend?.labels,
+          ...(compact && { usePointStyle: true, boxWidth: 8, boxHeight: 8 }),
         },
       },
       tooltip: {
+        ...pluginOptions?.tooltip,
         callbacks: {
           label: (context: TooltipItem<'bar'>) => {
             const label = context.dataset.label || '';
@@ -66,10 +73,10 @@ function BarChart({ data, options }: BarChartProps) {
           display: true,
         },
         grid: { display: false },
-        ticks: { color: lineColors.baseContent },
+        ticks: { color: lineColors.baseContent, ...(compact && { maxTicksLimit: 4, maxRotation: 0 }) },
       },
     },
-    ...options,
+    ...otherOptions,
   };
 
   return <Bar options={defaultOptions} data={data} />;

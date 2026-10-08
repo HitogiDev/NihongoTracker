@@ -1,8 +1,8 @@
-export function resizeAvatarCanvas(canvas: HTMLCanvasElement): void {
+export function resizeAvatarCanvas(canvas: HTMLCanvasElement, sampleScale = 1): void {
   const bounds = canvas.getBoundingClientRect();
   const density = (window.devicePixelRatio || 1) * (window.visualViewport?.scale ?? 1);
-  const width = Math.max(1, Math.ceil(bounds.width * density));
-  const height = Math.max(1, Math.ceil(bounds.height * density));
+  const width = Math.max(1, Math.ceil(bounds.width * density)) * sampleScale;
+  const height = Math.max(1, Math.ceil(bounds.height * density)) * sampleScale;
   if (canvas.width !== width) canvas.width = width;
   if (canvas.height !== height) canvas.height = height;
 }

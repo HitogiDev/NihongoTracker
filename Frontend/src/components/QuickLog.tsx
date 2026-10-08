@@ -18,6 +18,9 @@ import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
 import LogPrivacyToggle from './LogPrivacyToggle';
 import TagSelector from './TagSelector';
+import { isMobileApp } from '../utils/nativeRuntime';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface QuickLogProps {
   open: boolean;
@@ -129,6 +132,14 @@ function QuickLog({
     [allowedTypes]
   );
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
+  const { t: nt } = useTranslation('nav');
+  const [nativeDirty, setNativeDirty] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  useEffect(() => { if (open) setNativeDirty(false); }, [open]);
+  const requestClose = () => {
+    if (isMobileApp() && nativeDirty) setDiscardOpen(true);
+    else onClose();
+  };
   const [logDescription, setLogDescription] = useState<string>('');
   const [logComment, setLogComment] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -612,20 +623,20 @@ function QuickLog({
   return (
     <>
       {open && (
-        <dialog className="modal modal-bottom sm:modal-middle modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open" onCancel={(event) => { event.preventDefault(); requestClose(); }}>
           <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-x-hidden overflow-y-auto p-0">
             <div className="card-body">
               <div className="flex justify-between items-center">
                 <h2 className="card-title">{t('quick.title')}</h2>
                 <button
                   className="btn btn-ghost btn-sm btn-circle"
-                  onClick={onClose}
+                  onClick={requestClose}
                 >
                   ✕
                 </button>
               </div>
 
-              <form onSubmit={logSubmit} className="flex flex-col gap-4">
+              <form onSubmit={logSubmit} className="flex flex-col gap-4" onChangeCapture={() => setNativeDirty(true)}>
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex flex-col gap-4 flex-grow min-w-0">
                     <Field label={t('quick.selectType')}>
@@ -1021,7 +1032,7 @@ function QuickLog({
                 {logType && (
                   <TagSelector
                     selectedTags={selectedTags}
-                    onChange={setSelectedTags}
+                    onChange={(tags) => { setNativeDirty(true); setSelectedTags(tags); }}
                     label={t('quick.tags')}
                   />
                 )}
@@ -1038,7 +1049,7 @@ function QuickLog({
                     <button
                       className="btn btn-outline"
                       type="button"
-                      onClick={onClose}
+                      onClick={requestClose}
                     >
                       {t('quick.cancel')}
                     </button>
@@ -1059,10 +1070,11 @@ function QuickLog({
             </div>
           </div>
           <form method="dialog" className="modal-backdrop">
-            <button onClick={onClose}>close</button>
+            <button type="button" onClick={requestClose}>close</button>
           </form>
         </dialog>
       )}
+      <Modal open={discardOpen} onClose={() => setDiscardOpen(false)} title={nt('native.unsavedTitle')} actions={<><Button appearance="ghost" onClick={() => setDiscardOpen(false)}>{nt('native.keepEditing')}</Button><Button variant="error" onClick={() => { setNativeDirty(false); setDiscardOpen(false); onClose(); }}>{nt('native.discard')}</Button></>}><p>{nt('native.unsavedMessage')}</p></Modal>
     </>
   );
 }

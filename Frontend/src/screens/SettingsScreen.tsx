@@ -10,6 +10,9 @@ import React, {
 import Field from '../components/ui/Field';
 import Button from '../components/ui/Button';
 import DropdownSelect from '../components/ui/DropdownSelect';
+import NativeSettingsIndex from '../native/NativeSettingsIndex';
+import { isMobileApp } from '../utils/nativeRuntime';
+import { useNativeUnsavedChanges } from '../native/NativeDirtyContext';
 import { buttonClass } from '../components/ui/buttons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -469,8 +472,11 @@ function SettingsScreen() {
   const { user, setUser } = useUserDataStore();
   const detectedTimezone = getUserTimezone();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
-    searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile',
+    isMobileApp() && TAB_CONFIG.some(({ id }) => id === searchParams.get('tab'))
+      ? searchParams.get('tab') as SettingsTab
+      : searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile',
   );
+  const [nativeDirty, setNativeDirty] = useState(false);
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
   });
@@ -486,7 +492,7 @@ function SettingsScreen() {
   const [aboutPreviewText, setAboutPreviewText] = useState(user?.about || '');
   const [aboutViewMode, setAboutViewMode] = useState<
     'edit' | 'preview' | 'split'
-  >('split');
+  >(isMobileApp() ? 'edit' : 'split');
   const [customBadgeText, setCustomBadgeText] = useState(
     user?.patreon?.customBadgeText || '',
   );
@@ -597,6 +603,8 @@ function SettingsScreen() {
   const { mutate: updateUser, isPending } = useMutation({
     mutationFn: updateUserFn,
     onSuccess: (data: ILoginResponse, variables: FormData) => {
+      clearNativeDirty();
+      setNativeDirty(false);
       const submittedEmail = variables.get('email');
       const normalizedSubmittedEmail =
         typeof submittedEmail === 'string' ? submittedEmail.trim() : null;
@@ -2339,7 +2347,9 @@ function SettingsScreen() {
      canvas already takes no space. */
   const showAvatarPreview =
     avatarHasPendingCrop || (Boolean(user?.avatar) && !avatarMarkedForRemoval);
+  const clearNativeDirty = useNativeUnsavedChanges(nativeDirty || avatarHasPendingCrop || bannerHasPendingCrop || avatarMarkedForRemoval || bannerMarkedForRemoval, activeTab !== 'customization');
 
+  if (isMobileApp() && !TAB_CONFIG.some(({ id }) => id === searchParams.get('tab'))) return <NativeSettingsIndex />;
   return (
     <div className="min-h-screen bg-base-200 pt-20">
       <dialog
@@ -2445,7 +2455,7 @@ function SettingsScreen() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Header: same block every other screen uses. A full-bleed
             bg-base-100 band here was the only one in the app. */}
-        <div className="mb-8">
+        <div className="native-web-only mb-8">
           <h1 className="text-3xl font-bold text-base-content mb-2">
             {t('header.title')}
           </h1>
@@ -2453,7 +2463,7 @@ function SettingsScreen() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="lg:w-64 flex-shrink-0">
+          <aside className="native-web-only lg:w-64 flex-shrink-0">
             <div className="card surface sticky top-6">
               <div className="card-body p-2">
                 <nav className="flex flex-row lg:flex-col gap-1">
@@ -2479,7 +2489,7 @@ function SettingsScreen() {
             </div>
           </aside>
 
-          <main className="flex-1 min-w-0 space-y-6">
+          <main className="flex-1 min-w-0 space-y-6" onInputCapture={() => { if (isMobileApp() && (activeTab === 'profile' || activeTab === 'account')) setNativeDirty(true); }} onChangeCapture={() => { if (isMobileApp() && (activeTab === 'profile' || activeTab === 'account')) setNativeDirty(true); }}>
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div className="card surface">

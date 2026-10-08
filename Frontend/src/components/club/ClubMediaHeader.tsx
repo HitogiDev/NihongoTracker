@@ -1,3 +1,4 @@
+import OfflineImage from '../OfflineImage';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -171,7 +172,7 @@ export default function ClubMediaHeader() {
             <div className="flex flex-col items-center md:items-start">
               <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
                 {media.mediaDocument?.contentImage ? (
-                  <img
+                  <OfflineImage
                     src={media.mediaDocument.contentImage}
                     alt={media.title}
                     className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${

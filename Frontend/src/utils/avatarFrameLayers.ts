@@ -1,10 +1,9 @@
-import hearts from '../assets/avatar-frames/hearts.svg?raw';
 import starlight from '../assets/avatar-frames/starlight.svg?raw';
 import sigil from '../assets/avatar-frames/sigil.svg?raw';
 import fireflies from '../assets/avatar-frames/fireflies.svg?raw';
 import type { AvatarFrame } from '../types';
 
-const sources = { hearts, starlight, sigil, fireflies };
+const sources = { starlight, sigil, fireflies };
 type DecorativeFrame = keyof typeof sources;
 
 interface MotionLayer {

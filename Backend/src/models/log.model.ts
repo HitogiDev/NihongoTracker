@@ -66,6 +66,8 @@ const LogSchema = new Schema<ILog>(
     // episodes on AniList updates the existing log instead of duplicating it.
     anilistProgressStart: { type: Number },
     anilistProgressEnd: { type: Number },
+    clientOperationId: { type: String, maxlength: 128 },
+    clientOperationFinalized: { type: Boolean },
     xp: { type: Number, required: true },
     private: { type: Boolean, default: false },
     isAdult: { type: Boolean, default: false },
@@ -172,6 +174,13 @@ if (process.env.NODE_ENV === 'development') {
     {
       unique: true,
       partialFilterExpression: { anilistActivityId: { $type: 'number' } },
+    }
+  );
+  LogSchema.index(
+    { user: 1, clientOperationId: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { clientOperationId: { $type: 'string' } },
     }
   );
 }

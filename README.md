@@ -231,6 +231,7 @@ Create a `Backend/.env` file with the following variables:
 | `PROD_DOMAIN`                   | No       | Production domain used for app links and metadata                     |
 | `BACKEND_URL`                   | No       | Backend base URL (default local: `http://localhost:3000`)             |
 | `FRONTEND_URL`                  | No       | Frontend base URL (default local: `http://localhost:5173`)            |
+| `VITE_API_BASE_URL`             | No       | Capacitor build API URL. Set in the build terminal, including `/api/`. Local USB default: `http://localhost:3000/api/`. |
 | `FIREBASE_API_KEY`              | **Yes**  | Firebase API key                                                      |
 | `FIREBASE_AUTH_DOMAIN`          | **Yes**  | Firebase auth domain                                                  |
 | `FIREBASE_PROJECT_ID`           | **Yes**  | Firebase project ID                                                   |

@@ -1,4 +1,54 @@
 {
+  "native": {
+    "achievements": "Logros",
+    "mediaDetails": "Contenido",
+    "home": "Inicio", "records": "Registros", "profile": "Perfil", "back": "Volver",
+    "settingsProfile": "Editar perfil", "customization": "Personalización", "account": "Cuenta",
+    "preferences": "Preferencias", "privacy": "Privacidad", "subscription": "Suscripción", "advanced": "Avanzado",
+    "help": "Ayuda", "legal": "Ayuda y documentos legales", "refunds": "Reembolsos", "texthooker": "Texthooker", "sharedLog": "Registro compartido",
+    "unsavedTitle": "Cambios sin guardar", "unsavedMessage": "Si sales ahora, perderás los cambios de este formulario.",
+    "keepEditing": "Seguir editando", "discard": "Descartar", "createLog": "Crear registro",
+    "filters": "Filtros", "apply": "Aplicar", "reset": "Restablecer", "searchLogs": "Buscar registros",
+    "emptyLogs": "Todavía no hay registros", "emptyLogsHint": "Guarda tu primera sesión de inmersión.",
+    "noResults": "No hay resultados para estos filtros", "loadMore": "Cargar más", "retry": "Reintentar",
+    "offline": "Sin conexión. Puedes consultar lo que ya guardó la app.", "unavailable": "No se pudo cargar esta pantalla.",
+    "allTypes": "Todos los medios", "startDate": "Desde", "endDate": "Hasta", "createAccount": "Crear una cuenta",
+    "haveAccount": "Ya tengo una cuenta", "more": "Más", "settings": "Configuración", "signOut": "Cerrar sesión",
+    "dailyProgress": "Tu inmersión", "thisMonth": "Este mes", "goals": "Tus metas", "activity": "Actividad",
+    "yourClubs": "Tus clubs", "exploreClubs": "Descubrir clubs", "members": "Miembros", "media": "Medios"
+  },
+  "offline": {
+    "title": "Cambios pendientes",
+    "explanation": "Los cambios se guardan en este teléfono y se envían al recuperar la conexión. Los XP se confirman después de sincronizar.",
+    "pending": "Pendiente",
+    "failed": "Requiere atención",
+    "attention": "Revisar cambios",
+    "pendingCount": "Pendientes: {{count}}",
+    "offlineCount": "Sin conexión: {{count}} pendientes",
+    "empty": "No hay cambios pendientes. Puedes consultar los datos guardados en el teléfono.",
+    "confirmFirst": "Reintenta este envío antes de editarlo o descartarlo. El servidor puede haberlo recibido.",
+    "edit": "Editar registro",
+    "discard": "Descartar",
+    "retry": "Reintentar",
+    "save": "Guardar",
+    "description": "Descripción",
+    "types": {
+      "log": "Registro",
+      "profile": "Perfil",
+      "settings": "Personalización y ajustes",
+      "follow": "Seguir usuario",
+      "unfollow": "Dejar de seguir",
+      "joinClub": "Entrar al club",
+      "leaveClub": "Salir del club"
+    },
+    "units": {
+      "episodes": "Episodios",
+      "pages": "Páginas",
+      "chars": "Caracteres",
+      "time": "Minutos",
+      "volume": "Volumen"
+    }
+  },
   "a11y": {
     "notifications": "Notificaciones",
     "primaryNavigation": "Navegación principal",

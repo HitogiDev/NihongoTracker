@@ -29,6 +29,9 @@ import BannerEffectOverlay from '../BannerEffectOverlay';
 import AvatarFrameDecoration from '../AvatarFrame';
 import UserAvatar from '../UserAvatar';
 import Field from '../ui/Field';
+import { isMobileApp } from '../../utils/nativeRuntime';
+import { useNativeUnsavedChanges } from '../../native/NativeDirtyContext';
+import Button from '../ui/Button';
 import type {
   AvatarFrame,
   BannerEffect,
@@ -53,6 +56,9 @@ const DEFAULT_ACCENT_COLOR = '#7c3aed';
  */
 export default function CustomizationSettings() {
   const { t } = useTranslation('settings');
+  const { t: nt } = useTranslation('nav');
+  const [nativeDirty, setNativeDirty] = useState(false);
+  const clearNativeDirty = useNativeUnsavedChanges(nativeDirty);
   const { t: tProfile } = useTranslation('profile');
   const { t: tCommon } = useTranslation('common');
   const queryClient = useQueryClient();
@@ -63,7 +69,7 @@ export default function CustomizationSettings() {
   // Settings › Patreon is visible in this preview.
   const patreonBadge = getPatreonBadgeProps(user?.patreon);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['customization'],
     queryFn: getCustomizationFn,
   });
@@ -95,6 +101,8 @@ export default function CustomizationSettings() {
   const { mutate: save, isPending } = useMutation({
     mutationFn: updateCustomizationFn,
     onSuccess: (result) => {
+      clearNativeDirty();
+      setNativeDirty(false);
       toast.success(t('customization.saved'));
       if (user) {
         setUser({ ...user, customization: result.customization });
@@ -191,6 +199,7 @@ export default function CustomizationSettings() {
     );
   }
 
+  if (isMobileApp() && !isLoading && !options) return <div className="alert flex flex-col items-start" role="alert"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void refetch()}>{nt('native.retry')}</Button></div>;
   if (isLoading || !options) {
     return (
       <div className="flex justify-center py-12">
@@ -200,7 +209,7 @@ export default function CustomizationSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="native-customization space-y-6" onChangeCapture={() => setNativeDirty(true)} onClickCapture={(e) => { if ((e.target as HTMLElement).closest('button')) setNativeDirty(true); }}>
       {prefersReducedMotion && (
         <div className="alert alert-info">
           <Info className="h-5 w-5 shrink-0" />
@@ -286,7 +295,7 @@ export default function CustomizationSettings() {
         </div>
       </div>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.nameEffect')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.nameEffect')}
@@ -412,9 +421,9 @@ export default function CustomizationSettings() {
             </div>
           )}
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.avatarFrame')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.avatarFrame')}
@@ -517,9 +526,9 @@ export default function CustomizationSettings() {
             </Field>
           )}
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.title')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">{t('customization.title')}</h2>
           <p className="text-sm text-base-content/60">
@@ -549,9 +558,9 @@ export default function CustomizationSettings() {
             </DropdownSelect>
           )}
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.signatureStat')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.signatureStat')}
@@ -574,9 +583,9 @@ export default function CustomizationSettings() {
             )}
           </div>
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.profileAccent')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.profileAccent')}
@@ -692,9 +701,9 @@ export default function CustomizationSettings() {
             </div>
           </div>
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="card surface">
+      <CustomizationGroup title={t('customization.bannerEffect')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.bannerEffect')}
@@ -714,9 +723,9 @@ export default function CustomizationSettings() {
             )}
           </div>
         </div>
-      </div>
+      </CustomizationGroup>
 
-      <div className="flex justify-end">
+      <div className="native-customization-save flex justify-end">
         <button
           type="button"
           className="btn btn-primary"
@@ -735,4 +744,9 @@ export default function CustomizationSettings() {
       </div>
     </div>
   );
+}
+
+function CustomizationGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  if (!isMobileApp()) return <div className="card surface">{children}</div>;
+  return <details className="collapse collapse-arrow surface" name="native-customization"><summary className="collapse-title font-semibold">{title}</summary><div className="collapse-content">{children}</div></details>;
 }

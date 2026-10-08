@@ -201,6 +201,7 @@
     "onlyChecked": "Only checked fields will change. The same value will be applied to every selected log.",
     "selectAll": "Select all results",
     "selectEntry": "Select log",
+    "holdToSelect": "Hold a log to select it. Then tap other logs to add them.",
     "selectShown": "Select shown results",
     "selectionTitle": "Log selection",
     "selected_one": "{{count}} log selected",

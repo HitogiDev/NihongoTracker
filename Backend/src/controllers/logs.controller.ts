@@ -1688,11 +1688,22 @@ export async function adminUpdateLog(
   }
 }
 
+async function recoverInterruptedMobileLog(log: ILog) {
+  if (log.clientOperationFinalized) return;
+  const userId = new Types.ObjectId(log.user.toString());
+  await recalculateUserXpFromLogs(userId);
+  await recalculateStreaksForUser(userId);
+  await checkAchievements(userId, { trigger: 'log', log });
+  await checkAchievements(userId, { trigger: 'streak' });
+  await Log.updateOne({ _id: log._id }, { $set: { clientOperationFinalized: true } });
+}
+
 export async function createLog(
   req: Request<ParamsDictionary, any, ICreateLog>,
   res: Response,
   next: NextFunction
 ) {
+  const clientOperationId = req.get('Idempotency-Key');
   const {
     type,
     mediaId,
@@ -1714,7 +1725,22 @@ export async function createLog(
   } = req.body;
 
   try {
+    if (
+      clientOperationId &&
+      !/^[a-zA-Z0-9._:-]{1,128}$/.test(clientOperationId)
+    ) {
+      throw apiError('common.validationError', 400, 'Invalid idempotency key');
+    }
     if (!type) throw apiError('log.typeRequired', 400, 'Log type is required');
+
+    const user: ILog['user'] = res.locals.user._id;
+    if (clientOperationId) {
+      const existingLog = await Log.findOne({ user, clientOperationId });
+      if (existingLog) {
+        await recoverInterruptedMobileLog(existingLog);
+        return res.status(200).json(existingLog.toObject());
+      }
+    }
 
     const isUnknownDate = Boolean(unknownDate);
 
@@ -1824,9 +1850,9 @@ export async function createLog(
       });
     }
 
-    const user: ILog['user'] = res.locals.user._id;
     const newLog: ILog | null = new Log({
       user,
+      ...(clientOperationId && { clientOperationId }),
       type,
       mediaId: logMedia ? logMedia.contentId : mediaId,
       pages,
@@ -1848,18 +1874,33 @@ export async function createLog(
     });
     if (!newLog)
       throw apiError('log.createFailed', 500, 'Log could not be created');
-    const savedLog = await newLog.save();
+    let savedLog: ILog;
+    try {
+      savedLog = await newLog.save();
+    } catch (error) {
+      const mongoError = error as { code?: number };
+      if (clientOperationId && mongoError.code === 11000) {
+        const existingLog = await Log.findOne({ user, clientOperationId });
+        if (existingLog) {
+          await recoverInterruptedMobileLog(existingLog);
+          return res.status(200).json(existingLog.toObject());
+        }
+      }
+      throw error;
+    }
     if (!savedLog)
       throw apiError('log.saveFailed', 500, 'Log could not be saved');
 
     const levelBeforeLog: number = res.locals.user.stats?.userLevel ?? 1;
 
     res.locals.log = savedLog;
-    await updateStats(res, next);
+    if (clientOperationId) await recalculateUserXpFromLogs(user.toString());
+    else await updateStats(res, next);
 
     // Update streaks using user timezone and log date (incremental)
     if (!savedLog.unknownDate) {
-      await updateStreakWithLog(res.locals.user._id, savedLog.date);
+      if (clientOperationId) await recalculateStreaksForUser(new Types.ObjectId(user.toString()));
+      else await updateStreakWithLog(res.locals.user._id, savedLog.date);
     }
 
     // Check achievements after stats + streak are updated
@@ -2005,6 +2046,9 @@ export async function createLog(
       logMedia?.title?.contentTitleNative ||
       savedLog.mediaTitle;
     await recordLogActivity(savedLog, res.locals.user, activityMediaTitle);
+    if (clientOperationId) {
+      await Log.updateOne({ _id: savedLog._id }, { $set: { clientOperationFinalized: true } });
+    }
 
     // Celebration payload the client plays back after logging (XP roll-up,
     // level up, monthly-rank overtakes). Best-effort: never fails the log.

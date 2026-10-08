@@ -1,6 +1,8 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useState, useEffect } from 'react';
+import { isNativeApp } from '../utils/nativeRuntime';
+import { rememberMedia, searchCachedMedia } from '../offline/mediaCache';
 import { searchAnilist } from '../api/anilistApi';
 import {
   searchMediaFn,
@@ -129,9 +131,7 @@ export default function useSearch(
   const baseEnabled = debouncedSearch.trim().length > 0 && type !== '';
   const isEnabled = baseEnabled && (options?.enabled ?? true);
 
-  return useQuery<SearchResultType[] | undefined, Error>({
-    queryKey: ['searchMedia', debouncedSearch, type, page, perPage, ids],
-    queryFn: async () => {
+  const searchOnline = async () => {
       if (!debouncedSearch.trim() || !type) return [];
 
       if (type === 'video') {
@@ -257,6 +257,21 @@ export default function useSearch(
       }
 
       return [];
+  };
+
+  return useQuery<SearchResultType[] | undefined, Error>({
+    queryKey: ['searchMedia', debouncedSearch, type, page, perPage, ids],
+    queryFn: async () => {
+      if (isNativeApp() && !navigator.onLine) return searchCachedMedia(type, debouncedSearch, page, perPage);
+      try {
+        const results = await searchOnline();
+        if (isNativeApp() && !results.length) return searchCachedMedia(type, debouncedSearch, page, perPage);
+        await rememberMedia(results).catch(() => undefined);
+        return results;
+      } catch (error) {
+        if (isNativeApp()) return searchCachedMedia(type, debouncedSearch, page, perPage);
+        throw error;
+      }
     },
     enabled: isEnabled,
     // Keep the last results visible while a new query is in flight so the

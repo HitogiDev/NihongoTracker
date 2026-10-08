@@ -1,0 +1,383 @@
+html[data-native-app="true"] {
+  --native-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --native-safe-bottom: var(
+    --safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
+  --native-safe-left: var(
+    --safe-area-inset-left,
+    env(safe-area-inset-left, 0px)
+  );
+  --native-safe-right: var(
+    --safe-area-inset-right,
+    env(safe-area-inset-right, 0px)
+  );
+  background: var(--color-base-200);
+  scrollbar-gutter: auto;
+}
+html[data-native-app="true"] body {
+  margin: 0;
+  background: var(--color-base-200);
+}
+.native-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--native-safe-bottom);
+}
+.native-shell-dock {
+  padding-bottom: calc(4rem + var(--native-safe-bottom));
+}
+.native-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding-top: var(--native-safe-top);
+  padding-left: var(--native-safe-left);
+  padding-right: var(--native-safe-right);
+  border-bottom: 1px solid var(--color-base-300);
+}
+.native-notification-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 100%;
+}
+.native-content {
+  padding-left: var(--native-safe-left);
+  padding-right: var(--native-safe-right);
+}
+.native-content > div {
+  padding-top: 1rem;
+  min-height: 0;
+}
+.native-content > div > .container {
+  padding-top: 0;
+  padding-bottom: 1.5rem;
+}
+.native-content .min-h-screen {
+  min-height: 0;
+}
+.native-content .card-body {
+  padding: 1rem;
+}
+.native-content .text-4xl,
+.native-content .text-5xl {
+  font-size: 1.5rem;
+  line-height: 1.35;
+}
+.native-content .text-3xl {
+  font-size: 1.375rem;
+  line-height: 1.4;
+}
+html[data-native-app="true"] .btn,
+html[data-native-app="true"] [role="tab"],
+html[data-native-app="true"] .tab {
+  min-height: 3rem;
+}
+html[data-native-app="true"] .btn-square,
+html[data-native-app="true"] .btn-circle {
+  min-width: 3rem;
+  width: 3rem;
+}
+html[data-native-app="true"] :is(.input, .select) {
+  min-height: 3rem;
+  font-size: 1rem;
+}
+html[data-native-app="true"] .textarea {
+  font-size: 1rem;
+}
+html[data-native-app="true"] .mobile-bottom-dock {
+  height: calc(4rem + var(--native-safe-bottom));
+  min-height: 0;
+  padding: 0.25rem var(--native-safe-right) var(--native-safe-bottom)
+    var(--native-safe-left);
+  background: var(--color-base-100);
+  backdrop-filter: none;
+}
+html[data-native-app="true"] .mobile-bottom-dock > a {
+  flex: 1;
+  min-width: 0;
+  min-height: 3rem;
+}
+html[data-native-app="true"] .dock-label {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+html[data-native-app="true"] .modal {
+  padding-top: calc(var(--native-safe-top) + 0.5rem);
+  padding-bottom: calc(var(--native-safe-bottom) + 0.5rem);
+  padding-left: calc(var(--native-safe-left) + 0.5rem);
+  padding-right: calc(var(--native-safe-right) + 0.5rem);
+  align-items: end;
+}
+html[data-native-app="true"] .modal-box {
+  width: 100%;
+  margin: 0;
+  max-height: calc(
+    100dvh - var(--native-safe-top) - var(--native-safe-bottom) - 1rem
+  );
+  border-radius: var(--radius-box);
+  overscroll-behavior: contain;
+}
+html[data-native-app="true"] .Toastify__toast-container {
+  bottom: calc(var(--native-safe-bottom) + 4.5rem);
+  left: 0.75rem;
+  right: 0.75rem;
+  width: auto;
+  padding: 0;
+}
+html[data-native-app="true"][data-native-keyboard="true"] .mobile-bottom-dock,
+html[data-native-app="true"][data-native-keyboard="true"]
+  .native-floating-action {
+  display: none;
+}
+html[data-native-app="true"][data-native-keyboard="true"] .native-shell-dock {
+  padding-bottom: 0;
+}
+.native-auth form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.native-page {
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.native-toolbar {
+  position: sticky;
+  top: calc(3.5rem + var(--native-safe-top));
+  z-index: 20;
+  background: var(--color-base-200);
+  padding-block: 0.5rem;
+}
+.native-floating-action {
+  position: fixed;
+  right: calc(1rem + var(--native-safe-right));
+  bottom: calc(5rem + var(--native-safe-bottom));
+  z-index: 30;
+}
+.native-content .native-log-card {
+  border-radius: var(--radius-box);
+  box-shadow: none;
+}
+.native-content .native-log-card header {
+  flex-wrap: nowrap;
+}
+.native-content .native-log-card .badge {
+  white-space: nowrap;
+}
+.native-content .native-log-card .native-log-type {
+  max-width: 100%;
+  height: auto;
+  min-height: 1.25rem;
+  white-space: normal;
+}
+.native-content .native-log-card footer {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.native-content .native-log-card footer > .tooltip {
+  min-width: 0;
+  max-width: 100%;
+}
+.native-content .native-log-card time svg {
+  flex-shrink: 0;
+}
+.native-selectable-log {
+  -webkit-touch-callout: none;
+}
+.native-selectable-log img {
+  pointer-events: none;
+}
+html[data-native-app="true"] .native-web-only {
+  display: none;
+}
+html[data-native-app="true"] .native-profile-banner {
+  height: auto;
+  min-height: 10rem;
+  padding-top: 1rem;
+}
+html[data-native-app="true"] .native-profile-identity {
+  min-width: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-inline: 1rem;
+}
+html[data-native-app="true"] .native-profile-identity > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 0.5rem 0;
+}
+html[data-native-app="true"] .native-profile-identity > div:nth-child(2) > div {
+  align-items: start;
+}
+html[data-native-app="true"]
+  .native-profile-identity
+  > div:nth-child(2)
+  > .mt-2 {
+  justify-content: start;
+  flex-wrap: wrap;
+}
+html[data-native-app="true"] .native-profile-identity > div:last-child {
+  width: 100%;
+  justify-content: end;
+}
+html[data-native-app="true"] .native-profile-identity .w-24 {
+  width: 4rem;
+  height: 4rem;
+}
+html[data-native-app="true"] .native-club-banner {
+  height: 8rem;
+}
+html[data-native-app="true"] .native-club-tabs {
+  width: 100%;
+  justify-content: space-between;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  margin-bottom: 1rem;
+}
+html[data-native-app="true"] .native-club-tabs .tab {
+  flex: 1;
+  padding-inline: 0.75rem;
+}
+html[data-native-app="true"] .native-club-tabs .tab svg {
+  display: none;
+}
+html[data-native-app="true"] .native-club-tabs .tab:last-child svg {
+  display: inline;
+  margin: 0;
+}
+html[data-native-app="true"] .native-club-actions .hidden {
+  display: inline;
+}
+html[data-native-app="true"] .native-log-form {
+  gap: 1.25rem;
+}
+html[data-native-app="true"] .native-log-form > .grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+html[data-native-app="true"] .native-log-form .fieldset {
+  grid-template-columns: minmax(0, 1fr);
+}
+html[data-native-app="true"] .native-log-form .label {
+  max-width: 100%;
+  white-space: normal;
+}
+html[data-native-app="true"] .native-log-form :is(.label, .alert) > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html[data-native-app="true"] .native-log-form .label > span {
+  align-items: start;
+}
+html[data-native-app="true"] .native-log-form :is(.label, .alert) svg {
+  flex-shrink: 0;
+}
+html[data-native-app="true"] .native-log-form .alert {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+html[data-native-app="true"] [data-native-screen="log"] {
+  padding-bottom: calc(7rem + var(--native-safe-bottom));
+}
+html[data-native-app="true"] .native-log-submit {
+  position: fixed;
+  bottom: 0;
+  left: var(--native-safe-left);
+  right: var(--native-safe-right);
+  z-index: 30;
+  border-radius: 0;
+  border-top: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  padding-bottom: var(--native-safe-bottom);
+}
+html[data-native-app="true"] .native-log-submit :is(h2, p) {
+  display: none;
+}
+html[data-native-app="true"] .native-log-submit .card-body {
+  padding: 0.75rem 1rem;
+}
+html[data-native-app="true"] .native-log-submit .card-actions {
+  width: 100%;
+  margin: 0;
+}
+html[data-native-app="true"][data-native-keyboard="true"] .native-log-submit {
+  padding-bottom: 0;
+}
+html[data-native-app="true"] .native-content :is(.container, .overflow-x-auto) {
+  min-width: 0;
+  max-width: 100%;
+}
+html[data-native-app="true"] .native-content .grid {
+  min-width: 0;
+}
+html[data-native-app="true"] .native-customization {
+  padding-bottom: 6rem;
+}
+html[data-native-app="true"]
+  .native-customization
+  .collapse-content
+  > .card-body {
+  padding: 0 0.25rem 0.75rem;
+}
+html[data-native-app="true"]
+  .native-customization
+  .collapse-content
+  > .card-body
+  > h2 {
+  display: none;
+}
+html[data-native-app="true"] .native-customization .collapse-title {
+  min-height: 3rem;
+}
+html[data-native-app="true"] .native-customization-save {
+  position: fixed;
+  bottom: 0;
+  left: var(--native-safe-left);
+  right: var(--native-safe-right);
+  z-index: 30;
+  background: var(--color-base-100);
+  border-top: 1px solid var(--color-base-300);
+  padding: 0.75rem 1rem calc(0.75rem + var(--native-safe-bottom));
+}
+html[data-native-app="true"] .native-customization-save .btn {
+  width: 100%;
+}
+html[data-native-app="true"][data-native-keyboard="true"]
+  .native-customization-save {
+  padding-bottom: 0.75rem;
+}
+html[data-native-app="true"] .th-session-content {
+  padding-top: calc(4.5rem + var(--native-safe-top));
+  padding-bottom: calc(1rem + var(--native-safe-bottom));
+  padding-left: calc(1rem + var(--native-safe-left));
+  padding-right: calc(1rem + var(--native-safe-right));
+}
+html[data-native-app="true"] .th-root .th-topbar {
+  top: var(--native-safe-top);
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-native-app="true"] {
+    scroll-behavior: auto;
+  }
+}
+html[data-native-app="true"] [role="option"] {
+  min-height: 3rem;
+}
+html[data-native-app="true"] .native-calendar .rdp-root {
+  --rdp-day-width: 3rem;
+  --rdp-day-height: 3rem;
+  --rdp-day_button-width: 3rem;
+  --rdp-day_button-height: 3rem;
+  margin: 0 auto;
+  width: fit-content;
+}

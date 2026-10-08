@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { formatDateValue, parseDateValue } from '../../utils/dateInput';
 import { useUserDataStore } from '../../store/userData';
+import { isMobileApp } from '../../utils/nativeRuntime';
+import Modal from './Modal';
 import 'react-day-picker/style.css';
 
 interface DatePickerInputProps {
@@ -71,7 +74,7 @@ export default function DatePickerInput({
   };
 
   useEffect(() => {
-    if (!isCalendarOpen) return;
+    if (!isCalendarOpen || isMobileApp()) return;
 
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (
@@ -85,6 +88,26 @@ export default function DatePickerInput({
     document.addEventListener('mousedown', closeOnOutsideClick);
     return () => document.removeEventListener('mousedown', closeOnOutsideClick);
   }, [isCalendarOpen]);
+
+  const calendar = (
+    <DayPicker
+      className="rdp-themed"
+      components={{ Chevron: DayPickerChevron }}
+      mode="single"
+      weekStartsOn={weekStartsOn}
+      selected={selectedDate}
+      defaultMonth={selectedDate ?? minDate ?? maxDate ?? new Date()}
+      startMonth={minDate}
+      endMonth={maxDate}
+      disabled={(date) => disabled || Boolean(minDate && date < minDate) || Boolean(maxDate && date > maxDate)}
+      onSelect={(date) => {
+        if (!date && required) return;
+        updateValue(date ? formatDateValue(date) : '');
+        setIsCalendarOpen(false);
+        if (!isMobileApp()) inputRef.current?.focus();
+      }}
+    />
+  );
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -114,34 +137,15 @@ export default function DatePickerInput({
         <Calendar className="w-4 h-4" />
       </button>
 
-      {isCalendarOpen && <div
+      {isCalendarOpen && !isMobileApp() && <div
         tabIndex={0}
         role="dialog"
         aria-label={ariaLabel}
         className="absolute bottom-full right-0 z-[1000] mb-2 card card-sm w-72 p-2 surface-raised"
       >
-        <DayPicker
-          className="rdp-themed"
-          components={{ Chevron: DayPickerChevron }}
-          mode="single"
-          weekStartsOn={weekStartsOn}
-          selected={selectedDate}
-          defaultMonth={selectedDate ?? minDate ?? maxDate ?? new Date()}
-          startMonth={minDate}
-          endMonth={maxDate}
-          disabled={(date) =>
-            disabled ||
-            Boolean(minDate && date < minDate) ||
-            Boolean(maxDate && date > maxDate)
-          }
-          onSelect={(date) => {
-            if (!date && required) return;
-            updateValue(date ? formatDateValue(date) : '');
-            setIsCalendarOpen(false);
-            inputRef.current?.focus();
-          }}
-        />
+        {calendar}
       </div>}
+      {isMobileApp() && createPortal(<Modal open={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title={ariaLabel} className="p-1"><div className="native-calendar">{calendar}</div></Modal>, document.body)}
     </div>
   );
 }

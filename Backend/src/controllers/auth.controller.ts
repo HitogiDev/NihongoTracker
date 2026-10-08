@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { FilterQuery } from 'mongoose';
 import { createHash, randomBytes } from 'node:crypto';
 import User from '../models/user.model.js';
+import MobileSession from '../models/mobileSession.model.js';
 import generateToken from '../libs/jwt.js';
 import { hashPassword } from '../libs/password.js';
 import {
@@ -21,6 +22,7 @@ import {
 import { indexUser } from '../services/meilisearch/userIndex.js';
 import { getLiveCurrentStreak } from '../services/streaks.js';
 import { serializeAuthenticatedUser } from '../services/authenticatedUser.js';
+import { createMobileSession } from '../services/mobileSessions.service.js';
 
 const isValidTimezone = (timezone?: string): boolean => {
   if (!timezone) {
@@ -215,6 +217,59 @@ export async function login(
   }
 }
 
+export async function loginMobile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { login: loginValue, password }: ILogin = req.body;
+  try {
+    if (typeof loginValue !== 'string' || typeof password !== 'string' || !loginValue.trim() || !password) {
+      throw apiError(
+        'auth.credentialsRequired',
+        400,
+        'Please provide username and password'
+      );
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { username: loginValue },
+        { email: { $exists: true, $eq: loginValue } },
+      ],
+    })
+      .collation({ locale: 'en', strength: 2 })
+      .select('+password');
+
+    if (!user || !(await user.matchPassword(password))) {
+      throw apiError(
+        'auth.invalidCredentials',
+        401,
+        'Incorrect login or password'
+      );
+    }
+    if (user.moderation?.banned) {
+      throw apiError(
+        'auth.banned',
+        403,
+        user.moderation.banReason || 'Your account has been banned'
+      );
+    }
+
+    const session = await createMobileSession(user._id.toString());
+    const responseUser = serializeAuthenticatedUser(user);
+    responseUser.stats.currentStreak = getLiveCurrentStreak(
+      user.stats?.currentStreak ?? 0,
+      user.stats?.lastStreakDate ?? null,
+      user.settings?.timezone || 'UTC'
+    );
+
+    return res.status(200).json({ user: responseUser, session });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function logout(_req: Request, res: Response) {
   res.clearCookie('jwt', {
     httpOnly: true,
@@ -373,6 +428,7 @@ export async function resetPassword(
       { runValidators: true }
     );
     if (!updatedUser) throw apiError('auth.invalidResetToken', 400, 'Invalid or expired token');
+    await MobileSession.deleteMany({ user: updatedUser._id });
     void sendPasswordResetSuccessEmail(user.email, user.settings?.language).catch((error) => console.error('Password reset confirmation email failed:', error));
     res.status(200).json({ message: 'Password has been reset successfully!' });
   } catch (error) {
