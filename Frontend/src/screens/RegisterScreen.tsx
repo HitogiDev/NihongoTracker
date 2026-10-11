@@ -29,6 +29,7 @@ import { Rocket } from 'lucide-react';
 import { isMobileApp } from '../utils/nativeRuntime';
 import NativeAuthLayout from '../native/NativeAuthLayout';
 import Button from '../components/ui/Button';
+import { useNativeOnboardingStore } from '../native/onboardingStore';
 
 function RegisterScreen() {
   const { t } = useTranslation('auth');
@@ -202,6 +203,11 @@ function RegisterScreen() {
   const { mutate, isPending, isSuccess, error } = useMutation({
     mutationFn: registerUserFn,
     onSuccess: (data: ILoginResponse) => {
+      if (isMobileApp()) {
+        useNativeOnboardingStore.getState().start(data._id);
+        setUser(data);
+        return;
+      }
       setUser(data);
       try {
         sessionStorage.setItem('nihongoTracker:onboardingPending', data.username);

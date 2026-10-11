@@ -28,6 +28,18 @@ html[data-native-app="true"] body {
 .native-shell-dock {
   padding-bottom: calc(4rem + var(--native-safe-bottom));
 }
+.native-onboarding {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.native-onboarding-actions {
+  border-top: 1px solid var(--color-base-300);
+  padding: 0.75rem calc(1rem + var(--native-safe-right))
+    calc(0.75rem + var(--native-safe-bottom))
+    calc(1rem + var(--native-safe-left));
+}
 .native-header {
   position: sticky;
   top: 0;
@@ -229,6 +241,17 @@ html[data-native-app="true"]
 html[data-native-app="true"] .native-profile-identity > div:last-child {
   width: 100%;
   justify-content: end;
+}
+html[data-native-app="true"]
+  .native-profile-identity.native-profile-identity-other {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+html[data-native-app="true"]
+  .native-profile-identity.native-profile-identity-other
+  > div:last-child {
+  width: auto;
+  flex: 0 0 auto;
 }
 html[data-native-app="true"] .native-profile-identity .w-24 {
   width: 4rem;

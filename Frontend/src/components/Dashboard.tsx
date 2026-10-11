@@ -171,7 +171,7 @@ function Dashboard() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   useEffect(() => {
-    if (!username) return;
+    if (!username || isMobileApp()) return;
     try {
       if (sessionStorage.getItem('nihongoTracker:onboardingPending') === username) {
         sessionStorage.removeItem('nihongoTracker:onboardingPending');

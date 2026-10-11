@@ -191,9 +191,13 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - `App.tsx` maps paths to document titles and implements scroll restoration. Add titles there for new top-level routes.
 - Capacitor uses `native/NativeShell.tsx` instead of the web navbar and footer. Keep native presentation behind `isMobileApp()` and native plugins behind `isNativeApp()`.
 - Native navigation metadata lives in `native/navigation.ts`. The five main tabs are home, records, ranking, clubs, and the owner's profile.
+- Native back actions consume history entries. When no prior app entry exists, replace the current route with its parent. Do not push a parent from a back action.
+- The native header uses the heart button in `NativeSupportLink` for access to `/support` from primary tabs.
+- Native registration starts `NativeOnboarding`. `onboardingStore` persists its step per account until completion or skip. The web onboarding stays in `GettingStartedModal`. Share plan names, prices, and the Patreon URL through `constants/supportPlans.ts`.
 - Native safe areas are centralized in `native/native.css`. Do not add a second system inset to page wrappers. `NativeAppLifecycle` controls keyboard visibility and system bar contrast.
 - Native forms use `useNativeUnsavedChanges`. Settings categories use `/settings?tab=...`. Preserve account-scoped filters and scroll restoration when adding native pages.
 - Native log selection uses `SelectableLogRow`: hold a log to start selection, then tap logs to toggle them. Keep scrolling and log actions available outside selection.
+- Share Stats renders PNGs locally through `utils/statsCard.ts` using the active theme. Supporter styles require an active tier or admin access. Native exports use `native/shareStatsImage.ts`, the Capacitor Share plugin, and files in `Directory.Cache`. Keep shared files available while the receiving app reads them.
 - Development previews can use `?mobilePreview=1`. This enables presentation only, without native authentication, storage, or plugins.
 
 ## Frontend UI conventions

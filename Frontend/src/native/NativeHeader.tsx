@@ -7,6 +7,7 @@ import { useNotificationCount } from "../hooks/useNotificationCount";
 import { nativeRoute } from "./navigation";
 import SearchModal from "../components/SearchModal";
 import Button from "../components/ui/Button";
+import NativeSupportLink from "./NativeSupportLink";
 
 export default function NativeHeader() {
   const { t } = useTranslation("nav");
@@ -41,6 +42,7 @@ export default function NativeHeader() {
           </h1>
           {user && route.primary && (
             <>
+              <NativeSupportLink />
               <Button
                 appearance="ghost"
                 size="sm"

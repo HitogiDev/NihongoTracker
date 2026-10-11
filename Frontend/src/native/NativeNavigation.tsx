@@ -62,10 +62,9 @@ export default function NativeNavigation({
         else if (isNativeApp()) void App.exitApp();
       } else if (!route.parent) {
         if (isNativeApp()) void App.exitApp();
-      } else if (route.screen === "settings" && search) navigate("/settings");
-      else if (window.history.state?.idx > 0) navigate(-1);
-      else if (state?.nativeFrom) navigate(state.nativeFrom);
-      else navigate(route.parent ?? "/login");
+      } else if (window.history.state?.idx > 0) navigate(-1);
+      else if (state?.nativeFrom) navigate(state.nativeFrom, { replace: true });
+      else navigate(route.parent, { replace: true });
     };
     window.addEventListener("nihongo:native-back", onBack);
     return () => window.removeEventListener("nihongo:native-back", onBack);
