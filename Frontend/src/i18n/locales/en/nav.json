@@ -1,5 +1,6 @@
 {
   "native": {
+    "supportTitle": "Support NihongoTracker",
     "achievements": "Achievements",
     "mediaDetails": "Media",
     "home": "Home", "records": "Logs", "profile": "Profile", "back": "Back",
@@ -16,6 +17,46 @@
     "haveAccount": "I already have an account", "more": "More", "settings": "Settings", "signOut": "Sign out",
     "dailyProgress": "Your immersion", "thisMonth": "This month", "goals": "Your goals", "activity": "Activity",
     "yourClubs": "Your clubs", "exploreClubs": "Explore clubs", "members": "Members", "media": "Media"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "step": "{{current}} of {{total}}",
+    "welcome": {
+      "title": "Welcome to NihongoTracker",
+      "description": "Turn the stories you enjoy into a Japanese learning habit.",
+      "media": "Anime, novels, manga, games, and more",
+      "hint": "Log your immersion, see your progress, and grow at your own pace."
+    },
+    "logs": {
+      "title": "Every session counts",
+      "description": "Save what you read, listen to, or play. Your logs earn XP and help you stay consistent.",
+      "example": "An example log",
+      "session": "An episode of anime",
+      "duration": "25 minutes of immersion",
+      "hint": "Use Create log on Home. Add time, episodes, pages, or characters depending on the media."
+    },
+    "progress": {
+      "title": "Find your rhythm",
+      "description": "Choose a small goal and make Japanese part of your day.",
+      "goalsTitle": "Goals that fit you",
+      "goalsDescription": "Set daily, weekly, or deadline-based goals.",
+      "rankingTitle": "See how far you have come",
+      "rankingDescription": "Follow your levels, streaks, and statistics. Explore the ranking whenever you like.",
+      "clubsTitle": "Share the journey",
+      "clubsDescription": "Find clubs and people who enjoy the same media."
+    },
+    "plans": {
+      "title": "Help NihongoTracker grow",
+      "description": "Core tracking is free. If you want to support the project, these plans add tools and customization.",
+      "price": "{{price}} USD/month",
+      "donator": "A supporter badge, more themes, and name effects in your own colors.",
+      "enthusiast": "Includes Donator, immersion planning, session insights, and animated customization.",
+      "consumer": "Includes Enthusiast, exclusive frames, and a custom theme on your public profile.",
+      "hint": "Choose your plan and complete payment on Patreon. You can also support later using the heart in the top bar.",
+      "support": "Support on Patreon",
+      "continueFree": "Continue for free"
+    }
   },
   "offline": {
     "title": "Pending changes",

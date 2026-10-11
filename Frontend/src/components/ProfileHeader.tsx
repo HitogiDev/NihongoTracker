@@ -178,7 +178,13 @@ export default function ProfileHeader() {
         {/* z-[1] ties with the particle overlay, and later siblings win: the
             avatar and name stay above the ambient effect. */}
         <div className="relative z-[1] flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover">
-          <div className="native-profile-identity flex flex-col items-center gap-2 sm:flex-row sm:items-end sm:gap-4 min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
+          <div
+            className={`native-profile-identity flex flex-col items-center gap-2 sm:flex-row sm:items-end sm:gap-4 min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2 ${
+              currentUser && user && !isOwnProfile
+                ? 'native-profile-identity-other'
+                : ''
+            }`}
+          >
             <div>
               {isLoadingUser ? (
                 <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
@@ -227,7 +233,7 @@ export default function ProfileHeader() {
                 </p>
               )}
               {!isLoadingUser && user?.social && (
-                <div className="mt-2 flex items-center justify-center gap-4 text-sm text-white/90 sm:justify-start">
+                <div className="mt-2 flex items-center justify-center gap-4 text-sm text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] sm:justify-start">
                   <Link
                     to={`/user/${encodeURIComponent(user.username)}/followers`}
                     className="link link-hover"

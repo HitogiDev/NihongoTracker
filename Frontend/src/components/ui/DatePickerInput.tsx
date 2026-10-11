@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
@@ -56,6 +56,12 @@ export default function DatePickerInput({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [calendarPosition, setCalendarPosition] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+  } | null>(null);
   const selectedValue = value ?? internalValue;
   const weekStartsOn = useUserDataStore(
     (state) => state.user?.settings?.weekStartsOn ?? 1,
@@ -79,14 +85,71 @@ export default function DatePickerInput({
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (
         event.target instanceof Node &&
-        !wrapperRef.current?.contains(event.target)
+        !wrapperRef.current?.contains(event.target) &&
+        !calendarRef.current?.contains(event.target)
       ) {
         setIsCalendarOpen(false);
       }
     };
 
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setIsCalendarOpen(false);
+      inputRef.current?.focus();
+    };
+
     document.addEventListener('mousedown', closeOnOutsideClick);
-    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    };
+  }, [isCalendarOpen]);
+
+  useLayoutEffect(() => {
+    if (!isCalendarOpen || isMobileApp()) {
+      setCalendarPosition(null);
+      return;
+    }
+
+    const input = inputRef.current;
+    const popup = calendarRef.current;
+    if (!input || !popup) return;
+
+    const updatePosition = () => {
+      const rect = input.getBoundingClientRect();
+      const padding = 8;
+      const gap = 8;
+      const width = popup.getBoundingClientRect().width;
+      const height = popup.scrollHeight + popup.offsetHeight - popup.clientHeight;
+      const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - padding - gap);
+      const spaceAbove = Math.max(0, rect.top - padding - gap);
+      const openAbove = spaceBelow < height && spaceAbove > spaceBelow;
+      const maxHeight = openAbove ? spaceAbove : spaceBelow;
+      const top = openAbove
+        ? Math.max(padding, rect.top - Math.min(height, maxHeight) - gap)
+        : rect.bottom + gap;
+      const left = Math.max(
+        padding,
+        Math.min(rect.right - width, window.innerWidth - width - padding),
+      );
+
+      setCalendarPosition({ top, left, maxHeight });
+    };
+
+    updatePosition();
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(input);
+    observer.observe(popup);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [isCalendarOpen]);
 
   const calendar = (
@@ -137,14 +200,21 @@ export default function DatePickerInput({
         <Calendar className="w-4 h-4" />
       </button>
 
-      {isCalendarOpen && !isMobileApp() && <div
+      {isCalendarOpen && !isMobileApp() && createPortal(<div
+        ref={calendarRef}
         tabIndex={0}
         role="dialog"
         aria-label={ariaLabel}
-        className="absolute bottom-full right-0 z-[1000] mb-2 card card-sm w-72 p-2 surface-raised"
+        className="fixed z-[1000] card card-sm w-max max-w-[calc(100vw-1rem)] overflow-auto p-2 surface-raised"
+        style={{
+          top: calendarPosition?.top ?? 0,
+          left: calendarPosition?.left ?? 0,
+          maxHeight: calendarPosition?.maxHeight,
+          visibility: calendarPosition ? 'visible' : 'hidden',
+        }}
       >
         {calendar}
-      </div>}
+      </div>, inputRef.current?.closest('dialog[open]') ?? document.body)}
       {isMobileApp() && createPortal(<Modal open={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} title={ariaLabel} className="p-1"><div className="native-calendar">{calendar}</div></Modal>, document.body)}
     </div>
   );

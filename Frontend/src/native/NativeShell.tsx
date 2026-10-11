@@ -5,14 +5,21 @@ import { nativeRoute } from "./navigation";
 import NativeNavigation from "./NativeNavigation";
 import NativeHeader from "./NativeHeader";
 import MobileBottomNav from "../components/MobileBottomNav";
+import NativeOnboarding from "./NativeOnboarding";
+import { useNativeOnboardingStore } from "./onboardingStore";
 
 export default function NativeShell() {
   const { pathname, search } = useLocation();
   const user = useUserDataStore((store) => store.user);
+  const onboardingStep = useNativeOnboardingStore((store) =>
+    user ? store.steps[user._id] : undefined,
+  );
   const route = nativeRoute(pathname, search, user?.username);
   const dock = Boolean(user && route.primary);
   if (user && ["/login", "/register"].includes(pathname))
     return <Navigate to="/" replace />;
+  if (user && onboardingStep !== undefined)
+    return <NativeOnboarding key={user._id} account={user._id} />;
   return (
     <NativeNavigation key={user?._id ?? "guest"}>
       <div

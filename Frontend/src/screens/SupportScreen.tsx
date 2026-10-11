@@ -29,6 +29,7 @@ import SupportCustomizationShowcase from '../components/SupportCustomizationShow
 import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
 import type { IUserCustomization } from '../types';
+import { PATREON_URL, SUPPORT_PLANS } from '../constants/supportPlans';
 import {
   getNameEffectRender,
   getProfileAccentStyle,
@@ -47,9 +48,7 @@ interface PatreonTier {
 
 const TIERS: PatreonTier[] = [
   {
-    id: 'donator',
-    name: 'Donator',
-    price: '$1',
+    ...SUPPORT_PLANS[0],
     badgeClassName: 'badge badge-accent badge-lg gap-2',
     cardClassName:
       'card card-border relative bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
@@ -57,9 +56,7 @@ const TIERS: PatreonTier[] = [
     icon: <Heart className="w-5 h-5" />,
   },
   {
-    id: 'enthusiast',
-    name: 'Immersion Enthusiast',
-    price: '$5',
+    ...SUPPORT_PLANS[1],
     badgeClassName: 'badge badge-secondary badge-lg gap-2',
     cardClassName:
       'card card-border relative border-secondary bg-base-100 shadow-sm ring-2 ring-secondary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
@@ -68,9 +65,7 @@ const TIERS: PatreonTier[] = [
     popular: true,
   },
   {
-    id: 'consumer',
-    name: 'Avid Consumer',
-    price: '$10',
+    ...SUPPORT_PLANS[2],
     badgeClassName: 'badge badge-primary badge-lg gap-2',
     cardClassName:
       'card card-border relative bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
@@ -154,8 +149,6 @@ const THEME_PREVIEWS = [
   'valentine',
   'emerald',
 ] as const;
-
-const PATREON_URL = 'https://www.patreon.com/nihongotracker';
 
 interface PremiumProfileCombination {
   customization: IUserCustomization;
@@ -575,7 +568,7 @@ function SupportScreen() {
           </div>
 
           <div className="relative mx-auto w-full max-w-lg">
-            <div className="surface-raised relative p-6 shadow-lg sm:p-7">
+            <div className="surface-muted relative border-base-300 p-6 shadow-lg sm:p-7">
               <div className="mb-4">
                 <p className="text-xs font-semibold tracking-widest text-base-content/45 uppercase">
                   {t('support.hero.noteEyebrow')}
@@ -611,7 +604,7 @@ function SupportScreen() {
 
           <div className="card card-border bg-base-200 shadow-sm">
             <div className="card-body p-6 sm:p-8 lg:p-10">
-              <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
                 <div>
                   <span className="badge badge-secondary badge-soft w-fit">
                     {t('support.showcase.session.tier')}
@@ -646,9 +639,9 @@ function SupportScreen() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="card card-border bg-base-100 shadow-sm">
-              <div className="card-body p-6 sm:p-8">
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="card card-border min-w-0 bg-base-100 shadow-sm">
+              <div className="card-body min-w-0 p-6 sm:p-8">
                 <span className="badge badge-secondary badge-soft w-fit">
                   {t('support.showcase.planner.tier')}
                 </span>
@@ -741,8 +734,8 @@ function SupportScreen() {
               </div>
             </div>
 
-            <div className="card card-border bg-base-100 shadow-sm">
-              <div className="card-body p-6 sm:p-8">
+            <div className="card card-border min-w-0 bg-base-100 shadow-sm">
+              <div className="card-body min-w-0 p-6 sm:p-8">
                 <span className="badge badge-accent badge-soft w-fit">
                   {t('support.showcase.profile.tier')}
                 </span>

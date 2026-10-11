@@ -1,5 +1,6 @@
 {
   "native": {
+    "supportTitle": "Apoyar NihongoTracker",
     "achievements": "Logros",
     "mediaDetails": "Contenido",
     "home": "Inicio", "records": "Registros", "profile": "Perfil", "back": "Volver",
@@ -16,6 +17,46 @@
     "haveAccount": "Ya tengo una cuenta", "more": "Más", "settings": "Configuración", "signOut": "Cerrar sesión",
     "dailyProgress": "Tu inmersión", "thisMonth": "Este mes", "goals": "Tus metas", "activity": "Actividad",
     "yourClubs": "Tus clubs", "exploreClubs": "Descubrir clubs", "members": "Miembros", "media": "Medios"
+  },
+  "onboarding": {
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "step": "{{current}} de {{total}}",
+    "welcome": {
+      "title": "Bienvenido a NihongoTracker",
+      "description": "Convierte las historias que disfrutas en un hábito de japonés.",
+      "media": "Anime, novelas, manga, juegos y mucho más",
+      "hint": "Registra tu inmersión, observa tu progreso y avanza a tu ritmo."
+    },
+    "logs": {
+      "title": "Cada sesión cuenta",
+      "description": "Guarda lo que lees, escuchas o juegas. Tus registros suman XP y te ayudan a mantener la constancia.",
+      "example": "Así puede verse un registro",
+      "session": "Un episodio de anime",
+      "duration": "25 minutos de inmersión",
+      "hint": "Usa Crear registro en Inicio. Puedes añadir tiempo, episodios, páginas o caracteres según el medio."
+    },
+    "progress": {
+      "title": "Encuentra tu ritmo",
+      "description": "Elige una meta pequeña y haz del japonés parte de tu día.",
+      "goalsTitle": "Metas a tu medida",
+      "goalsDescription": "Crea objetivos diarios, semanales o para una fecha concreta.",
+      "rankingTitle": "Mira cuánto has avanzado",
+      "rankingDescription": "Sigue tus niveles, rachas y estadísticas. Explora el ranking cuando quieras.",
+      "clubsTitle": "Comparte el camino",
+      "clubsDescription": "Encuentra clubs y personas que disfrutan de los mismos medios."
+    },
+    "plans": {
+      "title": "Ayuda a crecer a NihongoTracker",
+      "description": "El tracking básico es gratis. Si quieres apoyar el proyecto, estos planes añaden herramientas y personalización.",
+      "price": "{{price}} USD/mes",
+      "donator": "Insignia de apoyo, más temas y efectos de nombre con tus colores.",
+      "enthusiast": "Incluye Donator, planificador de inmersión, análisis de sesiones y personalización animada.",
+      "consumer": "Incluye Enthusiast, marcos exclusivos y un tema personalizado en tu perfil público.",
+      "hint": "Elige tu plan y completa el pago en Patreon. También puedes apoyar más adelante desde el corazón de la barra superior.",
+      "support": "Apoyar en Patreon",
+      "continueFree": "Continuar gratis"
+    }
   },
   "offline": {
     "title": "Cambios pendientes",
