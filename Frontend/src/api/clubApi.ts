@@ -568,6 +568,7 @@ export async function getClubMemberRankingsFn(
   params: {
     metric?: 'xp' | 'time' | 'chars' | 'reading' | 'listening';
     period?: 'week' | 'month' | 'all-time';
+    scope?: 'all-media' | 'club-media';
     limit?: number;
     page?: number;
   } = {}

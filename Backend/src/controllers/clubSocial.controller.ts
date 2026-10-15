@@ -33,6 +33,7 @@ import {
 import {
   ClubLeaderboardMetric,
   ClubLeaderboardPeriod,
+  ClubLeaderboardScope,
   getClubLeaderboard,
 } from '../services/clubLeaderboard.service.js';
 import { getClubObjectives as listClubObjectives } from '../services/clubObjectives.service.js';
@@ -468,17 +469,22 @@ export async function getEnhancedClubLeaderboard(
     const club = await clubById(req.params.clubId);
     const metric = (req.query.metric ?? 'xp') as ClubLeaderboardMetric;
     const period = (req.query.period ?? 'all-time') as ClubLeaderboardPeriod;
+    const scope = (req.query.scope ?? 'all-media') as ClubLeaderboardScope;
     if (!['xp', 'time', 'chars', 'reading', 'listening'].includes(metric)) {
       throw apiError('auth.forbidden', 400, 'Invalid leaderboard metric');
     }
     if (!['week', 'month', 'all-time'].includes(period)) {
       throw apiError('auth.forbidden', 400, 'Invalid leaderboard period');
     }
+    if (!['all-media', 'club-media'].includes(scope)) {
+      throw apiError('auth.forbidden', 400, 'Invalid leaderboard scope');
+    }
     const rankings = await getClubLeaderboard({
       club,
       viewerId: res.locals.user?._id,
       metric,
       period,
+      scope,
     });
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
@@ -487,6 +493,7 @@ export async function getEnhancedClubLeaderboard(
       rankings: rankings.slice(start, start + limit),
       metric,
       period,
+      scope,
       pagination: {
         page,
         limit,

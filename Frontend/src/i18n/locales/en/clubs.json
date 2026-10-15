@@ -416,6 +416,14 @@
     "yourActivity": "Your Activity Overview"
   },
   "ranking": {
+    "clubMediaDescription": "Ranked by activity on media selected by a club vote or added by a club admin, including past selections.",
+    "metricLabel": "Ranking metric",
+    "periodLabel": "Ranking period",
+    "scope": {
+      "label": "Media included in ranking",
+      "allMedia": "All media",
+      "clubMedia": "Club media"
+    },
     "empty": "No ranking data available",
     "emptyBody": "No ranking data available yet. Start logging to appear in club rankings.",
     "emptyHint": "Members need to log activities to appear in rankings",
