@@ -418,6 +418,14 @@
     "yourActivity": "Resumen de tu actividad"
   },
   "ranking": {
+    "clubMediaDescription": "Clasificación por actividad con contenido elegido en una votación o añadido por un administrador del club, incluidas las selecciones anteriores.",
+    "metricLabel": "Métrica de clasificación",
+    "periodLabel": "Periodo de clasificación",
+    "scope": {
+      "label": "Contenido incluido en la clasificación",
+      "allMedia": "Todo el contenido",
+      "clubMedia": "Contenido del club"
+    },
     "empty": "No hay datos de clasificación",
     "emptyBody": "Todavía no hay datos de clasificación. Empieza a loguear para aparecer en ella.",
     "emptyHint": "Los miembros tienen que loguear actividad para aparecer aquí",

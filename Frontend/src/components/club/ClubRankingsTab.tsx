@@ -3,7 +3,6 @@ import {
   BookOpen,
   Calendar,
   Calendar1,
-  ChevronDown,
   Clock,
   Headphones,
   MessageSquareText,
@@ -17,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
 import UserAvatar from '../UserAvatar';
+import DropdownSelect from '../ui/DropdownSelect';
 import Spinner from '../ui/Spinner';
 
 interface ClubRankingsTabProps {
@@ -26,6 +26,7 @@ interface ClubRankingsTabProps {
 
 type Metric = 'xp' | 'time' | 'chars' | 'reading' | 'listening';
 type Period = 'week' | 'month' | 'all-time';
+type Scope = 'all-media' | 'club-media';
 
 const METRIC_ICONS = {
   xp: Zap,
@@ -81,19 +82,22 @@ export default function ClubRankingsTab({
   const { t } = useTranslation('clubs');
   const [metric, setMetric] = useState<Metric>('xp');
   const [period, setPeriod] = useState<Period>('all-time');
+  const [scope, setScope] = useState<Scope>('all-media');
   const rankings = useQuery({
-    queryKey: ['clubMemberRankings', clubId, metric, period],
+    queryKey: ['clubMemberRankings', clubId, metric, period, scope],
     queryFn: () =>
-      getClubMemberRankingsFn(clubId, { metric, period, limit: 100 }),
+      getClubMemberRankingsFn(clubId, { metric, period, scope, limit: 100 }),
   });
 
-  const metricOptions = (Object.keys(METRIC_ICONS) as Metric[]).map(
-    (value) => ({
+  const metricOptions = (Object.keys(METRIC_ICONS) as Metric[])
+    .filter(
+      (value) => scope === 'all-media' || ['xp', 'time', 'chars'].includes(value)
+    )
+    .map((value) => ({
       value,
       label: t(`ranking.metrics.${value}`),
       Icon: METRIC_ICONS[value],
-    })
-  );
+    }));
   const periodOptions = (['week', 'month', 'all-time'] as Period[]).map(
     (value) => ({
       value,
@@ -104,7 +108,6 @@ export default function ClubRankingsTab({
     })
   );
   const selectedMetric = metricOptions.find((option) => option.value === metric)!;
-  const selectedPeriod = periodOptions.find((option) => option.value === period)!;
   const rows = rankings.data?.rankings ?? [];
   const hasPodium = rows.length >= 3;
   const tableRows = hasPodium ? rows.slice(3) : rows;
@@ -130,70 +133,65 @@ export default function ClubRankingsTab({
           </h1>
         </div>
         <p className="text-base-content/70">
-          {clubName
-            ? t('ranking.tabSubtitleForClub', { club: clubName })
-            : t('ranking.tabSubtitle')}
+          {scope === 'club-media'
+            ? t('ranking.clubMediaDescription')
+            : clubName
+              ? t('ranking.tabSubtitleForClub', { club: clubName })
+              : t('ranking.tabSubtitle')}
         </p>
       </div>
 
       <div className="mb-8 grid w-full grid-cols-2 gap-3 sm:flex sm:justify-center sm:gap-4">
-        <div className="dropdown dropdown-start w-full sm:w-auto">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-outline w-full gap-2 sm:w-auto"
+        <div className="col-span-2 w-full sm:w-auto">
+          <DropdownSelect
+            value={scope}
+            aria-label={t('ranking.scope.label')}
+            className="w-full sm:w-auto"
+            onChange={(event) => {
+              const nextScope = event.target.value as Scope;
+              setScope(nextScope);
+              if (
+                nextScope === 'club-media' &&
+                ['reading', 'listening'].includes(metric)
+              ) {
+                setMetric('time');
+              }
+            }}
           >
-            <selectedPeriod.Icon className="h-4 w-4" />
-            {selectedPeriod.label}
-            <ChevronDown className="h-4 w-4" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content menu surface-raised z-[1] w-52 p-2"
-          >
-            {periodOptions.map(({ value, label, Icon }) => (
-              <li key={value}>
-                <button
-                  type="button"
-                  className={`gap-3 ${period === value ? 'active' : ''}`}
-                  onClick={() => setPeriod(value)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
+            <option value="all-media">{t('ranking.scope.allMedia')}</option>
+            <option value="club-media">{t('ranking.scope.clubMedia')}</option>
+          </DropdownSelect>
         </div>
-
-        <div className="dropdown dropdown-end w-full sm:w-auto">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-primary w-full gap-2 sm:w-auto"
-          >
-            <selectedMetric.Icon className="h-4 w-4" />
-            {selectedMetric.label}
-            <ChevronDown className="h-4 w-4" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content menu surface-raised z-[1] w-56 p-2"
-          >
-            {metricOptions.map(({ value, label, Icon }) => (
-              <li key={value}>
-                <button
-                  type="button"
-                  className={`gap-3 ${metric === value ? 'active' : ''}`}
-                  onClick={() => setMetric(value)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <DropdownSelect
+          value={period}
+          aria-label={t('ranking.periodLabel')}
+          className="w-full sm:w-auto"
+          onChange={(event) => setPeriod(event.target.value as Period)}
+        >
+          {periodOptions.map(({ value, label, Icon }) => (
+            <option key={value} value={value}>
+              <span className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                {label}
+              </span>
+            </option>
+          ))}
+        </DropdownSelect>
+        <DropdownSelect
+          value={metric}
+          aria-label={t('ranking.metricLabel')}
+          className="w-full sm:w-auto"
+          onChange={(event) => setMetric(event.target.value as Metric)}
+        >
+          {metricOptions.map(({ value, label, Icon }) => (
+            <option key={value} value={value}>
+              <span className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                {label}
+              </span>
+            </option>
+          ))}
+        </DropdownSelect>
       </div>
 
       {rankings.isLoading ? (

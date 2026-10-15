@@ -124,6 +124,8 @@ XP formula v3 uses 135 base XP per credited hour. Difficulty is normalized from 
 
 Club goals and opt-in challenges share the unified objective model in `models/clubChallenge.model.ts` and `services/clubObjectives.service.ts`. Use `mode: collective` for club-wide progress and `mode: individual` for participant-based progress. Legacy embedded `clubGoals` are mirrored lazily by `syncLegacyClubObjectives` so existing clubs remain compatible.
 
+Club member leaderboards support `scope: all-media` (default) and `scope: club-media` through `GET /api/clubs/:clubId/rankings`. Club media uses exact `mediaId` and log type pairs from all `currentMedia` entries, including past vote winners and admin additions. Aggregate visible logs through `services/clubLogMetrics.service.ts` for XP, time, and characters. Do not require completion or restrict logs to each selection's consumption period. Time includes anime logs without explicit time at 24 minutes per episode, matching the shared club metric rule.
+
 ### Achievements
 
 `services/achievements/achievementEngine.ts` dispatches by `condition.type`; implementations live in `services/achievements/conditions/*.condition.ts`. When adding a condition type, add its evaluator, its engine switch case, and a test under `Backend/src/__tests__/achievements/conditions/`.
@@ -171,6 +173,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 
 - Meilisearch integration is under `services/meilisearch/`. Keep document/index shape changes aligned with Mongoose models.
 - VNDB and IGDB metadata use scheduled dump synchronization; AniList and YouTube also have live lookup paths.
+- IGDB search and dump imports share `services/igdbFilterPolicy.ts`. Accept Japanese main games, standalone expansions, remakes, remasters, expanded games, and ports. Prefer `game_type` over legacy `category`, including type `0`. Keep dump cleanup aligned so it preserves these titles.
 - Socket.IO texthooker authentication is in `Backend/src/index.ts`. Room handlers are in `services/textSessionSocket.ts` and the client is in `Frontend/src/screens/HookerScreen.tsx`. Treat event names and payloads as a shared wire contract. Require authenticated hosts and check room membership plus its host token for each mutation. Keep shared rooms until their 24-hour expiry.
 - Desktop LunaHook input reaches the browser through `NativeHookBridge` and a loopback WebSocket URL in the `ntdc` fragment. Validate it with `nativeBridgeUrl`, match every line to the reader's content ID, and preserve line IDs for server deduplication. This mode disables the external hooker WebSocket. Hook selection is saved by the desktop bridge. Keep the bridge token out of API requests and persisted settings.
 - The browser bridge accepts `set-source` with `lunahook` or `websocket` and an optional `requestId`. The `source-changed` reply returns the request ID and confirmed hook status. Native status includes `websocket_selected` and can complete a pending source change. A compact daisyUI join selects one input for the session. Hook options appear only for LunaHook. WebSocket mode keeps the saved native hook and suppresses native lines until LunaHook is selected again. Failed or timed out requests release the controls.

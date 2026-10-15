@@ -3,7 +3,7 @@ import { IMediaDocument } from '../types.js';
 import {
   hasJapaneseLanguageMetadata,
   hasJapaneseTextHeuristic,
-  isMainGameCategory,
+  isSupportedGameType,
 } from './igdbFilterPolicy.js';
 
 const IGDB_API_URL = 'https://api.igdb.com/v4';
@@ -47,6 +47,7 @@ function buildImageUrl(imageId: string, size: string = 'cover_big'): string {
 interface IgdbGame {
   id: number;
   name: string;
+  game_type?: number;
   category?: number;
   language_supports?: Array<{ language?: { locale?: string; name?: string } }>;
   cover?: { image_id: string };
@@ -80,7 +81,7 @@ function isJapaneseGame(game: IgdbGame): boolean {
 }
 
 function normalizeGame(game: IgdbGame): IMediaDocument | null {
-  if (!isMainGameCategory(game.category ?? null)) {
+  if (!isSupportedGameType(game.game_type ?? game.category)) {
     return null;
   }
 
@@ -126,7 +127,7 @@ export async function searchIgdb(
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `search "${query.replace(/"/g, '\\"')}";
-fields name, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
+fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
 limit ${limit};`,
       {
         headers: {
@@ -158,7 +159,7 @@ export async function getIgdbGame(
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `where id = ${igdbId};
-fields name, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
+fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
 limit 1;`,
       {
         headers: {

@@ -18,7 +18,7 @@ import { addDocuments, deleteDocuments } from './meilisearch/meiliSearch.js';
 import {
   hasJapaneseLanguageMetadata,
   hasJapaneseTextHeuristic,
-  isMainGameCategory,
+  isSupportedGameType,
 } from './igdbFilterPolicy.js';
 
 export type IgdbSyncTrigger = 'manual' | 'scheduled';
@@ -77,13 +77,13 @@ interface IGameLanguageSupportContext {
 
 interface INormalizeGameRowResult {
   media: INormalizedGameMedia | null;
-  reason: 'invalid' | 'non-main' | 'non-japanese' | null;
+  reason: 'invalid' | 'unsupported-type' | 'non-japanese' | null;
 }
 
-const GAME_CATEGORY_KEYS = [
-  'category',
+const GAME_TYPE_KEYS = [
   'game_type',
   'gametype',
+  'category',
   'game_category',
   'gamecategory',
 ];
@@ -660,10 +660,10 @@ function normalizeGameRow(
     return { media: null, reason: 'invalid' };
   }
 
-  const category = parseNumber(pickField(row, GAME_CATEGORY_KEYS));
+  const gameType = parseNumber(pickField(row, GAME_TYPE_KEYS));
 
-  if (!isMainGameCategory(category)) {
-    return { media: null, reason: 'non-main' };
+  if (!isSupportedGameType(gameType)) {
+    return { media: null, reason: 'unsupported-type' };
   }
 
   const updatedAt =
@@ -1219,7 +1219,7 @@ async function runSyncProcess(
 
       if (!normalizedResult.media) {
         if (
-          normalizedResult.reason === 'non-main' ||
+          normalizedResult.reason === 'unsupported-type' ||
           normalizedResult.reason === 'non-japanese'
         ) {
           counters.skipped += 1;
@@ -1259,7 +1259,7 @@ async function runSyncProcess(
 
     await touchLockAndProgress(
       'cleanup',
-      'Removing non-main/non-Japanese IGDB games',
+      'Removing unsupported/non-Japanese IGDB games',
       counters
     );
 

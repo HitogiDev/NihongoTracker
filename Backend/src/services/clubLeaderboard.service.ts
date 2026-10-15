@@ -12,6 +12,7 @@ export type ClubLeaderboardMetric = Extract<
   'xp' | 'time' | 'chars' | 'reading' | 'listening'
 >;
 export type ClubLeaderboardPeriod = 'week' | 'month' | 'all-time';
+export type ClubLeaderboardScope = 'all-media' | 'club-media';
 
 function periodStart(period: ClubLeaderboardPeriod, now = new Date()) {
   if (period === 'all-time') return undefined;
@@ -26,10 +27,11 @@ function periodStart(period: ClubLeaderboardPeriod, now = new Date()) {
 }
 
 export async function getClubLeaderboard(input: {
-  club: Pick<IClub, 'members'>;
+  club: Pick<IClub, 'members' | 'currentMedia'>;
   viewerId?: Types.ObjectId;
   metric: ClubLeaderboardMetric;
   period: ClubLeaderboardPeriod;
+  scope?: ClubLeaderboardScope;
 }) {
   const memberIds = input.club.members
     .filter((member) => member.status === 'active')
@@ -44,6 +46,7 @@ export async function getClubLeaderboard(input: {
     viewerId: input.viewerId,
     metric: input.metric,
     startDate: periodStart(input.period),
+    ...(input.scope === 'club-media' ? { media: input.club.currentMedia } : {}),
   });
   const users = await User.find({ _id: { $in: visibleMemberIds } })
     .select('_id username avatar stats.userLevel')

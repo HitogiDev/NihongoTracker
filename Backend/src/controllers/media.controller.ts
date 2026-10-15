@@ -565,7 +565,7 @@ export async function searchMedia(
       });
 
       // The dump is the fast local catalogue, but it can lag behind IGDB or
-      // exclude a valid title while applying the Japanese/main-game filters.
+      // exclude a valid title while applying the Japanese/standalone-game filters.
       // Use the live API to fill missing results on the first page.
       if (offset > 0 || localResults.hits.length >= limit) {
         return res.status(200).json(localResults.hits);

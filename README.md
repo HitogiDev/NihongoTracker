@@ -74,6 +74,8 @@ All screenshots below are in the dark theme.
 
 *Join or create immersion clubs*
 
+Club leaderboards can rank members across all media or only club media, including titles selected by a vote or added by a club admin. The Club media filter ranks logged activity by XP, hours, or characters, including past selections. Titles do not need to be completed. Anime logs without explicit time count as 24 minutes per episode.
+
 ## Technology Stack
 
 ### Frontend
@@ -217,6 +219,8 @@ npm start
 ```
 
 In production, Express serves both the API and static frontend from a single server.
+
+IGDB game search and scheduled dump imports accept Japanese main games, standalone expansions, remakes, remasters, expanded games, and ports. Both use `game_type`, with legacy `category` as a fallback. After deploying a game filter change, an admin can request `POST /api/admin/igdb-dump/sync` with `{ "force": true }` to refresh the catalogue immediately. Otherwise, the next updated games dump applies the filter. First-page searches also query the live IGDB API when the local catalogue returns fewer results than requested.
 
 ### Environment Variables
 

@@ -1,4 +1,5 @@
-export const IGDB_MAIN_GAME_CATEGORY = 0;
+// IGDB types: main game, standalone expansion, remake, remaster, expanded game, and port.
+const STANDALONE_GAME_TYPES = new Set([0, 4, 8, 9, 10, 11]);
 
 const JAPANESE_SCRIPT_REGEX = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/;
 const JAPANESE_NATIVE_MARKER = '\u65e5\u672c\u8a9e';
@@ -11,10 +12,10 @@ function hasJapaneseLocaleToken(value: string): boolean {
   return /(^|[^a-z0-9])ja(?:[_-][a-z0-9]+)?($|[^a-z0-9])/.test(value);
 }
 
-export function isMainGameCategory(
-  category: number | null | undefined
+export function isSupportedGameType(
+  gameType: number | null | undefined
 ): boolean {
-  return category === IGDB_MAIN_GAME_CATEGORY;
+  return gameType != null && STANDALONE_GAME_TYPES.has(gameType);
 }
 
 export function hasJapaneseTextHeuristic(

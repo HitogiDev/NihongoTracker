@@ -1,6 +1,6 @@
 import { FilterQuery, PipelineStage, Types } from 'mongoose';
 import Log from '../models/log.model.js';
-import { ClubChallengeMetric, ILog } from '../types.js';
+import { ClubChallengeMetric, IClubMedia, ILog } from '../types.js';
 import { LISTENING_TYPES, READING_TYPES } from './xp.js';
 import { buildVisibleImmersionLogFilter } from './socialVisibility.service.js';
 
@@ -23,6 +23,7 @@ interface ClubLogMetricInput {
   endDate?: Date;
   mediaId?: string;
   mediaType?: string;
+  media?: Pick<IClubMedia, 'mediaId' | 'mediaType'>[];
   privacyCategory?: 'statistics' | 'immersionActivity';
 }
 
@@ -66,6 +67,10 @@ export async function aggregateVisibleLogMetricByUser(
   input: ClubLogMetricInput
 ): Promise<ClubLogMetricRow[]> {
   if (input.ownerIds.length === 0) return [];
+  const mediaClauses = input.media
+    ?.filter((media) => media.mediaId)
+    .map((media) => ({ mediaId: media.mediaId, type: media.mediaType }));
+  if (mediaClauses?.length === 0) return [];
   const visibilityFilter = await buildVisibleImmersionLogFilter(
     input.ownerIds,
     input.viewerId,
@@ -84,6 +89,7 @@ export async function aggregateVisibleLogMetricByUser(
       : {}),
     ...(input.mediaId ? { mediaId: input.mediaId } : {}),
     ...(input.mediaType ? { type: input.mediaType } : {}),
+    ...(mediaClauses ? { $and: [{ $or: mediaClauses }] } : {}),
   };
 
   if (input.metric === 'active_days') {

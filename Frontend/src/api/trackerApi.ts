@@ -550,10 +550,16 @@ export async function removeMediaFromImmersionListFn(payload: {
 
 export async function getAverageColorFn(imageUrl?: string) {
   if (!imageUrl) return null;
-  const { data } = await api.get<IAverageColor>(`media/utils/avgcolor`, {
-    params: { imageUrl },
-  });
-  return data;
+  try {
+    const { data } = await api.get<IAverageColor>(`media/utils/avgcolor`, {
+      params: { imageUrl },
+      timeout: 7000,
+    });
+    return data;
+  } catch {
+    // Color extraction is optional, so failures keep the caller's fallback.
+    return null;
+  }
 }
 
 export async function getUntrackedLogsFn() {

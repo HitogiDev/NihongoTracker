@@ -39,6 +39,11 @@ describe('image URL boundaries', () => {
     'https://169.254.169.254/latest/meta-data',
     'https://s4.anilist.co.attacker.test/image.jpg',
     'https://yt3.ggpht.com.attacker.test/image.jpg',
+    'https://m.media-amazon.com.attacker.test/image.jpg',
+    'https://attacker.media-amazon.com/image.jpg',
+    'http://m.media-amazon.com/images/I/cover.jpg',
+    'https://m.media-amazon.com:8443/images/I/cover.jpg',
+    'https://user:password@m.media-amazon.com/images/I/cover.jpg',
     'https://attacker.ggpht.com/image.jpg',
     'http://yt3.ggpht.com/image.jpg',
     'https://yt3.ggpht.com:8443/image.jpg',
@@ -63,6 +68,15 @@ describe('image URL boundaries', () => {
   it('accepts YouTube channel thumbnails with image transformation parameters', () => {
     const url =
       'https://yt3.ggpht.com/j-dgqmZPnXwg5eN93q0jShZZt__u26yk338g2UyfsElK93z_5vUmwy4EgLpLaKg7juE_za4-Kg=s800-c-k-c0x00ffffff-no-rj';
+    expect(validateImageUrl(url).href).toBe(url);
+  });
+
+  it.each([
+    'm.media-amazon.com',
+    'images-na.ssl-images-amazon.com',
+    'images-fe.ssl-images-amazon.com',
+  ])('accepts Amazon covers from %s', (host) => {
+    const url = `https://${host}/images/I/cover._SL1500_.jpg`;
     expect(validateImageUrl(url).href).toBe(url);
   });
 
