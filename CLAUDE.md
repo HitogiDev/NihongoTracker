@@ -111,6 +111,7 @@ File replacements use `FileUploadBatch`. Commit cleanup after the database store
 Daily, weekly, and custom period goals can optionally filter progress by a log's media type. A missing or null media type counts all logs. Keep the goal media type options aligned with the log schema, and calculate recurring progress per goal so goals with the same metric can track different media.
 Username-based goal reads use optional authentication and `services/goalVisibility.ts` to enforce profile and statistics privacy. Forecasts remain private authenticated records.
 Custom period goal dates include both their start and target days in the owner's timezone. Presets use Sunday through Saturday for This Week, calendar boundaries for This Month, and count today as the first of Next X days. Keep creation, editing, validation, and progress aligned on these date rules.
+Weekly cadence goals and the long-term "this week" progress start on the owner's `settings.weekStartsOn` (0 for Sunday, 1 for Monday, default 1). Both calculations are in `dailyGoals.controller.ts` and `longTermGoals.controller.ts`. Keep them aligned with this setting.
 
 `models/log.model.ts` is the central immersion model. Valid log types are `light-novel|reading|anime|vn|video|manga|audio|movie|tv show|other|game`.
 

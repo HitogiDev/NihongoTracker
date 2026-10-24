@@ -356,7 +356,10 @@ async function calculateLongTermGoalProgress(
     userNow.getDate()
   );
   const startOfWeek = new Date(startOfDay);
-  startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay()); // Sunday
+  const weekStartsOn = user.settings?.weekStartsOn ?? 1;
+  startOfWeek.setDate(
+    startOfDay.getDate() - ((startOfDay.getDay() - weekStartsOn + 7) % 7)
+  );
   const startOfMonth = new Date(userNow.getFullYear(), userNow.getMonth(), 1);
 
   logs.forEach((log) => {
