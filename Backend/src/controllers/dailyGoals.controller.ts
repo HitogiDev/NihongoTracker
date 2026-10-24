@@ -88,10 +88,12 @@ export async function getDailyGoals(
       ),
       userTimezone
     );
-    // Weekly windows follow the app's Sunday-through-Saturday convention.
+    // Weekly windows start on the owner's preferred week start day.
+    const weekStartsOn = foundUser.settings?.weekStartsOn ?? 1;
     const startOfWeekLocal = new Date(userDate);
     startOfWeekLocal.setDate(
-      startOfWeekLocal.getDate() - startOfWeekLocal.getDay()
+      startOfWeekLocal.getDate() -
+        ((startOfWeekLocal.getDay() - weekStartsOn + 7) % 7)
     );
     const endOfWeekLocal = new Date(startOfWeekLocal);
     endOfWeekLocal.setDate(endOfWeekLocal.getDate() + 7);
