@@ -118,4 +118,65 @@ describe('IGDB dump game eligibility', () => {
       );
     }
   );
+
+  it('stores alternative name text and updates existing games missing it', async () => {
+    const dumps: Record<string, string> = {
+      languages: 'id,name,locale\n16,Japanese,ja-JP\n',
+      language_supports: 'id,game,language\n1,100,16\n2,101,16\n',
+      alternative_names:
+        'id,name,comment,game\n1,Fushigi no Dungeon,Japanese title,100\n2,Other Name,,100\n3,Same Name,,101\n',
+      games:
+        'id,name,game_type,updated_at,alternative_names\n100,Game A,0,1,"{1,2}"\n101,Same Name,0,1,{3}\n',
+    };
+    mocks.dumpStream.mockImplementation(async (endpoint: string) =>
+      Readable.from([dumps[endpoint] ?? ''])
+    );
+    mocks.find.mockImplementation((filter: { contentId: unknown }) => ({
+      select: () => ({
+        lean: async () =>
+          filter.contentId instanceof RegExp
+            ? []
+            : [{ contentId: 'igdb-100', igdbUpdatedAt: 1, synonyms: [] }],
+      }),
+    }));
+
+    expect((await startIgdbDumpSync('manual', { force: true })).started).toBe(true);
+    await vi.waitFor(() => expect(isIgdbDumpSyncRunningInProcess()).toBe(false));
+
+    const operations = mocks.bulkWrite.mock.calls[0][0] as Array<{
+      updateOne: {
+        filter: { contentId: string };
+        update: { $set: { synonyms: string[] } };
+      };
+    }>;
+    expect(operations).toHaveLength(2);
+    expect(operations[0].updateOne.update.$set.synonyms).toEqual([
+      'Fushigi no Dungeon',
+      'Other Name',
+    ]);
+    expect(operations[1].updateOne.update.$set.synonyms).toEqual([]);
+  });
+
+  it('imports games released in Japan without Japanese language support', async () => {
+    const dumps: Record<string, string> = {
+      languages: 'id,name,locale\n16,Japanese,ja-JP\n',
+      language_supports: 'id,game,language\n1,102,7\n',
+      release_dates:
+        'id,game,region,release_region\n1,100,,5\n2,101,,2\n3,102,,2\n4,103,5,\n',
+      games:
+        'id,name,game_type,updated_at\n100,Japan only,0,1\n101,No Japan release,0,1\n102,English support only,0,1\n103,Legacy region,0,1\n',
+    };
+    mocks.dumpStream.mockImplementation(async (endpoint: string) =>
+      Readable.from([dumps[endpoint] ?? ''])
+    );
+
+    expect((await startIgdbDumpSync('manual', { force: true })).started).toBe(true);
+    await vi.waitFor(() => expect(isIgdbDumpSyncRunningInProcess()).toBe(false));
+
+    const operations = mocks.bulkWrite.mock.calls[0][0] as Array<{
+      updateOne: { filter: { contentId: string } };
+    }>;
+    expect(operations.map((operation) => operation.updateOne.filter.contentId))
+      .toEqual(['igdb-100', 'igdb-103']);
+  });
 });

@@ -3,6 +3,7 @@ import { IMediaDocument } from '../types.js';
 import {
   hasJapaneseLanguageMetadata,
   hasJapaneseTextHeuristic,
+  isJapanReleaseRegion,
   isSupportedGameType,
 } from './igdbFilterPolicy.js';
 
@@ -50,6 +51,10 @@ interface IgdbGame {
   game_type?: number;
   category?: number;
   language_supports?: Array<{ language?: { locale?: string; name?: string } }>;
+  release_dates?: Array<{
+    region?: number;
+    release_region?: { region?: string };
+  }>;
   cover?: { image_id: string };
   alternative_names?: Array<{ name: string; comment?: string }>;
   summary?: string;
@@ -59,6 +64,16 @@ interface IgdbGame {
 }
 
 function isJapaneseGame(game: IgdbGame): boolean {
+  const releasedInJapan = (game.release_dates || []).some(
+    (release) =>
+      isJapanReleaseRegion(release.release_region?.region) ||
+      isJapanReleaseRegion(release.region)
+  );
+
+  if (releasedInJapan) {
+    return true;
+  }
+
   const supportLabels =
     game.language_supports?.flatMap((support) => {
       const locale = support.language?.locale || null;
@@ -127,7 +142,7 @@ export async function searchIgdb(
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `search "${query.replace(/"/g, '\\"')}";
-fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
+fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name, release_dates.region, release_dates.release_region.region;
 limit ${limit};`,
       {
         headers: {
@@ -159,7 +174,7 @@ export async function getIgdbGame(
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `where id = ${igdbId};
-fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
+fields name, game_type, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name, release_dates.region, release_dates.release_region.region;
 limit 1;`,
       {
         headers: {

@@ -18,6 +18,7 @@ import { addDocuments, deleteDocuments } from './meilisearch/meiliSearch.js';
 import {
   hasJapaneseLanguageMetadata,
   hasJapaneseTextHeuristic,
+  isJapanReleaseRegion,
   isSupportedGameType,
 } from './igdbFilterPolicy.js';
 
@@ -72,7 +73,13 @@ interface INormalizedGameMedia {
 interface IGameLanguageSupportContext {
   japaneseLanguageIds: Set<number>;
   gameIdsWithJapaneseSupport: Set<number>;
+  gameIdsReleasedInJapan: Set<number>;
   hasExplicitLanguageMap: boolean;
+}
+
+interface IAlternativeName {
+  name: string;
+  comment: string;
 }
 
 interface INormalizeGameRowResult {
@@ -455,6 +462,7 @@ function defaultLanguageSupportContext(): IGameLanguageSupportContext {
   return {
     japaneseLanguageIds: new Set<number>(),
     gameIdsWithJapaneseSupport: new Set<number>(),
+    gameIdsReleasedInJapan: new Set<number>(),
     hasExplicitLanguageMap: false,
   };
 }
@@ -502,6 +510,11 @@ function evaluateJapaneseAvailability(
     if (hasJapaneseLanguageMetadata(languageLabels)) {
       hasJapanese = true;
     }
+  }
+
+  if (languageSupportContext.gameIdsReleasedInJapan.has(gameId)) {
+    isExplicit = true;
+    hasJapanese = true;
   }
 
   return {
@@ -639,12 +652,76 @@ async function buildJapaneseGameSupportSetFromDump(
   return gameIds;
 }
 
+// The games dump lists alternative names as IDs. This dump holds their text.
+async function buildAlternativeNameMapFromDump(
+  dump: IIgdbDumpDetails,
+  counters: IIgdbDumpSyncCounters
+): Promise<Map<number, IAlternativeName[]>> {
+  const namesByGameId = new Map<number, IAlternativeName[]>();
+
+  await streamDumpRows(dump, async (row) => {
+    counters.scanned += 1;
+
+    const normalizedRow = normalizeRowKeys(row);
+    const gameId = parseNumber(pickField(normalizedRow, ['game', 'game_id']));
+    const name = pickField(normalizedRow, ['name']);
+
+    if (!gameId || !name) {
+      counters.failed += 1;
+      return;
+    }
+
+    const entries = namesByGameId.get(gameId) ?? [];
+    entries.push({ name, comment: pickField(normalizedRow, ['comment']) ?? '' });
+    namesByGameId.set(gameId, entries);
+  });
+
+  console.log(
+    `✅ Parsed alternative names for ${namesByGameId.size} game(s) from alternative_names dump`
+  );
+
+  return namesByGameId;
+}
+
+async function buildJapanReleaseGameSetFromDump(
+  dump: IIgdbDumpDetails,
+  counters: IIgdbDumpSyncCounters
+): Promise<Set<number>> {
+  const gameIds = new Set<number>();
+
+  await streamDumpRows(dump, async (row) => {
+    counters.scanned += 1;
+
+    const normalizedRow = normalizeRowKeys(row);
+    const gameId = parseNumber(pickField(normalizedRow, ['game', 'game_id']));
+
+    if (!gameId) {
+      counters.failed += 1;
+      return;
+    }
+
+    if (
+      isJapanReleaseRegion(pickField(normalizedRow, ['release_region'])) ||
+      isJapanReleaseRegion(pickField(normalizedRow, ['region']))
+    ) {
+      gameIds.add(gameId);
+    }
+  });
+
+  console.log(
+    `✅ Parsed ${gameIds.size} game(s) released in Japan from release_dates dump`
+  );
+
+  return gameIds;
+}
+
 function normalizeGameRow(
   sourceRow: Record<string, unknown>,
   genreNameById: Map<number, string>,
   platformNameById: Map<number, string>,
   coverImageById: Map<number, string>,
-  languageSupportContext: IGameLanguageSupportContext
+  languageSupportContext: IGameLanguageSupportContext,
+  alternativeNamesByGameId: Map<number, IAlternativeName[]>
 ): INormalizeGameRowResult {
   const row = normalizeRowKeys(sourceRow);
 
@@ -683,9 +760,15 @@ function normalizeGameRow(
 
   const summary = pickField(row, ['summary', 'storyline', 'description']);
 
-  const alternatives = parseStringArray(
-    pickField(row, GAME_ALTERNATIVE_NAMES_KEYS)
-  ).filter((item) => !/^\d+$/.test(item));
+  const alternativeEntries = alternativeNamesByGameId.get(id) ?? [];
+  const alternatives = Array.from(
+    new Set([
+      ...alternativeEntries.map((entry) => entry.name),
+      ...parseStringArray(pickField(row, GAME_ALTERNATIVE_NAMES_KEYS)).filter(
+        (item) => !/^\d+$/.test(item)
+      ),
+    ])
+  ).filter((item) => item !== nameValue);
 
   const japaneseAvailability = evaluateJapaneseAvailability(
     id,
@@ -698,9 +781,11 @@ function normalizeGameRow(
   }
 
   if (!japaneseAvailability.isExplicit) {
-    const hasJapaneseFallback = [nameValue, ...alternatives].some((value) =>
-      hasJapaneseTextHeuristic(value)
-    );
+    const hasJapaneseFallback =
+      [nameValue, ...alternatives].some((value) =>
+        hasJapaneseTextHeuristic(value)
+      ) ||
+      alternativeEntries.some((entry) => hasJapaneseTextHeuristic(entry.comment));
 
     if (!hasJapaneseFallback) {
       return { media: null, reason: 'non-japanese' };
@@ -856,7 +941,7 @@ async function flushGameBatch(
     type: 'game',
     contentId: { $in: contentIds },
   })
-    .select('_id contentId igdbUpdatedAt')
+    .select('_id contentId igdbUpdatedAt synonyms')
     .lean();
 
   const existingByContentId = new Map(
@@ -875,17 +960,23 @@ async function flushGameBatch(
 
   batch.forEach((item) => {
     const current = existingByContentId.get(item.contentId) as
-      | { igdbUpdatedAt?: number }
+      | { igdbUpdatedAt?: number; synonyms?: string[] }
       | undefined;
 
     const currentUpdatedAt =
       typeof current?.igdbUpdatedAt === 'number' ? current.igdbUpdatedAt : 0;
     const incomingUpdatedAt = item.igdbUpdatedAt || 0;
 
+    // Alternative names change without a new game updated_at, so compare them.
+    const hasNewSynonyms =
+      item.synonyms.length > 0 &&
+      item.synonyms.join('\n') !== (current?.synonyms ?? []).join('\n');
+
     if (
       current &&
       incomingUpdatedAt > 0 &&
-      currentUpdatedAt >= incomingUpdatedAt
+      currentUpdatedAt >= incomingUpdatedAt &&
+      !hasNewSynonyms
     ) {
       counters.skipped += 1;
       return;
@@ -1186,6 +1277,7 @@ async function runSyncProcess(
         languageSupportContext = {
           japaneseLanguageIds,
           gameIdsWithJapaneseSupport,
+          gameIdsReleasedInJapan: new Set<number>(),
           hasExplicitLanguageMap: true,
         };
       }
@@ -1195,6 +1287,45 @@ async function runSyncProcess(
         error
       );
       languageSupportContext = defaultLanguageSupportContext();
+    }
+
+    try {
+      await touchLockAndProgress(
+        'releases',
+        'Parsing release dates dump',
+        counters
+      );
+
+      languageSupportContext.gameIdsReleasedInJapan =
+        await buildJapanReleaseGameSetFromDump(
+          await getIgdbDumpDetails('release_dates'),
+          counters
+        );
+    } catch (error) {
+      console.warn(
+        'Failed to parse release dates dump, continuing without Japan release detection:',
+        error
+      );
+    }
+
+    let alternativeNamesByGameId = new Map<number, IAlternativeName[]>();
+
+    try {
+      await touchLockAndProgress(
+        'alternative_names',
+        'Parsing alternative names dump',
+        counters
+      );
+
+      alternativeNamesByGameId = await buildAlternativeNameMapFromDump(
+        await getIgdbDumpDetails('alternative_names'),
+        counters
+      );
+    } catch (error) {
+      console.warn(
+        'Failed to parse alternative names dump, continuing without alternative names:',
+        error
+      );
     }
 
     await touchLockAndProgress(
@@ -1214,7 +1345,8 @@ async function runSyncProcess(
         genreNameById,
         platformNameById,
         coverImageById,
-        languageSupportContext
+        languageSupportContext,
+        alternativeNamesByGameId
       );
 
       if (!normalizedResult.media) {
