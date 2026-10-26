@@ -16,6 +16,8 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 ## Working rules
 
 - Run npm commands from `Backend/` or `Frontend/`, never from the repository root.
+- Work directly on `main`. Do not create or switch to other branches.
+- Do not commit or push. Leave all changes uncommitted so the maintainer can review and commit them.
 - Preserve unrelated user changes. The worktree may already be dirty.
 - Do not use em dashes in UI copy, documentation, comments, or user-facing responses. Use commas, periods, colons, or parentheses instead.
 - Both packages use ESM. Backend TypeScript imports use explicit `.js` extensions, including imports of `.ts` source modules.
@@ -178,6 +180,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - Socket.IO texthooker authentication is in `Backend/src/index.ts`. Room handlers are in `services/textSessionSocket.ts` and the client is in `Frontend/src/screens/HookerScreen.tsx`. Treat event names and payloads as a shared wire contract. Require authenticated hosts and check room membership plus its host token for each mutation. Keep shared rooms until their 24-hour expiry.
 - Desktop LunaHook input reaches the browser through `NativeHookBridge` and a loopback WebSocket URL in the `ntdc` fragment. Validate it with `nativeBridgeUrl`, match every line to the reader's content ID, and preserve line IDs for server deduplication. This mode disables the external hooker WebSocket. Hook selection is saved by the desktop bridge. Keep the bridge token out of API requests and persisted settings.
 - The browser bridge accepts `set-source` with `lunahook` or `websocket` and an optional `requestId`. The `source-changed` reply returns the request ID and confirmed hook status. Native status includes `websocket_selected` and can complete a pending source change. A compact daisyUI join selects one input for the session. Hook options appear only for LunaHook. WebSocket mode keeps the saved native hook and suppresses native lines until LunaHook is selected again. Failed or timed out requests release the controls.
+- External hooker WebSockets use `hooks/useTexthookerSocket.ts`. An optional secondary URL (`texthooker_secondaryWebsocketUrl`) feeds the same line handler as the primary URL. LunaHook input disables both. Pause on disconnect applies only when no configured socket is connected.
 - Texthooker room state is stored in `TextSession` with a 24-hour TTL. Socket authentication parses the JWT cookie separately from Express middleware.
 - Swagger UI is mounted at `/api/docs`.
 - `GET /api/users/:username/reviews` returns public reviews written by a user, with `page` and `limit` pagination. `GET /api/users/:username/lists` reuses the media list controller and returns private lists only to their authenticated owner.

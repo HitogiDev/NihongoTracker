@@ -1,6 +1,7 @@
 import DropdownSelect from '../components/ui/DropdownSelect';
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import Field from '../components/ui/Field';
+import useTexthookerSocket from '../hooks/useTexthookerSocket';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useRef, useState, useEffect, Fragment, useMemo } from 'react';
 import {
@@ -35,7 +36,9 @@ import {
   BarChart2,
   Copy,
   Link,
+  Link2,
   Unlink,
+  Unlink2,
   Save,
   Share2,
   Home,
@@ -932,12 +935,9 @@ function TextHooker() {
       localStorage.getItem('texthooker_websocketUrl') || 'ws://localhost:6677'
     );
   });
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<
-    'disconnected' | 'connecting' | 'connected' | 'error'
-  >('disconnected');
-  const socketRef = useRef<WebSocket | null>(null);
-  const isManualSocketDisconnectRef = useRef(false);
+  const [secondaryWebsocketUrl, setSecondaryWebsocketUrl] = useState(() => {
+    return localStorage.getItem('texthooker_secondaryWebsocketUrl') || '';
+  });
 
   const lastActivityRef = useRef(Date.now());
   const timerInitializedFromServerRef = useRef(false);
@@ -1240,6 +1240,12 @@ function TextHooker() {
   }, [websocketUrl]);
   useEffect(() => {
     localStorage.setItem(
+      'texthooker_secondaryWebsocketUrl',
+      secondaryWebsocketUrl
+    );
+  }, [secondaryWebsocketUrl]);
+  useEffect(() => {
+    localStorage.setItem(
       'texthooker_autostartTimerByPaste',
       String(autostartTimerByPaste)
     );
@@ -1281,12 +1287,6 @@ function TextHooker() {
       String(pauseOnDisconnect)
     );
   }, [pauseOnDisconnect]);
-
-  useEffect(() => {
-    if (!nativeInput && pauseOnDisconnect && connectionStatus === 'disconnected') {
-      setIsTimerActive(false);
-    }
-  }, [pauseOnDisconnect, connectionStatus, nativeInput]);
 
   useEffect(() => {
     localStorage.setItem('texthooker_customCss', customCss);
@@ -1534,154 +1534,44 @@ function TextHooker() {
     ]
   );
 
-  const attemptConnect = useCallback(() => {
-    if (nativeInput) return;
-    if (
-      socketRef.current?.readyState === WebSocket.OPEN ||
-      socketRef.current?.readyState === WebSocket.CONNECTING
-    ) {
-      return;
-    }
-
-    isManualSocketDisconnectRef.current = false;
-    setConnectionStatus('connecting');
-    try {
-      const socket = new WebSocket(websocketUrl);
-      socketRef.current = socket;
-
-      socket.onopen = () => {
-        if (socketRef.current !== socket) {
-          return;
-        }
-
-        setConnectionStatus('connected');
-        if (reconnectIntervalRef.current) {
-          clearInterval(reconnectIntervalRef.current);
-          reconnectIntervalRef.current = null;
-        }
-      };
-
-      socket.onclose = () => {
-        if (socketRef.current !== socket) {
-          return;
-        }
-
-        setConnectionStatus('disconnected');
-        socketRef.current = null;
-      };
-
-      socket.onerror = () => {
-        if (socketRef.current !== socket) {
-          return;
-        }
-
-        setConnectionStatus('error');
-        socketRef.current = null;
-      };
-
-      socket.onmessage = handleSocketMessage;
-    } catch (error) {
-      console.error('WebSocket error:', error);
-      setConnectionStatus('error');
-    }
-  }, [websocketUrl, handleSocketMessage, nativeInput]);
+  const primarySocket = useTexthookerSocket({
+    url: websocketUrl,
+    disabled: nativeInput,
+    continuousReconnect,
+    onMessage: handleSocketMessage,
+  });
+  const secondarySocket = useTexthookerSocket({
+    url: secondaryWebsocketUrl,
+    disabled: nativeInput,
+    continuousReconnect,
+    onMessage: handleSocketMessage,
+  });
+  const connectionStatus = primarySocket.status;
+  const toggleSocket = primarySocket.toggle;
+  const { connect: connectPrimarySocket } = primarySocket;
 
   useEffect(() => {
-    if (socketRef.current) {
-      socketRef.current.onmessage = handleSocketMessage;
-    }
-  }, [handleSocketMessage]);
+    if (!nativeInput && nativeBridge) connectPrimarySocket();
+  }, [nativeInput, nativeBridge, connectPrimarySocket]);
 
-  const disconnectSocket = useCallback((isManual = false) => {
-    if (isManual) {
-      isManualSocketDisconnectRef.current = true;
-    }
-
-    if (reconnectIntervalRef.current) {
-      clearInterval(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
-    }
-
-    const activeSocket = socketRef.current;
-    socketRef.current = null;
-    setConnectionStatus('disconnected');
-
-    if (!activeSocket) {
-      return;
-    }
-
-    activeSocket.onopen = null;
-    activeSocket.onclose = null;
-    activeSocket.onerror = null;
-    activeSocket.onmessage = null;
-
-    if (
-      activeSocket.readyState === WebSocket.OPEN ||
-      activeSocket.readyState === WebSocket.CONNECTING
-    ) {
-      activeSocket.close();
-    }
-  }, []);
-
-  const toggleSocket = useCallback(() => {
-    const activeSocket = socketRef.current;
-    const isActiveConnection =
-      activeSocket?.readyState === WebSocket.OPEN ||
-      activeSocket?.readyState === WebSocket.CONNECTING;
-
-    if (isActiveConnection) {
-      disconnectSocket(true);
-      return;
-    }
-
-    attemptConnect();
-
-    if (continuousReconnect) {
-      reconnectIntervalRef.current = setInterval(() => {
-        if (
-          !socketRef.current ||
-          socketRef.current.readyState === WebSocket.CLOSED
-        ) {
-          attemptConnect();
-        }
-      }, 3000);
-    }
-  }, [attemptConnect, continuousReconnect, disconnectSocket]);
-
-  useEffect(() => {
-    if (nativeInput) disconnectSocket();
-    else if (nativeBridge) attemptConnect();
-  }, [nativeInput, nativeBridge, disconnectSocket, attemptConnect]);
-
+  const secondarySocketStatus = secondarySocket.status;
+  const secondarySocketInactive = secondarySocket.inactive;
   useEffect(() => {
     if (
       !nativeInput &&
-      continuousReconnect &&
-      !isManualSocketDisconnectRef.current &&
-      connectionStatus !== 'connected' &&
-      connectionStatus !== 'connecting'
+      pauseOnDisconnect &&
+      connectionStatus === 'disconnected' &&
+      (secondarySocketInactive || secondarySocketStatus === 'disconnected')
     ) {
-      if (!reconnectIntervalRef.current) {
-        reconnectIntervalRef.current = setInterval(() => {
-          if (
-            !socketRef.current ||
-            socketRef.current.readyState === WebSocket.CLOSED
-          ) {
-            attemptConnect();
-          }
-        }, 3000);
-      }
-    } else if ((nativeInput || !continuousReconnect) && reconnectIntervalRef.current) {
-      clearInterval(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
+      setIsTimerActive(false);
     }
-  }, [continuousReconnect, connectionStatus, attemptConnect, nativeInput]);
-
-  useEffect(() => {
-    return () => {
-      disconnectSocket();
-    };
-  }, [disconnectSocket]);
+  }, [
+    pauseOnDisconnect,
+    connectionStatus,
+    secondarySocketStatus,
+    secondarySocketInactive,
+    nativeInput,
+  ]);
 
   const handleFontSizeChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -2613,6 +2503,38 @@ function TextHooker() {
               <Unlink className="w-4 h-4" />
             )}
           </button>}
+
+          {secondaryWebsocketUrl.trim() && (
+            <button
+              type="button"
+              onClick={secondarySocket.toggle}
+              disabled={nativeInput}
+              className={`${topbarIconBtnClass} transition-colors duration-300 ${
+                nativeInput
+                  ? 'opacity-40'
+                  : secondarySocketStatus === 'connected'
+                    ? 'text-success'
+                    : secondarySocketStatus === 'error'
+                      ? 'text-error'
+                      : secondarySocketStatus === 'connecting'
+                        ? 'text-warning'
+                        : 'opacity-40'
+              }`}
+              title={
+                nativeInput
+                  ? t('hooker.native.websocketDisabled')
+                  : t('hooker.collab.secondaryWebsocketStatus', {
+                      status: secondarySocketStatus,
+                    })
+              }
+            >
+              {!nativeInput && secondarySocketStatus === 'connected' ? (
+                <Link2 className="w-4 h-4" />
+              ) : (
+                <Unlink2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"
@@ -3857,6 +3779,21 @@ function TextHooker() {
                     onChange={(e) => setWebsocketUrl(e.target.value)}
                     className="input input-sm w-full"
                     placeholder={t('hooker.collab.websocketPlaceholder')}
+                  />
+                </Field>
+
+                <Field
+                  label={t('hooker.collab.secondaryWebsocketUrl')}
+                  hint={t('hooker.collab.secondaryWebsocketHint')}
+                >
+                  <input
+                    type="text"
+                    value={secondaryWebsocketUrl}
+                    onChange={(e) => setSecondaryWebsocketUrl(e.target.value)}
+                    className="input input-sm w-full"
+                    placeholder={t(
+                      'hooker.collab.secondaryWebsocketPlaceholder'
+                    )}
                   />
                 </Field>
 
