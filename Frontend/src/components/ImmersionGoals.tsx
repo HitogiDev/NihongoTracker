@@ -39,6 +39,7 @@ import {
   type GoalPeriod
 } from '../utils/goalPeriod';
 import { parseDateValue } from '../utils/dateInput';
+import { goalTimeframePace } from '../utils/goalPace';
 import { useUserDataStore } from '../store/userData';
 
 const goalTypeConfig = {
@@ -442,30 +443,18 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 }
               };
 
-              // Calculate timeframe requirement with fallback
-              const timeframeRequirement = progress
-                ? progress.requiredPerTimeframe > 0
-                  ? progress.requiredPerTimeframe
-                  : progress.remainingDays > 0
-                    ? progress.remainingTarget / progress.remainingDays
-                    : 0
-                : 0;
-
-              const finalTimeframeRequirement =
-                timeframeRequirement > 0
-                  ? timeframeRequirement
-                  : progress && progress.remainingDays > 0
-                    ? goal.totalTarget / progress.remainingDays
-                    : 0;
-
               const timeframeProgress = getTimeframeProgress();
-              const timeframeProgressPercentage =
-                finalTimeframeRequirement > 0
-                  ? Math.min(
-                      (timeframeProgress / finalTimeframeRequirement) * 100,
-                      100
-                    )
-                  : 0;
+              const pace = progress
+                ? goalTimeframePace({
+                    totalTarget: goal.totalTarget,
+                    totalProgress: progress.totalProgress,
+                    remainingTarget: progress.remainingTarget,
+                    remainingDays: progress.remainingDays,
+                    requiredPerTimeframe: progress.requiredPerTimeframe,
+                    timeframeProgress
+                  })
+                : null;
+              const timeframeProgressPercentage = pace?.percentage ?? 0;
 
               const timeframeLabel = getTimeframeLabel();
 
@@ -663,11 +652,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             ) : (
                               <span className="text-xs text-base-content/50">
                                 {formatLongTermProgress(
-                                  Math.max(
-                                    0,
-                                    finalTimeframeRequirement -
-                                      timeframeProgress
-                                  ),
+                                  pace?.remaining ?? 0,
                                   goal.type
                                 )}{' '}
                                 {goal.type !== 'time' ? config.unit : ''}{' '}
@@ -703,13 +688,16 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               )}
                               {goal.type !== 'time' && ` ${config.unit}`}
                             </span>
-                            <span className="text-base-content/50 tabular-nums">
-                              {formatLongTermProgress(
-                                finalTimeframeRequirement,
-                                goal.type
-                              )}
-                              {goal.type !== 'time' && ` ${config.unit}`} needed
-                            </span>
+                            {!pace?.completed && (
+                              <span className="text-base-content/50 tabular-nums">
+                                {formatLongTermProgress(
+                                  pace?.requirement ?? 0,
+                                  goal.type
+                                )}
+                                {goal.type !== 'time' && ` ${config.unit}`}{' '}
+                                needed
+                              </span>
+                            )}
                           </div>
                         </div>
 
