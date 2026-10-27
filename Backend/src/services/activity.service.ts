@@ -12,6 +12,7 @@ import {
   ActivityType,
   CommentPermission,
   IActivity,
+  IClub,
   SocialVisibility,
 } from '../types.js';
 import {
@@ -216,11 +217,48 @@ function parseBefore(
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Match global reviews by active members about club media, written during its consumption period.
+ * The period includes the whole UTC end day, because reviews have a time and end dates are midnight.
+ */
+export function buildClubMediaReviewFilter(
+  club: Pick<IClub, 'members' | 'currentMedia'>
+): FilterQuery<IActivity> | null {
+  const memberIds = (club.members ?? [])
+    .filter((member) => member.status === 'active')
+    .map((member) => member.user);
+  const periods = (club.currentMedia ?? []).flatMap((media) =>
+    media.mediaId && media.startDate && media.endDate
+      ? [
+          {
+            'metadata.mediaId': media.mediaId,
+            'metadata.mediaType': media.mediaType,
+            occurredAt: {
+              $gte: new Date(media.startDate),
+              $lt: new Date(new Date(media.endDate).getTime() + DAY_MS),
+            },
+          },
+        ]
+      : []
+  );
+  if (memberIds.length === 0 || periods.length === 0) return null;
+  return {
+    type: 'media_review',
+    club: null,
+    actor: { $in: memberIds },
+    $or: periods,
+  };
+}
+
 export async function getActivityFeed(input: {
   viewerId: Types.ObjectId;
   clubIds: Types.ObjectId[];
   scope: 'global' | 'following' | 'clubs' | 'user';
   clubId?: Types.ObjectId;
+  /** Extra activities without a club that belong in the club feed. */
+  clubMediaReviews?: FilterQuery<IActivity> | null;
   targetUserId?: Types.ObjectId;
   before?: unknown;
   limit?: unknown;
@@ -257,7 +295,14 @@ export async function getActivityFeed(input: {
         'You must be a member to view this club feed'
       );
     }
-    clauses.push({ club: { $in: allowedClubIds } });
+    const clubClause: FilterQuery<IActivity> = {
+      club: { $in: allowedClubIds },
+    };
+    clauses.push(
+      input.clubId && input.clubMediaReviews
+        ? { $or: [clubClause, input.clubMediaReviews] }
+        : clubClause
+    );
     clauses.push(visibility);
   } else {
     if (!input.targetUserId) {
