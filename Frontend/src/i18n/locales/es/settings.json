@@ -525,6 +525,10 @@
       "description": "Escaparate de tu contenido favorito.",
       "label": "Contenido favorito"
     },
+    "currentMedia": {
+      "label": "Contenido actual",
+      "description": "Hasta tres obras que registraste hace poco y no has terminado."
+    },
     "hide": "Ocultar el widget",
     "immersionActivity": {
       "description": "Mapa de calor de tu inmersión en el tiempo.",

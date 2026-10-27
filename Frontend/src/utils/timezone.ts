@@ -249,38 +249,41 @@ export const convertToUserTimezone = (
 };
 
 // Format a date for display in user's timezone
+/** Date, time, and zone. Callers that pass options get exactly those fields. */
+const DEFAULT_DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZoneName: 'short',
+};
+
 export const formatDateInTimezone = (
   date: Date | string,
   timezone?: string,
   options?: Intl.DateTimeFormatOptions
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  // Do not merge with the defaults, or a date-only request also shows the time and zone.
+  const formatOptions = options ?? DEFAULT_DATE_TIME_OPTIONS;
 
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short',
-    ...options,
-  };
-
+  // toLocaleString, because toLocaleDateString adds a date to time-only options.
   if (!timezone || timezone === 'UTC') {
-    return dateObj.toLocaleDateString(getLocale(), {
-      ...defaultOptions,
+    return dateObj.toLocaleString(getLocale(), {
+      ...formatOptions,
       timeZone: 'UTC',
     });
   }
 
   try {
-    return dateObj.toLocaleDateString(getLocale(), {
-      ...defaultOptions,
+    return dateObj.toLocaleString(getLocale(), {
+      ...formatOptions,
       timeZone: timezone,
     });
   } catch (error) {
     console.warn('Failed to format date in timezone:', error);
-    return dateObj.toLocaleDateString(getLocale(), defaultOptions);
+    return dateObj.toLocaleString(getLocale(), formatOptions);
   }
 };
 

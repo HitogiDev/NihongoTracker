@@ -8,6 +8,7 @@ import ProfileStatsBand from '../components/ProfileStatsBand';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import FavoriteMedia from '../components/FavoriteMedia';
+import CurrentMedia from '../components/CurrentMedia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
@@ -62,9 +63,6 @@ const DATE_ONLY: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
-  hour: undefined,
-  minute: undefined,
-  timeZoneName: undefined,
 };
 
 const RARITY_ORDER: Record<AchievementRarity, number> = {
@@ -686,6 +684,12 @@ function ProfileScreen() {
       <FavoriteMedia
         favorites={user?.favorites ?? []}
         isOwner={isOwner}
+        username={username}
+        blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
+      />
+    ) : null,
+    currentMedia: username ? (
+      <CurrentMedia
         username={username}
         blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
       />

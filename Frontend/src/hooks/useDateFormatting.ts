@@ -49,6 +49,7 @@ export function useDateFormatting() {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZoneName: 'short',
     });
 
   const formatTime = (date: Date | string) =>

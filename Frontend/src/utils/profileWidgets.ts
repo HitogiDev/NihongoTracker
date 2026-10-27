@@ -28,6 +28,11 @@ export const PROFILE_WIDGETS: ProfileWidgetMeta[] = [
     descriptionKey: 'profileWidgets.favorites.description',
   },
   {
+    id: 'currentMedia',
+    labelKey: 'profileWidgets.currentMedia.label',
+    descriptionKey: 'profileWidgets.currentMedia.description',
+  },
+  {
     id: 'progressStats',
     labelKey: 'profileWidgets.progressStats.label',
     descriptionKey: 'profileWidgets.progressStats.description',

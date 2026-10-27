@@ -58,6 +58,7 @@ export type ProfileWidgetId =
   | 'profileStats'
   | 'about'
   | 'favorites'
+  | 'currentMedia'
   | 'progressStats'
   | 'immersionActivity'
   | 'immersionGoals'

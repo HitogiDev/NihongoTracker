@@ -207,9 +207,6 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const hoverPos = hoverIndex !== null ? positions[hoverIndex] : null;
   const hoverDate = hoverPoint
     ? formatDate(hoverPoint.date, {
-        hour: undefined,
-        minute: undefined,
-        timeZoneName: undefined,
         month: 'short',
         day: 'numeric',
         year: 'numeric',

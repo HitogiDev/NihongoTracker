@@ -14,9 +14,6 @@ const DATE_ONLY: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
-  hour: undefined,
-  minute: undefined,
-  timeZoneName: undefined,
 };
 
 /** Module scope: key names, never text. */

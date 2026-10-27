@@ -14,6 +14,7 @@ import Tag from '../models/tag.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { MediaBase } from '../models/media.model.js';
+import { getCurrentMedia as listCurrentMedia } from '../services/currentMedia.service.js';
 import {
   IMediaDocument,
   IMediaTitle,
@@ -1009,6 +1010,7 @@ const VALID_PROFILE_WIDGET_IDS = new Set<ProfileWidgetId>([
   'profileStats',
   'about',
   'favorites',
+  'currentMedia',
   'progressStats',
   'immersionActivity',
   'immersionGoals',
@@ -2831,6 +2833,38 @@ export async function clearUserData(
         settings: updatedUser.settings,
       },
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getCurrentMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select(
+      '_id settings'
+    );
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
+    return res.status(200).json(await listCurrentMedia(user._id));
   } catch (error) {
     return next(error as customError);
   }

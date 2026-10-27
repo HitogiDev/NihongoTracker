@@ -8,6 +8,7 @@ import {
   searchUsers,
   clearUserData,
   getImmersionList,
+  getCurrentMedia,
   compareUserStats,
   getRankingSummary,
   getRankingHistory,
@@ -107,6 +108,7 @@ router.get('/:username/dashboard', protect, getDashboardHours);
 router.get('/:username/recentlogs', protect, getRecentLogs);
 
 router.get('/:username/immersionlist', optionalProtect, getImmersionList);
+router.get('/:username/current-media', optionalProtect, getCurrentMedia);
 
 router.get('/:username/gantt', optionalProtect, getGanttData);
 

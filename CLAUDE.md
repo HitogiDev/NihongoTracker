@@ -185,6 +185,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - External hooker WebSockets use `hooks/useTexthookerSocket.ts`. An optional secondary URL (`texthooker_secondaryWebsocketUrl`) feeds the same line handler as the primary URL. LunaHook input disables both. Pause on disconnect applies only when no configured socket is connected.
 - Texthooker room state is stored in `TextSession` with a 24-hour TTL. Socket authentication parses the JWT cookie separately from Express middleware.
 - Swagger UI is mounted at `/api/docs`.
+- `GET /api/users/:username/current-media` feeds the profile `currentMedia` widget through `services/currentMedia.service.ts`. It returns up to three unfinished works logged in the last 30 days, excluding video, private logs, and inactive statuses. Progress uses episodes, characters (Jiten when the media has no count), or movie runtime. Skip full progress with the MediaDetails auto-complete rule. The immersion activity privacy setting applies.
 - `GET /api/users/:username/reviews` returns public reviews written by a user, with `page` and `limit` pagination. `GET /api/users/:username/lists` reuses the media list controller and returns private lists only to their authenticated owner.
 
 ## Frontend architecture
