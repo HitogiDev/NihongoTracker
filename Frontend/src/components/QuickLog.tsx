@@ -20,6 +20,7 @@ import LogPrivacyToggle from './LogPrivacyToggle';
 import TagSelector from './TagSelector';
 import { isMobileApp } from '../utils/nativeRuntime';
 import Modal from './ui/Modal';
+import { MentionButton } from './mentions/MentionPicker';
 import Button from './ui/Button';
 
 interface QuickLogProps {
@@ -142,6 +143,7 @@ function QuickLog({
   };
   const [logDescription, setLogDescription] = useState<string>('');
   const [logComment, setLogComment] = useState<string>('');
+  const commentRef = useRef<HTMLTextAreaElement>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [episodes, setEpisodes] = useState<number>(0);
   const [loggedVolume, setLoggedVolume] = useState<number | undefined>(
@@ -702,9 +704,20 @@ function QuickLog({
 
                         <Field
                           label={t('quick.comment')}
-                          aside={t('quick.markdownSupported')}
+                          aside={
+                            <span className="inline-flex items-center gap-1">
+                              {t('quick.markdownSupported')}
+                              <MentionButton
+                                className="btn btn-ghost btn-xs btn-square"
+                                value={logComment}
+                                onChange={setLogComment}
+                                textareaRef={commentRef}
+                              />
+                            </span>
+                          }
                         >
                           <textarea
+                            ref={commentRef}
                             className="textarea w-full"
                             rows={3}
                             placeholder={t('quick.commentPlaceholder')}

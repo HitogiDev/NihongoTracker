@@ -37,6 +37,8 @@
     "review.liked_other": "A {{username}} y a {{count}} personas más les ha gustado tu reseña",
     "review.liked_zero": "A {{username}} le ha gustado tu reseña",
     "social.followed": "{{username}} ha empezado a seguirte",
+    "social.mentionedInComment": "{{username}} te citó en un comentario",
+    "social.mentionedInReview": "{{username}} te citó en una reseña",
     "social.reacted": "A {{username}} le gustó tu actividad",
     "social.commented": "{{username}} comentó en tu actividad",
     "social.replied": "{{username}} respondió a tu comentario",

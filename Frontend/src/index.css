@@ -415,6 +415,11 @@ html {
   color: inherit !important;
 }
 
+/* Mention chips show images, so hide them until the spoiler is revealed. */
+.spoiler:not(.revealed) .mention-chip {
+  visibility: hidden;
+}
+
 /* ─── react-day-picker DaisyUI theme ─────────────────────────────────────────
    Scoped to .rdp-themed so only explicitly opted-in calendars are affected.
    Overrides rdp's default CSS variables and class styles for dark/light mode. */

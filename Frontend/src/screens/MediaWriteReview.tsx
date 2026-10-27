@@ -30,6 +30,8 @@ import { OutletMediaContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { addMediaReviewFn, getMediaReviewsFn } from '../api/trackerApi';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from '../components/ui/MarkdownContent';
+import { MentionButton } from '../components/mentions/MentionPicker';
 import { useTranslation } from 'react-i18next';
 
 const REVIEW_MAX_LENGTH = 5000;
@@ -524,6 +526,14 @@ function MediaWriteReview() {
                   >
                     <EyeOff className="w-4 h-4" />
                   </button>
+                  <MentionButton
+                    className="btn btn-ghost btn-xs"
+                    value={reviewForm.content}
+                    onChange={(content) =>
+                      setReviewForm((prev) => ({ ...prev, content }))
+                    }
+                    textareaRef={reviewTextareaRef}
+                  />
                 </div>
 
                 <textarea
@@ -581,11 +591,9 @@ function MediaWriteReview() {
               {reviewForm.summary.trim() && <div className="divider my-2" />}
 
               {reviewForm.content.trim() ? (
-                <div
+                <MarkdownContent
                   className="prose prose-sm max-w-none text-base-content [&>*:first-child]:mt-0"
-                  dangerouslySetInnerHTML={{
-                    __html: renderMarkdownWithSpoilers(reviewForm.content),
-                  }}
+                  html={renderMarkdownWithSpoilers(reviewForm.content)}
                 />
               ) : (
                 <div className="text-base-content/60">

@@ -96,6 +96,9 @@ import { getUserTimezone } from '../utils/timezone';
 import { getApiErrorMessage } from '../utils/apiError';
 import type { ParseKeys } from 'i18next';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from '../components/ui/MarkdownContent';
+import { MentionButton } from '../components/mentions/MentionPicker';
+import MentionAutocomplete from '../components/mentions/MentionAutocomplete';
 import {
   Bold,
   CloudDownload,
@@ -413,6 +416,17 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
             onSelectionChange?.(selection);
           }}
         ></textarea>
+        <MentionAutocomplete
+          textareaRef={textareaRef}
+          maxLength={maxLength}
+          onChange={(newValue) => {
+            setValue(newValue);
+            aboutRef.current = newValue;
+            setLength(newValue.length);
+            setIsDirty(newValue !== (initialValue || ''));
+            onPreviewChange?.(newValue);
+          }}
+        />
         <div className="flex justify-between items-center">
           <label className="label py-1"></label>
           <span className="text-base-content/60">
@@ -2288,6 +2302,12 @@ function SettingsScreen() {
       >
         <EyeOff className="w-4 h-4" />
       </button>
+      <MentionButton
+        className="btn btn-ghost btn-xs"
+        onInsert={(token) =>
+          aboutEditorRef.current?.insertSnippet(token, '', '')
+        }
+      />
       <button
         type="button"
         className="btn btn-ghost btn-xs"
@@ -2545,11 +2565,9 @@ function SettingsScreen() {
                                 </div>
                               )}
                               {renderedAboutPreview ? (
-                                <div
+                                <MarkdownContent
                                   className="prose prose-sm max-w-none"
-                                  dangerouslySetInnerHTML={{
-                                    __html: renderedAboutPreview,
-                                  }}
+                                  html={renderedAboutPreview}
                                 />
                               ) : (
                                 <p className="text-base-content/30 text-sm italic">

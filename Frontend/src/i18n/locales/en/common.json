@@ -81,5 +81,21 @@
     "reload": "Reload now",
     "title": "Unexpected Application Error",
     "generic": "Something went wrong while loading this page."
+  },
+  "mentions": {
+    "button": "Mention a user or work",
+    "title": "Mention",
+    "users": "Users",
+    "media": "Works",
+    "searchUsers": "Search users...",
+    "searchMedia": "Search works...",
+    "typeToSearch": "Type at least 2 characters to search.",
+    "noResults": "No results for \"{{query}}\".",
+    "level": "Level {{level}}",
+    "autocompleteHint": "Mention a user or a work: keep typing a name",
+    "autocompleteSearching": "Mentions for \"{{query}}\"",
+    "searchAll": "Search all results for \"{{query}}\"",
+    "browse": "Browse users and works",
+    "keyboardHint": "↑↓ to move, Enter to insert, Esc to close"
   }
 }

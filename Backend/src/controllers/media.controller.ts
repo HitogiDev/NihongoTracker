@@ -42,8 +42,33 @@ import {
 import {
   recordReviewActivity,
 } from '../services/activityEvents.service.js';
+import { notifyMentionedUsers } from '../services/mentions.service.js';
 import { deleteActivitiesBySource } from '../services/activity.service.js';
 import type { IMediaDocument } from '../types.js';
+
+/** Notify users that a review mentions. Reviews are public, so no access check is needed. */
+async function notifyReviewMentions(input: {
+  reviewId: string;
+  content: string;
+  previousContent?: string;
+  summary: string;
+  mediaType: string;
+  contentId: string;
+  actor: { _id: Types.ObjectId; username: string; avatar?: string };
+}) {
+  await notifyMentionedUsers({
+    content: input.content,
+    previousContent: input.previousContent,
+    actor: input.actor,
+    entityType: 'mediaReview',
+    entityId: input.reviewId,
+    link: `/review/${input.reviewId}`,
+    title: `${input.actor.username} mentioned you in a review`,
+    titleKey: 'social.mentionedInReview',
+    body: input.summary,
+    meta: { mediaType: input.mediaType, contentId: input.contentId },
+  });
+}
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
@@ -787,6 +812,15 @@ export async function addMediaReview(
       rating,
     });
 
+    await notifyReviewMentions({
+      reviewId: review._id.toString(),
+      content: trimmedContent,
+      summary: trimmedSummary,
+      mediaType,
+      contentId,
+      actor: res.locals.user,
+    });
+
     return res
       .status(201)
       .json({ message: 'Review added successfully', review });
@@ -927,6 +961,7 @@ export async function editMediaReview(
         .json({ message: 'Review not found or you are not the author' });
     }
 
+    const previousContent = review.content;
     review.summary = trimmedSummary;
     review.content = trimmedContent;
     review.hasSpoilers = hasSpoilers || false;
@@ -936,6 +971,16 @@ export async function editMediaReview(
     }
 
     await review.save();
+
+    await notifyReviewMentions({
+      reviewId: review._id.toString(),
+      content: trimmedContent,
+      previousContent,
+      summary: trimmedSummary,
+      mediaType,
+      contentId,
+      actor: res.locals.user,
+    });
 
     const updatedReview = await MediaReview.findById(reviewId).populate(
       'user',

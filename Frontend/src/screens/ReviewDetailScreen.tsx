@@ -24,6 +24,7 @@ import LikeButton from '../components/LikeButton';
 import { IMediaReview } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from '../components/ui/MarkdownContent';
 import { useTranslation } from 'react-i18next';
 
 function getMediaTitle(mediaTitle?: {
@@ -364,11 +365,9 @@ function ReviewDetailScreen() {
               </div>
             </div>
 
-            <div
+            <MarkdownContent
               className="prose prose-sm md:prose-base max-w-none mt-8 text-base-content"
-              dangerouslySetInnerHTML={{
-                __html: renderMarkdownWithSpoilers(review.content),
-              }}
+              html={renderMarkdownWithSpoilers(review.content)}
             />
           </div>
         </article>

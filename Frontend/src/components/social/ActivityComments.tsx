@@ -43,6 +43,8 @@ import { useUserDataStore } from '../../store/userData';
 import type { IActivityComment } from '../../types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { renderMarkdownWithSpoilers } from '../../utils/markdown';
+import MarkdownContent from '../ui/MarkdownContent';
+import { MentionButton } from '../mentions/MentionPicker';
 import { formatRelativeDateInTimezone } from '../../utils/timezone';
 import Spinner from '../ui/Spinner';
 import UserAvatar from '../UserAvatar';
@@ -243,6 +245,12 @@ function CommentFormattingToolbar({
           <Icon className="h-4 w-4" />
         </button>
       ))}
+      <MentionButton
+        value={value}
+        onChange={onChange}
+        textareaRef={textareaRef}
+        maxLength={maxLength}
+      />
     </div>
   );
 }
@@ -755,13 +763,11 @@ export default function ActivityComments({
                       </div>
                     </div>
                   ) : (
-                    <div
+                    <MarkdownContent
                       className={`prose prose-sm ${
                         isReply && parentReference ? 'mt-2' : 'mt-3'
                       } max-w-none wrap-break-word text-base-content [&>*:first-child]:mt-0 [&>*:last-child]:mb-0`}
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdownWithSpoilers(comment.content),
-                      }}
+                      html={renderMarkdownWithSpoilers(comment.content)}
                     />
                   )}
                   {depth === 0 && replyCount > 0 && (
