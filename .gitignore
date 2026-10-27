@@ -29,7 +29,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
-.claude/*
+.claude/
 .codex
 .agents
 .github/instructions/
@@ -44,4 +44,3 @@ dist-ssr
 *.sw?
 skills-lock.json
 *.tsbuildinfo
-.claude/worktrees/
