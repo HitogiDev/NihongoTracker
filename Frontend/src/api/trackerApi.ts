@@ -25,6 +25,7 @@ import {
   ILogsParams,
   IMediaDocument,
   IImmersionList,
+  ICurrentMediaItem,
   IAverageColor,
   IUserStats,
   IUpdateLogRequest,
@@ -497,6 +498,13 @@ export async function getImmersionListFn(
   const { data } = await api.get<IImmersionList>(
     `users/${username}/immersionlist`,
     { params }
+  );
+  return data;
+}
+
+export async function getCurrentMediaFn(username: string) {
+  const { data } = await api.get<ICurrentMediaItem[]>(
+    `users/${username}/current-media`
   );
   return data;
 }

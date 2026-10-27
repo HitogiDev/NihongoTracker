@@ -37,10 +37,6 @@ export default function AchievementFeedItem({
           year: 'numeric',
           month: 'short',
           day: 'numeric',
-          // The shared formatter adds these unless opted out.
-          hour: undefined,
-          minute: undefined,
-          timeZoneName: undefined,
         })
       : '';
 

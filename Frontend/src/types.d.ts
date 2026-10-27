@@ -44,6 +44,7 @@ export type ProfileWidgetId =
   | 'profileStats'
   | 'about'
   | 'favorites'
+  | 'currentMedia'
   | 'progressStats'
   | 'immersionActivity'
   | 'immersionGoals'
@@ -971,6 +972,23 @@ export interface IMediaTitle {
   contentTitleNative: string;
   contentTitleRomaji?: string;
   contentTitleEnglish?: string;
+}
+
+/** A recently logged work that the user has not finished, from `GET /users/:username/current-media`. */
+export interface ICurrentMediaItem {
+  mediaId: string;
+  type: 'anime' | 'manga' | 'light-novel' | 'vn' | 'game' | 'movie' | 'tv show';
+  title: IMediaTitle;
+  contentImage?: string;
+  coverImage?: string;
+  isAdult: boolean;
+  isAdultImage: boolean;
+  lastLogDate: string;
+  progress: {
+    unit: 'episodes' | 'chars' | 'minutes';
+    current: number;
+    total: number;
+  } | null;
 }
 
 export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';

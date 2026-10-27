@@ -116,9 +116,6 @@ const DATE_ONLY_OPTS: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
-  hour: undefined,
-  minute: undefined,
-  timeZoneName: undefined,
 };
 
 export default function ShareStatsModal({

@@ -86,6 +86,13 @@
     "edit": "Edit",
     "add": "Add"
   },
+  "currentMediaWidget": {
+    "title": "Current Content",
+    "episodes": "{{current}} / {{total}} episodes",
+    "chars": "{{current}} / {{total}} characters",
+    "minutes": "{{current}} / {{total}} min",
+    "lastLogged": "Last logged {{date}}"
+  },
   "feed": {
     "all": "All activity",
     "logs": "Logs",

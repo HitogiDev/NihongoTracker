@@ -525,6 +525,10 @@
       "description": "Your favorite media and notes.",
       "label": "Favorite Media"
     },
+    "currentMedia": {
+      "label": "Current Content",
+      "description": "Up to three works you have logged recently and have not finished."
+    },
     "hide": "Hide widget",
     "immersionActivity": {
       "description": "Heatmap of your immersion over time.",
