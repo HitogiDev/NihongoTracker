@@ -3,7 +3,7 @@ import type { ParseKeys } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { Download, Heart, RotateCcw, Share2 } from 'lucide-react';
+import { Download, Heart, RotateCcw, Share2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getUserFn, getUserStatsFn } from '../api/trackerApi';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -15,8 +15,15 @@ import {
   canCustomizeStatsCard,
   DEFAULT_STATS_CARD_DESIGN,
   generateStatsCard,
+  maxTopMedia,
   normalizeStatsCardDesign,
+  STATS_CARD_PALETTES,
+  STATS_CARD_STYLES,
   type StatsCardDesign,
+  type StatsCardFormat,
+  type StatsCardPalette,
+  type StatsCardStyle,
+  type StatsCardTitleLanguage,
 } from '../utils/statsCard';
 import { downloadStatsImage, shareStatsImage } from '../native/shareStatsImage';
 import DatePickerInput from './ui/DatePickerInput';
@@ -45,6 +52,60 @@ const RANGE_OPTIONS: Array<{
   { value: 'custom', labelKey: 'share.custom' },
 ];
 
+const FORMAT_OPTIONS: Array<{
+  value: StatsCardFormat;
+  labelKey: ParseKeys<'stats'>;
+}> = [
+  { value: 'portrait', labelKey: 'share.portrait' },
+  { value: 'square', labelKey: 'share.square' },
+  { value: 'story', labelKey: 'share.story' },
+];
+
+const STYLE_LABELS: Record<StatsCardStyle, ParseKeys<'stats'>> = {
+  classic: 'share.styles.classic',
+  seigaiha: 'share.styles.seigaiha',
+  nightSky: 'share.styles.nightSky',
+  sakura: 'share.styles.sakura',
+  halftone: 'share.styles.halftone',
+};
+
+const PALETTE_LABELS: Record<StatsCardPalette, ParseKeys<'stats'>> = {
+  theme: 'share.palettes.theme',
+  midnight: 'share.palettes.midnight',
+  paper: 'share.palettes.paper',
+};
+
+const TITLE_LANGUAGE_OPTIONS: Array<{
+  value: StatsCardTitleLanguage;
+  labelKey: ParseKeys<'stats'>;
+}> = [
+  { value: 'native', labelKey: 'share.titleNative' },
+  { value: 'romaji', labelKey: 'share.titleRomaji' },
+  { value: 'english', labelKey: 'share.titleEnglish' },
+];
+
+const ACCENT_PRESETS = [
+  '#38bdf8',
+  '#a78bfa',
+  '#f472b6',
+  '#fb7185',
+  '#fbbf24',
+  '#34d399',
+];
+
+const MEDIA_TYPE_KEYS: Record<string, string> = {
+  anime: 'anime',
+  manga: 'manga',
+  reading: 'reading',
+  game: 'game',
+  video: 'video',
+  movie: 'movie',
+  'tv show': 'tvShow',
+  audio: 'audio',
+  book: 'book',
+  other: 'other',
+};
+
 function toQueryDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -66,6 +127,7 @@ export default function ShareStatsModal({
   onClose,
 }: ShareStatsModalProps) {
   const { t, i18n } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   const colors = useThemeColors();
   const viewer = useUserDataStore((state) => state.user);
   const supporter = canCustomizeStatsCard(viewer);
@@ -110,7 +172,7 @@ export default function ShareStatsModal({
       return {
         statsParams:
           customStart && customEnd
-            ? { start: customStart, end: customEnd, timezone }
+            ? { start: customStart, end: customEnd, timezone, topMedia: 5 }
             : null,
         dateLabel:
           customStart && customEnd
@@ -126,7 +188,7 @@ export default function ShareStatsModal({
       // (e.g. Jan 1 00:00 local rendering as Dec 31 in a western timezone).
       const start = new Date(now.getFullYear(), now.getMonth(), 1, 12);
       return {
-        statsParams: { timeRange: 'month', timezone },
+        statsParams: { timeRange: 'month', timezone, topMedia: 5 },
         dateLabel: `${formatDate(start, DATE_ONLY_OPTS)} – ${formatDate(
           now,
           DATE_ONLY_OPTS
@@ -136,7 +198,7 @@ export default function ShareStatsModal({
     if (mode === 'year') {
       const start = new Date(now.getFullYear(), 0, 1, 12);
       return {
-        statsParams: { timeRange: 'year', timezone },
+        statsParams: { timeRange: 'year', timezone, topMedia: 5 },
         dateLabel: `${formatDate(start, DATE_ONLY_OPTS)} – ${formatDate(
           now,
           DATE_ONLY_OPTS
@@ -144,7 +206,7 @@ export default function ShareStatsModal({
       };
     }
     return {
-      statsParams: { timeRange: 'total', timezone },
+      statsParams: { timeRange: 'total', timezone, topMedia: 5 },
       dateLabel: t('share.allTime'),
     };
   }, [mode, customStart, customEnd, timezone, formatDate, t]);
@@ -192,14 +254,28 @@ export default function ShareStatsModal({
         labels: {
           heading: t('share.cardHeading'),
           hours: t('share.immersedHours'),
+          total: t('share.total'),
           reading: t('cards.reading'),
           listening: t('cards.listening'),
           dailyAverage: t('cards.dailyAverage'),
           characters: t('cards.charsRead'),
+          charsUnit: t('units.chars'),
+          episodesUnit: t('share.episodesUnit'),
           streak: t('cards.currentStreak'),
           days: t('share.days'),
           logs: t('cards.logCount'),
           supporter: t('share.supporter'),
+          topMedia: t('share.topMediaHeading'),
+          mediaTypes: {
+            ...Object.fromEntries(
+              Object.entries(MEDIA_TYPE_KEYS).map(([type, key]) => [
+                type,
+                tCommon(`mediaTypes.${key}` as ParseKeys<'common'>),
+              ])
+            ),
+            'light-novel': 'LN',
+            vn: 'VN',
+          },
         },
       })
         .then((blob) => {
@@ -238,6 +314,7 @@ export default function ShareStatsModal({
     effectiveDesign,
     i18n.language,
     t,
+    tCommon,
     attempt,
   ]);
 
@@ -322,28 +399,95 @@ export default function ShareStatsModal({
 
           <Field label={t('share.format')}>
             <div className="join w-full">
-              <button
-                type="button"
-                aria-pressed={design.format === 'portrait'}
-                className={`${design.format === 'portrait' ? BTN.segmentActive : BTN.segment} flex-1`}
-                onClick={() =>
-                  setDesign((value) => ({ ...value, format: 'portrait' }))
-                }
-              >
-                {t('share.portrait')}
-              </button>
-              <button
-                type="button"
-                aria-pressed={design.format === 'square'}
-                className={`${design.format === 'square' ? BTN.segmentActive : BTN.segment} flex-1`}
-                onClick={() =>
-                  setDesign((value) => ({ ...value, format: 'square' }))
-                }
-              >
-                {t('share.square')}
-              </button>
+              {FORMAT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={design.format === option.value}
+                  className={`${design.format === option.value ? BTN.segmentActive : BTN.segment} flex-1`}
+                  onClick={() =>
+                    setDesign((value) => ({ ...value, format: option.value }))
+                  }
+                >
+                  {t(option.labelKey)}
+                </button>
+              ))}
             </div>
           </Field>
+
+          <div className="surface-muted space-y-3 p-4">
+            <label className="flex items-center justify-between gap-3 text-sm font-semibold">
+              <span className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-primary" />
+                {t('share.showTopMedia')}
+              </span>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm toggle-primary"
+                checked={effectiveDesign.showTopMedia}
+                onChange={(event) =>
+                  setDesign((value) => ({
+                    ...value,
+                    showTopMedia: event.target.checked,
+                  }))
+                }
+              />
+            </label>
+            {effectiveDesign.showTopMedia && (
+              <>
+                {stats && !stats.topMedia?.length && (
+                  <p className="text-xs text-base-content/60">
+                    {t('share.noTopMedia')}
+                  </p>
+                )}
+                <Field label={t('share.topMediaCount')}>
+                  <div className="join w-full">
+                    {Array.from(
+                      { length: maxTopMedia(effectiveDesign.format) },
+                      (_, index) => index + 1
+                    ).map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        aria-pressed={effectiveDesign.topMediaCount === count}
+                        className={`${effectiveDesign.topMediaCount === count ? BTN.segmentActive : BTN.segment} flex-1`}
+                        onClick={() =>
+                          setDesign((value) => ({
+                            ...value,
+                            topMediaCount: count,
+                          }))
+                        }
+                      >
+                        {count}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label={t('share.titleLanguage')}>
+                  {(id) => (
+                    <DropdownSelect
+                      id={id}
+                      value={effectiveDesign.titleLanguage}
+                      className="w-full"
+                      onChange={(event) =>
+                        setDesign((value) => ({
+                          ...value,
+                          titleLanguage: event.target
+                            .value as StatsCardTitleLanguage,
+                        }))
+                      }
+                    >
+                      {TITLE_LANGUAGE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {t(option.labelKey)}
+                        </option>
+                      ))}
+                    </DropdownSelect>
+                  )}
+                </Field>
+              </>
+            )}
+          </div>
 
           <div className="surface-muted space-y-3 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold">
@@ -352,34 +496,57 @@ export default function ShareStatsModal({
             </div>
             {supporter ? (
               <>
-                <Field label={t('share.style')}>
-                  {(id) => (
-                    <DropdownSelect
-                      id={id}
-                      value={effectiveDesign.style}
-                      className="w-full"
-                      onChange={(event) =>
-                        setDesign((value) => ({
-                          ...value,
-                          style: event.target.value as StatsCardDesign['style'],
-                        }))
-                      }
-                    >
-                      <option value="classic">{t('share.classic')}</option>
-                      <option value="aurora">{t('share.aurora')}</option>
-                      <option value="constellations">
-                        {t('share.constellations')}
-                      </option>
-                    </DropdownSelect>
-                  )}
-                </Field>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label={t('share.style')}>
+                    {(id) => (
+                      <DropdownSelect
+                        id={id}
+                        value={effectiveDesign.style}
+                        className="w-full"
+                        onChange={(event) =>
+                          setDesign((value) => ({
+                            ...value,
+                            style: event.target.value as StatsCardStyle,
+                          }))
+                        }
+                      >
+                        {STATS_CARD_STYLES.map((style) => (
+                          <option key={style} value={style}>
+                            {t(STYLE_LABELS[style])}
+                          </option>
+                        ))}
+                      </DropdownSelect>
+                    )}
+                  </Field>
+                  <Field label={t('share.background')}>
+                    {(id) => (
+                      <DropdownSelect
+                        id={id}
+                        value={effectiveDesign.palette}
+                        className="w-full"
+                        onChange={(event) =>
+                          setDesign((value) => ({
+                            ...value,
+                            palette: event.target.value as StatsCardPalette,
+                          }))
+                        }
+                      >
+                        {STATS_CARD_PALETTES.map((palette) => (
+                          <option key={palette} value={palette}>
+                            {t(PALETTE_LABELS[palette])}
+                          </option>
+                        ))}
+                      </DropdownSelect>
+                    )}
+                  </Field>
+                </div>
                 <Field label={t('share.accent')}>
                   {(id) => (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         id={id}
                         type="color"
-                        className="h-10 w-12 cursor-pointer rounded-field border border-base-300 p-1"
+                        className="h-9 w-11 cursor-pointer rounded-field border border-base-300 p-1"
                         value={accentInputColor}
                         onChange={(event) =>
                           setDesign((value) => ({
@@ -388,6 +555,23 @@ export default function ShareStatsModal({
                           }))
                         }
                       />
+                      {ACCENT_PRESETS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          aria-label={color}
+                          aria-pressed={effectiveDesign.accent === color}
+                          className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                            effectiveDesign.accent === color
+                              ? 'border-base-content'
+                              : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() =>
+                            setDesign((value) => ({ ...value, accent: color }))
+                          }
+                        />
+                      ))}
                       <Button
                         size="sm"
                         appearance="ghost"
@@ -422,7 +606,14 @@ export default function ShareStatsModal({
                   )}
                 </Field>
                 <label className="flex items-center justify-between gap-3 text-sm">
-                  {t('share.useBanner')}
+                  <span>
+                    {t('share.useBanner')}
+                    {!profile?.banner && (
+                      <span className="block text-xs text-base-content/60">
+                        {t('share.noBanner')}
+                      </span>
+                    )}
+                  </span>
                   <input
                     type="checkbox"
                     className="toggle toggle-sm"
@@ -471,7 +662,7 @@ export default function ShareStatsModal({
         </div>
 
         <div
-          className="surface-muted relative flex min-h-64 min-w-0 items-center justify-center p-3"
+          className="surface-muted relative flex min-h-64 min-w-0 items-center justify-center p-3 md:sticky md:top-0 md:h-[calc(100dvh-14rem)] md:min-h-80 md:self-start"
           aria-busy={busy}
         >
           {mode === 'custom' && !customReady ? (
@@ -498,7 +689,7 @@ export default function ShareStatsModal({
             <img
               src={imageUrl}
               alt={t('share.previewAlt')}
-              className={`max-h-[65vh] w-full object-contain shadow-sm transition-opacity ${
+              className={`h-auto max-h-[65vh] w-auto max-w-full object-contain shadow-sm transition-opacity md:max-h-full ${
                 busy ? 'opacity-50' : 'opacity-100'
               }`}
             />
@@ -512,7 +703,7 @@ export default function ShareStatsModal({
           )}
         </div>
       </div>
-      <div className="modal-action sticky bottom-0 bg-base-100 pt-3">
+      <div className="modal-action sticky -bottom-6 z-10 -mx-6 -mb-6 border-t border-base-300 bg-base-100 px-6 py-4">
         {!isNativeApp() && (
           <Button
             appearance="ghost"

@@ -2405,6 +2405,7 @@ interface IGetUserStatsQuery {
   timezone?: string;
   includedTags?: string;
   excludedTags?: string;
+  topMedia?: string;
 }
 
 interface IStatByType {
@@ -2489,6 +2490,7 @@ export async function getUserStats(
       timezone: tzParam,
       includedTags: includedTagsParam,
       excludedTags: excludedTagsParam,
+      topMedia: topMediaParam,
     } = req.query as IGetUserStatsQuery;
 
     const validTimeRanges = [
@@ -3124,6 +3126,87 @@ export async function getUserStats(
       longestStreak: user.stats?.longestStreak ?? 0,
     };
 
+    const topMediaLimit = Math.min(
+      5,
+      Math.max(0, Math.trunc(Number(topMediaParam) || 0))
+    );
+    // Anime logs without explicit time count 24 minutes per episode, like the totals above.
+    const topMedia = topMediaLimit
+      ? await Log.aggregate([
+          {
+            $match: {
+              ...totalsMatch,
+              mediaId: { $nin: [null, ''] },
+            },
+          },
+          {
+            $group: {
+              _id: { mediaId: '$mediaId', type: '$type' },
+              minutes: {
+                $sum: {
+                  $ifNull: [
+                    '$time',
+                    {
+                      $cond: [
+                        { $eq: ['$type', 'anime'] },
+                        { $multiply: [{ $ifNull: ['$episodes', 0] }, 24] },
+                        0,
+                      ],
+                    },
+                  ],
+                },
+              },
+              chars: { $sum: { $ifNull: ['$chars', 0] } },
+              episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+              xp: { $sum: { $ifNull: ['$xp', 0] } },
+            },
+          },
+          { $sort: { minutes: -1, chars: -1, xp: -1 } },
+          { $limit: topMediaLimit },
+          {
+            $lookup: {
+              from: 'media',
+              localField: '_id.mediaId',
+              foreignField: 'contentId',
+              as: 'media',
+              pipeline: [
+                {
+                  $project: {
+                    title: 1,
+                    contentImage: 1,
+                    coverImage: 1,
+                    isAdult: 1,
+                    isAdultImage: 1,
+                  },
+                },
+              ],
+            },
+          },
+          { $unwind: { path: '$media', preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              _id: 0,
+              mediaId: '$_id.mediaId',
+              type: '$_id.type',
+              title: '$media.title',
+              image: { $ifNull: ['$media.contentImage', '$media.coverImage'] },
+              // VNDB marks many VNs as adult content although their covers are safe.
+              // For VNs, only isAdultImage marks an explicit cover.
+              isAdultImage: {
+                $cond: [
+                  { $eq: ['$_id.type', 'vn'] },
+                  { $ifNull: ['$media.isAdultImage', false] },
+                  { $ifNull: ['$media.isAdult', false] },
+                ],
+              },
+              hours: { $divide: ['$minutes', 60] },
+              chars: 1,
+              episodes: 1,
+            },
+          },
+        ])
+      : undefined;
+
     return res.json({
       totals,
       statsByType: statsWithLocalDates,
@@ -3133,6 +3216,7 @@ export async function getUserStats(
       selectedType: Array.isArray(type) ? type.join(',') : type,
       timezone: userTimezone,
       streaks,
+      ...(topMedia ? { topMedia } : {}),
     });
   } catch (error) {
     return next(error);

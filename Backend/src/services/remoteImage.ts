@@ -96,3 +96,12 @@ export async function downloadAverageColorImage(
     .png()
     .toBuffer();
 }
+
+// Share cards draw these images on a canvas. Same-origin bytes keep the canvas exportable.
+export async function downloadCardImage(value: string): Promise<Buffer> {
+  const buffer = await download(validateImageUrl(value));
+  return sharp(buffer, { limitInputPixels: 40_000_000, animated: false })
+    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 86 })
+    .toBuffer();
+}

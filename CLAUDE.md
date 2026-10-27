@@ -204,7 +204,7 @@ Manga activity is intentionally skipped because AniList chapter progress cannot 
 - Native safe areas are centralized in `native/native.css`. Do not add a second system inset to page wrappers. `NativeAppLifecycle` controls keyboard visibility and system bar contrast.
 - Native forms use `useNativeUnsavedChanges`. Settings categories use `/settings?tab=...`. Preserve account-scoped filters and scroll restoration when adding native pages.
 - Native log selection uses `SelectableLogRow`: hold a log to start selection, then tap logs to toggle them. Keep scrolling and log actions available outside selection.
-- Share Stats renders PNGs locally through `utils/statsCard.ts` using the active theme. Supporter styles require an active tier or admin access. Native exports use `native/shareStatsImage.ts`, the Capacitor Share plugin, and files in `Directory.Cache`. Keep shared files available while the receiving app reads them.
+- Share Stats renders PNGs locally through `utils/statsCard.ts` using the active theme. Supporter styles require an active tier or admin access. The card reads optional top media from `GET /api/users/:username/stats?topMedia=N` (maximum 5). Load remote images through `GET /api/media/utils/card-image`, which uses the `services/remoteImage.ts` host allowlist. Cross-origin images without CORS headers taint the canvas and block the PNG export. Native exports use `native/shareStatsImage.ts`, the Capacitor Share plugin, and files in `Directory.Cache`. Keep shared files available while the receiving app reads them.
 - Development previews can use `?mobilePreview=1`. This enables presentation only, without native authentication, storage, or plugins.
 
 ## Frontend UI conventions

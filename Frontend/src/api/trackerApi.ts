@@ -548,6 +548,15 @@ export async function removeMediaFromImmersionListFn(payload: {
   };
 }
 
+export async function getCardImageFn(url: string): Promise<Blob> {
+  const { data } = await api.get<Blob>('media/utils/card-image', {
+    params: { url },
+    responseType: 'blob',
+    timeout: 8000,
+  });
+  return data;
+}
+
 export async function getAverageColorFn(imageUrl?: string) {
   if (!imageUrl) return null;
   try {
@@ -669,6 +678,7 @@ export async function getUserStatsFn(
     timezone?: string;
     includedTags?: string;
     excludedTags?: string;
+    topMedia?: number;
   }
 ) {
   if (!username) {
@@ -685,6 +695,8 @@ export async function getUserStatsFn(
   }
   if (params?.start) queryParams.append('start', params.start);
   if (params?.end) queryParams.append('end', params.end);
+  if (params?.topMedia)
+    queryParams.append('topMedia', String(params.topMedia));
   if (params?.timezone) queryParams.append('timezone', params.timezone);
   if (params?.includedTags)
     queryParams.append('includedTags', params.includedTags);
