@@ -81,5 +81,21 @@
     "reload": "Recargar ahora",
     "title": "Error inesperado de la aplicación",
     "generic": "Algo ha fallado al cargar esta página."
+  },
+  "mentions": {
+    "button": "Citar un usuario u obra",
+    "title": "Citar",
+    "users": "Usuarios",
+    "media": "Obras",
+    "searchUsers": "Buscar usuarios...",
+    "searchMedia": "Buscar obras...",
+    "typeToSearch": "Escribe al menos 2 caracteres para buscar.",
+    "noResults": "Sin resultados para \"{{query}}\".",
+    "level": "Nivel {{level}}",
+    "autocompleteHint": "Cita a un usuario o una obra: sigue escribiendo un nombre",
+    "autocompleteSearching": "Citas para \"{{query}}\"",
+    "searchAll": "Buscar todos los resultados para \"{{query}}\"",
+    "browse": "Explorar usuarios y obras",
+    "keyboardHint": "↑↓ para moverte, Enter para insertar, Esc para cerrar"
   }
 }

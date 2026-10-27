@@ -1,6 +1,7 @@
 import OfflineImage from '../components/OfflineImage';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Field from '../components/ui/Field';
+import { MentionButton } from '../components/mentions/MentionPicker';
 import DatePickerInput from '../components/ui/DatePickerInput';
 import { formatDateValue, parseDateValue } from '../utils/dateInput';
 import {
@@ -220,6 +221,7 @@ function LogScreen() {
   const { t } = useTranslation(['logs', 'common']);
   const { t: tCommon } = useTranslation('common');
   const vt = useValidationText();
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [logData, setLogData] = useState<logDataType>(() =>
     createInitialLogState()
   );
@@ -1449,9 +1451,22 @@ function LogScreen() {
 
                       <Field
                         label={t('create.customDescription')}
-                        aside={t('create.markdownSupported')}
+                        aside={
+                          <span className="inline-flex items-center gap-1">
+                            {t('create.markdownSupported')}
+                            <MentionButton
+                              className="btn btn-ghost btn-xs btn-square"
+                              value={logData.description ?? ''}
+                              onChange={(description) =>
+                                handleInputChange('description', description)
+                              }
+                              textareaRef={descriptionRef}
+                            />
+                          </span>
+                        }
                       >
                         <textarea
+                          ref={descriptionRef}
                           className="textarea w-full"
                           placeholder={t('create.notesPlaceholder')}
                           rows={3}

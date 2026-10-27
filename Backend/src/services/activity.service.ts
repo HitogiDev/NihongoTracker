@@ -544,11 +544,10 @@ export async function editActivityComment(
   userId: Types.ObjectId,
   content: string
 ) {
-  const comment = await ActivityComment.findOneAndUpdate(
-    { _id: commentId, user: userId },
-    { $set: { content, editedAt: new Date() } },
-    { new: true }
-  ).populate('user', 'username avatar');
+  const comment = await ActivityComment.findOne({
+    _id: commentId,
+    user: userId,
+  });
   if (!comment) {
     throw apiError(
       'activity.commentNotFoundOrForbidden',
@@ -556,7 +555,15 @@ export async function editActivityComment(
       'Comment not found or you are not the author'
     );
   }
-  return comment;
+  const previousContent = comment.content;
+  comment.content = content;
+  comment.editedAt = new Date();
+  await comment.save();
+  await comment.populate('user', 'username avatar');
+  const activity = await Activity.findById(comment.activity).select(
+    'actor visibility'
+  );
+  return { comment, previousContent, activity };
 }
 
 export async function deleteActivityComment(

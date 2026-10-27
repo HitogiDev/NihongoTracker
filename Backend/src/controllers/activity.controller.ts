@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
-import { userRoles } from '../types.js';
+import { IActivity, userRoles } from '../types.js';
 import User from '../models/user.model.js';
 import { apiError, ErrorCode } from '../i18n/errorCodes.js';
 import { customError } from '../middlewares/errorMiddleware.js';
@@ -22,6 +22,32 @@ import {
   createNotification,
   removeNotifications,
 } from '../services/notifications.service.js';
+import { notifyMentionedUsers } from '../services/mentions.service.js';
+import { canViewActivity } from '../services/socialVisibility.service.js';
+
+/** Notify users that a comment mentions, if they can see its activity. */
+async function notifyCommentMentions(input: {
+  activity: Pick<IActivity, '_id' | 'actor' | 'visibility'>;
+  commentId: Types.ObjectId;
+  content: string;
+  previousContent?: string;
+  actor: { _id: Types.ObjectId; username: string; avatar?: string };
+  excludeUserIds?: Types.ObjectId[];
+}) {
+  await notifyMentionedUsers({
+    content: input.content,
+    previousContent: input.previousContent,
+    actor: input.actor,
+    entityType: 'activityComment',
+    entityId: String(input.commentId),
+    link: `/?feed=following&activity=${String(input.activity._id)}`,
+    title: `${input.actor.username} mentioned you in a comment`,
+    titleKey: 'social.mentionedInComment',
+    body: input.content,
+    excludeUserIds: input.excludeUserIds,
+    canView: (userId) => canViewActivity(input.activity, userId),
+  });
+}
 
 function parseObjectId(
   value: string,
@@ -188,6 +214,13 @@ export async function addComment(
         avatar: res.locals.user.avatar ?? '',
       },
     });
+    await notifyCommentMentions({
+      activity,
+      commentId: comment._id as Types.ObjectId,
+      content,
+      actor: res.locals.user,
+      excludeUserIds: [parentComment?.user ?? activity.actor],
+    });
     return res.status(201).json({ comment });
   } catch (error) {
     return next(error as customError);
@@ -205,11 +238,20 @@ export async function editComment(
       'activity.invalidCommentId'
     );
     const content = parseCommentContent(req.body.content);
-    const comment = await editActivityComment(
+    const { comment, previousContent, activity } = await editActivityComment(
       commentId,
       res.locals.user._id,
       content
     );
+    if (activity) {
+      await notifyCommentMentions({
+        activity,
+        commentId: comment._id as Types.ObjectId,
+        content,
+        previousContent,
+        actor: res.locals.user,
+      });
+    }
     return res.status(200).json({ comment });
   } catch (error) {
     return next(error as customError);

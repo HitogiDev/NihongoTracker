@@ -38,6 +38,7 @@ import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from '../components/ui/MarkdownContent';
 import {
   Search,
   Funnel,
@@ -642,12 +643,12 @@ function ProfileScreen() {
           {aboutHtml ? (
             <div className="space-y-3">
               <div className="relative">
-                <div
+                <MarkdownContent
                   ref={aboutContentRef}
                   className={`prose prose-sm max-w-none text-base-content/90 ${
                     showAboutPreview ? 'max-h-56 overflow-hidden' : ''
                   }`}
-                  dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                  html={aboutHtml}
                 />
                 {showAboutPreview && (
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 via-base-100/90 to-transparent" />

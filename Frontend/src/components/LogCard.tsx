@@ -45,6 +45,8 @@ import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { useTimezone } from '../hooks/useTimezone';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from './ui/MarkdownContent';
+import { MentionButton } from './mentions/MentionPicker';
 import {
   getDayKeyInTimezone,
   getTimeInTimezone,
@@ -225,6 +227,7 @@ function LogCard({
     tags: extractTagIds(log.tags),
   });
 
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [editData, setEditData] = useState<EditLogFormState>(() =>
     buildEditState()
   );
@@ -660,9 +663,10 @@ function LogCard({
                     media.title?.contentTitleEnglish
                   ) ||
                     description !== media.title.contentTitleEnglish) && (
-                    <div
+                    <MarkdownContent
+                      inlineOnly
                       className="prose prose-sm max-w-none text-base-content/60 mt-1 leading-tight line-clamp-2 [&>*]:my-0 [&_p]:my-0"
-                      dangerouslySetInnerHTML={{ __html: renderedDescription }}
+                      html={renderedDescription}
                     />
                   )}
               </div>
@@ -876,11 +880,9 @@ function LogCard({
                       <span className="font-medium">
                         {t('details.descriptionLabel')}
                       </span>
-                      <div
+                      <MarkdownContent
                         className="prose prose-sm max-w-none text-base-content mt-1"
-                        dangerouslySetInnerHTML={{
-                          __html: renderedDescription,
-                        }}
+                        html={renderedDescription}
                       />
                     </div>
                   )}
@@ -1350,11 +1352,24 @@ function LogCard({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field
                     label={t('edit.description')}
-                    aside={t('edit.markdownSupported')}
+                    aside={
+                      <span className="inline-flex items-center gap-1">
+                        {t('edit.markdownSupported')}
+                        <MentionButton
+                          className="btn btn-ghost btn-xs btn-square"
+                          value={editData.description}
+                          onChange={(description) =>
+                            setEditData((prev) => ({ ...prev, description }))
+                          }
+                          textareaRef={descriptionRef}
+                        />
+                      </span>
+                    }
                     required
                     className="md:col-span-2"
                   >
                     <textarea
+                      ref={descriptionRef}
                       className="textarea w-full"
                       rows={3}
                       value={editData.description}

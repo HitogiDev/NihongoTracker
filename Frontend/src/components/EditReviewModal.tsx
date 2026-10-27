@@ -20,6 +20,8 @@ import {
 import { toast } from 'react-toastify';
 import { IMediaReview } from '../types';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MarkdownContent from './ui/MarkdownContent';
+import { MentionButton } from './mentions/MentionPicker';
 
 const REVIEW_MAX_LENGTH = 5000;
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
@@ -374,6 +376,14 @@ export default function EditReviewModal({
               >
                 <EyeOff className="w-4 h-4" />
               </button>
+              <MentionButton
+                className="btn btn-ghost btn-xs"
+                value={editForm.content}
+                onChange={(content) =>
+                  setEditForm((prev) => ({ ...prev, content }))
+                }
+                textareaRef={reviewTextareaRef}
+              />
             </div>
             <textarea
               className="textarea w-full min-h-56 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
@@ -408,11 +418,9 @@ export default function EditReviewModal({
                 {editForm.summary.trim() && <div className="divider my-2" />}
 
                 {editForm.content.trim() ? (
-                  <div
+                  <MarkdownContent
                     className="prose prose-sm max-w-none text-base-content [&>*:first-child]:mt-0"
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdownWithSpoilers(editForm.content),
-                    }}
+                    html={renderMarkdownWithSpoilers(editForm.content)}
                   />
                 ) : (
                   <div className="text-base-content/60">
