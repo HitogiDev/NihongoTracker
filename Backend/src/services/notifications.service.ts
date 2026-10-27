@@ -102,6 +102,54 @@ export async function createNotifications(
   );
 }
 
+const BROADCAST_BATCH_SIZE = 1000;
+
+/**
+ * Insert one notification for each recipient in batches. Use this for large
+ * audiences, where one write for each user is too slow. Grouping and the
+ * self-notification check do not apply.
+ */
+export async function insertNotificationBatches(
+  recipients: AsyncIterable<IdLike> | Iterable<IdLike>,
+  input: Omit<CreateNotificationInput, 'recipient' | 'groupKey' | 'allowSelf'>
+): Promise<number> {
+  const base = {
+    actor: input.actor ? toObjectId(input.actor) : null,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    titleKey: input.titleKey ?? null,
+    bodyKey: input.bodyKey ?? null,
+    link: input.link,
+    image: input.image,
+    entityType: input.entityType ?? null,
+    entityId: input.entityId ?? null,
+    meta: input.meta,
+    groupKey: null,
+    expireAt: input.expireAt ?? null,
+    count: 1,
+  };
+
+  let inserted = 0;
+  let batch: Array<typeof base & { recipient: Types.ObjectId }> = [];
+
+  const flush = async () => {
+    if (batch.length === 0) return;
+    const docs = batch;
+    batch = [];
+    await Notification.insertMany(docs, { ordered: false });
+    inserted += docs.length;
+  };
+
+  for await (const recipient of recipients) {
+    batch.push({ ...base, recipient: toObjectId(recipient) });
+    if (batch.length >= BROADCAST_BATCH_SIZE) await flush();
+  }
+  await flush();
+
+  return inserted;
+}
+
 /**
  * Remove notifications tied to an entity that no longer exists (an unliked
  * review, a deleted comment…). Safe to call when nothing matches.

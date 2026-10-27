@@ -27,6 +27,7 @@ import {
   adminUpdateMedia,
   triggerJitenDifficultyBackfill,
   getJitenDifficultyBackfillStatus,
+  sendAdminNotification,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -268,6 +269,13 @@ router.get(
   protect,
   checkPermission(userRoles.admin),
   getJitenDifficultyBackfillStatus
+);
+
+router.post(
+  '/notifications',
+  protect,
+  checkPermission(userRoles.admin),
+  sendAdminNotification
 );
 
 // Media editing (admin or mod: pairs with the media-request approval flow)
