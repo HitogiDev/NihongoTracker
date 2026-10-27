@@ -17,7 +17,8 @@
     "mediaNotFound": "Media not found",
     "moderationFieldRequired": "At least one moderation field must be provided",
     "nativeTitleRequired": "Native title cannot be empty",
-    "passwordTooShort": "Password must be at least 6 characters"
+    "passwordTooShort": "Password must be at least 6 characters",
+    "unknownUsers": "Unknown users: {{usernames}}"
   },
   "anilist": {
     "alreadyLinked": "That AniList account is already linked to another user",

@@ -320,7 +320,7 @@ function NotificationBell() {
                   {isUnread ? t('item.unread') : t('item.read')}
                 </span>
               </div>
-              {item.body && (
+              {getNotificationBody(item) && (
                 <p className="mt-0.5 text-xs text-base-content/60 line-clamp-1">
                   {getNotificationBody(item)}
                 </p>

@@ -246,7 +246,7 @@ function NotificationsScreen() {
                   </span>
                 </div>
 
-                {item.body && (
+                {getNotificationBody(item) && (
                   <p className="mt-1 text-sm text-base-content/60 line-clamp-2">
                     {getNotificationBody(item)}
                   </p>

@@ -73,10 +73,28 @@ function resolve(
   return translated;
 }
 
+/**
+ * Custom admin notifications carry their own text for each language in
+ * `meta`, as `title_<lang>` and `body_<lang>`. They have no catalogue key.
+ */
+function localizedText(
+  field: 'title' | 'body',
+  meta: Record<string, string> | undefined
+): string | undefined {
+  const language = (i18n.resolvedLanguage ?? i18n.language ?? '').split('-')[0];
+  return meta?.[`${field}_${language}`] || undefined;
+}
+
 export function getNotificationLabel(item: NotificationLike): string {
-  return resolve(item.labelKey, item.label, item.meta);
+  return (
+    localizedText('title', item.meta) ??
+    resolve(item.labelKey, item.label, item.meta)
+  );
 }
 
 export function getNotificationBody(item: NotificationLike): string {
-  return resolve(item.bodyKey, item.body ?? '', item.meta);
+  return (
+    localizedText('body', item.meta) ??
+    resolve(item.bodyKey, item.body ?? '', item.meta)
+  );
 }

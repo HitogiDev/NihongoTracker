@@ -247,6 +247,7 @@ export const ERROR_CODES = [
   // E4 follow-ups
   'achievement.notEarned',
   'admin.moderationFieldRequired',
+  'admin.unknownUsers',
   'tag.limitReached',
   'tag.limitReachedTier',
   'patreon.useOauthFlow',

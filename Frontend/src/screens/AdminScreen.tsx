@@ -46,10 +46,18 @@ import {
   type IActivityBackfillStatus,
   type IAdminBannedUsersResponse,
 } from '../api/trackerApi';
-import { ArrowDown, ArrowUp, Users, Play, ShieldAlert } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Bell,
+  Users,
+  Play,
+  ShieldAlert,
+} from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
 import MediaRequestQueue from '../components/MediaRequestQueue';
 import MediaEditPanel from '../components/MediaEditPanel';
+import AdminNotificationPanel from '../components/AdminNotificationPanel';
 import { getLocale } from '../utils/timezone';
 import Button from '../components/ui/Button';
 
@@ -173,6 +181,7 @@ function AdminScreen() {
     | 'requests'
     | 'media'
     | 'changelogs'
+    | 'notifications'
     | 'system'
   >('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -774,6 +783,13 @@ function AdminScreen() {
             Changelogs
           </button>
           <button
+            className={`tab ${selectedTab === 'notifications' ? 'tab-active' : ''}`}
+            onClick={() => setSelectedTab('notifications')}
+          >
+            <Bell className="w-5 h-5 mr-2" />
+            {t('notifications.tab')}
+          </button>
+          <button
             className={`tab ${selectedTab === 'system' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('system')}
           >
@@ -803,6 +819,8 @@ function AdminScreen() {
         {selectedTab === 'requests' && <MediaRequestQueue />}
 
         {selectedTab === 'media' && <MediaEditPanel />}
+
+        {selectedTab === 'notifications' && <AdminNotificationPanel />}
 
         {selectedTab === 'bans' && (
           <section className="card surface">

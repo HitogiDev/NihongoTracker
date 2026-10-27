@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import { apiError } from '../i18n/errorCodes.js';
 import Log from '../models/log.model.js';
-import { IUser , IMediaDocument } from '../types.js';
+import { IUser , IMediaDocument, SUPPORTED_LANGUAGES } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile } from '../services/uploadFile.js';
 import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
@@ -28,6 +28,7 @@ import {
   fetchJitenDeckDetail,
 } from '../services/jiten.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import { insertNotificationBatches } from '../services/notifications.service.js';
 import {
   getActivityBackfillState,
   startActivityBackfill,
@@ -1255,6 +1256,184 @@ export async function adminUpdateMedia(
     return res
       .status(200)
       .json({ message: 'Media updated', media: media.toObject() });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const MAX_NOTIFICATION_RECIPIENTS = 100;
+
+interface AdminNotificationBody {
+  audience?: unknown;
+  usernames?: unknown;
+  title?: unknown;
+  body?: unknown;
+  link?: unknown;
+  translations?: unknown;
+}
+
+function readOptionalText(
+  value: unknown,
+  field: string,
+  maxLength: number
+): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string') {
+    throw apiError('common.validationError', 400, `${field} must be text`);
+  }
+  const text = value.trim();
+  if (text.length > maxLength) {
+    throw apiError(
+      'common.validationError',
+      400,
+      `${field} must be ${maxLength} characters or fewer`
+    );
+  }
+  return text || undefined;
+}
+
+export async function sendAdminNotification(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const payload = req.body as AdminNotificationBody;
+    const audience = payload.audience;
+    if (audience !== 'all' && audience !== 'users') {
+      throw apiError(
+        'common.validationError',
+        400,
+        'Audience must be "all" or "users"'
+      );
+    }
+
+    const title = readOptionalText(payload.title, 'Title', 300);
+    if (!title) {
+      throw apiError('common.validationError', 400, 'Title is required');
+    }
+    const body = readOptionalText(payload.body, 'Body', 1000);
+    const link = readOptionalText(payload.link, 'Link', 500) ?? '/notifications';
+    // The client renders links with the router, so only app paths work.
+    if (!link.startsWith('/') || link.startsWith('//')) {
+      throw apiError(
+        'common.validationError',
+        400,
+        'Link must be an app path that starts with "/"'
+      );
+    }
+
+    // The English text is the stored fallback. Other languages go in `meta`
+    // as `title_<lang>` and `body_<lang>`, which the client reads first.
+    const meta: Record<string, string> = {};
+    const translations = payload.translations;
+    if (translations !== undefined && translations !== null) {
+      if (typeof translations !== 'object' || Array.isArray(translations)) {
+        throw apiError(
+          'common.validationError',
+          400,
+          'Translations must be an object'
+        );
+      }
+      const byLanguage = translations as Record<string, unknown>;
+      for (const language of SUPPORTED_LANGUAGES) {
+        if (language === 'en') continue;
+        const entry = byLanguage[language];
+        if (entry === undefined || entry === null) continue;
+        if (typeof entry !== 'object' || Array.isArray(entry)) {
+          throw apiError(
+            'common.validationError',
+            400,
+            `Translation "${language}" must be an object`
+          );
+        }
+        const fields = entry as { title?: unknown; body?: unknown };
+        const localizedTitle = readOptionalText(
+          fields.title,
+          `Title (${language})`,
+          300
+        );
+        const localizedBody = readOptionalText(
+          fields.body,
+          `Body (${language})`,
+          1000
+        );
+        if (localizedTitle) meta[`title_${language}`] = localizedTitle;
+        if (localizedBody) meta[`body_${language}`] = localizedBody;
+      }
+    }
+
+    // The ID marks every row of this send, so a later cleanup can remove them.
+    const broadcastId = new Types.ObjectId().toHexString();
+    const notification = {
+      type: 'system' as const,
+      title,
+      body,
+      link,
+      entityType: 'admin_broadcast',
+      entityId: broadcastId,
+      meta: Object.keys(meta).length > 0 ? meta : undefined,
+    };
+
+    let sent: number;
+    if (audience === 'all') {
+      const cursor = User.find({ 'moderation.banned': { $ne: true } })
+        .select('_id')
+        .lean()
+        .cursor();
+      sent = await insertNotificationBatches(
+        (async function* () {
+          for await (const user of cursor) yield user._id as Types.ObjectId;
+        })(),
+        notification
+      );
+    } else {
+      if (!Array.isArray(payload.usernames)) {
+        throw apiError('common.validationError', 400, 'Usernames are required');
+      }
+      const usernames = [
+        ...new Set(
+          payload.usernames
+            .filter((name): name is string => typeof name === 'string')
+            .map((name) => name.trim())
+            .filter(Boolean)
+        ),
+      ];
+      if (usernames.length === 0) {
+        throw apiError('common.validationError', 400, 'Usernames are required');
+      }
+      if (usernames.length > MAX_NOTIFICATION_RECIPIENTS) {
+        throw apiError(
+          'common.validationError',
+          400,
+          `Send to ${MAX_NOTIFICATION_RECIPIENTS} users or fewer at a time`
+        );
+      }
+
+      const users = await User.find({ username: { $in: usernames } })
+        .collation({ locale: 'en', strength: 2 })
+        .select('_id username')
+        .lean();
+      const found = new Set(users.map((user) => user.username.toLowerCase()));
+      const missing = usernames.filter(
+        (name) => !found.has(name.toLowerCase())
+      );
+      if (missing.length > 0) {
+        throw apiError(
+          'admin.unknownUsers',
+          400,
+          `Unknown users: ${missing.join(', ')}`,
+          { usernames: missing.join(', ') }
+        );
+      }
+
+      sent = await insertNotificationBatches(
+        users.map((user) => user._id as Types.ObjectId),
+        notification
+      );
+    }
+
+    return res.status(201).json({ sent, broadcastId });
   } catch (error) {
     return next(error as customError);
   }

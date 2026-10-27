@@ -1426,6 +1426,22 @@ export async function adminUpdateUserModerationFn(
   return data;
 }
 
+export async function adminSendNotificationFn(payload: {
+  audience: 'all' | 'users';
+  usernames?: string[];
+  title: string;
+  body?: string;
+  link?: string;
+  /** Text for other languages. The English title and body are the fallback. */
+  translations?: Record<string, { title?: string; body?: string }>;
+}) {
+  const { data } = await api.post<{ sent: number; broadcastId: string }>(
+    'admin/notifications',
+    payload
+  );
+  return data;
+}
+
 export async function adminRecalculateUserStreakFn(username: string) {
   const { data } = await api.post(
     `admin/users/username/${username}/recalculate-streaks`
