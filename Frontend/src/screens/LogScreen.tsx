@@ -30,8 +30,13 @@ import TagSelector from '../components/TagSelector';
 import {
   CircleCheck,
   CircleX,
+  Clapperboard,
+  Clock,
   Info,
+  Pencil,
+  Plus,
   Search,
+  Trash2,
 } from 'lucide-react';
 import PlaylistSelectorModal, {
   PlaylistVideoWithOverride,
@@ -137,6 +142,15 @@ const createInitialLogState = (
   youtubeChannelInfo: null,
 });
 
+// Date, privacy, and tags are shared form settings. They apply to every
+// queued video at submit time.
+interface QueuedVideo {
+  key: number;
+  data: logDataType;
+}
+
+const getVideoMinutes = (data: logDataType) => data.hours * 60 + data.minutes;
+
 const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
 
 const getLastLoggedVolumeKey = (type: 'manga' | 'light-novel', mediaId: string) =>
@@ -215,9 +229,15 @@ function LogScreen() {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isAdvancedOptions, setIsAdvancedOptions] = useState<boolean>(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [videoQueue, setVideoQueue] = useState<QueuedVideo[]>([]);
+  // Position of the form video between the saved videos.
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const videoQueueKeyRef = useRef(0);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const clearNativeDirty = useNativeUnsavedChanges(nativeDirty || Boolean(
     logData.mediaId || logData.mediaName || logData.hours || logData.minutes ||
-    logData.watchedEpisodes || logData.readChars || logData.readPages || selectedTags.length
+    logData.watchedEpisodes || logData.readChars || logData.readPages || selectedTags.length ||
+    videoQueue.length
   ));
   const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -430,6 +450,204 @@ function LogScreen() {
 
   // ── End playlist helpers ────────────────────────────────────────────────────
 
+  // Refresh the stored user so the rest of the UI (header, profile)
+  // reflects the new stats. The celebration overlay itself is driven
+  // globally from the createLog response (see LogCelebrationHost).
+  const refreshStoredUser = async () => {
+    if (!user?.username) return;
+    try {
+      const updatedUser = await getUserFn(user.username);
+
+      const loginResponse: ILoginResponse = {
+        _id: updatedUser._id || user._id,
+        username: updatedUser.username || user.username,
+        email: updatedUser.email ?? user.email,
+        verified: updatedUser.verified ?? user.verified,
+        stats: updatedUser.stats || user.stats,
+        avatar: updatedUser.avatar ?? user.avatar,
+        banner: updatedUser.banner ?? user.banner,
+        titles: updatedUser.titles || user.titles,
+        roles: updatedUser.roles || user.roles,
+        discordId: updatedUser.discordId ?? '',
+        patreon: updatedUser.patreon ?? user.patreon,
+        settings: updatedUser.settings ?? user.settings,
+        about: updatedUser.about ?? user.about,
+      };
+      setUser(loginResponse);
+    } catch (e) {
+      console.error('Error fetching user data:', e);
+    }
+  };
+
+  // ── Video queue helpers ─────────────────────────────────────────────────────
+  const createVideoEntry = (data: logDataType): QueuedVideo => ({
+    key: ++videoQueueKeyRef.current,
+    data,
+  });
+
+  const isCurrentVideoEmpty =
+    !logData.mediaName.trim() && !logData.hours && !logData.minutes;
+
+  // Return the full list in display order, with the video in the form at
+  // its position. Return null when the form video is not valid.
+  const collectVideoEntries = (): QueuedVideo[] | null => {
+    if (isCurrentVideoEmpty) return videoQueue;
+    if (!validateCurrentVideo()) return null;
+    const entries = [...videoQueue];
+    entries.splice(activeVideoIndex, 0, createVideoEntry(logData));
+    return entries;
+  };
+
+  const loadVideoIntoForm = (data: logDataType) => {
+    setLogData((prev) => ({
+      ...data,
+      private: prev.private,
+      unknownDate: prev.unknownDate,
+      date: prev.date,
+    }));
+    setTouched({});
+    setErrors({});
+  };
+
+  const validateCurrentVideo = () => {
+    const videoTouched = { mediaName: true, hours: true, minutes: true };
+    setTouched((prev) => ({ ...prev, ...videoTouched }));
+    const validation = validateLogData(
+      {
+        type: logData.type,
+        mediaName: logData.mediaName,
+        watchedEpisodes: logData.watchedEpisodes,
+        hours: logData.hours,
+        minutes: logData.minutes,
+        readChars: logData.readChars,
+        readPages: logData.readPages,
+      },
+      videoTouched
+    );
+    setErrors(validation.errors);
+    return validation.isValid && !!logData.mediaName.trim();
+  };
+
+  const handleAddVideo = () => {
+    if (isCurrentVideoEmpty) {
+      mediaInputRef.current?.focus();
+      return;
+    }
+    const entries = collectVideoEntries();
+    if (!entries) {
+      toast.error(t('toast.fixValidation'));
+      return;
+    }
+    setVideoQueue(entries);
+    setActiveVideoIndex(entries.length);
+    loadVideoIntoForm(createInitialLogState('video'));
+    mediaInputRef.current?.focus();
+  };
+
+  const handleEditVideo = (key: number) => {
+    const entries = collectVideoEntries();
+    if (!entries) {
+      toast.error(t('toast.fixValidation'));
+      return;
+    }
+    const index = entries.findIndex((entry) => entry.key === key);
+    if (index < 0) return;
+    setVideoQueue(entries.filter((entry) => entry.key !== key));
+    setActiveVideoIndex(index);
+    loadVideoIntoForm(entries[index].data);
+    mediaInputRef.current?.focus();
+  };
+
+  const removeQueuedVideo = (key: number) => {
+    const index = videoQueue.findIndex((entry) => entry.key === key);
+    if (index < 0) return;
+    setVideoQueue((prev) => prev.filter((entry) => entry.key !== key));
+    if (index < activeVideoIndex) setActiveVideoIndex((prev) => prev - 1);
+  };
+
+  const clearCurrentVideo = () => {
+    loadVideoIntoForm(createInitialLogState('video'));
+  };
+
+  const submitVideoQueue = async (entries: QueuedVideo[]) => {
+    if (!entries.length) return;
+    setIsBatchLogging(true);
+    setBatchProgress({ current: 0, total: entries.length });
+
+    const date =
+      logData.unknownDate || !logData.date
+        ? undefined
+        : pickedDayToUtc(logData.date, timezone);
+    const failed: QueuedVideo[] = [];
+
+    for (const entry of entries) {
+      const { data } = entry;
+      try {
+        await createLogFn({
+          type: 'video',
+          mediaId: data.mediaId,
+          description:
+            data.description || (data.mediaId ? '' : data.mediaName),
+          episodes: data.watchedEpisodes,
+          time: getVideoMinutes(data) || undefined,
+          date,
+          unknownDate: logData.unknownDate,
+          private: logData.private,
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+        } as ICreateLog);
+      } catch (err) {
+        console.error('Video queue log error for', data.mediaName, err);
+        failed.push(entry);
+      }
+      setBatchProgress((prev) =>
+        prev ? { ...prev, current: prev.current + 1 } : null
+      );
+    }
+
+    setIsBatchLogging(false);
+    setBatchProgress(null);
+    // Keep failed videos in the list so the user can retry them.
+    setVideoQueue(failed);
+    setActiveVideoIndex(failed.length);
+
+    const loggedCount = entries.length - failed.length;
+    if (loggedCount === 0) {
+      toast.error(tCommon('errors.generic'));
+      return;
+    }
+
+    setLogData(createInitialLogState('video'));
+    setDateInput('');
+    setSelectedTags([]);
+    setTouched({});
+    setErrors({});
+
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        ['logs', user?.username, 'user', 'recentLogs'].includes(
+          query.queryKey[0] as string
+        ),
+    });
+    void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+    invalidateLogScreenQueries(queryClient, 'video', user?.username);
+
+    const message = t('toast.videosLogged', {
+      count: entries.length,
+      logged: loggedCount,
+    });
+    if (failed.length) {
+      toast.warning(message);
+    } else {
+      toast.success(message);
+      clearNativeDirty();
+      setNativeDirty(false);
+    }
+
+    await refreshStoredUser();
+    if (!failed.length && isMobileApp()) navigate('/records', { replace: true });
+  };
+  // ── End video queue helpers ─────────────────────────────────────────────────
+
   const {
     data: searchResult,
     error: searchError,
@@ -519,33 +737,7 @@ function LogScreen() {
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       invalidateLogScreenQueries(queryClient, currentType, user?.username);
 
-      // Refresh the stored user so the rest of the UI (header, profile)
-      // reflects the new stats. The celebration overlay itself is driven
-      // globally from the createLog response (see LogCelebrationHost).
-      if (user?.username) {
-        try {
-          const updatedUser = await getUserFn(user.username);
-
-          const loginResponse: ILoginResponse = {
-            _id: updatedUser._id || user._id,
-            username: updatedUser.username || user.username,
-            email: updatedUser.email ?? user.email,
-            verified: updatedUser.verified ?? user.verified,
-            stats: updatedUser.stats || user.stats,
-            avatar: updatedUser.avatar ?? user.avatar,
-            banner: updatedUser.banner ?? user.banner,
-            titles: updatedUser.titles || user.titles,
-            roles: updatedUser.roles || user.roles,
-            discordId: updatedUser.discordId ?? '',
-            patreon: updatedUser.patreon ?? user.patreon,
-            settings: updatedUser.settings ?? user.settings,
-            about: updatedUser.about ?? user.about,
-          };
-          setUser(loginResponse);
-        } catch (e) {
-          console.error('Error fetching user data:', e);
-        }
-      }
+      await refreshStoredUser();
       if (isMobileApp()) navigate('/records', { replace: true });
     },
     onError: (error) => {
@@ -716,6 +908,20 @@ function LogScreen() {
   const logSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (logData.type === 'video' && videoQueue.length > 0) {
+      if (isDateInputInvalid) {
+        toast.error(t('create.invalidDate'));
+        return;
+      }
+      const entries = collectVideoEntries();
+      if (!entries) {
+        toast.error(t('toast.fixValidationAll'));
+        return;
+      }
+      void submitVideoQueue(entries);
+      return;
+    }
+
     // Mark all relevant fields as touched for final validation
     const allTouched = {
       type: true,
@@ -829,6 +1035,84 @@ function LogScreen() {
   }));
 
   const isSeriesType = logData.type === 'anime' || logData.type === 'tv show';
+  const isVideoMode = logData.type === 'video';
+  const hasVideoQueue = isVideoMode && videoQueue.length > 0;
+  const videoTotalCount = videoQueue.length + (isCurrentVideoEmpty ? 0 : 1);
+  const videoTotalMinutes =
+    videoQueue.reduce((sum, entry) => sum + getVideoMinutes(entry.data), 0) +
+    getVideoMinutes(logData);
+
+  const renderSavedVideo = (entry: QueuedVideo, position: number) => {
+    const { data } = entry;
+    const minutes = getVideoMinutes(data);
+    return (
+      <li
+        key={entry.key}
+        className="surface-muted flex items-center gap-3 p-2 pr-3"
+      >
+        <button
+          type="button"
+          className="flex flex-1 min-w-0 items-center gap-3 text-left cursor-pointer"
+          onClick={() => handleEditVideo(entry.key)}
+          disabled={isBatchLogging}
+          title={t('create.videoEdit')}
+        >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-base-300 text-xs font-semibold">
+            {position}
+          </span>
+          {data.img ? (
+            <OfflineImage
+              src={data.img}
+              alt={data.mediaName}
+              className="hidden sm:block w-20 aspect-video shrink-0 rounded-box object-cover"
+            />
+          ) : (
+            <span className="hidden sm:flex w-20 aspect-video shrink-0 items-center justify-center rounded-box bg-base-300 text-base-content/50">
+              <Clapperboard className="w-5 h-5" />
+            </span>
+          )}
+          <span className="flex-1 min-w-0">
+            <span className="block truncate text-sm font-semibold">
+              {data.mediaName}
+            </span>
+            <span className="block truncate text-xs text-base-content/70">
+              <span className="sm:hidden">
+                {t('create.videoMinutes', { minutes })} ·{' '}
+              </span>
+              {data.youtubeChannelInfo?.channelTitle ??
+                t('create.videoCustomTitle')}
+            </span>
+          </span>
+        </button>
+        <span className="badge badge-ghost hidden sm:inline-flex gap-1 shrink-0">
+          <Clock className="w-3 h-3" />
+          {t('create.videoMinutes', { minutes })}
+        </span>
+        <div className="flex shrink-0">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            aria-label={t('create.videoEdit')}
+            title={t('create.videoEdit')}
+            onClick={() => handleEditVideo(entry.key)}
+            disabled={isBatchLogging}
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            aria-label={t('create.videoQueueRemove')}
+            title={t('create.videoQueueRemove')}
+            onClick={() => removeQueuedVideo(entry.key)}
+            disabled={isBatchLogging}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </li>
+    );
+  };
 
   const showEpisodesInMain = isSeriesType;
   const showTimeInMain = [
@@ -918,6 +1202,8 @@ function LogScreen() {
                         setLogData(createInitialLogState(newType));
                         setDateInput('');
                         setSelectedTags([]);
+                        setVideoQueue([]);
+                        setActiveVideoIndex(0);
                         setTouched({});
                         setErrors({});
                         setIsFormValid(false);
@@ -943,6 +1229,52 @@ function LogScreen() {
                   <div className="card surface">
                     <div className="card-body">
                       <h2 className="card-title">{t('create.stepDetails')}</h2>
+                      {hasVideoQueue && activeVideoIndex > 0 && (
+                        <ul className="space-y-2">
+                          {videoQueue
+                            .slice(0, activeVideoIndex)
+                            .map((entry, index) =>
+                              renderSavedVideo(entry, index + 1)
+                            )}
+                        </ul>
+                      )}
+                      <div
+                        className={
+                          hasVideoQueue
+                            ? 'surface-muted p-4 space-y-4'
+                            : 'contents'
+                        }
+                      >
+                      {hasVideoQueue && (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-base-300 text-base-content text-xs font-semibold">
+                              {activeVideoIndex + 1}
+                            </span>
+                            <span className="font-semibold">
+                              {t('create.videoNumber', {
+                                number: activeVideoIndex + 1,
+                              })}
+                            </span>
+                            {hasVideoQueue && (
+                              <span className="badge badge-primary badge-soft badge-sm">
+                                {t('create.videoEditing')}
+                              </span>
+                            )}
+                          </div>
+                          {hasVideoQueue && !isCurrentVideoEmpty && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={clearCurrentVideo}
+                              disabled={isBatchLogging}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              {t('create.videoClear')}
+                            </button>
+                          )}
+                        </div>
+                      )}
                       <Field
                         label={
                           logData.type === 'video'
@@ -952,6 +1284,7 @@ function LogScreen() {
                       >
                         <div className="relative">
                           <input
+                            ref={mediaInputRef}
                             type="text"
                             placeholder={
                               logData.type === 'video'
@@ -1306,9 +1639,11 @@ function LogScreen() {
                               <label className="label">
                                 <span className="text-error flex items-center gap-1">
                                   <CircleX />
-                                  {errors.time ||
-                                    errors.hours ||
-                                    errors.minutes}
+                                  {vt(
+                                    errors.time ||
+                                      errors.hours ||
+                                      errors.minutes
+                                  )}
                                 </span>
                               </label>
                             )}
@@ -1415,6 +1750,48 @@ function LogScreen() {
                           </Field>
                         )}
                       </div>
+                      </div>
+
+                      {hasVideoQueue && activeVideoIndex < videoQueue.length && (
+                        <ul className="space-y-2">
+                          {videoQueue
+                            .slice(activeVideoIndex)
+                            .map((entry, index) =>
+                              renderSavedVideo(
+                                entry,
+                                activeVideoIndex + index + 2
+                              )
+                            )}
+                        </ul>
+                      )}
+
+                      {isVideoMode && (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-outline btn-block h-auto flex-col gap-1 border-2 border-dashed py-4"
+                          onClick={handleAddVideo}
+                          disabled={isBatchLogging}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Plus className="w-5 h-5" />
+                            {t('create.addAnotherVideo')}
+                          </span>
+                          <span className="text-xs font-normal opacity-70">
+                            {isCurrentVideoEmpty
+                              ? t('create.addAnotherVideoEmptyHint')
+                              : t('create.addAnotherVideoHint', {
+                                  number: activeVideoIndex + 1,
+                                })}
+                          </span>
+                        </button>
+                      )}
+
+                      {hasVideoQueue && (
+                        <div className="flex items-center gap-2 text-sm text-base-content/70">
+                          <Info className="w-4 h-4 shrink-0" />
+                          <span>{t('create.videoQueueSharedHint')}</span>
+                        </div>
+                      )}
 
                       <div className="collapse collapse-arrow surface-muted overflow-visible">
                         <input
@@ -1691,21 +2068,53 @@ function LogScreen() {
               <div className="native-log-submit card surface">
                 <div className="card-body items-center text-center">
                   <h2 className="card-title">{t('create.stepReady')}</h2>
-                  <p>{t('create.reviewHint')}</p>
+                  {hasVideoQueue ? (
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <span className="badge badge-primary badge-soft badge-lg gap-1">
+                        <Clapperboard className="w-4 h-4" />
+                        {t('create.videoSummaryCount', {
+                          count: videoTotalCount,
+                        })}
+                      </span>
+                      <span className="badge badge-primary badge-soft badge-lg gap-1">
+                        <Clock className="w-4 h-4" />
+                        {videoTotalMinutes < 60
+                          ? t('create.videoSummaryMinutes', {
+                              minutes: videoTotalMinutes,
+                            })
+                          : t('create.videoSummaryTime', {
+                              hours: Math.floor(videoTotalMinutes / 60),
+                              minutes: videoTotalMinutes % 60,
+                            })}
+                      </span>
+                    </div>
+                  ) : (
+                    <p>{t('create.reviewHint')}</p>
+                  )}
                   <div className="card-actions justify-center mt-4">
                     <button
                       className="btn btn-primary btn-lg w-full"
                       type="submit"
-                      disabled={isLogCreating || !isFormValid}
+                      disabled={
+                        isLogCreating ||
+                        isBatchLogging ||
+                        (hasVideoQueue
+                          ? !isCurrentVideoEmpty && !isFormValid
+                          : !isFormValid)
+                      }
                     >
-                      {isLogCreating ? (
+                      {isLogCreating || isBatchLogging ? (
                         <span className="loading loading-spinner loading-md"></span>
                       ) : (
                         <CircleCheck className="w-6 h-6" />
                       )}
-                      {isLogCreating
+                      {isLogCreating || isBatchLogging
                         ? t('create.submitting')
-                        : t('create.submit')}
+                        : hasVideoQueue
+                          ? t('create.submitVideos', {
+                              count: videoTotalCount,
+                            })
+                          : t('create.submit')}
                     </button>
                   </div>
                 </div>
@@ -1733,7 +2142,9 @@ function LogScreen() {
             <span className="loading loading-spinner loading-sm text-primary" />
             <div className="flex-1">
               <p className="text-sm font-semibold">
-                {t('create.loggingPlaylist')}
+                {playlistModalOpen
+                  ? t('create.loggingPlaylist')
+                  : t('create.loggingVideos')}
               </p>
               <progress
                 className="progress progress-primary w-full mt-1"

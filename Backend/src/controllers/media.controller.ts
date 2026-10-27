@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import fac from 'fast-average-color-node';
-import { downloadAverageColorImage } from '../services/remoteImage.js';
+import {
+  downloadAverageColorImage,
+  downloadCardImage,
+} from '../services/remoteImage.js';
 import {
   Anime,
   Manga,
@@ -66,6 +69,25 @@ export async function getAverageColor(
     );
 
     return res.status(200).json(color);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getCardImage(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { url } = req.query as { url?: string };
+    if (typeof url !== 'string' || !url) {
+      return res.status(400).json({ message: 'Image URL is required' });
+    }
+    const image = await downloadCardImage(url);
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.status(200).send(image);
   } catch (error) {
     return next(error as customError);
   }

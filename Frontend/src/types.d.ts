@@ -1144,6 +1144,17 @@ export interface ILogData {
   date: Date | null;
 }
 
+interface IUserStatsTopMedia {
+  mediaId: string;
+  type: string;
+  title?: IMediaTitle;
+  image?: string;
+  isAdultImage: boolean;
+  hours: number;
+  chars: number;
+  episodes: number;
+}
+
 interface IUserStats {
   totals: {
     totalLogs: number;
@@ -1161,6 +1172,7 @@ interface IUserStats {
     currentStreak: number;
     longestStreak: number;
   };
+  topMedia?: IUserStatsTopMedia[];
   statsByType: Array<{
     type: string;
     count: number;

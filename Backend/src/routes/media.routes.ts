@@ -4,6 +4,7 @@ import {
   searchMedia,
   multiSearchMedia,
   getAverageColor,
+  getCardImage,
   addMediaReview,
   getMediaReviews,
   editMediaReview,
@@ -22,6 +23,12 @@ import { searchYouTubeVideo, searchYouTubePlaylist } from '../services/searchYou
 const router = Router();
 
 router.get('/utils/avgcolor', requestRateLimit(100, 600_000), getAverageColor);
+router.get(
+  '/utils/card-image',
+  protect,
+  requestRateLimit(200, 600_000),
+  getCardImage
+);
 router.get('/anilist/search', anilistSearchProxy);
 router.get('/googlebooks/search', googleBooksSearchProxy);
 router.get('/search', searchMedia);
