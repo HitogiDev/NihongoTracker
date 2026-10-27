@@ -17,7 +17,12 @@ import {
   IClubChallenge,
   userRoles,
 } from '../types.js';
-import { createActivity, deleteActivityComment, getActivityFeed } from '../services/activity.service.js';
+import {
+  buildClubMediaReviewFilter,
+  createActivity,
+  deleteActivityComment,
+  getActivityFeed,
+} from '../services/activity.service.js';
 import {
   normalizeClubRole,
   requireClubMember,
@@ -87,6 +92,7 @@ export async function getClubFeed(
       clubIds: [club._id],
       scope: 'clubs',
       clubId: club._id,
+      clubMediaReviews: buildClubMediaReviewFilter(club),
       before: req.query.before,
       limit: req.query.limit,
     });

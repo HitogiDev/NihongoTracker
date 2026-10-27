@@ -129,6 +129,8 @@ Club goals and opt-in challenges share the unified objective model in `models/cl
 
 Club member leaderboards support `scope: all-media` (default) and `scope: club-media` through `GET /api/clubs/:clubId/rankings`. Club media uses exact `mediaId` and log type pairs from all `currentMedia` entries, including past vote winners and admin additions. Aggregate visible logs through `services/clubLogMetrics.service.ts` for XP, time, and characters. Do not require completion or restrict logs to each selection's consumption period. Time includes anime logs without explicit time at 24 minutes per episode, matching the shared club metric rule.
 
+Club feeds also show global `media_review` activities by active members. A review appears when its media ID and type match a `currentMedia` entry and it was written between that entry's start date and the end of its end date (UTC). `buildClubMediaReviewFilter` in `services/activity.service.ts` applies this rule when the feed is read, so period edits and membership changes apply to existing reviews.
+
 ### Achievements
 
 `services/achievements/achievementEngine.ts` dispatches by `condition.type`; implementations live in `services/achievements/conditions/*.condition.ts`. When adding a condition type, add its evaluator, its engine switch case, and a test under `Backend/src/__tests__/achievements/conditions/`.
