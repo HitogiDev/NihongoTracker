@@ -1,6 +1,7 @@
 import User from '../../models/user.model.js';
 import {
   addDocuments,
+  addDocumentsAndWait,
   createIndex,
   updateIndexSettings,
   getIndexStats,
@@ -41,7 +42,7 @@ export async function indexUser(user: {
   stats?: { userXp?: number };
 }) {
   try {
-    await addDocuments(USERS_INDEX, [toMeiliUserDocument(user)]);
+    await addDocumentsAndWait(USERS_INDEX, [toMeiliUserDocument(user)]);
   } catch (error) {
     console.error('Failed to index user in Meilisearch:', error);
   }
