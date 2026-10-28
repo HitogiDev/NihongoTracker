@@ -5,6 +5,7 @@ import { SystemBars, SystemBarsStyle } from "@capacitor/core";
 import { isNativeApp } from "../utils/nativeRuntime";
 import { syncOfflineQueue } from "../offline/offlineQueue";
 import { prefetchPersonalData } from "../offline/prefetch";
+import { dispatchNativeDismiss } from "../native/useNativeDismiss";
 
 export default function NativeAppLifecycle() {
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function NativeAppLifecycle() {
         void Keyboard.hide();
         return;
       }
+      if (dispatchNativeDismiss()) return;
       const dialogs =
         document.querySelectorAll<HTMLDialogElement>("dialog[open], dialog.modal-open");
       const dialog = dialogs[dialogs.length - 1];

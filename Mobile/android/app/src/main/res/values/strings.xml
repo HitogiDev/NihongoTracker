@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NihongoTracker</string>
+    <string name="title_activity_main">NihongoTracker</string>
+    <string name="package_name">app.nihongotracker.mobile</string>
+    <string name="custom_url_scheme">app.nihongotracker.mobile</string>
+</resources>

@@ -30,6 +30,7 @@ import apiKeyRoutes from './routes/apiKey.routes.js';
 import achievementRoutes from './routes/achievement.routes.js';
 import activityRoutes from './routes/activity.routes.js';
 import mediaRecommendationRoutes from './routes/mediaRecommendation.routes.js';
+import appLinksRoutes from './routes/appLinks.routes.js';
 import swaggerRoutes from './swagger.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
@@ -87,6 +88,7 @@ app.use(
 );
 app.use(cookieParser());
 
+app.use('/.well-known', appLinksRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/media-requests', mediaRequestRoutes);

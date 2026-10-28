@@ -42,3 +42,40 @@ export async function logoutMobile(
     return next(error as customError);
   }
 }
+
+/** Save or remove the FCM token of the current mobile session. */
+export async function updateMobilePushToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { token } = req.body as { token?: unknown };
+    if (
+      token !== null &&
+      (typeof token !== 'string' || !token.trim() || token.length > 4096)
+    ) {
+      throw apiError('common.validationError', 400, 'Invalid push token');
+    }
+    const sessionId = res.locals.mobileSessionId;
+    if (token) {
+      // A device token belongs to the most recent session that registered it.
+      await MobileSession.updateMany(
+        { pushToken: token.trim(), _id: { $ne: sessionId } },
+        { $unset: { pushToken: 1 } }
+      );
+      await MobileSession.updateOne(
+        { _id: sessionId, user: res.locals.user._id },
+        { $set: { pushToken: token.trim() } }
+      );
+    } else {
+      await MobileSession.updateOne(
+        { _id: sessionId, user: res.locals.user._id },
+        { $unset: { pushToken: 1 } }
+      );
+    }
+    return res.status(204).end();
+  } catch (error) {
+    return next(error as customError);
+  }
+}

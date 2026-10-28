@@ -11,7 +11,8 @@ describe('canonical Jiten media links', () => {
   it.each([
     ['vn', 'v123', 2, 'v123'],
     ['manga', '123', 4, '123'],
-    ['light-novel', '123', 4, '123'],
+    // Manga and light novels share a link type, so a shared id hits the cache.
+    ['light-novel', '456', 4, '456'],
     ['book', 'gbooks-abc', 6, 'abc'],
   ])(
     'looks up %s with its external link type',

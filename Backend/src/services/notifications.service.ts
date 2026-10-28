@@ -1,6 +1,10 @@
 import { Types } from 'mongoose';
 import Notification from '../models/notification.model.js';
 import { INotification, NotificationType } from '../types.js';
+import {
+  sendPushToUser,
+  sendPushToUsers,
+} from './pushNotifications.service.js';
 
 type IdLike = Types.ObjectId | string;
 
@@ -73,8 +77,9 @@ export async function createNotification(
       expireAt: input.expireAt ?? null,
     };
 
+    let notification: INotification | null;
     if (input.groupKey) {
-      return await Notification.findOneAndUpdate(
+      notification = await Notification.findOneAndUpdate(
         { recipient, groupKey: input.groupKey },
         {
           $set: { ...payload, isRead: false, readAt: null },
@@ -83,9 +88,23 @@ export async function createNotification(
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+    } else {
+      notification = await Notification.create({ ...payload, count: 1 });
     }
 
-    return await Notification.create({ ...payload, count: 1 });
+    if (notification) {
+      void sendPushToUser(recipient, {
+        title: notification.title,
+        body: notification.body,
+        titleKey: notification.titleKey,
+        bodyKey: notification.bodyKey,
+        meta: notification.meta,
+        link: notification.link,
+        notificationId: String(notification._id),
+        tag: notification.groupKey,
+      });
+    }
+    return notification;
   } catch (error) {
     console.error('Failed to create notification:', error);
     return null;
@@ -139,6 +158,11 @@ export async function insertNotificationBatches(
     batch = [];
     await Notification.insertMany(docs, { ordered: false });
     inserted += docs.length;
+    // Send push messages in the background so a large broadcast does not wait for Firebase.
+    void sendPushToUsers(
+      docs.map((doc) => doc.recipient),
+      input
+    );
   };
 
   for await (const recipient of recipients) {

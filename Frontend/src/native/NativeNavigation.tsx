@@ -14,8 +14,23 @@ import { nativeRoute } from "./navigation";
 import Modal from "../components/ui/Modal";
 import Button from "../components/ui/Button";
 import { NativeDirtyContext } from "./NativeDirtyContext";
+import { useNativePush } from "./useNativePush";
 
 const positions = new Map<string, number>();
+const APP_LINK_HOSTS = new Set(["nihongotracker.app", "www.nihongotracker.app"]);
+let launchUrlRead = false;
+
+/** Return the in-app route of a verified site link, or null for other URLs. */
+function appLinkRoute(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || !APP_LINK_HOSTS.has(parsed.hostname))
+      return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 export default function NativeNavigation({
   children,
@@ -33,6 +48,7 @@ export default function NativeNavigation({
   const clearDirty = useCallback(() => {
     dirty.current = false;
   }, []);
+  useNativePush(user?._id, navigate);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       dirty.current &&
@@ -52,6 +68,25 @@ export default function NativeNavigation({
       /* The tabs still work without saved filters. */
     }
   }, [pathname, search, user?._id, user?.username]);
+
+  useEffect(() => {
+    if (!isNativeApp()) return undefined;
+    const open = (url: string | undefined) => {
+      const route = url ? appLinkRoute(url) : null;
+      if (route) navigate(route);
+    };
+    // The launch URL starts the app once. This component remounts on account changes.
+    if (!launchUrlRead) {
+      launchUrlRead = true;
+      void App.getLaunchUrl()
+        .then((launch) => open(launch?.url))
+        .catch(() => undefined);
+    }
+    const listener = App.addListener("appUrlOpen", ({ url }) => open(url));
+    return () => {
+      void listener.then((handle) => handle.remove());
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const onBack = (event: Event) => {

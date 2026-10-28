@@ -2,7 +2,6 @@ import { get, update } from 'idb-keyval';
 import type { SearchResultType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { isNativeApp } from '../utils/nativeRuntime';
-import { cacheResponseImages } from './imageCache';
 
 const key = (userId: string) => `nihongo:media:${userId}`;
 
@@ -18,7 +17,6 @@ export async function rememberMedia(results: SearchResultType[]) {
     );
     return [...combined.values()].slice(-500);
   });
-  void cacheResponseImages(userId, results).catch(() => undefined);
   return results;
 }
 

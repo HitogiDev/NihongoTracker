@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import Button from './Button';
+import { useNativeDismiss } from '../../native/useNativeDismiss';
 
 interface MultiSelectDropdownProps {
   label: ReactNode;
@@ -30,6 +31,7 @@ export default function MultiSelectDropdown({
 }: MultiSelectDropdownProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  useNativeDismiss(open, () => setOpen(false));
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({
