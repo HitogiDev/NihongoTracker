@@ -46,6 +46,20 @@ export function notFoundHandler(
   return next(error);
 }
 
+/** `{ path: message }` from a mongoose `ValidationError`. */
+export function validationFields(err: Error): Record<string, string> {
+  const errors =
+    'errors' in err && err.errors && typeof err.errors === 'object'
+      ? (err.errors as Record<string, { message?: unknown }>)
+      : {};
+  return Object.fromEntries(
+    Object.entries(errors).map(([path, detail]) => [
+      path,
+      typeof detail?.message === 'string' ? detail.message : 'Invalid value',
+    ])
+  );
+}
+
 export function errorHandler(
   err: customError | Error,
   _req: Request,
@@ -61,6 +75,7 @@ export function errorHandler(
   let statusCode = error.statusCode === 200 ? 500 : error.statusCode;
   let {message} = error;
   let {code} = error;
+  let fields: Record<string, string> | undefined;
 
   if (err.name === 'MulterError') {
     statusCode = 'code' in err && err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
@@ -77,8 +92,14 @@ export function errorHandler(
   // Manejo de errores de validación de MongoDB
   if (err.name === 'ValidationError') {
     statusCode = 400;
-    message = 'Validation Error';
     code = 'common.validationError';
+    // Which paths failed and why, so a client can point at the field instead
+    // of guessing. Mongoose keys `errors` by path ("episodes", "media.title").
+    fields = validationFields(err);
+    const paths = Object.keys(fields);
+    message = paths.length
+      ? `Validation Error: ${paths.join(', ')}`
+      : 'Validation Error';
   }
 
   // Manejo específico de errores JWT
@@ -116,6 +137,7 @@ export function errorHandler(
     message,
     ...(code && { code }),
     ...(error.params && { params: error.params }),
+    ...(fields && { fields }),
     ...(process.env.NODE_ENV !== 'production' && { stack: error.stack }),
   });
 }
