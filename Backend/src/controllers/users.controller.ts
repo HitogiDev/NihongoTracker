@@ -2703,14 +2703,31 @@ export async function searchUsers(
 
     const results = await searchDocuments('users', query, { limit: 10 });
 
-    // Transform Meilisearch results to match the existing API shape
-    const users = results.hits.map((hit) => ({
-      _id: hit.id as string,
-      username: hit.username as string,
-      avatar: hit.avatar as string | null,
-      banner: hit.banner as string | null,
-      stats: { xp: hit.xp as number },
-    }));
+    // Meilisearch only ranks the matches. Read the profile fields from MongoDB
+    // because an index write can fail and leave an old avatar in the index.
+    const ids = results.hits
+      .map((hit) => String(hit.id))
+      .filter((id) => Types.ObjectId.isValid(id));
+    const profiles = await User.find({ _id: { $in: ids } })
+      .select('username avatar banner stats.userXp')
+      .lean();
+    const profilesById = new Map(
+      profiles.map((profile) => [String(profile._id), profile])
+    );
+
+    const users = ids.flatMap((id) => {
+      const profile = profilesById.get(id);
+      if (!profile) return [];
+      return [
+        {
+          _id: id,
+          username: profile.username,
+          avatar: profile.avatar || null,
+          banner: profile.banner || null,
+          stats: { xp: profile.stats?.userXp ?? 0 },
+        },
+      ];
+    });
 
     return res.json(users);
   } catch (error) {
