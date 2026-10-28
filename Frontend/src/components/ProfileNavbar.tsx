@@ -6,6 +6,7 @@ import { Ellipsis, Settings } from 'lucide-react';
 import { isMobileApp } from '../utils/nativeRuntime';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 function ProfileNavbar({
   username,
@@ -29,6 +30,10 @@ function ProfileNavbar({
     Boolean(loggedUsername) &&
     viewedUsername === loggedUsername;
   const showModerationTab = Boolean(isAdmin && !isOwnProfile);
+  const featureFlags = useFeatureFlags();
+  // Admins see Wrapped before it is turned on, so they can check it.
+  const showWrappedTab =
+    canViewStatistics && (featureFlags.wrapped || Boolean(isAdmin));
 
   const isActive = (path: string) => {
     if (path === `/user/${username}/`) {
@@ -56,7 +61,7 @@ function ProfileNavbar({
     </nav>
     <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title={nt('native.more')}>
       <nav className="flex flex-col gap-2">
-        {(['list', 'lists', 'goals', 'achievements', ...(showModerationTab ? ['moderation'] : [])] as const).filter((tab) => tab !== 'list' || canViewImmersionActivity).map((tab) => <Link key={tab} to={`/user/${username}/${tab}`} className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}>{t(tab === 'list' ? 'tabs.immersionList' : `tabs.${tab}` as 'tabs.lists')}</Link>)}
+        {(['list', 'lists', 'goals', 'achievements', 'wrapped', ...(showModerationTab ? ['moderation'] : [])] as const).filter((tab) => (tab !== 'list' || canViewImmersionActivity) && (tab !== 'wrapped' || showWrappedTab)).map((tab) => <Link key={tab} to={`/user/${username}/${tab}`} className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}>{t(tab === 'list' ? 'tabs.immersionList' : `tabs.${tab}` as 'tabs.lists')}</Link>)}
         {isOwnProfile && <Link to="/settings" className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}><Settings className="h-5 w-5" />{nt('titles.settings')}</Link>}
       </nav>
     </Modal>
@@ -88,6 +93,16 @@ function ProfileNavbar({
                 className={tabClass(`/user/${username}/stats`)}
               >
                 {t('tabs.stats')}
+              </Link>
+            </li>
+          )}
+          {showWrappedTab && (
+            <li>
+              <Link
+                to={`/user/${username}/wrapped`}
+                className={tabClass(`/user/${username}/wrapped`)}
+              >
+                {t('tabs.wrapped')}
               </Link>
             </li>
           )}

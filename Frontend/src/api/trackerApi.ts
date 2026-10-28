@@ -26,6 +26,7 @@ import {
   IMediaDocument,
   IImmersionList,
   ICurrentMediaItem,
+  IWrappedStats,
   IAverageColor,
   IUserStats,
   IUpdateLogRequest,
@@ -554,6 +555,32 @@ export async function removeMediaFromImmersionListFn(payload: {
     hidden: boolean;
     removedStatus: boolean;
   };
+}
+
+export interface IFeatureFlags {
+  wrapped: boolean;
+}
+
+export async function getFeatureFlagsFn() {
+  const { data } = await api.get<IFeatureFlags>('features');
+  return data;
+}
+
+export async function updateFeatureFlagFn(
+  key: keyof IFeatureFlags,
+  enabled: boolean
+) {
+  const { data } = await api.patch<IFeatureFlags>(`features/${key}`, {
+    enabled,
+  });
+  return data;
+}
+
+export async function getWrappedFn(username: string, year?: number) {
+  const { data } = await api.get<IWrappedStats>(`users/${username}/wrapped`, {
+    params: year ? { year } : undefined,
+  });
+  return data;
 }
 
 export async function getCardImageFn(url: string): Promise<Blob> {

@@ -163,5 +163,14 @@
     "tooMany": "Send to {{max}} users or fewer at a time.",
     "englishHint": "English is required. Users see it when their language has no translation.",
     "translationHint": "Optional. Users with this language see it. Empty fields use the English text."
+  },
+  "features": {
+    "title": "Features",
+    "description": "Turn site-wide features on or off for everyone. Admins can always see them.",
+    "saved": "Feature updated",
+    "wrapped": {
+      "label": "Nihongo Wrapped",
+      "description": "Show the Wrapped tab on every profile."
+    }
   }
 }

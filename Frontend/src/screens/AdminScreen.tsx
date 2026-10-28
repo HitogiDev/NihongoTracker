@@ -1,4 +1,5 @@
 import DropdownSelect from '../components/ui/DropdownSelect';
+import FeatureFlagsCard from '../components/FeatureFlagsCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Field from '../components/ui/Field';
 import DatePickerInput from '../components/ui/DatePickerInput';
@@ -2615,6 +2616,7 @@ function AdminScreen() {
 
         {selectedTab === 'system' && (
           <div className="space-y-6">
+            <FeatureFlagsCard />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="card surface">
                 <div className="card-body">

@@ -101,6 +101,7 @@ const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'));
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.tsx'));
 const SharedLogScreen = lazy(() => import('./screens/SharedLogScreen.tsx'));
 const StatsScreen = lazy(() => import('./screens/StatsScreen.tsx'));
+const WrappedScreen = lazy(() => import('./screens/WrappedScreen.tsx'));
 const TextHooker = lazy(() => import('./screens/HookerScreen.tsx'));
 const MediaSocial = lazy(() => import('./screens/MediaSocial.tsx'));
 const MediaReviews = lazy(() => import('./screens/MediaReviews.tsx'));
@@ -210,6 +211,7 @@ const router = createBrowserRouter(
           <Route index element={<ProfileScreen />} />
           <Route path="activity" element={<ProfileActivityScreen />} />
           <Route path="stats" element={<StatsScreen />} />
+          <Route path="wrapped" element={<WrappedScreen />} />
           <Route path="list" element={<ListScreen />} />
           <Route path="lists" element={<UserListsScreen />} />
           <Route path="goals" element={<GoalsScreen />} />

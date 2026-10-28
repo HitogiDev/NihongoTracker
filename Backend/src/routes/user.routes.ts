@@ -9,6 +9,7 @@ import {
   clearUserData,
   getImmersionList,
   getCurrentMedia,
+  getWrapped,
   compareUserStats,
   getRankingSummary,
   getRankingHistory,
@@ -109,6 +110,7 @@ router.get('/:username/recentlogs', protect, getRecentLogs);
 
 router.get('/:username/immersionlist', optionalProtect, getImmersionList);
 router.get('/:username/current-media', optionalProtect, getCurrentMedia);
+router.get('/:username/wrapped', optionalProtect, getWrapped);
 
 router.get('/:username/gantt', optionalProtect, getGanttData);
 
