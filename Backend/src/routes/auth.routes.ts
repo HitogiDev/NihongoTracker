@@ -15,6 +15,7 @@ import {
 import {
   logoutMobile,
   refreshMobileSession,
+  updateMobilePushToken,
 } from '../controllers/mobileAuth.controller.js';
 import {
   protect,
@@ -31,6 +32,7 @@ router.post('/login', login);
 router.post('/mobile/login', requestRateLimit(10, 600_000), loginMobile);
 router.post('/mobile/refresh', requestRateLimit(30, 600_000), refreshMobileSession);
 router.post('/mobile/logout', protect, requireMobileSession, logoutMobile);
+router.put('/mobile/push-token', protect, requireMobileSession, updateMobilePushToken);
 
 router.post('/logout', logout);
 

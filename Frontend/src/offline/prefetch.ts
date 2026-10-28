@@ -9,11 +9,24 @@ import type {
 } from '../types';
 import { rememberMedia } from './mediaCache';
 import { pruneImageCache } from './imageCache';
+import { pruneApiCache } from './offlineStore';
 import { refreshOfflineAccount } from './offlineQueue';
+
+const MAX_MEDIA_DETAILS = 10;
+const MAX_CLUBS = 10;
+const MAX_FOLLOWED_PROFILES = 20;
 
 let prefetching = false;
 let lastFetchedAt = 0;
 let lastAccount = '';
+
+/** Skip optional downloads when the user turned on Android Data Saver. */
+function saveData() {
+  const connection = (navigator as Navigator & {
+    connection?: { saveData?: boolean };
+  }).connection;
+  return connection?.saveData === true;
+}
 
 export async function prefetchPersonalData() {
   const user = useUserDataStore.getState().user;
@@ -47,38 +60,40 @@ export async function prefetchPersonalData() {
     ];
     const results = await Promise.allSettled(requests);
     if (!sameAccount()) return;
+    // Detail requests run one at a time. Limit them so a resume does not
+    // send hundreds of requests over a mobile connection.
     const logs = results[1];
     if (logs.status === 'fulfilled' && Array.isArray(logs.value.data)) {
+      const media = new Set<string>();
       for (const log of logs.value.data as ILog[]) {
+        if (log.mediaId && log.media)
+          media.add(`${log.media.type}/${log.mediaId}`);
+      }
+      for (const path of [...media].slice(0, MAX_MEDIA_DETAILS)) {
         if (!sameAccount()) return;
-        if (log.mediaId && log.media) {
-          const result = await api
-            .get<SearchResultType>(`media/${log.media.type}/${log.mediaId}`)
-            .catch(() => null);
-          if (result && sameAccount()) await rememberMedia([result.data]);
-        }
+        const result = await api
+          .get<SearchResultType>(`media/${path}`)
+          .catch(() => null);
+        if (result && sameAccount()) await rememberMedia([result.data]);
       }
     }
     const clubs = results[6];
     if (clubs.status === 'fulfilled' && Array.isArray(clubs.value.data)) {
-      for (const club of clubs.value.data as IClub[]) {
+      for (const club of (clubs.value.data as IClub[]).slice(0, MAX_CLUBS)) {
         if (!sameAccount()) return;
         await api.get(`clubs/${club._id}`).catch(() => undefined);
       }
     }
-    for (let page = 1; sameAccount(); page++) {
+    if (!saveData()) {
       const response = await api
         .get<IConnectionsResponse>(`users/${user.username}/following`, {
-          params: { page, limit: 20 },
+          params: { page: 1, limit: MAX_FOLLOWED_PROFILES },
         })
         .catch(() => null);
-      if (!response || !sameAccount()) break;
-      for (const connection of response.data.users) {
+      for (const connection of response?.data.users ?? []) {
         if (!sameAccount()) return;
         await api.get(`users/${connection.username}`).catch(() => undefined);
       }
-      if (page * 20 >= response.data.total || !response.data.users.length)
-        break;
     }
     if (sameAccount()) {
       await refreshOfflineAccount();
@@ -86,6 +101,7 @@ export async function prefetchPersonalData() {
       lastFetchedAt = Date.now();
     }
     await pruneImageCache(user._id);
+    await pruneApiCache(user._id);
   } finally {
     prefetching = false;
   }

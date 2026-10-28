@@ -126,6 +126,21 @@ async function sendOperation(operation: OfflineOperation) {
   }
 }
 
+/**
+ * Changes with the same target must reach the server in order.
+ * Logs are independent, so they have no target.
+ */
+function operationTarget(operation: OfflineOperation): string | null {
+  const { type, payload } = operation;
+  if (type === 'follow' || type === 'unfollow')
+    return `user:${String(payload.username).toLowerCase()}`;
+  if (type === 'joinClub' || type === 'leaveClub')
+    return `club:${String(payload.clubId)}`;
+  if (type === 'settings') return `settings:${String(payload.key)}`;
+  if (type === 'profile') return 'profile';
+  return null;
+}
+
 export async function syncOfflineQueue() {
   if (!isNativeApp() || !navigator.onLine) return;
   if (syncInFlight) return syncInFlight;
@@ -136,10 +151,16 @@ export async function syncOfflineQueue() {
   syncInFlight = (async () => {
     const operations = await getOfflineOperations(userId);
     const results = new Map<string, unknown>();
+    const blocked = new Set<string>();
     let changed = false;
     for (const operation of operations) {
       if (useUserDataStore.getState().user?._id !== userId) break;
-      if (operation.status === 'failed') break;
+      const target = operationTarget(operation);
+      if (target && blocked.has(target)) continue;
+      if (operation.status === 'failed') {
+        if (target) blocked.add(target);
+        continue;
+      }
       try {
         await updateOfflineOperation({ ...operation, attempted: true });
         if (useUserDataStore.getState().user?._id !== userId) break;
@@ -161,7 +182,10 @@ export async function syncOfflineQueue() {
             ? String(error.response?.data?.message || error.message)
             : 'The server rejected this change.',
         });
-        break;
+        // A retryable failure usually means the connection is gone, so stop.
+        // A rejected change blocks only later changes to the same target.
+        if (isRetryable) break;
+        if (target) blocked.add(target);
       }
     }
     if (changed) {

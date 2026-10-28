@@ -7,6 +7,7 @@ import { useUserDataStore } from '../../store/userData';
 import { isMobileApp } from '../../utils/nativeRuntime';
 import Modal from './Modal';
 import 'react-day-picker/style.css';
+import { useNativeDismiss } from '../../native/useNativeDismiss';
 
 interface DatePickerInputProps {
   id?: string;
@@ -54,6 +55,7 @@ export default function DatePickerInput({
 }: DatePickerInputProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  useNativeDismiss(isCalendarOpen, () => setIsCalendarOpen(false));
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);

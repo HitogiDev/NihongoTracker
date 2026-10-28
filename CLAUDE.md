@@ -6,16 +6,17 @@ This file gives Codex and other coding agents repository-specific guidance. It a
 
 NihongoTracker is a gamified Japanese immersion tracker with XP, levels, streaks, leaderboards, achievements, clubs, media tracking, and realtime texthooker sessions.
 
-The repository is a monorepo with two independently versioned npm packages and no root `package.json`:
+The repository is a monorepo with three independently versioned npm packages and no root `package.json`:
 
 - `Backend/`: Express, TypeScript, MongoDB/Mongoose, Socket.IO, and Vitest. Source is in `Backend/src`; TypeScript compiles to `Backend/build`.
 - `Frontend/`: React 19, TypeScript, Vite, TanStack Query, Zustand, Tailwind CSS v4, and daisyUI v5. Production output is `Frontend/dist`.
+- `Mobile/`: the Capacitor Android container. It packages the `Frontend/` build and holds the native `android/` project.
 
 In production, the frontend build is copied to `Backend/dist`; Express serves the API, static frontend files, and the SPA fallback from one process.
 
 ## Working rules
 
-- Run npm commands from `Backend/` or `Frontend/`, never from the repository root.
+- Run npm commands from `Backend/`, `Frontend/`, or `Mobile/`, never from the repository root.
 - Work directly on `main`. Do not create or switch to other branches.
 - Commit only when asked. Do not add a Co-Authored-By trailer. Do not push.
 - Preserve unrelated user changes. The worktree may already be dirty.
@@ -96,9 +97,13 @@ cd ../Backend && npm run build:frontend && npm run build && npm start
 
 ### Authentication and errors
 
-Capacitor Android builds share the frontend in `Frontend/`. The native container is in the sibling `NihongoTracker App/capacitor` package. The Expo prototype remains separate.
+Capacitor Android builds share the frontend in `Frontend/`. The native container is the `Mobile/` package. Its `scripts/build.mjs` builds `Frontend/` and requires matching Capacitor versions in both packages.
 Mobile login and refresh use `/api/auth/mobile/*`. Access JWTs require an active `MobileSession` through Bearer authentication. Refresh tokens rotate atomically and are stored as hashes. Password changes revoke mobile sessions.
 Native credentials use secure storage. Page and image caches plus the outbox use account-scoped IndexedDB. Logs use a stable `Idempotency-Key` from their first attempt. Keep the log unique index aligned with the migration script.
+The outbox, API cache, and image cache each use their own IndexedDB store from `offline/idbStores.ts`. `offlineStore.ts` skips search and utility responses and prunes old responses. Images are cached only from responses shown offline. A change that the server rejects blocks only later changes to the same target. Logs have no target.
+Push notifications use FCM. `createNotification` sends them through `services/pushNotifications.service.ts` when `FIREBASE_SERVICE_ACCOUNT_JSON` is set. `insertNotificationBatches` also sends them for broadcasts. `services/pushText.ts` translates each message into the recipient's `settings.language` from the frontend `notifications` and `achievements` catalogs, so keep `Frontend/` next to `Backend/` in deployments. The token is stored on the `MobileSession`, so logout and session revocation stop delivery. The app registers only when the build sets `VITE_PUSH_ENABLED`.
+Android App Links use `/.well-known/assetlinks.json` from `routes/appLinks.routes.ts`. Keep the manifest path prefixes aligned with the routes that `NativeNavigation` opens.
+The Android back button first closes the keyboard, then overlays that use `useNativeDismiss`, then open dialogs, then navigates. Use `useNativeDismiss` for new portaled menus and popovers.
 
 `middlewares/authMiddleware.ts` supports an `x-api-key` first, then a JWT in an httpOnly cookie. `protect` requires identity; `optionalProtect` attaches `res.locals.user` when available. Authentication also rejects banned users and checks Patreon tier expiry.
 

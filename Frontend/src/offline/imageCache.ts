@@ -1,4 +1,5 @@
-import { del, get, keys, set } from 'idb-keyval';
+import { delMany, entries, get, set } from 'idb-keyval';
+import { imageCacheStore } from './idbStores';
 import { apiBaseUrl } from '../utils/nativeRuntime';
 
 interface CachedImage {
@@ -15,7 +16,10 @@ export function mobileImageUrl(src: string) {
 }
 
 export async function cachedImage(userId: string, src: string) {
-  const image = await get<CachedImage>(key(userId, mobileImageUrl(src)));
+  const image = await get<CachedImage>(
+    key(userId, mobileImageUrl(src)),
+    imageCacheStore,
+  );
   return image && Date.now() - image.storedAt < ttl ? image.blob : null;
 }
 
@@ -35,7 +39,11 @@ export async function cacheImage(userId: string, src: string) {
     const blob = await response.blob();
     if (!blob.type.startsWith('image/') || blob.size > 4 * 1024 * 1024)
       return null;
-    await set(imageKey, { blob, storedAt: Date.now() } satisfies CachedImage);
+    await set(
+      imageKey,
+      { blob, storedAt: Date.now() } satisfies CachedImage,
+      imageCacheStore,
+    );
     return blob;
   })()
     .catch(() => null)
@@ -67,25 +75,16 @@ export async function cacheResponseImages(userId: string, data: unknown) {
 }
 
 export async function pruneImageCache(userId: string) {
-  const imageKeys = (await keys()).filter(
-    (entry): entry is string =>
-      typeof entry === 'string' && entry.startsWith(`nihongo:image:${userId}:`),
-  );
-  const images = await Promise.all(
-    imageKeys.map(async (entry) => ({
-      entry,
-      cached: await get<CachedImage>(entry),
-    })),
-  );
-  images.sort((a, b) => (b.cached?.storedAt ?? 0) - (a.cached?.storedAt ?? 0));
-  await Promise.all(
-    images
-      .filter(
-        (image, index) =>
-          index >= 300 ||
-          !image.cached ||
-          Date.now() - image.cached.storedAt > ttl,
-      )
-      .map(({ entry }) => del(entry)),
-  );
+  const prefix = `nihongo:image:${userId}:`;
+  const now = Date.now();
+  const images = (await entries<string, CachedImage>(imageCacheStore))
+    .filter(([entry]) => typeof entry === 'string' && entry.startsWith(prefix))
+    .sort(([, left], [, right]) => (right?.storedAt ?? 0) - (left?.storedAt ?? 0));
+  const stale = images
+    .filter(
+      ([, cached], index) =>
+        index >= 300 || !cached || now - cached.storedAt > ttl,
+    )
+    .map(([entry]) => entry);
+  if (stale.length) await delMany(stale, imageCacheStore);
 }

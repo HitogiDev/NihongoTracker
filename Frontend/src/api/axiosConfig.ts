@@ -14,6 +14,8 @@ import {
   readCachedApiResponse,
 } from '../offline/offlineStore';
 
+const UPLOAD_TIMEOUT_MS = 120000;
+
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl(),
   withCredentials: !isNativeApp(),
@@ -45,6 +47,12 @@ axiosInstance.interceptors.request.use(async (config) => {
     }
     if (!navigator.onLine)
       throw new axios.AxiosError('Offline', 'ERR_NETWORK', config);
+    // Files cannot wait in the offline queue, so give uploads time on slow networks.
+    if (
+      config.data instanceof FormData &&
+      [...config.data.values()].some((value) => value instanceof Blob)
+    )
+      config.timeout = UPLOAD_TIMEOUT_MS;
   }
   return config;
 });

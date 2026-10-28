@@ -1,8 +1,25 @@
-import { del, get, keys, set } from 'idb-keyval';
+import { del, delMany, entries, get, keys, set } from 'idb-keyval';
 import { cacheResponseImages } from './imageCache';
+import { apiCacheStore, migrateLegacyEntries, outboxStore } from './idbStores';
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_CACHED_RESPONSES = 400;
 const QUEUE_EVENT = 'nihongo:offline-queue-change';
+
+/**
+ * Do not keep responses that are useless offline or that change with each keystroke.
+ * Offline media search reads `mediaCache` instead of these responses.
+ */
+const UNCACHED_REQUESTS =
+  /\/api\/(?:users\/search|media\/(?:search|multi-search|utils|youtube)|users\/compare|anilist|patreon|changelogs\/admin)\b/;
+
+/** Image URLs are cached only from responses that the app shows offline. */
+const IMAGE_SOURCE_REQUESTS =
+  /\/api\/(?:users\/[^/?]+(?:\/(?:logs|recentlogs|dashboard|following))?|users\/me(?:\/customization)?|users\/ranking|clubs(?:\/[^/?]+)?|clubs\/user\/my-clubs|media\/[^/?]+\/[^/?]+)(?:\?|$)/;
+
+export function isCacheableRequest(requestKey: string) {
+  return !UNCACHED_REQUESTS.test(requestKey);
+}
 
 export type OfflineOperationType =
   | 'log'
@@ -49,20 +66,44 @@ export async function cacheApiResponse(
   requestKey: string,
   data: unknown,
 ) {
-  await set(cacheKey(userId, requestKey), {
-    data,
-    storedAt: Date.now(),
-  } satisfies CachedApiResponse);
-  void cacheResponseImages(userId, data).catch(() => undefined);
+  if (!isCacheableRequest(requestKey)) return;
+  await set(
+    cacheKey(userId, requestKey),
+    { data, storedAt: Date.now() } satisfies CachedApiResponse,
+    apiCacheStore,
+  );
+  if (IMAGE_SOURCE_REQUESTS.test(requestKey))
+    void cacheResponseImages(userId, data).catch(() => undefined);
 }
 
 export async function readCachedApiResponse(
   userId: string,
   requestKey: string,
 ): Promise<unknown | null> {
-  const cached = await get<CachedApiResponse>(cacheKey(userId, requestKey));
+  const cached = await get<CachedApiResponse>(
+    cacheKey(userId, requestKey),
+    apiCacheStore,
+  );
   if (!cached || Date.now() - cached.storedAt > CACHE_TTL_MS) return null;
   return cached.data;
+}
+
+/** Delete expired responses and keep only the most recent responses. */
+export async function pruneApiCache(userId: string) {
+  const prefix = `nihongo:api:${userId}:`;
+  const now = Date.now();
+  const cached = (await entries<string, CachedApiResponse>(apiCacheStore))
+    .filter(([key]) => typeof key === 'string' && key.startsWith(prefix))
+    .sort(([, left], [, right]) => (right?.storedAt ?? 0) - (left?.storedAt ?? 0));
+  const stale = cached
+    .filter(
+      ([, value], index) =>
+        index >= MAX_CACHED_RESPONSES ||
+        !value ||
+        now - value.storedAt > CACHE_TTL_MS,
+    )
+    .map(([key]) => key);
+  if (stale.length) await delMany(stale, apiCacheStore);
 }
 
 export async function enqueueOfflineOperation(
@@ -73,18 +114,20 @@ export async function enqueueOfflineOperation(
     createdAt: Date.now(),
     status: 'pending',
   };
-  await set(operationKey(entry), entry);
+  await migrateLegacyEntries();
+  await set(operationKey(entry), entry, outboxStore);
   notifyOfflineQueueChanged();
   return entry;
 }
 
 export async function getOfflineOperations(userId: string) {
-  const matchingKeys = (await keys()).filter(
+  await migrateLegacyEntries();
+  const matchingKeys = (await keys(outboxStore)).filter(
     (key): key is string =>
       typeof key === 'string' && key.startsWith(`nihongo:outbox:${userId}:`),
   );
   const operations = await Promise.all(
-    matchingKeys.map((key) => get<OfflineOperation>(key)),
+    matchingKeys.map((key) => get<OfflineOperation>(key, outboxStore)),
   );
   return operations
     .filter((operation): operation is OfflineOperation => Boolean(operation))
@@ -92,12 +135,12 @@ export async function getOfflineOperations(userId: string) {
 }
 
 export async function updateOfflineOperation(operation: OfflineOperation) {
-  await set(operationKey(operation), operation);
+  await set(operationKey(operation), operation, outboxStore);
   notifyOfflineQueueChanged();
 }
 
 export async function removeOfflineOperation(operation: OfflineOperation) {
-  await del(operationKey(operation));
+  await del(operationKey(operation), outboxStore);
   notifyOfflineQueueChanged();
 }
 

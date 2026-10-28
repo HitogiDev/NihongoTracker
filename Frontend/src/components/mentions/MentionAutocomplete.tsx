@@ -28,6 +28,7 @@ import { getMediaDisplayTitle } from '../../utils/mediaTitle';
 import Spinner from '../ui/Spinner';
 import UserAvatar from '../UserAvatar';
 import MentionPickerModal, { type MentionTab } from './MentionPickerModal';
+import { useNativeDismiss } from '../../native/useNativeDismiss';
 
 /**
  * Match an @ trigger that ends at the caret.
@@ -201,6 +202,7 @@ export default function MentionAutocomplete({
   }, [usersQuery.data, mediaQuery.data, canSearch, query, blurAdult, t]);
 
   const close = useCallback(() => setTrigger(null), []);
+  useNativeDismiss(trigger !== null, close);
 
   const refresh = useCallback(() => {
     const textarea = textareaRef.current;

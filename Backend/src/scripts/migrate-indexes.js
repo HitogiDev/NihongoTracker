@@ -44,6 +44,12 @@ const MIGRATIONS = [
     indexes: [
       { key: { expiresAt: 1 }, name: 'expiresAt_1', expireAfterSeconds: 0, description: 'Remove expired mobile sessions' },
       { key: { user: 1, createdAt: -1 }, name: 'user_1_createdAt_-1', description: 'Mobile sessions for an account' },
+      {
+        key: { pushToken: 1 },
+        name: 'pushToken_1',
+        partialFilterExpression: { pushToken: { $type: 'string' } },
+        description: 'Find and remove push tokens of mobile sessions',
+      },
     ],
   },
   {

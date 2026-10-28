@@ -15,6 +15,7 @@ import type {
   ReactNode,
 } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useNativeDismiss } from '../../native/useNativeDismiss';
 
 interface DropdownOption {
   value: string;
@@ -106,6 +107,7 @@ export default function DropdownSelect({
   );
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
+  useNativeDismiss(isOpen, () => setIsOpen(false));
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);

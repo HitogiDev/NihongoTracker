@@ -236,6 +236,9 @@ Create a `Backend/.env` file with the following variables:
 | `BACKEND_URL`                   | No       | Backend base URL (default local: `http://localhost:3000`)             |
 | `FRONTEND_URL`                  | No       | Frontend base URL (default local: `http://localhost:5173`)            |
 | `VITE_API_BASE_URL`             | No       | Capacitor build API URL. Set in the build terminal, including `/api/`. Local USB default: `http://localhost:3000/api/`. |
+| `VITE_PUSH_ENABLED`             | No       | Capacitor build flag for push registration. The build script sets `true` when `android/app/google-services.json` exists. |
+| `ANDROID_APP_ID`                | No       | Android package name for App Links (default: `app.nihongotracker.mobile`) |
+| `ANDROID_APP_SHA256_FINGERPRINTS` | No     | Comma-separated SHA-256 fingerprints of the Android signing certificates. Serves `/.well-known/assetlinks.json` when set. |
 | `FIREBASE_API_KEY`              | **Yes**  | Firebase API key                                                      |
 | `FIREBASE_AUTH_DOMAIN`          | **Yes**  | Firebase auth domain                                                  |
 | `FIREBASE_PROJECT_ID`           | **Yes**  | Firebase project ID                                                   |
@@ -243,6 +246,7 @@ Create a `Backend/.env` file with the following variables:
 | `FIREBASE_MESSAGING_SENDER_ID`  | **Yes**  | Firebase messaging sender ID                                          |
 | `FIREBASE_APP_ID`               | **Yes**  | Firebase app ID                                                       |
 | `FIREBASE_MEASUREMENT_ID`       | No       | Firebase analytics measurement ID                                     |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | No      | Firebase service account JSON on one line. Enables Android push notifications through FCM. |
 | `YOUTUBE_API_KEY`               | No       | YouTube Data API key (for video metadata)                             |
 | `GOOGLE_BOOKS_API_KEY`          | No       | Google Books API key (book search); keyless works at lower quota      |
 | `JITEN_API_URL`                 | No       | Dictionary API URL used by text tooling                               |
