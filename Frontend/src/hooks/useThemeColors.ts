@@ -158,7 +158,8 @@ export function useThemeColors(alpha = 1) {
     const observer = new MutationObserver(updateColors);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme'],
+      // Custom palettes set inline variables in the style attribute.
+      attributeFilter: ['data-theme', 'style'],
     });
 
     return () => observer.disconnect();

@@ -164,5 +164,14 @@
     "tooMany": "Envía a {{max}} usuarios o menos cada vez.",
     "englishHint": "El inglés es obligatorio. Se muestra si el idioma del usuario no tiene traducción.",
     "translationHint": "Opcional. Lo ven los usuarios con este idioma. Los campos vacíos usan el texto en inglés."
+  },
+  "features": {
+    "title": "Funciones",
+    "description": "Activa o desactiva funciones para todo el sitio. Los admins siempre las ven.",
+    "saved": "Función actualizada",
+    "wrapped": {
+      "label": "Nihongo Wrapped",
+      "description": "Muestra la pestaña Wrapped en todos los perfiles."
+    }
   }
 }

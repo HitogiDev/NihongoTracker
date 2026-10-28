@@ -991,6 +991,77 @@ export interface ICurrentMediaItem {
   } | null;
 }
 
+export interface IWrappedMedia {
+  mediaId: string;
+  type: string;
+  title: IMediaTitle;
+  contentImage?: string;
+  isAdult: boolean;
+  isAdultImage: boolean;
+  time: number;
+  xp: number;
+}
+
+/** Year summary from `GET /users/:username/wrapped`. Times are in minutes. */
+export interface IWrappedStats {
+  year: number;
+  timezone: string;
+  availableYears: number[];
+  daysInYear: number;
+  totals: {
+    logs: number;
+    xp: number;
+    time: number;
+    readingTime: number;
+    listeningTime: number;
+    chars: number;
+    episodes: number;
+    pages: number;
+  };
+  previousYear: { xp: number; time: number } | null;
+  daysActive: number;
+  longestStreak: number;
+  mostActiveDay: { date: string; time: number; xp: number } | null;
+  peakHour: number | null;
+  /** 0 is Sunday. */
+  peakWeekday: number | null;
+  /** `types` maps each log type to its minutes in the month. */
+  monthly: {
+    month: number;
+    time: number;
+    xp: number;
+    types: Record<string, number>;
+  }[];
+  monthsActive: number;
+  byType: {
+    type: string;
+    time: number;
+    xp: number;
+    logs: number;
+    chars: number;
+    pages: number;
+    episodes: number;
+  }[];
+  level: { start: number; end: number };
+  ranking: {
+    /** Month is 1 to 12. */
+    bestMonthly: { position: number; month: number } | null;
+    firstPlaceMonths: number[];
+    globalStart: number | null;
+    globalEnd: number | null;
+  } | null;
+  topWatched: IWrappedMedia[];
+  topRead: IWrappedMedia[];
+  firstMedia: IWrappedMedia | null;
+  lastMedia: IWrappedMedia | null;
+  genres: { genre: string; time: number }[];
+  completed: { total: number; byType: Record<string, number> };
+  achievementsUnlocked: number;
+  reviewsWritten: number;
+  /** Share of active users with less XP this year, from 0 to 100. */
+  percentile: number | null;
+}
+
 export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export type MediaRequestType =

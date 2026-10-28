@@ -27,7 +27,7 @@ interface ClubLogMetricInput {
   privacyCategory?: 'statistics' | 'immersionActivity';
 }
 
-const effectiveTimeExpression = {
+export const effectiveTimeExpression = {
   $cond: [
     {
       $and: [

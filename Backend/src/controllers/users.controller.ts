@@ -15,6 +15,8 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { getCurrentMedia as listCurrentMedia } from '../services/currentMedia.service.js';
+import { getWrappedStats } from '../services/wrapped.service.js';
+import { isFeatureEnabled } from '../services/featureFlags.service.js';
 import {
   IMediaDocument,
   IMediaTitle,
@@ -2833,6 +2835,59 @@ export async function clearUserData(
         settings: updatedUser.settings,
       },
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getWrapped(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select(
+      '_id settings stats.userXp'
+    );
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    // Admins can preview Wrapped before it is turned on for everyone.
+    if (!hasAdminRole(viewer) && !(await isFeatureEnabled('wrapped'))) {
+      throw apiError('common.resourceNotFound', 404, 'Wrapped is not available');
+    }
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
+    }
+
+    const timezone = user.settings?.timezone || 'UTC';
+    const currentYear = Number(
+      new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric' }).format(new Date())
+    );
+    const year = req.query.year ? Number(req.query.year) : currentYear;
+    if (!Number.isInteger(year) || year < 2000 || year > currentYear) {
+      return res.status(400).json({ message: 'Invalid year' });
+    }
+
+    const stats = await getWrappedStats({
+      userId: user._id,
+      year,
+      timezone,
+      includePrivate: Boolean(viewer?._id?.equals(user._id)),
+      currentXp: user.stats?.userXp ?? 0,
+    });
+    return res.status(200).json(stats);
   } catch (error) {
     return next(error as customError);
   }
