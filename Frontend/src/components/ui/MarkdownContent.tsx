@@ -27,16 +27,33 @@ interface MarkdownContentProps
   ref?: Ref<HTMLDivElement>;
 }
 
+function isBlankText(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE && !node.textContent?.trim();
+}
+
+function isLineBreak(node: Node | null): boolean {
+  return node === null || node.nodeName === 'BR';
+}
+
+/** Return the nearest sibling that is not blank text, or null at the edge. */
+function adjacentNode(element: HTMLElement, direction: 'previous' | 'next') {
+  let node =
+    direction === 'previous' ? element.previousSibling : element.nextSibling;
+  while (node && isBlankText(node)) {
+    node = direction === 'previous' ? node.previousSibling : node.nextSibling;
+  }
+  return node;
+}
+
 /**
- * A mention is shown as a card when it is the only content of its paragraph.
- * Check this before the fallback link is removed from the placeholder.
+ * A mention is shown as a card when it is the only content of its line.
+ * A line ends at a paragraph boundary or at a <br> from a single line break.
  */
 function isStandalone(element: HTMLElement): boolean {
-  const parent = element.parentElement;
-  if (!parent || parent.tagName !== 'P') return false;
+  if (element.parentElement?.tagName !== 'P') return false;
   return (
-    parent.childElementCount === 1 &&
-    parent.textContent?.trim() === element.textContent?.trim()
+    isLineBreak(adjacentNode(element, 'previous')) &&
+    isLineBreak(adjacentNode(element, 'next'))
   );
 }
 
@@ -101,7 +118,12 @@ export default function MarkdownContent({
         }
         if (!chip) return;
 
-        if (variant === 'card') element.classList.add('block');
+        if (variant === 'card') {
+          element.classList.add('block');
+          // A <br> after a block element adds an empty line, so hide it.
+          const next = adjacentNode(element, 'next');
+          if (next instanceof HTMLBRElement) next.classList.add('hidden');
+        }
         element.replaceChildren();
         next.push(createPortal(chip, element, `mention-${index}`));
       });
