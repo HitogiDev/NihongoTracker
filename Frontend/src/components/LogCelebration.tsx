@@ -4,6 +4,8 @@ import { confetti } from '@tsparticles/confetti';
 import { Volume2, VolumeX, TrendingUp, Flame } from 'lucide-react';
 import { ILogCelebration } from '../types';
 import LevelUpAnimation from './LevelUpAnimation';
+import { haptic } from '../native/haptics';
+import { isNativeApp } from '../utils/nativeRuntime';
 import { useTranslation } from 'react-i18next';
 import {
   playLogSuccess,
@@ -85,7 +87,8 @@ export default function LogCelebration({
     if (step !== 'xp') return;
 
     playLogSuccess();
-    navigator.vibrate?.(30);
+    if (isNativeApp()) haptic('success');
+    else navigator.vibrate?.(30);
 
     // Small burst from the center where the check pops.
     void confetti({

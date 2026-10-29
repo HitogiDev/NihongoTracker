@@ -12,13 +12,13 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import RootLayout from './components/RootLayout.tsx';
-import { QueryClientProvider } from '@tanstack/react-query';
+import QueryProvider from './components/QueryProvider';
+import { isNativeApp } from './utils/nativeRuntime';
 import { I18nextProvider } from 'react-i18next';
 import i18n, { initI18n, resolveInitialLanguage } from './i18n';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { setupChunkLoadRecoveryListeners } from './utils/chunkRecovery';
-import queryClient from './queryClient.ts';
 import {
   applyAppTheme,
   canManageCustomThemes,
@@ -78,6 +78,7 @@ if (typeof window !== 'undefined') {
 const App = lazy(() => import('./App.tsx'));
 const CalculatorScreen = lazy(() => import('./screens/CalculatorScreen.tsx'));
 const FeaturesScreen = lazy(() => import('./screens/FeaturesScreen.tsx'));
+const DesktopAppScreen = lazy(() => import('./screens/DesktopAppScreen.tsx'));
 const HomeScreen = lazy(() => import('./screens/HomeScreen.tsx'));
 const NativeRecordsScreen = lazy(() => import('./native/NativeRecordsScreen'));
 const ListScreen = lazy(() => import('./screens/ListScreen.tsx'));
@@ -198,6 +199,7 @@ const router = createBrowserRouter(
         <Route path="lists/:listId" element={<MediaListDetailScreen />} />
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
+        <Route path="desktop" element={<DesktopAppScreen />} />
         <Route path="guidelines" element={<GuidelinesScreen />} />
         <Route path="support" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
@@ -266,6 +268,13 @@ document.addEventListener('click', (e) => {
 // Translations are awaited before the first render so there is never a flash of
 // English and no component has to suspend on a missing namespace.
 async function bootstrap() {
+  // Google image hosts answer 429 to the Referer of the app WebView (https://localhost).
+  if (isNativeApp()) {
+    const referrer = document.createElement('meta');
+    referrer.name = 'referrer';
+    referrer.content = 'no-referrer';
+    document.head.appendChild(referrer);
+  }
   await initI18n(initialLanguage);
   if (!(await initializeMobileSession())) {
     useUserDataStore.getState().logout();
@@ -274,7 +283,7 @@ async function bootstrap() {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <I18nextProvider i18n={i18n}>
-        <QueryClientProvider client={queryClient}>
+        <QueryProvider>
           <TimezoneProvider>
             <Suspense
               fallback={
@@ -286,7 +295,7 @@ async function bootstrap() {
               <RouterProvider router={router} />
             </Suspense>
           </TimezoneProvider>
-        </QueryClientProvider>
+        </QueryProvider>
       </I18nextProvider>
     </React.StrictMode>,
   );

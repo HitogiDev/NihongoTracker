@@ -6,6 +6,8 @@ import { isNativeApp } from "../utils/nativeRuntime";
 import { syncOfflineQueue } from "../offline/offlineQueue";
 import { prefetchPersonalData } from "../offline/prefetch";
 import { dispatchNativeDismiss } from "../native/useNativeDismiss";
+import { installTouchHaptics } from "../native/haptics";
+import { applyAppTheme } from "../utils/appTheme";
 
 export default function NativeAppLifecycle() {
   useEffect(() => {
@@ -51,6 +53,19 @@ export default function NativeAppLifecycle() {
         style: dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
       }).catch(() => undefined);
     };
+    // The settings screen is the only other place that follows the system theme.
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const followSystemTheme = () => {
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem("theme");
+      } catch {
+        /* Without storage, the app follows the system theme. */
+      }
+      if (!saved || saved === "system") applyAppTheme("system");
+    };
+    systemTheme.addEventListener("change", followSystemTheme);
+    const removeTouchHaptics = installTouchHaptics();
     const themeObserver = new MutationObserver(syncBars);
     themeObserver.observe(root, {
       attributes: true,
@@ -89,6 +104,8 @@ export default function NativeAppLifecycle() {
         (listener) => void listener.then((handle) => handle.remove()),
       );
       themeObserver.disconnect();
+      systemTheme.removeEventListener("change", followSystemTheme);
+      removeTouchHaptics();
       hideKeyboard();
     };
   }, []);

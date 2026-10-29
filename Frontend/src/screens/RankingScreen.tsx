@@ -40,6 +40,7 @@ import { getLogTypeLabelKey } from '../utils/logTypes';
 import { isMobileApp } from '../utils/nativeRuntime';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import InfiniteScrollSentinel from '../components/ui/InfiniteScrollSentinel';
 import Field from '../components/ui/Field';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import DatePickerInput from '../components/ui/DatePickerInput';
@@ -850,7 +851,7 @@ function RankingScreen() {
           : 'surface flex min-w-0 flex-col items-center gap-2 px-2 py-3'}>
           {rank === 1 && <Crown className="absolute -top-6 h-7 w-7 fill-warning text-warning" aria-hidden="true" />}
           <span className={getRankColor(rank)}><Trophy className="h-4 w-4 inline" /> {rank}</span>
-          <UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-12 w-12 rounded-full" />
+          <span className="shrink-0"><UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-12 w-12 rounded-full" /></span>
           <span className="w-full truncate text-center text-sm font-semibold">{person.username}</span>
           <span className="w-full break-words text-center text-xs text-base-content/65">{value(person)}</span>
         </Link>;
@@ -859,12 +860,12 @@ function RankingScreen() {
         const effect = getNameEffectRender(person.customization);
         return <Link key={person.username} to={`/user/${encodeURIComponent(person.username)}`} className="flex min-h-20 items-center gap-3 px-3 py-4">
           <span className="w-6 shrink-0 text-center text-sm text-base-content/60">{i + (podium ? 4 : 1)}</span>
-          <UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-10 w-10 rounded-full" />
+          {/* A fixed slot leaves room for decorative frames and keeps the names aligned. */}<span className="flex w-14 shrink-0 justify-center"><UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-10 w-10 rounded-full" /></span>
           <span className={`min-w-0 flex-1 truncate font-medium ${effect.className}`} style={effect.style}>{person.username}</span>
           <span className="shrink-0 text-sm tabular-nums">{value(person)}</span>
         </Link>;
       })}</div>
-      {(mode === 'global' ? hasNextPage : hasNextPageMedium) && <Button block loading={mode === 'global' ? isFetchingNextPage : isFetchingNextPageMedium} onClick={() => void (mode === 'global' ? fetchNextPage() : fetchNextPageMedium())}>{nt('native.loadMore')}</Button>}
+      <InfiniteScrollSentinel hasNextPage={Boolean(mode === 'global' ? hasNextPage : hasNextPageMedium)} isFetchingNextPage={mode === 'global' ? isFetchingNextPage : isFetchingNextPageMedium} onLoadMore={() => void (mode === 'global' ? fetchNextPage() : fetchNextPageMedium())} />
       <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title={nt('native.filters')} actions={<Button variant="primary" onClick={() => setFiltersOpen(false)}>{nt('native.apply')}</Button>}>
         <div className="space-y-4">
           <Field label={t('audience.label')}><DropdownSelect className="select w-full" value={audience} onChange={(e) => { if (isOneOf(e.target.value, VALID_AUDIENCES)) setAudience(e.target.value); }}>{VALID_AUDIENCES.map((option) => <option key={option} value={option}>{t(option === 'mutual' ? 'audience.mutuals' : `audience.${option}`)}</option>)}</DropdownSelect></Field>

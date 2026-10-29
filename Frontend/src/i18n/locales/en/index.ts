@@ -3,6 +3,7 @@ import admin from "./admin.json";
 import auth from "./auth.json";
 import clubs from "./clubs.json";
 import common from "./common.json";
+import desktop from "./desktop.json";
 import errors from "./errors.json";
 import goals from "./goals.json";
 import guidelines from "./guidelines.json";
@@ -26,6 +27,7 @@ const en = {
   auth,
   clubs,
   common,
+  desktop,
   errors,
   goals,
   guidelines,

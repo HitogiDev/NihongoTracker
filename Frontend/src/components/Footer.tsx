@@ -91,6 +91,9 @@ function Footer() {
         <Link to="/calculator" className="link link-hover">
           {t('links.calculator')}
         </Link>
+        <Link to="/desktop" className="link link-hover">
+          {t('links.desktop')}
+        </Link>
         <Link to="/changelog" className="link link-hover">
           {t('footer.changelog')}
         </Link>

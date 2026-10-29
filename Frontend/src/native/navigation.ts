@@ -165,6 +165,9 @@ export function nativeRoute(
       title: titles[parts[0]],
       parent: parts[0] === "lists" && parts[1] ? "/lists" : ownProfile,
     };
+  // Media pages use /:mediaType/:mediaId. Any other path has no screen of its own.
+  if (parts.length < 2 || parts[0] === "404")
+    return { ...base, title: "titles.notFound", screen: "notFound" };
   return {
     ...base,
     title: "native.mediaDetails",
