@@ -507,7 +507,7 @@ function StatsScreen() {
   const [endDate, setEndDate] = useState('');
   const startBtnRef = useRef<HTMLDivElement | null>(null);
   const endBtnRef = useRef<HTMLDivElement | null>(null);
-  const { timezone } = useTimezone();
+  const { timezone, dayStartHour } = useTimezone();
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [localGroups, setLocalGroups] = useState<StatsGroupLayout[] | null>(
@@ -773,6 +773,7 @@ function StatsScreen() {
       includedTagsParam,
       excludedTagsParam,
       timezone,
+      dayStartHour,
     ],
     enabled: Boolean(username),
     queryFn: () =>
@@ -783,6 +784,7 @@ function StatsScreen() {
         start: startDate || undefined,
         end: endDate || undefined,
         timezone,
+        dayStartHour,
         includedTags: includedTagsParam || undefined,
         excludedTags: excludedTagsParam || undefined,
       }),

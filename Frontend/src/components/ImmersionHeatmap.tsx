@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { useTimezone } from '../hooks/useTimezone';
-import { getLocale } from '../utils/timezone';
+import { getLocale, shiftByDayStart } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
 import { getHeatmapCellColor } from '../utils/customization';
 import type { IUserCustomization } from '../types';
@@ -75,7 +75,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
   accent,
 }) => {
   const { t } = useTranslation('stats');
-  const { timezone } = useTimezone();
+  const { timezone, dayStartHour } = useTimezone();
 
   const { data: logs, isLoading } = useQuery({
     queryKey: ['heatmap-logs', username],
@@ -85,7 +85,10 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
   });
 
   const { weeks, todayKey } = React.useMemo(() => {
-    const todayKey = toDateKey(new Date(), timezone);
+    const todayKey = toDateKey(
+      shiftByDayStart(new Date(), dayStartHour),
+      timezone
+    );
 
     if (!logs || !Array.isArray(logs)) {
       return { weeks: [], todayKey };
@@ -99,7 +102,10 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
 
     for (const log of logs as LogData[]) {
       if (log.unknownDate || !log.date) continue;
-      const key = toDateKey(new Date(log.date), timezone);
+      const key = toDateKey(
+        shiftByDayStart(log.date, dayStartHour),
+        timezone
+      );
       if (key < firstKey || key > todayKey) continue;
       dailyXp.set(
         key,
@@ -148,7 +154,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
     }
 
     return { weeks: columns, todayKey };
-  }, [logs, timezone]);
+  }, [logs, timezone, dayStartHour]);
 
   // Colors are inline rather than utility classes: the accent is chosen at
   // runtime by the profile owner, so Tailwind cannot know the class names.

@@ -8,6 +8,7 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { calculateLevel } from './calculateLevel.js';
 import { effectiveTimeExpression } from './clubLogMetrics.service.js';
 import { LISTENING_TYPES, READING_TYPES } from './xp.js';
+import { resolveDayStartHour } from './streaks.js';
 
 const TOP_MEDIA_LIMIT = 5;
 const TOP_GENRE_LIMIT = 14;
@@ -258,6 +259,8 @@ export async function getWrappedStats(input: {
   includePrivate: boolean;
   /** Current total XP of the user. It also counts manual immersion outside logs. */
   currentXp: number;
+  /** Local hour when the owner's day starts. Earlier logs count toward the previous day. */
+  dayStartHour?: number;
   now?: Date;
 }): Promise<WrappedStats> {
   const { userId, year, timezone } = input;
@@ -265,14 +268,24 @@ export async function getWrappedStats(input: {
   const start = startOfYearInZone(year, timezone);
   const end = startOfYearInZone(year + 1, timezone);
   const previousStart = startOfYearInZone(year - 1, timezone);
+  const dayStartMs = resolveDayStartHour(input.dayStartHour) * 60 * 60 * 1000;
   const privacy = input.includePrivate ? {} : { private: { $ne: true } };
   const yearMatch = {
     user: userId,
-    date: { $gte: start, $lt: end },
+    date: {
+      $gte: new Date(start.getTime() + dayStartMs),
+      $lt: new Date(end.getTime() + dayStartMs),
+    },
     ...privacy,
   };
-  const local = (format: string) => ({
-    $dateToString: { date: '$date', format, timezone },
+  // Days, months, and weekdays use the shifted date. Hours of the day use the real time.
+  const local = (format: string, shiftDay = true) => ({
+    $dateToString: {
+      date:
+        shiftDay && dayStartMs > 0 ? { $subtract: ['$date', dayStartMs] } : '$date',
+      format,
+      timezone,
+    },
   });
 
   const facet: PipelineStage = {
@@ -330,7 +343,7 @@ export async function getWrappedStats(input: {
         { $match: { unknownDate: { $ne: true } } },
         {
           $group: {
-            _id: { $toInt: local('%H') },
+            _id: { $toInt: local('%H', false) },
             time: { $sum: effectiveTimeExpression },
           },
         },

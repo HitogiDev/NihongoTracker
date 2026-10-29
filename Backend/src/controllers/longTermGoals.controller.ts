@@ -13,6 +13,7 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { isValidGoalMediaType } from '../services/goalMediaType.js';
 import { goalTodayKey, isGoalTargetDatePast } from '../services/goalPeriod.js';
+import { resolveDayStartHour, shiftByDayStart } from '../services/streaks.js';
 import { requireGoalVisibility } from '../services/goalVisibility.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
@@ -298,10 +299,13 @@ async function calculateLongTermGoalProgress(
 ): Promise<ILongTermGoalProgress> {
   const userTimezone = user.settings?.timezone || FALLBACK_TIMEZONE;
   const now = new Date();
+  // Activity before the day start hour counts toward the previous day.
+  const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
+  const dayNow = shiftByDayStart(now, dayStartHour);
 
   // Dates represent whole calendar days in the goal owner's timezone.
   const targetDate = new Date(goal.targetDate);
-  const todayKey = goalTodayKey(userTimezone, now);
+  const todayKey = goalTodayKey(userTimezone, dayNow);
   const targetKey = targetDate.toISOString().slice(0, 10);
   const startKey = new Date(goal.startDate).toISOString().slice(0, 10);
   const remainingMs =
@@ -321,7 +325,10 @@ async function calculateLongTermGoalProgress(
     ...(goal.mediaType ? { type: goal.mediaType } : {})
   });
   const logs = candidateLogs.filter((log) => {
-    const logDay = goalTodayKey(userTimezone, log.date);
+    const logDay = goalTodayKey(
+      userTimezone,
+      shiftByDayStart(log.date, dayStartHour)
+    );
     return logDay >= startKey && logDay <= targetKey;
   });
 
@@ -347,7 +354,7 @@ async function calculateLongTermGoalProgress(
 
   // Date boundaries - calculate in user timezone
   const userNow = new Date(
-    now.toLocaleString('en-US', { timeZone: userTimezone })
+    dayNow.toLocaleString('en-US', { timeZone: userTimezone })
   );
 
   const startOfDay = new Date(
@@ -385,7 +392,9 @@ async function calculateLongTermGoalProgress(
 
     // Convert log date to user timezone for comparison
     const logDateInUserTz = new Date(
-      log.date.toLocaleString('en-US', { timeZone: userTimezone })
+      shiftByDayStart(log.date, dayStartHour).toLocaleString('en-US', {
+        timeZone: userTimezone,
+      })
     );
 
     // Create comparable dates (same timezone)

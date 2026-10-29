@@ -446,6 +446,9 @@
     "weekStartsOn": "La semana empieza el",
     "monday": "Lunes",
     "sunday": "Domingo",
+    "dayStartHour": "El día siguiente empieza a las",
+    "dayStartMidnight": "Medianoche (predeterminado)",
+    "dayStartHourHint": "La actividad antes de esta hora cuenta para el día anterior en las rachas y las metas diarias. Útil si te acuestas tarde.",
     "title": "Preferencias"
   },
   "privacy": {

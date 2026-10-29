@@ -381,6 +381,18 @@ function zoneOffsetMs(date: Date, timeZone: string): number {
   return asIfUtc - Math.floor(date.getTime() / 60000) * 60000;
 }
 
+/**
+ * Move an instant back by the user's day start hour.
+ * Read the result in the user's timezone to get the day that the activity counts toward.
+ */
+export const shiftByDayStart = (
+  date: Date | string,
+  dayStartHour = 0
+): Date => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return new Date(dateObj.getTime() - dayStartHour * 60 * 60 * 1000);
+};
+
 /** The calendar day (YYYY-MM-DD) an instant falls on in the given timezone. */
 export const getDayKeyInTimezone = (
   date: Date | string,

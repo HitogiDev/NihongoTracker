@@ -3,15 +3,40 @@ import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
+export const MAX_DAY_START_HOUR = 12;
 
-export function getUserDayKey(date: Date, timezone: string): string {
+/** The local hour at which a user's day starts, clamped to a valid range. */
+export function resolveDayStartHour(dayStartHour?: number | null): number {
+  if (typeof dayStartHour !== 'number' || !Number.isInteger(dayStartHour)) {
+    return 0;
+  }
+  return Math.min(Math.max(dayStartHour, 0), MAX_DAY_START_HOUR);
+}
+
+/** Moves an instant back by the day start hour, so its local calendar day is the user's day. */
+export function shiftByDayStart(date: Date, dayStartHour = 0): Date {
+  return new Date(
+    date.getTime() - resolveDayStartHour(dayStartHour) * 60 * 60 * 1000
+  );
+}
+
+/**
+ * Returns the user's local day for a date.
+ * With a day start hour, activity before that hour counts toward the previous day.
+ */
+export function getUserDayKey(
+  date: Date,
+  timezone: string,
+  dayStartHour = 0
+): string {
+  const shifted = shiftByDayStart(date, dayStartHour);
   // Use Intl parts to avoid locale formatting surprises
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).formatToParts(date);
+  }).formatToParts(shifted);
 
   const y = parts.find((p) => p.type === 'year')?.value;
   const m = parts.find((p) => p.type === 'month')?.value;
@@ -46,6 +71,7 @@ export async function recalculateStreaksForUser(
   if (!user || !user.stats) return;
 
   const timezone = user.settings?.timezone || FALLBACK_TIMEZONE;
+  const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
 
   // Exclude unknownDate logs: they have no real date to streak on
   const logs = await Log.find({
@@ -66,7 +92,7 @@ export async function recalculateStreaksForUser(
   // day-boundary mismatch), then sort lexicographically (YYYY-MM-DD sorts correctly).
   const dayKeySet = new Set<string>();
   for (const log of logs) {
-    dayKeySet.add(getUserDayKey(new Date(log.date), timezone));
+    dayKeySet.add(getUserDayKey(new Date(log.date), timezone, dayStartHour));
   }
   const dayKeys = Array.from(dayKeySet).sort();
 
@@ -91,7 +117,7 @@ export async function recalculateStreaksForUser(
   // Check if streak is still active: lastKey must be today or yesterday in user tz.
   // If the last log was 2+ days ago the streak is broken: zero currentStreak so
   // the stored value does not lie when read back without a live check.
-  const todayKey = getUserDayKey(new Date(), timezone);
+  const todayKey = getUserDayKey(new Date(), timezone, dayStartHour);
   const lastKey = dayKeys[dayKeys.length - 1];
   const diffFromToday = dayDiff(lastKey, todayKey);
   if (diffFromToday > 1) {
@@ -114,11 +140,12 @@ export async function recalculateStreaksForUser(
 export function getLiveCurrentStreak(
   currentStreak: number,
   lastStreakDate: Date | null,
-  timezone: string
+  timezone: string,
+  dayStartHour = 0
 ): number {
   if (!lastStreakDate || currentStreak <= 0) return 0;
   const lastKey = getDayKeyFromUTCDate(new Date(lastStreakDate));
-  const todayKey = getUserDayKey(new Date(), timezone);
+  const todayKey = getUserDayKey(new Date(), timezone, dayStartHour);
   const diff = dayDiff(lastKey, todayKey);
   // Streak active if last log was today (0) or yesterday (1)
   return diff <= 1 ? currentStreak : 0;
@@ -132,8 +159,9 @@ export async function updateStreakWithLog(
   const user = await User.findById(userId);
   if (!user || !user.stats) return;
   const timezone = user.settings?.timezone || FALLBACK_TIMEZONE;
-  const newKey = getUserDayKey(new Date(logDate), timezone);
-  const todayKey = getUserDayKey(new Date(), timezone);
+  const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
+  const newKey = getUserDayKey(new Date(logDate), timezone, dayStartHour);
+  const todayKey = getUserDayKey(new Date(), timezone, dayStartHour);
 
   // Reject future-dated logs from advancing the streak (clock drift / bad client date)
   if (newKey > todayKey) return;
@@ -171,7 +199,8 @@ export async function updateStreakWithLog(
     const liveCurrent = getLiveCurrentStreak(
       user.stats.currentStreak,
       lastDate,
-      timezone
+      timezone,
+      dayStartHour
     );
     user.stats.currentStreak = liveCurrent + 1;
   } else {

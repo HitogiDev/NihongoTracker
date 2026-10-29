@@ -446,6 +446,9 @@
     "weekStartsOn": "Week starts on",
     "monday": "Monday",
     "sunday": "Sunday",
+    "dayStartHour": "Next day starts at",
+    "dayStartMidnight": "Midnight (default)",
+    "dayStartHourHint": "Activity before this hour counts toward the previous day for streaks and daily goals. Useful if you stay up late.",
     "title": "Preferences"
   },
   "privacy": {

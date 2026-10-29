@@ -188,6 +188,7 @@ export interface IUserSettings {
   hideRankingFeatures?: boolean;
   timezone?: string;
   weekStartsOn?: 0 | 1;
+  dayStartHour?: number;
   language?: SupportedLanguage;
   hiddenRecentMedia?: string[];
   statsLayout?: StatsGroupLayout[];
@@ -1000,6 +1001,7 @@ export interface IUpdateRequest {
   hiddenRecentMedia?: string;
   timezone?: string;
   weekStartsOn?: string;
+  dayStartHour?: string;
   // string, not SupportedLanguage: PUT /users is multipart/form-data
   language?: string;
   about?: string;

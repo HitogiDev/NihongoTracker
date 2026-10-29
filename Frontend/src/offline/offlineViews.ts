@@ -110,6 +110,8 @@ export function profileFields(
   if (fields.timezone !== undefined) next.settings.timezone = fields.timezone;
   if (fields.weekStartsOn !== undefined)
     next.settings.weekStartsOn = fields.weekStartsOn === '1' ? 1 : 0;
+  if (fields.dayStartHour !== undefined)
+    next.settings.dayStartHour = Number(fields.dayStartHour);
   if (fields.language === 'es' || fields.language === 'en')
     next.settings.language = fields.language;
   return next;

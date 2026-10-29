@@ -160,6 +160,7 @@ export interface IUser {
     hideRankingFeatures?: boolean;
     timezone?: string;
     weekStartsOn?: 0 | 1;
+    dayStartHour?: number;
     language?: 'en' | 'es';
     statsLayout?: StatsGroupLayout[];
     profileLayout?: ProfileWidgetLayout[];

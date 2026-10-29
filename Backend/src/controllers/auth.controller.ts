@@ -183,7 +183,8 @@ export async function login(
       const liveCurrentStreak = getLiveCurrentStreak(
         user.stats?.currentStreak ?? 0,
         user.stats?.lastStreakDate ?? null,
-        tz
+        tz,
+        user.settings?.dayStartHour
       );
       const responseUser = {
         _id: user._id,
@@ -261,7 +262,8 @@ export async function loginMobile(
     responseUser.stats.currentStreak = getLiveCurrentStreak(
       user.stats?.currentStreak ?? 0,
       user.stats?.lastStreakDate ?? null,
-      user.settings?.timezone || 'UTC'
+      user.settings?.timezone || 'UTC',
+      user.settings?.dayStartHour
     );
 
     return res.status(200).json({ user: responseUser, session });
