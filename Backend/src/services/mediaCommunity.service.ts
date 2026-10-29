@@ -23,6 +23,20 @@ interface MediaStatusRow {
   updatedAt: Date;
 }
 
+// YouTube channels have no status. Ignore records stored before this rule.
+function withoutChannelStatus(
+  rows: MediaStatusRow[],
+  mediaType: string
+): MediaStatusRow[] {
+  if (mediaType !== 'video') return rows;
+  return rows.map((row) => ({
+    ...row,
+    status: null,
+    completed: false,
+    completedAt: null,
+  }));
+}
+
 interface CommunityUser {
   _id: Types.ObjectId;
   username: string;
@@ -122,7 +136,13 @@ async function getMediaCommunityPeople(input: {
       user: { $in: visibleOwnerIds },
     })
       .select('user status completed completedAt updatedAt')
-      .lean() as unknown as Promise<MediaStatusRow[]>,
+      .lean()
+      .then((rows) =>
+        withoutChannelStatus(
+          rows as unknown as MediaStatusRow[],
+          input.mediaType
+        )
+      ),
     Log.aggregate<MediaProgressLogRow>([
       {
         $match: {
@@ -238,7 +258,13 @@ export async function getMediaCommunity(input: {
           user: { $in: visibleStatsOwnerIds },
         })
           .select('user status completed completedAt createdAt updatedAt')
-          .lean() as unknown as Promise<MediaStatusRow[]>)
+          .lean()
+          .then((rows) =>
+            withoutChannelStatus(
+              rows as unknown as MediaStatusRow[],
+              input.mediaType
+            )
+          ))
       : Promise.resolve<MediaStatusRow[]>([]),
     input.viewerId
       ? Follow.find({
@@ -255,12 +281,15 @@ export async function getMediaCommunity(input: {
   );
   const friendStatuses =
     visibleFriendOwnerIds.length > 0
-      ? ((await UserMediaStatus.find({
-          ...statusFilter,
-          user: { $in: visibleFriendOwnerIds },
-        })
-          .select('user status completed completedAt createdAt updatedAt')
-          .lean()) as unknown as MediaStatusRow[])
+      ? withoutChannelStatus(
+          (await UserMediaStatus.find({
+            ...statusFilter,
+            user: { $in: visibleFriendOwnerIds },
+          })
+            .select('user status completed completedAt createdAt updatedAt')
+            .lean()) as unknown as MediaStatusRow[],
+          input.mediaType
+        )
       : [];
   const friendUserIds = friendStatuses.map((row) => row.user);
   const friendUsers = await Activity.db
@@ -314,7 +343,11 @@ export async function getMediaCommunity(input: {
     },
     friends: {
       consuming: friendStatuses
-        .filter((row) => !row.completed && row.status === 'in_progress')
+        .filter(
+          (row) =>
+            input.mediaType === 'video' ||
+            (!row.completed && row.status === 'in_progress')
+        )
         .map(toFriend)
         .filter((item) => item.user),
       completed: friendStatuses

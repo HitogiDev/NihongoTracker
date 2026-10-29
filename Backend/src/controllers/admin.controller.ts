@@ -464,7 +464,6 @@ export async function markLogsWithoutStatusToInProgress(
       'light-novel',
       'vn',
       'game',
-      'video',
       'movie',
       'tv show',
       'book',
