@@ -1954,11 +1954,14 @@ export async function createLog(
         });
       }
 
+      // YouTube channels have no status. Their record only tracks list membership.
+      const tracksStatus = statusType !== 'video';
+
       if (!existingStatus) {
         try {
           await UserMediaStatus.create({
             ...statusFilter,
-            status: 'in_progress',
+            status: tracksStatus ? 'in_progress' : null,
             completed: false,
             completedAt: null,
             autoCompleteSuppressed: false,
@@ -1969,23 +1972,29 @@ export async function createLog(
             throw error;
           }
 
-          await UserMediaStatus.updateOne(
-            {
-              ...statusFilter,
-              completed: { $ne: true },
-              $or: [{ status: { $exists: false } }, { status: null }],
-            },
-            {
-              $set: {
-                status: 'in_progress',
-                completed: false,
-                completedAt: null,
-                autoCompleteSuppressed: false,
+          if (tracksStatus) {
+            await UserMediaStatus.updateOne(
+              {
+                ...statusFilter,
+                completed: { $ne: true },
+                $or: [{ status: { $exists: false } }, { status: null }],
               },
-            }
-          );
+              {
+                $set: {
+                  status: 'in_progress',
+                  completed: false,
+                  completedAt: null,
+                  autoCompleteSuppressed: false,
+                },
+              }
+            );
+          }
         }
-      } else if (!existingStatus.completed && !existingStatus.status) {
+      } else if (
+        tracksStatus &&
+        !existingStatus.completed &&
+        !existingStatus.status
+      ) {
         await UserMediaStatus.updateOne(statusFilter, {
           $set: {
             status: 'in_progress',

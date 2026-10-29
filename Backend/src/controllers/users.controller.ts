@@ -3121,10 +3121,12 @@ export async function getImmersionList(
     >();
     mediaStatuses.forEach((s) => {
       const key = `${s.type}:${s.mediaId}`;
+      // YouTube channels have no status. Ignore records stored before this rule.
+      const hasStatus = s.type !== 'video';
       statusMap.set(key, {
-        completed: s.completed,
-        completedAt: s.completedAt ?? null,
-        status: s.status ?? null,
+        completed: hasStatus && s.completed,
+        completedAt: hasStatus ? (s.completedAt ?? null) : null,
+        status: hasStatus ? (s.status ?? null) : null,
         hiddenFromList: s.hiddenFromList === true,
       });
     });
@@ -3172,7 +3174,10 @@ export async function getImmersionList(
     const statusesWithoutLogs = mediaStatuses.filter((s) => {
       const key = `${s.type}:${s.mediaId}`;
       return (
-        !!s.status && s.hiddenFromList !== true && !mediaKeysFromLogs.has(key)
+        s.type !== 'video' &&
+        !!s.status &&
+        s.hiddenFromList !== true &&
+        !mediaKeysFromLogs.has(key)
       );
     });
 
@@ -3275,7 +3280,11 @@ export async function updateMediaCompletionStatus(
     const normalizedMediaId = String(mediaId);
     const normalizedType = type.toLowerCase() as ImmersionMediaType;
 
-    if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
+    // YouTube channels have no status
+    if (
+      !IMMERSION_MEDIA_TYPES.includes(normalizedType) ||
+      normalizedType === 'video'
+    ) {
       throw apiError(
         'immersionList.invalidMediaType',
         400,
@@ -3858,6 +3867,7 @@ export async function getGanttData(
       { completed: boolean; completedAt?: Date | null }
     >();
     mediaStatuses.forEach((s) => {
+      if (s.type === 'video') return;
       statusMap.set(`${s.type}:${s.mediaId}`, {
         completed: s.completed,
         completedAt: s.completedAt ?? null,

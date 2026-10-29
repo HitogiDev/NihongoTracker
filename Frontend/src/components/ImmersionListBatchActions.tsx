@@ -103,11 +103,14 @@ export default function ImmersionListBatchActions({
       }
       return applyToSelected((media) =>
         action.kind === 'status'
-          ? updateMediaCompletionStatusFn({
-              mediaId: media.contentId,
-              type: media.type,
-              status: action.status,
-            })
+          ? // YouTube channels have no status
+            media.type === 'video'
+            ? Promise.resolve()
+            : updateMediaCompletionStatusFn({
+                mediaId: media.contentId,
+                type: media.type,
+                status: action.status,
+              })
           : removeMediaFromImmersionListFn({
               mediaId: media.contentId,
               type: media.type,

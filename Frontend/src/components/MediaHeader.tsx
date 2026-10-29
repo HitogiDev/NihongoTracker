@@ -657,7 +657,24 @@ export default function MediaHeader() {
                         TextHooker
                       </button>
                     )}
-                  {isOwnProfile && media?.contentId && media?.type && (
+                  {/* YouTube channels have no status */}
+                  {isOwnProfile && media?.type === 'video' && (
+                    <button
+                      type="button"
+                      className="btn btn-error btn-outline w-full"
+                      onClick={() => {
+                        setRemoveWithLogs(false);
+                        setRemoveModalOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {t('header.removeFromList')}
+                    </button>
+                  )}
+                  {isOwnProfile &&
+                    media?.contentId &&
+                    media?.type &&
+                    media.type !== 'video' && (
                     <div className="flex flex-col gap-1">
                       <div
                         className={

@@ -223,7 +223,8 @@ export async function getMedia(
       mediaStatus: null as string | null,
     };
 
-    if (requestedUsername) {
+    // YouTube channels have no status
+    if (requestedUsername && normalizedMediaType !== 'video') {
       const targetUser = await User.findOne({ username: requestedUsername })
         .select('_id')
         .lean();

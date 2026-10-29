@@ -1443,8 +1443,11 @@ function MediaCard({
 
   const config = typeConfig[media.type as keyof typeof typeConfig];
   const TypeIcon = config.icon;
-  const currentStatus =
-    media.mediaStatus ?? (media.isCompleted ? 'completed' : null);
+  // YouTube channels have no status
+  const hasStatus = media.type !== 'video';
+  const currentStatus = hasStatus
+    ? (media.mediaStatus ?? (media.isCompleted ? 'completed' : null))
+    : null;
   const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
@@ -1470,8 +1473,23 @@ function MediaCard({
           />
         </label>
       )}
+      {isOwnProfile && !selectionMode && !hasStatus && (
+        <button
+          type="button"
+          className="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 z-40 bg-base-100/80 border-base-300 text-error"
+          disabled={isToggling}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveMedia(media);
+          }}
+          aria-label={t('header.removeFromList')}
+          title={t('header.removeFromList')}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
       {/* Status dropdown button at the top right */}
-      {isOwnProfile && !selectionMode && (
+      {isOwnProfile && !selectionMode && hasStatus && (
         <div
           className="dropdown dropdown-end absolute top-2 right-2 z-40"
           onClick={(e) => e.stopPropagation()}
@@ -1753,8 +1771,11 @@ function MediaListItem({
 
   const config = typeConfig[media.type as keyof typeof typeConfig];
   const TypeIcon = config.icon;
-  const currentStatus =
-    media.mediaStatus ?? (media.isCompleted ? 'completed' : null);
+  // YouTube channels have no status
+  const hasStatus = media.type !== 'video';
+  const currentStatus = hasStatus
+    ? (media.mediaStatus ?? (media.isCompleted ? 'completed' : null))
+    : null;
   const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
 
   return (
@@ -1863,7 +1884,11 @@ function MediaListItem({
 
           {isOwnProfile && !selectionMode && (
             <div
-              className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2 border-t border-base-300 pt-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:flex lg:w-auto lg:shrink-0 lg:items-center lg:gap-1 lg:border-t-0 lg:pt-0"
+              className={
+                hasStatus
+                  ? 'grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2 border-t border-base-300 pt-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] lg:flex lg:w-auto lg:shrink-0 lg:items-center lg:gap-1 lg:border-t-0 lg:pt-0'
+                  : 'grid w-full grid-cols-2 gap-2 border-t border-base-300 pt-3 lg:flex lg:w-auto lg:shrink-0 lg:items-center lg:gap-1 lg:border-t-0 lg:pt-0'
+              }
               onClick={(e) => e.stopPropagation()}
             >
               <Button
@@ -1878,47 +1903,53 @@ function MediaListItem({
                 <Plus className="h-4 w-4" />
                 <span className="lg:sr-only">{t('header.log')}</span>
               </Button>
-              <DropdownSelect
-                value={currentStatus ?? ''}
-                disabled={isToggling}
-                aria-label={t('list.setStatus')}
-                aria-busy={isToggling}
-                className={`h-12 min-h-12 w-full min-w-0 gap-2 lg:btn-sm lg:h-9 lg:min-h-9 lg:w-44 ${statusCfg?.buttonClass ?? ''}`}
-                optionClassName="min-h-12 gap-2 lg:min-h-9"
-                onChange={(event) =>
-                  onSetStatus(
-                    media,
-                    event.target.value as MediaStatusPayload['status'],
-                  )
-                }
-              >
-                <option value="" disabled>
-                  <span className="flex items-center gap-2">
-                    {isToggling ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <Circle className="h-4 w-4 shrink-0" />
-                    )}
-                    {t('list.setStatus')}
-                  </span>
-                </option>
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>
+              {hasStatus && (
+                <DropdownSelect
+                  value={currentStatus ?? ''}
+                  disabled={isToggling}
+                  aria-label={t('list.setStatus')}
+                  aria-busy={isToggling}
+                  className={`h-12 min-h-12 w-full min-w-0 gap-2 lg:btn-sm lg:h-9 lg:min-h-9 lg:w-44 ${statusCfg?.buttonClass ?? ''}`}
+                  optionClassName="min-h-12 gap-2 lg:min-h-9"
+                  onChange={(event) =>
+                    onSetStatus(
+                      media,
+                      event.target.value as MediaStatusPayload['status'],
+                    )
+                  }
+                >
+                  <option value="" disabled>
                     <span className="flex items-center gap-2">
-                      {isToggling && currentStatus === key ? (
+                      {isToggling ? (
                         <Spinner size="sm" />
                       ) : (
-                        <cfg.icon className="h-4 w-4 shrink-0" />
+                        <Circle className="h-4 w-4 shrink-0" />
                       )}
-                      {t(cfg.labelKey)}
+                      {t('list.setStatus')}
                     </span>
                   </option>
-                ))}
-              </DropdownSelect>
+                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                    <option key={key} value={key}>
+                      <span className="flex items-center gap-2">
+                        {isToggling && currentStatus === key ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <cfg.icon className="h-4 w-4 shrink-0" />
+                        )}
+                        {t(cfg.labelKey)}
+                      </span>
+                    </option>
+                  ))}
+                </DropdownSelect>
+              )}
               <Button
                 variant="error"
                 appearance="ghost"
-                className="col-span-2 h-12 min-h-12 w-full gap-2 sm:col-span-1 lg:btn-sm lg:btn-square lg:h-9 lg:min-h-9 lg:w-9"
+                className={
+                  hasStatus
+                    ? 'col-span-2 h-12 min-h-12 w-full gap-2 sm:col-span-1 lg:btn-sm lg:btn-square lg:h-9 lg:min-h-9 lg:w-9'
+                    : 'h-12 min-h-12 w-full gap-2 lg:btn-sm lg:btn-square lg:h-9 lg:min-h-9 lg:w-9'
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemoveMedia(media);
