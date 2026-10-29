@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "530907173207",
+    "project_id": "immersion-tracker-c4e49",
+    "storage_bucket": "immersion-tracker-c4e49.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530907173207:android:0f582d75d6c243439e6e12",
+        "android_client_info": {
+          "package_name": "app.nihongotracker.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "530907173207-k3gktl2vjpsh2a0m5q4fa4u22suv2kn6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBp4C0U7zXNLL1eHhM8GXRAer7td4rog0M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530907173207-k3gktl2vjpsh2a0m5q4fa4u22suv2kn6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
