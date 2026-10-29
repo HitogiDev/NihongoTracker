@@ -160,7 +160,7 @@ export async function searchUsersFn(
 }
 
 export async function updateUserFn(updateValues: FormData): Promise<ILoginResponse> {
-  const allowed = new Set(['about', 'timezone', 'weekStartsOn', 'language', 'blurAdultContent', 'hideAdultFromSearch', 'hideUnmatchedLogsAlert', 'hideRankingFeatures']);
+  const allowed = new Set(['about', 'timezone', 'weekStartsOn', 'dayStartHour', 'language', 'blurAdultContent', 'hideAdultFromSearch', 'hideUnmatchedLogsAlert', 'hideRankingFeatures']);
   const safeFields: Record<string, string> = {};
   let safe = true;
   for (const [key, value] of updateValues.entries()) {
@@ -711,6 +711,7 @@ export async function getUserStatsFn(
     start?: string;
     end?: string;
     timezone?: string;
+    dayStartHour?: number;
     includedTags?: string;
     excludedTags?: string;
     topMedia?: number;
@@ -733,6 +734,8 @@ export async function getUserStatsFn(
   if (params?.topMedia)
     queryParams.append('topMedia', String(params.topMedia));
   if (params?.timezone) queryParams.append('timezone', params.timezone);
+  if (params?.dayStartHour !== undefined)
+    queryParams.append('dayStartHour', String(params.dayStartHour));
   if (params?.includedTags)
     queryParams.append('includedTags', params.includedTags);
   if (params?.excludedTags)

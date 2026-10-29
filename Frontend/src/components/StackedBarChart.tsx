@@ -15,7 +15,7 @@ import { Bar } from 'react-chartjs-2';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useTimezone } from '../hooks/useTimezone';
-import { convertToUserTimezone } from '../utils/timezone';
+import { convertToUserTimezone, shiftByDayStart } from '../utils/timezone';
 import { getLogTypeLabelKey } from '../utils/logTypes';
 import { useUserDataStore } from '../store/userData';
 
@@ -78,7 +78,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   const { t: tCommon } = useTranslation('common');
   const lineColors = useThemeColors(1);
   const fillColors = useThemeColors(0.16);
-  const { timezone } = useTimezone();
+  const { timezone, dayStartHour } = useTimezone();
   const weekStartsOn = useUserDataStore(
     (state) => state.user?.settings?.weekStartsOn ?? 1,
   );
@@ -163,7 +163,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     let sortedDates = Array.from(allDates).sort();
 
     if (timeframe === 'month') {
-      const nowLocal = convertToUserTimezone(new Date(), timezone);
+      const nowLocal = convertToUserTimezone(
+        shiftByDayStart(new Date(), dayStartHour),
+        timezone
+      );
       const currentYearMonth = `${nowLocal.getFullYear()}-${pad(nowLocal.getMonth() + 1)}`;
 
       let monthDates = sortedDates.filter((key) =>

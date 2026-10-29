@@ -58,6 +58,7 @@ import { indexUser } from '../services/meilisearch/userIndex.js';
 import { calculateXp } from '../services/calculateLevel.js';
 import {
   getLiveCurrentStreak,
+  MAX_DAY_START_HOUR,
   recalculateStreaksForUser,
 } from '../services/streaks.js';
 import { recalculateUserXpFromLogs } from '../services/updateStats.js';
@@ -201,6 +202,7 @@ export async function updateUser(
     hideRankingFeatures,
     timezone,
     weekStartsOn,
+    dayStartHour,
     language,
     about,
     avatarCrop,
@@ -216,6 +218,8 @@ export async function updateUser(
       throw apiError('user.notFound', 404, 'User not found');
     }
     const wasHidingRankingFeatures = user.settings?.hideRankingFeatures === true;
+    const previousTimezone = user.settings?.timezone;
+    const previousDayStartHour = user.settings?.dayStartHour ?? 0;
 
     const hasPatreonMediaAccess =
       user.patreon?.isActive &&
@@ -522,6 +526,7 @@ export async function updateUser(
       hideRankingFeatures !== undefined ||
       timezone !== undefined ||
       weekStartsOn !== undefined ||
+      dayStartHour !== undefined ||
       language !== undefined
     ) {
       const updatedSettings: any = { ...user.settings };
@@ -560,6 +565,14 @@ export async function updateUser(
         updatedSettings.weekStartsOn = Number(weekStartsOn);
       }
 
+      if (dayStartHour !== undefined) {
+        const hour = Number(dayStartHour);
+        if (!/^\d{1,2}$/.test(dayStartHour) || hour > MAX_DAY_START_HOUR) {
+          throw apiError('common.validationError', 400, 'Invalid day start hour');
+        }
+        updatedSettings.dayStartHour = hour;
+      }
+
       if (language !== undefined) {
         if (!SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
           throw apiError('user.invalidLanguage', 400, 'Invalid language');
@@ -596,6 +609,18 @@ export async function updateUser(
           'Failed to clear pending ranking achievement feedback:',
           feedbackError
         );
+      }
+    }
+
+    // Day boundaries changed, so stored streaks can be wrong.
+    if (
+      updatedUser.settings?.timezone !== previousTimezone ||
+      (updatedUser.settings?.dayStartHour ?? 0) !== previousDayStartHour
+    ) {
+      try {
+        await recalculateStreaksForUser(updatedUser._id);
+      } catch (streakError) {
+        console.error('Failed to recalculate streaks:', streakError);
       }
     }
 
@@ -1476,7 +1501,8 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
   const liveCurrentStreak = getLiveCurrentStreak(
     userFound.stats?.currentStreak ?? 0,
     userFound.stats?.lastStreakDate ?? null,
-    timezone
+    timezone,
+    userFound.settings?.dayStartHour
   );
 
   const viewer = res.locals.user as IUser | undefined;
@@ -1608,7 +1634,7 @@ export async function getRanking(
     if (filter === 'currentStreak') {
       const streakUsers = await User.find(rankingUserMatch)
         .select(
-          'username avatar stats.userLevel stats.currentStreak stats.lastStreakDate settings.timezone patreon customization'
+          'username avatar stats.userLevel stats.currentStreak stats.lastStreakDate settings.timezone settings.dayStartHour patreon customization'
         )
         .lean();
 
@@ -1623,7 +1649,8 @@ export async function getRanking(
             currentStreak: getLiveCurrentStreak(
               streakUser.stats?.currentStreak ?? 0,
               streakUser.stats?.lastStreakDate ?? null,
-              streakUser.settings?.timezone || 'UTC'
+              streakUser.settings?.timezone || 'UTC',
+              streakUser.settings?.dayStartHour
             ),
           },
         }))
@@ -2903,6 +2930,7 @@ export async function getWrapped(
       timezone,
       includePrivate: Boolean(viewer?._id?.equals(user._id)),
       currentXp: user.stats?.userXp ?? 0,
+      dayStartHour: user.settings?.dayStartHour,
     });
     return res.status(200).json(stats);
   } catch (error) {

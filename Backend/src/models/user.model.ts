@@ -89,6 +89,7 @@ const SettingsSchema = new Schema<IUserSettings>(
     hideRankingFeatures: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
     weekStartsOn: { type: Number, enum: [0, 1], default: 1 },
+    dayStartHour: { type: Number, min: 0, max: 12, default: 0 },
     language: { type: String, enum: SUPPORTED_LANGUAGES, default: 'en' },
     hiddenRecentMedia: { type: [String], default: [] },
     statsLayout: { type: [Schema.Types.Mixed], default: [] },

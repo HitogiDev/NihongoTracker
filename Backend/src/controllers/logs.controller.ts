@@ -25,6 +25,8 @@ import {
   recalculateStreaksForUser,
   updateStreakWithLog,
   getLiveCurrentStreak,
+  resolveDayStartHour,
+  shiftByDayStart,
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
 
@@ -469,11 +471,15 @@ export async function getDashboardHours(
   try {
     // Use user's timezone for date calculations
     const userTimezone = user.settings?.timezone || 'UTC';
+    const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
     const now = new Date();
 
     // Get current date in user's timezone
+    // offsetNow includes the day start hour, so local boundaries map to the user's day.
     const userDate = new Date(
-      now.toLocaleString('en-US', { timeZone: userTimezone })
+      shiftByDayStart(now, dayStartHour).toLocaleString('en-US', {
+        timeZone: userTimezone,
+      })
     );
     const offsetNow = now.getTime() - userDate.getTime();
 
@@ -2403,6 +2409,7 @@ interface IGetUserStatsQuery {
   start?: string;
   end?: string;
   timezone?: string;
+  dayStartHour?: string;
   includedTags?: string;
   excludedTags?: string;
   topMedia?: string;
@@ -2488,6 +2495,7 @@ export async function getUserStats(
       start: startParam,
       end: endParam,
       timezone: tzParam,
+      dayStartHour: dayStartParam,
       includedTags: includedTagsParam,
       excludedTags: excludedTagsParam,
       topMedia: topMediaParam,
@@ -2553,14 +2561,22 @@ export async function getUserStats(
 
     // Use provided timezone or user's timezone for date calculations
     const userTimezone = tzParam || user.settings?.timezone || 'UTC';
+    // Viewers send their own day start hour together with their timezone.
+    const dayStartHour =
+      dayStartParam !== undefined && /^\d{1,2}$/.test(dayStartParam)
+        ? resolveDayStartHour(Number(dayStartParam))
+        : resolveDayStartHour(user.settings?.dayStartHour);
 
     let dateFilter: any = {};
     let daysPeriod = 1;
     const now = new Date();
 
     // Get current date in user's timezone
+    // offsetNow includes the day start hour, so local boundaries map to the user's day.
     const userDate = new Date(
-      now.toLocaleString('en-US', { timeZone: userTimezone })
+      shiftByDayStart(now, dayStartHour).toLocaleString('en-US', {
+        timeZone: userTimezone,
+      })
     );
     const offsetNow = now.getTime() - userDate.getTime();
 
@@ -2839,10 +2855,16 @@ export async function getUserStats(
       const parts = dateFormatter.formatToParts(sourceDate);
       const partValue = (partType: Intl.DateTimeFormatPart['type']) =>
         parts.find((part) => part.type === partType)?.value || '00';
+      // The day comes from the shifted instant. The time of day stays the real local time.
+      const dayParts = dateFormatter.formatToParts(
+        shiftByDayStart(sourceDate, dayStartHour)
+      );
+      const dayPartValue = (partType: Intl.DateTimeFormatPart['type']) =>
+        dayParts.find((part) => part.type === partType)?.value || '00';
 
-      const year = Number(partValue('year')) || 0;
-      const month = Number(partValue('month')) || 1;
-      const day = Number(partValue('day')) || 1;
+      const year = Number(dayPartValue('year')) || 0;
+      const month = Number(dayPartValue('month')) || 1;
+      const day = Number(dayPartValue('day')) || 1;
       const hour = Number(partValue('hour')) || 0;
       const minute = Number(partValue('minute')) || 0;
       const second = Number(partValue('second')) || 0;
@@ -3121,7 +3143,8 @@ export async function getUserStats(
       currentStreak: getLiveCurrentStreak(
         user.stats?.currentStreak ?? 0,
         user.stats?.lastStreakDate ?? null,
-        userTimezone
+        userTimezone,
+        user.settings?.dayStartHour
       ),
       longestStreak: user.stats?.longestStreak ?? 0,
     };
@@ -3402,11 +3425,15 @@ export async function getUserMediaStats(
 
     // Use user's timezone for date calculations
     const userTimezone = user.settings?.timezone || 'UTC';
+    const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
     const now = new Date();
 
     // Get current date in user's timezone
+    // offsetNow includes the day start hour, so local boundaries map to the user's day.
     const userDate = new Date(
-      now.toLocaleString('en-US', { timeZone: userTimezone })
+      shiftByDayStart(now, dayStartHour).toLocaleString('en-US', {
+        timeZone: userTimezone,
+      })
     );
     const offsetNow = now.getTime() - userDate.getTime();
 
@@ -4042,11 +4069,15 @@ export async function getLogScreenStats(
   try {
     // Use user's timezone for date calculations
     const userTimezone = user.settings?.timezone || 'UTC';
+    const dayStartHour = resolveDayStartHour(user.settings?.dayStartHour);
     const now = new Date();
 
     // Get current date in user's timezone
+    // offsetNow includes the day start hour, so local boundaries map to the user's day.
     const userDate = new Date(
-      now.toLocaleString('en-US', { timeZone: userTimezone })
+      shiftByDayStart(now, dayStartHour).toLocaleString('en-US', {
+        timeZone: userTimezone,
+      })
     );
     const offsetNow = now.getTime() - userDate.getTime();
 

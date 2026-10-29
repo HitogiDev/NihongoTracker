@@ -151,6 +151,7 @@ import {
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
+const DAY_START_HOURS = Array.from({ length: 13 }, (_, hour) => hour);
 const DEFAULT_BADGE_COLOR = '#ff69b4';
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff';
 const PRESET_BADGE_BACKGROUNDS = ['primary', 'secondary', 'rainbow'] as const;
@@ -542,6 +543,9 @@ function SettingsScreen() {
   const [weekStartsOn, setWeekStartsOn] = useState<0 | 1>(
     user?.settings?.weekStartsOn ?? 1,
   );
+  const [dayStartHour, setDayStartHour] = useState(
+    user?.settings?.dayStartHour ?? 0,
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string>('');
   const [bannerSrc, setBannerSrc] = useState<string>('');
@@ -809,6 +813,8 @@ function SettingsScreen() {
         formData.append('timezone', value as string);
       } else if (prefType === 'weekStartsOn') {
         formData.append('weekStartsOn', value.toString());
+      } else if (prefType === 'dayStartHour') {
+        formData.append('dayStartHour', value.toString());
       } else if (prefType === 'blurAdultContent') {
         formData.append('blurAdultContent', value.toString());
       } else if (prefType === 'hideAdultFromSearch') {
@@ -827,6 +833,7 @@ function SettingsScreen() {
   // Use refs to track timeouts for debouncing
   const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const weekStartsOnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dayStartHourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -851,6 +858,7 @@ function SettingsScreen() {
       setHideRankingFeatures(user.settings?.hideRankingFeatures || false);
       setTimezone(user.settings?.timezone || detectedTimezone);
       setWeekStartsOn(user.settings?.weekStartsOn ?? 1);
+      setDayStartHour(user.settings?.dayStartHour ?? 0);
       setIsInitialized(true);
     }
   }, [user, isInitialized, detectedTimezone]);
@@ -874,6 +882,26 @@ function SettingsScreen() {
       }
     };
   }, [weekStartsOn, user?.settings?.weekStartsOn, debouncedUpdatePreferences, isInitialized]);
+
+  useEffect(() => {
+    if (
+      isInitialized &&
+      (user?.settings?.dayStartHour ?? 0) !== dayStartHour
+    ) {
+      if (dayStartHourTimeoutRef.current) {
+        clearTimeout(dayStartHourTimeoutRef.current);
+      }
+      dayStartHourTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('dayStartHour', dayStartHour);
+      }, 500);
+    }
+
+    return () => {
+      if (dayStartHourTimeoutRef.current) {
+        clearTimeout(dayStartHourTimeoutRef.current);
+      }
+    };
+  }, [dayStartHour, user?.settings?.dayStartHour, debouncedUpdatePreferences, isInitialized]);
 
   useEffect(() => {
     // Avoid wiping editor state when user is temporarily null (e.g. auth state transitions)
@@ -3128,6 +3156,34 @@ function SettingsScreen() {
                           <option value={1}>{t('preferences.monday')}</option>
                           <option value={0}>{t('preferences.sunday')}</option>
                         </DropdownSelect>
+                      </fieldset>
+
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium gap-2">
+                          {t('preferences.dayStartHour')}
+                          {isPreferencesPending && (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          )}
+                        </legend>
+                        <DropdownSelect
+                          className="w-full"
+                          value={dayStartHour}
+                          onChange={(event) =>
+                            setDayStartHour(Number(event.target.value))
+                          }
+                          disabled={isPending || isPreferencesPending}
+                        >
+                          {DAY_START_HOURS.map((hour) => (
+                            <option key={hour} value={hour}>
+                              {hour === 0
+                                ? t('preferences.dayStartMidnight')
+                                : `${String(hour).padStart(2, '0')}:00`}
+                            </option>
+                          ))}
+                        </DropdownSelect>
+                        <p className="label text-base-content/60 text-wrap">
+                          {t('preferences.dayStartHourHint')}
+                        </p>
                       </fieldset>
 
                       <fieldset className="fieldset w-full p-0">

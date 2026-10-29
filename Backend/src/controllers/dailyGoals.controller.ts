@@ -9,6 +9,7 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { isValidGoalMediaType } from '../services/goalMediaType.js';
 import { requireGoalVisibility } from '../services/goalVisibility.js';
+import { resolveDayStartHour } from '../services/streaks.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -26,11 +27,12 @@ function dateParts(date: Date, timeZone: string) {
   return Object.fromEntries(parts.map(({ type, value }) => [type, value]));
 }
 
-function zonedMidnightUtc(localDate: Date, timeZone: string) {
+function zonedDayStartUtc(localDate: Date, timeZone: string, hour: number) {
   const utcGuess = Date.UTC(
     localDate.getFullYear(),
     localDate.getMonth(),
-    localDate.getDate()
+    localDate.getDate(),
+    hour
   );
   const parts = dateParts(new Date(utcGuess), timeZone);
   const representedUtc = Date.UTC(
@@ -71,22 +73,24 @@ export async function getDailyGoals(
     // Calculate today's progress using user's timezone
     const userTimezone = foundUser.settings?.timezone || FALLBACK_TIMEZONE;
 
-    // Get the current date in the user's timezone
-    const now = new Date();
+    // Activity before the day start hour counts toward the previous day.
+    const dayStartHour = resolveDayStartHour(foundUser.settings?.dayStartHour);
+    const now = new Date(Date.now() - dayStartHour * 60 * 60 * 1000);
     const currentParts = dateParts(now, userTimezone);
     const userDate = new Date(
       Number(currentParts.year),
       Number(currentParts.month) - 1,
       Number(currentParts.day)
     );
-    const startOfDay = zonedMidnightUtc(userDate, userTimezone);
-    const endOfDay = zonedMidnightUtc(
+    const startOfDay = zonedDayStartUtc(userDate, userTimezone, dayStartHour);
+    const endOfDay = zonedDayStartUtc(
       new Date(
         userDate.getFullYear(),
         userDate.getMonth(),
         userDate.getDate() + 1
       ),
-      userTimezone
+      userTimezone,
+      dayStartHour
     );
     // Weekly windows start on the owner's preferred week start day.
     const weekStartsOn = foundUser.settings?.weekStartsOn ?? 1;
@@ -97,8 +101,12 @@ export async function getDailyGoals(
     );
     const endOfWeekLocal = new Date(startOfWeekLocal);
     endOfWeekLocal.setDate(endOfWeekLocal.getDate() + 7);
-    const startOfWeek = zonedMidnightUtc(startOfWeekLocal, userTimezone);
-    const endOfWeek = zonedMidnightUtc(endOfWeekLocal, userTimezone);
+    const startOfWeek = zonedDayStartUtc(
+      startOfWeekLocal,
+      userTimezone,
+      dayStartHour
+    );
+    const endOfWeek = zonedDayStartUtc(endOfWeekLocal, userTimezone, dayStartHour);
 
     const calculateProgress = async (
       start: Date,
@@ -183,7 +191,10 @@ export async function getDailyGoals(
       endOfDay,
       `${currentParts.year}-${currentParts.month}-${currentParts.day}`
     );
-    const weekStartParts = dateParts(startOfWeek, userTimezone);
+    const weekStartParts = dateParts(
+      new Date(startOfWeek.getTime() - dayStartHour * 60 * 60 * 1000),
+      userTimezone
+    );
     const weekly = await calculateProgress(
       startOfWeek,
       endOfWeek,

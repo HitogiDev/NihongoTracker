@@ -3,7 +3,7 @@ import { ILog } from '../types';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
 import LineChart from './LineChart';
-import { getLocale } from '../utils/timezone';
+import { getLocale, shiftByDayStart } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
 import { getLogTypeLabelKey } from '../utils/logTypes';
 
@@ -66,7 +66,7 @@ function SpeedChart({
   const [timeframe, setTimeframe] = useState<TimeframeType>('total');
   const [filteredData, setFilteredData] = useState<FilteredData>({});
 
-  const { timezone } = useTimezone();
+  const { timezone, dayStartHour } = useTimezone();
 
   useEffect(() => {
     if (externalTimeframe) {
@@ -99,7 +99,9 @@ function SpeedChart({
     });
 
     const createLocalInfo = (date: Date) => {
-      const parts = formatter.formatToParts(date);
+      const parts = formatter.formatToParts(
+        shiftByDayStart(date, dayStartHour)
+      );
       const partValue = (type: Intl.DateTimeFormatPart['type']) =>
         parts.find((part) => part.type === type)?.value || '00';
 
@@ -247,7 +249,7 @@ function SpeedChart({
     });
 
     setFilteredData(filtered);
-  }, [timeframe, readingData, readingSpeedData, timezone]);
+  }, [timeframe, readingData, readingSpeedData, timezone, dayStartHour]);
 
   // Get all unique dates across all reading types
   const getAllDates = () => {

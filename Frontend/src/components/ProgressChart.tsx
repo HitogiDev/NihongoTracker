@@ -5,7 +5,11 @@ import BarChart from './BarChart';
 import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { convertToUserTimezone, getLocale } from '../utils/timezone';
+import {
+  convertToUserTimezone,
+  getLocale,
+  shiftByDayStart,
+} from '../utils/timezone';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { effectiveLogMinutes } from '../utils/immersionTime';
 import { useTranslation } from 'react-i18next';
@@ -109,7 +113,10 @@ export default function ProgressChart({
   );
   const { t } = useTranslation('stats');
   const { t: tCommon } = useTranslation('common');
-  const { timezone } = useTimezone();
+  const { timezone, dayStartHour } = useTimezone();
+  // The user's day for an instant. Activity before the day start hour counts toward the previous day.
+  const toUserDay = (date: Date) =>
+    convertToUserTimezone(shiftByDayStart(date, dayStartHour), timezone);
   const themeColors = useThemeColors(1);
   const [timeframe, setTimeframe] = useState<
     'today' | 'week' | 'month' | 'year' | 'total'
@@ -203,7 +210,7 @@ export default function ProgressChart({
       metricValues = dayValues;
     } else if (timeframe === 'month') {
       // Format for days in current month
-      const currentLocal = convertToUserTimezone(new Date(), timezone);
+      const currentLocal = toUserDay(new Date());
       const daysInMonth = new Date(
         currentLocal.getFullYear(),
         currentLocal.getMonth() + 1,
@@ -304,10 +311,7 @@ export default function ProgressChart({
       });
 
       filteredLogs.forEach((log) => {
-        const logDateInUserTz = convertToUserTimezone(
-          new Date(log.date),
-          timezone
-        );
+        const logDateInUserTz = toUserDay(new Date(log.date));
         const dayOfWeek = logDateInUserTz.getDay();
         const dayName = dayNames[dayOfWeek];
         if (metric === 'xp') {
@@ -342,10 +346,7 @@ export default function ProgressChart({
       ];
 
       filteredLogs.forEach((log) => {
-        const logDateInUserTz = convertToUserTimezone(
-          new Date(log.date),
-          timezone
-        );
+        const logDateInUserTz = toUserDay(new Date(log.date));
         const monthIndex = logDateInUserTz.getMonth();
         if (!metricByMonth[monthIndex.toString()]) {
           metricByMonth[monthIndex.toString()] = 0;
@@ -369,7 +370,7 @@ export default function ProgressChart({
       const metricByMonthYear: { [key: string]: number } = {};
 
       filteredLogs.forEach((log) => {
-        const date = new Date(log.date);
+        const date = toUserDay(new Date(log.date));
         const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
           .padStart(2, '0')}`;
@@ -395,17 +396,14 @@ export default function ProgressChart({
 
   function filterLogsByTimeframe(logs: ILog[], timeframe: string) {
     const now = new Date();
-    const nowInUserTz = convertToUserTimezone(now, timezone);
+    const nowInUserTz = toUserDay(now);
 
     return logs.filter((log) => {
       if (log.unknownDate) {
         return false;
       }
 
-      const logDateInUserTz = convertToUserTimezone(
-        new Date(log.date),
-        timezone
-      );
+      const logDateInUserTz = toUserDay(new Date(log.date));
 
       if (timeframe === 'today') {
         return logDateInUserTz.toDateString() === nowInUserTz.toDateString();
@@ -433,10 +431,7 @@ export default function ProgressChart({
     const metricByDate: { [key: string]: number } = {};
 
     logs.forEach((log) => {
-      const logDateInUserTz = convertToUserTimezone(
-        new Date(log.date),
-        timezone
-      );
+      const logDateInUserTz = toUserDay(new Date(log.date));
       const dateStr = logDateInUserTz.toISOString().split('T')[0];
       if (!metricByDate[dateStr]) {
         metricByDate[dateStr] = 0;
