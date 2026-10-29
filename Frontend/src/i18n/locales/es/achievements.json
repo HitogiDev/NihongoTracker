@@ -575,6 +575,7 @@
   "reveal": {
     "unlocked": "¡Logro desbloqueado!",
     "next": "Siguiente ({{current}}/{{total}})",
+    "previous": "Anterior",
     "done": "¡Genial!",
     "skipAll": "Saltar todo"
   },

@@ -574,6 +574,7 @@
   "reveal": {
     "unlocked": "Achievement Unlocked!",
     "next": "Next ({{current}}/{{total}})",
+    "previous": "Previous",
     "done": "Awesome!",
     "skipAll": "Skip all"
   },
