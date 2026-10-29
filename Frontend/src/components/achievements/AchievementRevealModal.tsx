@@ -36,7 +36,9 @@ export default function AchievementRevealModal({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [skipped, setSkipped] = useState(false);
 
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -47,6 +49,7 @@ export default function AchievementRevealModal({
 
   const current = achievements[currentIndex];
   const a = current?.achievement;
+  const isFirst = currentIndex === 0;
   const isLast = currentIndex === achievements.length - 1;
 
   // Fade in the overlay once, not on each card.
@@ -64,8 +67,10 @@ export default function AchievementRevealModal({
 
     setIsFlipped(false);
     setShowContent(false);
+    setSkipped(false);
 
     const tl = gsap.timeline({ delay: isFirstCardRef.current ? 0.3 : 0 });
+    timelineRef.current = tl;
     isFirstCardRef.current = false;
 
     const cardRarity = a.rarity ?? 'common';
@@ -105,6 +110,7 @@ export default function AchievementRevealModal({
 
     return () => {
       tl.kill();
+      if (timelineRef.current === tl) timelineRef.current = null;
     };
   }, [currentIndex, a]);
 
@@ -123,6 +129,11 @@ export default function AchievementRevealModal({
 
     if (elements.length === 0) return;
 
+    if (skipped) {
+      gsap.set(elements, { opacity: 1, y: 0 });
+      return;
+    }
+
     const tween = gsap.fromTo(
       elements,
       { opacity: 0, y: 12 },
@@ -132,7 +143,23 @@ export default function AchievementRevealModal({
     return () => {
       tween.kill();
     };
-  }, [showContent, currentIndex]);
+  }, [showContent, currentIndex, skipped]);
+
+  // Jump to the finished card: no flip, burst, sound, or text intro.
+  const skipAnimation = () => {
+    timelineRef.current?.kill();
+    timelineRef.current = null;
+    setSkipped(true);
+    setIsFlipped(true);
+    setShowContent(true);
+  };
+
+  const handlePrevious = () => {
+    if (isFirst) return;
+    setIsFlipped(false);
+    setShowContent(false);
+    setCurrentIndex((i) => i - 1);
+  };
 
   const handleNext = () => {
     if (isLast) {
@@ -165,6 +192,10 @@ export default function AchievementRevealModal({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       style={{ opacity: 0 }}
       onClick={(e) => {
+        if (!showContent) {
+          skipAnimation();
+          return;
+        }
         if (e.target === e.currentTarget) handleDismiss();
       }}
     >
@@ -198,7 +229,9 @@ export default function AchievementRevealModal({
               achievement's icon before it flipped away again. */}
           <div
             key={currentIndex}
-            className={`achievement-flip-card ${isFlipped ? 'flipped' : ''}`}
+            className={`achievement-flip-card ${isFlipped ? 'flipped' : ''} ${
+              skipped ? 'achievement-flip-card-instant' : ''
+            }`}
           >
             {/* Front: unrevealed ? card */}
             <div className="achievement-flip-front surface-muted flex items-center justify-center">
@@ -280,7 +313,24 @@ export default function AchievementRevealModal({
         )}
 
         <div className="flex gap-3 mt-2">
-          <button onClick={handleNext} className="btn btn-primary btn-sm px-6">
+          {!isFirst && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevious();
+              }}
+              className="btn btn-ghost btn-sm text-white/60 hover:text-white"
+            >
+              {t('reveal.previous')}
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
+            className="btn btn-primary btn-sm px-6"
+          >
             {isLast
               ? t('reveal.done')
               : t('reveal.next', {
@@ -290,7 +340,10 @@ export default function AchievementRevealModal({
           </button>
           {!isLast && (
             <button
-              onClick={handleDismiss}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDismiss();
+              }}
               className="btn btn-ghost btn-sm text-white/60 hover:text-white"
             >
               {t('reveal.skipAll')}
