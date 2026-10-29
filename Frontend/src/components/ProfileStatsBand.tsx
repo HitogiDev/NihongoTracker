@@ -224,12 +224,12 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     <div className="card w-full surface">
       <div className="card-body w-full p-4 sm:p-6 flex flex-col gap-3">
         {/* Header row: always visible, toggles the whole section */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <button
             type="button"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
-            className="flex items-center gap-1.5 card-title text-base-content/80 hover:text-base-content transition-colors"
+            className="flex items-center gap-1.5 whitespace-nowrap card-title text-base-content/80 hover:text-base-content transition-colors"
           >
             <ChevronDown
               className={`w-4 h-4 transition-transform ${
@@ -238,33 +238,31 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             />
             {t('stats.title')}
           </button>
-          <div className="flex items-center gap-3">
-            {collapsed && !hideRankingFeatures && (
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-base-content/60">
-                  Global{' '}
-                  <span className="font-bold text-base-content">
-                    {compactGlobal}
-                  </span>
+          {collapsed && !hideRankingFeatures && (
+            <div className="order-last flex w-full items-center gap-4 text-sm sm:order-none sm:ml-auto sm:w-auto">
+              <span className="text-base-content/60">
+                {t('stats.global')}{' '}
+                <span className="font-bold text-base-content">
+                  {compactGlobal}
                 </span>
-                <span className="text-base-content/60">
-                  Monthly{' '}
-                  <span className="font-bold text-base-content">
-                    {compactMonthly}
-                  </span>
+              </span>
+              <span className="text-base-content/60">
+                {t('stats.monthly')}{' '}
+                <span className="font-bold text-base-content">
+                  {compactMonthly}
                 </span>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content"
-              title={t('stats.shareTitle')}
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              {t('stats.share')}
-            </button>
-          </div>
+              </span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className={`btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content ${collapsed && !hideRankingFeatures ? 'ml-auto sm:ml-0' : 'ml-auto'}`}
+            title={t('stats.shareTitle')}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            {t('stats.share')}
+          </button>
         </div>
 
         {!collapsed && (

@@ -34,6 +34,7 @@ export async function cacheImage(userId: string, src: string) {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(12000),
       credentials: 'omit',
+      referrerPolicy: 'no-referrer',
     });
     if (!response.ok) return null;
     const blob = await response.blob();

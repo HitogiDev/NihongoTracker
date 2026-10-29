@@ -6,6 +6,8 @@ import NativeNavigation from "./NativeNavigation";
 import NativeHeader from "./NativeHeader";
 import MobileBottomNav from "../components/MobileBottomNav";
 import NativeOnboarding from "./NativeOnboarding";
+import NativeFab from "./NativeFab";
+import PullToRefresh from "./PullToRefresh";
 import { useNativeOnboardingStore } from "./onboardingStore";
 
 export default function NativeShell() {
@@ -33,7 +35,9 @@ export default function NativeShell() {
         >
           <Outlet key={route.screen === "settings" ? search : undefined} />
         </main>
-        <ToastContainer autoClose={2500} position="bottom-center" />
+        <ToastContainer autoClose={2500} position="top-center" />
+        <PullToRefresh />
+        <NativeFab />
         {dock && <MobileBottomNav />}
       </div>
     </NativeNavigation>

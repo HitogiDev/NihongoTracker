@@ -1,0 +1,85 @@
+{
+  "hero": {
+    "title": "NihongoTracker Desktop Companion",
+    "subtitle": "Una app de escritorio gratuita que detecta lo que ves, lees y juegas, y lo registra en NihongoTracker por ti. Incluye un texthooker integrado, un diccionario sin conexión y minado para Anki.",
+    "downloadFor": "Descargar para {{platform}}",
+    "downloadLatest": "Descargar la última versión",
+    "version": "Versión {{version}}",
+    "versionWithSize": "Versión {{version}} · {{size}}",
+    "platforms": "Disponible para Windows, macOS y Linux"
+  },
+  "beta": {
+    "badge": "Beta",
+    "notice": "El companion está en beta, así que puede tener errores o funciones incompletas.",
+    "report": "Reportar un problema"
+  },
+  "screenshots": {
+    "alt": "Captura del Desktop Companion {{number}}"
+  },
+  "platforms": {
+    "windows": "Windows",
+    "macos": "macOS",
+    "linux": "Linux"
+  },
+  "downloads": {
+    "title": "Descargas",
+    "detected": "Tu sistema",
+    "allReleases": "Todas las versiones y notas de lanzamiento en GitHub",
+    "requirements": {
+      "windows": "Windows 10 o posterior, 64 bits.",
+      "macos": "macOS 10.15 o posterior. Apple silicon e Intel.",
+      "linux": "64 bits, glibc 2.39 o posterior (Ubuntu 24.04 o más reciente)."
+    },
+    "formats": {
+      "exe": "Instalador (.exe)",
+      "dmg": "Imagen de disco (.dmg)",
+      "appimage": "AppImage",
+      "deb": "Debian / Ubuntu (.deb)"
+    }
+  },
+  "features": {
+    "title": "Qué hace",
+    "items": {
+      "anime": {
+        "title": "Seguimiento automático de anime",
+        "description": "Reconoce mpv, MPC-HC, VLC, PotPlayer y más. Registra cada episodio al alcanzar el umbral de visualización, y los videos en pausa no cuentan."
+      },
+      "novels": {
+        "title": "Novelas visuales y texthooker",
+        "description": "Vincula el ejecutable de un juego a un título. El texthooker se abre con él, y el tiempo solo cuenta mientras la ventana tiene el foco."
+      },
+      "games": {
+        "title": "Videojuegos",
+        "description": "Registra el tiempo de juego de los títulos vinculados. Cada sesión pasa a Pendientes para revisarla al cerrar el juego."
+      },
+      "mining": {
+        "title": "Diccionario y minado",
+        "description": "Importa diccionarios de Yomitan para buscar sin conexión, guarda oraciones desde cualquier ventana y envía tarjetas a Anki."
+      },
+      "offline": {
+        "title": "Funciona sin conexión",
+        "description": "Cada registro pasa por una cola local con reintentos, así que cerrar la app o perder la conexión nunca pierde datos."
+      },
+      "community": {
+        "title": "Amigos y clasificación",
+        "description": "Consulta la actividad de tus amigos, quién está inmersionando ahora y la clasificación sin abrir la web."
+      }
+    }
+  },
+  "setup": {
+    "title": "Primeros pasos",
+    "install": {
+      "title": "Instala la app",
+      "description": "Ejecuta el instalador de tu sistema. La app se actualiza sola desde GitHub y pregunta antes de instalar nada."
+    },
+    "apiKey": {
+      "title": "Conecta tu cuenta",
+      "description": "Crea una clave de API en tus ajustes y pégala en el companion cuando te la pida.",
+      "action": "Crear una clave de API"
+    },
+    "immerse": {
+      "title": "Empieza a inmersionar",
+      "description": "Abre un video, una novela o un juego. El companion lo detecta y registra tu tiempo automáticamente."
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "hero": {
+    "title": "NihongoTracker Desktop Companion",
+    "subtitle": "A free desktop app that detects what you watch, read, and play, then logs it to NihongoTracker for you. It includes a built-in texthooker, an offline dictionary, and Anki mining.",
+    "downloadFor": "Download for {{platform}}",
+    "downloadLatest": "Download the latest version",
+    "version": "Version {{version}}",
+    "versionWithSize": "Version {{version}} · {{size}}",
+    "platforms": "Available for Windows, macOS, and Linux"
+  },
+  "beta": {
+    "badge": "Beta",
+    "notice": "The companion is in beta, so you may find bugs or missing features.",
+    "report": "Report a problem"
+  },
+  "screenshots": {
+    "alt": "Desktop Companion screenshot {{number}}"
+  },
+  "platforms": {
+    "windows": "Windows",
+    "macos": "macOS",
+    "linux": "Linux"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "detected": "Your system",
+    "allReleases": "All releases and release notes on GitHub",
+    "requirements": {
+      "windows": "Windows 10 or later, 64-bit.",
+      "macos": "macOS 10.15 or later. Apple silicon and Intel.",
+      "linux": "64-bit, glibc 2.39 or later (Ubuntu 24.04 or newer)."
+    },
+    "formats": {
+      "exe": "Installer (.exe)",
+      "dmg": "Disk image (.dmg)",
+      "appimage": "AppImage",
+      "deb": "Debian / Ubuntu (.deb)"
+    }
+  },
+  "features": {
+    "title": "What it does",
+    "items": {
+      "anime": {
+        "title": "Automatic anime tracking",
+        "description": "Recognizes mpv, MPC-HC, VLC, PotPlayer, and more. It logs each episode when you reach the viewing threshold, and paused videos do not count."
+      },
+      "novels": {
+        "title": "Visual novels and texthooker",
+        "description": "Link a game executable to a title. The texthooker opens with it, and time counts only while the window is focused."
+      },
+      "games": {
+        "title": "Games",
+        "description": "Track play time for linked games. Each session goes to Pending for review when the game closes."
+      },
+      "mining": {
+        "title": "Dictionary and mining",
+        "description": "Import Yomitan dictionaries for offline lookups, save sentences from any window, and send cards to Anki."
+      },
+      "offline": {
+        "title": "Offline first",
+        "description": "Every log goes through a local queue with retries, so a closed app or a lost connection never loses data."
+      },
+      "community": {
+        "title": "Friends and ranking",
+        "description": "See friend activity, who is immersing right now, and the leaderboard without opening the website."
+      }
+    }
+  },
+  "setup": {
+    "title": "Get started",
+    "install": {
+      "title": "Install the app",
+      "description": "Run the installer for your system. The app updates itself from GitHub and asks before it installs anything."
+    },
+    "apiKey": {
+      "title": "Connect your account",
+      "description": "Create an API key in your settings and paste it into the companion when it asks for one.",
+      "action": "Create an API key"
+    },
+    "immerse": {
+      "title": "Start immersing",
+      "description": "Open a video, novel, or game. The companion detects it and logs your time automatically."
+    }
+  }
+}

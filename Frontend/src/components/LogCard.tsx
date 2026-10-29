@@ -645,7 +645,8 @@ function LogCard({
 
                 {media &&
                   typeof media === 'object' &&
-                  media.title?.contentTitleEnglish && (
+                  media.title?.contentTitleEnglish &&
+                  media.title.contentTitleEnglish.trim() !== logTitle.trim() && (
                     <p className="text-sm text-base-content/60 mt-1 leading-tight">
                       {media.title.contentTitleEnglish.length > 45
                         ? `${media.title.contentTitleEnglish.slice(0, 45)}...`

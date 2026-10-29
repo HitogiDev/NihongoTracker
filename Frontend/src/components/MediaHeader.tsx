@@ -577,7 +577,7 @@ export default function MediaHeader() {
         </dialog>
       )}
       <div
-        className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
+        className={`native-media-banner h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingMedia ? 'skeleton' : ''
         } ${shouldBlur ? 'blur-sm' : ''}`}
         style={{
@@ -622,7 +622,7 @@ export default function MediaHeader() {
               {isLoadingMedia ? (
                 <div className="skeleton h-12 w-full max-w-[200px] mt-4 rounded-lg"></div>
               ) : (
-                <div className="w-full max-w-[200px] mt-4 flex flex-col gap-2">
+                <div className="native-media-actions w-full max-w-[200px] mt-4 flex flex-col gap-2">
                   <button
                     className="btn btn-primary w-full"
                     onClick={() => setLogModalOpen(true)}

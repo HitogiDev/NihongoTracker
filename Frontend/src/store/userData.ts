@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import queryClient from '../queryClient';
+import { clearPersistedQueries } from '../offline/queryCacheStore';
 import { useAchievementRevealStore } from './achievementReveal';
 import { useLogCelebrationStore } from './logCelebration';
 import { ILoginResponse } from '../types';
@@ -15,6 +16,7 @@ const FREE_TEXTHOOKER_THEMES = new Set(['', 'light', 'dark', 'system']);
 
 function clearAccountState() {
   queryClient.clear();
+  void clearPersistedQueries();
   useAchievementRevealStore.setState({ queue: [], suspended: false });
   useLogCelebrationStore.setState({ pending: null });
 }

@@ -444,12 +444,12 @@ export default function VotingSystem({
                   <Trophy className="w-5 h-5" />
                   {t('voting.recentResults')}
                 </h3>
-                <label className="w-full md:w-auto">
+                <label className="flex w-full flex-col gap-1 md:w-auto">
                   <span className="text-xs uppercase tracking-wide text-base-content/60">
                     {t('voting.timespan')}
                   </span>
                   <DropdownSelect
-                    className="select select-sm"
+                    className="select select-sm w-full md:w-auto"
                     value={resultsTimespan}
                     onChange={(event) =>
                       setResultsTimespan(event.target.value as ResultsTimespan)

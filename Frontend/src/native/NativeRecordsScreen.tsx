@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { NotebookPen, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { CalendarRange, NotebookPen, Plus, Search, X } from "lucide-react";
 import { getUserLogsFn } from "../api/trackerApi";
 import { useUserDataStore } from "../store/userData";
 import type { ILog } from "../types";
@@ -11,9 +11,10 @@ import { BulkLogToolbar, SelectableLogRow } from "../components/BulkLogEdit";
 import Button from "../components/ui/Button";
 import Field from "../components/ui/Field";
 import Modal from "../components/ui/Modal";
-import DropdownSelect from "../components/ui/DropdownSelect";
 import DatePickerInput from "../components/ui/DatePickerInput";
-import Spinner from "../components/ui/Spinner";
+import InfiniteScrollSentinel from "../components/ui/InfiniteScrollSentinel";
+import { SkeletonCard } from "../components/ui/Skeleton";
+import { useTimezone } from "../hooks/useTimezone";
 import { useNativePageState } from "./useNativePageState";
 import { getLogTypeLabelKey } from "../utils/logTypes";
 
@@ -38,6 +39,23 @@ interface Filters {
   end: string;
 }
 const emptyFilters: Filters = { search: "", type: "", start: "", end: "" };
+const PERIODS = [
+  { key: "today", days: 1, label: "native.today" },
+  { key: "week", days: 7, label: "native.last7Days" },
+  { key: "month", days: 30, label: "native.last30Days" },
+] as const;
+
+/** Format a day as YYYY-MM-DD in the given time zone. */
+function dayInZone(date: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(date);
+}
+function periodRange(days: number, timeZone: string) {
+  const now = Date.now();
+  return {
+    start: dayInZone(new Date(now - (days - 1) * 86_400_000), timeZone),
+    end: dayInZone(new Date(now), timeZone),
+  };
+}
 
 export default function NativeRecordsScreen() {
   const { t } = useTranslation("nav");
@@ -47,8 +65,29 @@ export default function NativeRecordsScreen() {
     "records:filters",
     emptyFilters,
   );
+  const { timezone } = useTimezone();
   const [draft, setDraft] = useState(filters);
   const [open, setOpen] = useState(false);
+  const [searchText, setSearchText] = useState(filters.search);
+  useEffect(() => {
+    if (searchText === filters.search) return undefined;
+    const timer = setTimeout(
+      () => setFilters((current) => ({ ...current, search: searchText.trim() })),
+      350,
+    );
+    return () => clearTimeout(timer);
+  }, [searchText, filters.search, setFilters]);
+  const activePeriod = useMemo(
+    () =>
+      PERIODS.find((period) => {
+        const range = periodRange(period.days, timezone);
+        return range.start === filters.start && range.end === filters.end;
+      })?.key,
+    [filters.start, filters.end, timezone],
+  );
+  const customDates = Boolean(
+    (filters.start || filters.end) && !activePeriod,
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const query = useInfiniteQuery({
     queryKey: ["logs", user?.username, "native-records", filters],
@@ -76,47 +115,122 @@ export default function NativeRecordsScreen() {
   const logs = Array.from(unique.values()).sort(
     (a, b) => +new Date(b.date) - +new Date(a.date),
   );
+  const resetFilters = () => {
+    setSearchText("");
+    setFilters(emptyFilters);
+  };
   const filtered = Boolean(
     filters.search || filters.type || filters.start || filters.end,
   );
   return (
     <section className="native-page space-y-4">
-      <div className="native-toolbar flex items-center gap-2">
-        <Link
-          to="/log"
-          state={{ nativeFrom: "/records" }}
-          className="btn btn-primary flex-1"
-        >
-          <Plus className="h-5 w-5" />
-          {t("native.createLog")}
-        </Link>
-        <Button
-          appearance="outline"
-          shape="square"
-          aria-label={t("native.filters")}
-          onClick={() => {
-            setDraft(filters);
-            setOpen(true);
-          }}
-        >
-          <SlidersHorizontal className="h-5 w-5" />
-        </Button>
-      </div>
-      {filtered && (
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="truncate">
-            {[filters.search, filters.type, filters.start, filters.end]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-          <Button appearance="ghost" onClick={() => setFilters(emptyFilters)}>
-            {t("native.reset")}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <label className="input min-w-0 flex-1 focus-within:input-primary">
+            <Search className="h-4 w-4 shrink-0 text-base-content/60" />
+            <input
+              type="search"
+              className="grow"
+              placeholder={t("native.searchLogs")}
+              aria-label={t("native.searchLogs")}
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+            />
+            {searchText && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs btn-circle"
+                aria-label={t("native.reset")}
+                onClick={() => {
+                  setSearchText("");
+                  setFilters((current) => ({ ...current, search: "" }));
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </label>
+          <Button
+            appearance={customDates ? "solid" : "outline"}
+            variant={customDates ? "primary" : "default"}
+            shape="square"
+            aria-label={t("native.customDates")}
+            aria-pressed={customDates}
+            onClick={() => {
+              setDraft(filters);
+              setOpen(true);
+            }}
+          >
+            <CalendarRange className="h-5 w-5" />
           </Button>
         </div>
-      )}
+        <div
+          className="native-chip-row flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label={t("native.filters")}
+        >
+          {PERIODS.map((period) => (
+            <Button
+              key={period.key}
+              size="sm"
+              className="native-chip shrink-0 rounded-full"
+              variant={activePeriod === period.key ? "primary" : "default"}
+              appearance={activePeriod === period.key ? "solid" : "outline"}
+              aria-pressed={activePeriod === period.key}
+              onClick={() =>
+                setFilters((current) => ({
+                  ...current,
+                  ...(activePeriod === period.key
+                    ? { start: "", end: "" }
+                    : periodRange(period.days, timezone)),
+                }))
+              }
+            >
+              {t(period.label)}
+            </Button>
+          ))}
+          {customDates && (
+            <Button
+              size="sm"
+              variant="primary"
+              className="native-chip shrink-0 rounded-full"
+              aria-label={t("native.reset")}
+              onClick={() =>
+                setFilters((current) => ({ ...current, start: "", end: "" }))
+              }
+            >
+              {[filters.start, filters.end].filter(Boolean).join(" - ")}
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div
+          className="native-chip-row flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label={t("native.allTypes")}
+        >
+          {["", ...types].map((type) => (
+            <Button
+              key={type || "all"}
+              size="sm"
+              className="native-chip shrink-0 rounded-full"
+              variant={filters.type === type ? "primary" : "default"}
+              appearance={filters.type === type ? "solid" : "outline"}
+              aria-pressed={filters.type === type}
+              onClick={() => setFilters((current) => ({ ...current, type }))}
+            >
+              {type
+                ? lt(getLogTypeLabelKey(type as ILog["type"]) ?? "mediaTypes.other")
+                : t("native.allTypes")}
+            </Button>
+          ))}
+        </div>
+      </div>
       {query.isPending && (
-        <div className="flex justify-center p-8" role="status">
-          <Spinner />
+        <div className="space-y-3" role="status" aria-busy="true">
+          {[0, 1, 2, 3].map((item) => (
+            <SkeletonCard key={item} />
+          ))}
         </div>
       )}
       {query.isError && (
@@ -138,6 +252,18 @@ export default function NativeRecordsScreen() {
           <p className="text-sm text-base-content/65">
             {t("native.emptyLogsHint")}
           </p>
+          {filtered ? (
+            <Button onClick={resetFilters}>{t("native.reset")}</Button>
+          ) : (
+            <Link
+              to="/log"
+              state={{ nativeFrom: "/records" }}
+              className="btn btn-primary"
+            >
+              <Plus className="h-5 w-5" />
+              {t("native.logFirst")}
+            </Link>
+          )}
         </div>
       )}
       <div className="space-y-3">
@@ -166,28 +292,31 @@ export default function NativeRecordsScreen() {
           </SelectableLogRow>
         ))}
       </div>
-      {query.hasNextPage && (
-        <Button
-          block
-          loading={query.isFetchingNextPage}
-          onClick={() => void query.fetchNextPage()}
-        >
-          {t("native.loadMore")}
-        </Button>
-      )}
+      <InfiniteScrollSentinel
+        hasNextPage={Boolean(query.hasNextPage)}
+        isFetchingNextPage={query.isFetchingNextPage}
+        onLoadMore={() => void query.fetchNextPage()}
+      />
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={t("native.filters")}
+        title={t("native.customDates")}
         actions={
           <>
-            <Button appearance="ghost" onClick={() => setDraft(emptyFilters)}>
+            <Button
+              appearance="ghost"
+              onClick={() => setDraft({ ...draft, start: "", end: "" })}
+            >
               {t("native.reset")}
             </Button>
             <Button
               variant="primary"
               onClick={() => {
-                setFilters(draft);
+                setFilters((current) => ({
+                  ...current,
+                  start: draft.start,
+                  end: draft.end,
+                }));
                 setOpen(false);
               }}
             >
@@ -197,38 +326,6 @@ export default function NativeRecordsScreen() {
         }
       >
         <div className="space-y-4">
-          <Field
-            label={
-              <>
-                <Search className="h-4 w-4" />
-                {t("native.searchLogs")}
-              </>
-            }
-          >
-            {(id) => (
-              <input
-                id={id}
-                type="search"
-                className="input focus:input-primary w-full"
-                value={draft.search}
-                onChange={(e) => setDraft({ ...draft, search: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field label={t("native.allTypes")}>
-            <DropdownSelect
-              className="select w-full"
-              value={draft.type}
-              onChange={(e) => setDraft({ ...draft, type: e.target.value })}
-            >
-              <option value="">{t("native.allTypes")}</option>
-              {types.map((type) => (
-                <option key={type} value={type}>
-                  {lt(getLogTypeLabelKey(type) ?? "mediaTypes.other")}
-                </option>
-              ))}
-            </DropdownSelect>
-          </Field>
           <Field label={t("native.startDate")}>
             <DatePickerInput
               value={draft.start}

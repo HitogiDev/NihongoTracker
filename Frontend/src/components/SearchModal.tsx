@@ -20,6 +20,8 @@ import { searchAnilist } from '../api/anilistApi';
 import { SearchResultType } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
 import { useUserDataStore } from '../store/userData';
+import { isMobileApp } from '../utils/nativeRuntime';
+import DropdownSelect from './ui/DropdownSelect';
 
 type SearchTab = 'all' | 'users' | 'media';
 type MediaTypeFilter = 'all' | string;
@@ -632,7 +634,7 @@ function SearchModal({
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
+            className="min-w-0 flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
             placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -640,6 +642,7 @@ function SearchModal({
           {isSearching && (
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
+          {!isMobileApp() && (
           <div className="dropdown dropdown-end flex-shrink-0">
             <div
               tabIndex={0}
@@ -683,10 +686,35 @@ function SearchModal({
               ))}
             </ul>
           </div>
+          )}
           <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {isMobileApp() && (
+          <div className="px-4 py-2 border-b border-base-content/10">
+            <DropdownSelect
+              className="select select-sm w-full"
+              aria-label={t('search.filterByType')}
+              value={mediaTypeFilter}
+              onChange={(e) => {
+                const next = e.target.value as MediaTypeFilter;
+                setMediaTypeFilter(next);
+                // A type filter only makes sense against media results
+                if (next !== 'all' && activeTab === 'users') {
+                  setActiveTab('media');
+                }
+              }}
+            >
+              {MEDIA_TYPE_FILTERS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {tCommon(opt.labelKey)}
+                </option>
+              ))}
+            </DropdownSelect>
+          </div>
+        )}
 
         <div className="flex items-center gap-1 px-4 py-2 border-b border-base-content/10">
           {(
@@ -775,6 +803,7 @@ function SearchModal({
           )}
         </div>
 
+        {!isMobileApp() && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-base-content/10 text-[11px] text-base-content/30">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
@@ -798,6 +827,7 @@ function SearchModal({
             <kbd className="kbd kbd-xs">K</kbd>
           </span>
         </div>
+        )}
       </div>
       <form method="dialog" className="modal-backdrop">
         <button onClick={onClose}>close</button>

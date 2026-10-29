@@ -1122,14 +1122,14 @@ function StatsScreen() {
           <div className="card-body flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-                <div className="join w-full sm:w-auto">
+                <div className="join w-full overflow-x-auto sm:w-auto">
                   {CATEGORY_OPTIONS.map(({ id, labelKey, Icon }) => (
                     <button
                       key={id}
-                      className={`join-item btn btn-sm flex-1 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
+                      className={`join-item btn btn-sm flex-1 shrink-0 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => setActiveCategory(id)}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="hidden w-4 h-4 sm:block" />
                       {tTab(labelKey)}
                     </button>
                   ))}

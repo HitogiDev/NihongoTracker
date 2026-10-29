@@ -15,6 +15,7 @@ import DatePickerInput from './ui/DatePickerInput';
 import Field from './ui/Field';
 import TagSelector from './TagSelector';
 import { isMobileApp } from '../utils/nativeRuntime';
+import { haptic } from '../native/haptics';
 
 type EditableField = 'description' | 'type' | 'date' | 'time' | 'episodes' | 'volume' | 'pages' | 'chars' | 'tags';
 type BulkEditRequest = { ids: string[]; updates: IUpdateLogRequest };
@@ -391,6 +392,7 @@ export function SelectableLogRow({
         pressStart.current = { x: event.clientX, y: event.clientY };
         pressTimer.current = setTimeout(() => {
           held.current = true;
+          haptic('medium');
           toggleSelected();
           cancelPress();
         }, 500);

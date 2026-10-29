@@ -7,7 +7,6 @@ import { useNotificationCount } from "../hooks/useNotificationCount";
 import { nativeRoute } from "./navigation";
 import SearchModal from "../components/SearchModal";
 import Button from "../components/ui/Button";
-import NativeSupportLink from "./NativeSupportLink";
 
 export default function NativeHeader() {
   const { t } = useTranslation("nav");
@@ -42,7 +41,6 @@ export default function NativeHeader() {
           </h1>
           {user && route.primary && (
             <>
-              <NativeSupportLink />
               <Button
                 appearance="ghost"
                 size="sm"
@@ -52,27 +50,26 @@ export default function NativeHeader() {
               >
                 <Search className="h-5 w-5" />
               </Button>
-              {route.tab === "profile" ? (
+              <Link
+                to="/notifications"
+                className="btn btn-ghost btn-sm btn-square relative"
+                aria-label={t("a11y.notifications")}
+              >
+                <Bell className="h-5 w-5" />
+                {count > 0 && (
+                  <span
+                    className="native-notification-dot bg-primary"
+                    aria-label={String(count)}
+                  />
+                )}
+              </Link>
+              {route.tab === "profile" && (
                 <Link
                   to="/settings"
                   className="btn btn-ghost btn-sm btn-square"
                   aria-label={t("titles.settings")}
                 >
                   <Settings className="h-5 w-5" />
-                </Link>
-              ) : (
-                <Link
-                  to="/notifications"
-                  className="btn btn-ghost btn-sm btn-square relative"
-                  aria-label={t("a11y.notifications")}
-                >
-                  <Bell className="h-5 w-5" />
-                  {count > 0 && (
-                    <span
-                      className="native-notification-dot bg-primary"
-                      aria-label={String(count)}
-                    />
-                  )}
                 </Link>
               )}
             </>

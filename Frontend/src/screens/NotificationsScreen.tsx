@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Bell, Check, Clock3, ChevronRight, Inbox, Trash2 } from 'lucide-react';
+import { isMobileApp } from '../utils/nativeRuntime';
 import { useTranslation } from 'react-i18next';
 import {
   getNotificationBody,
@@ -280,7 +281,7 @@ function NotificationsScreen() {
   return (
     <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="text-center mb-8">
+        {!isMobileApp() && <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <Bell className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold text-base-content">
@@ -290,13 +291,13 @@ function NotificationsScreen() {
           <p className="text-base-content/70 max-w-lg mx-auto">
             {t('page.subtitle')}
           </p>
-        </div>
+        </div>}
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-72 flex-shrink-0 space-y-4">
             <div className="card surface">
               <div className="card-body p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-2">
+                {!isMobileApp() && <div className="grid grid-cols-2 gap-2">
                   <div className="surface-muted p-3">
                     <div className="text-xs uppercase tracking-wider text-base-content/50">
                       {t('summary.total')}
@@ -309,7 +310,8 @@ function NotificationsScreen() {
                     </div>
                     <div className="text-2xl font-semibold">{unreadCount}</div>
                   </div>
-                </div>
+                </div>}
+                <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
 
                 <button
                   className="btn btn-primary btn-sm gap-2 w-full"
@@ -335,6 +337,7 @@ function NotificationsScreen() {
                   <Inbox className="w-4 h-4" />
                   {t('summary.markAsUnread')}
                 </button>
+                </div>
               </div>
             </div>
           </div>

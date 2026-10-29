@@ -14,6 +14,7 @@ html[data-native-app="true"] {
   );
   background: var(--color-base-200);
   scrollbar-gutter: auto;
+  overscroll-behavior-y: none;
 }
 html[data-native-app="true"] body {
   margin: 0;
@@ -135,11 +136,13 @@ html[data-native-app="true"] .modal-box {
   overscroll-behavior: contain;
 }
 html[data-native-app="true"] .Toastify__toast-container {
-  bottom: calc(var(--native-safe-bottom) + 4.5rem);
+  top: calc(var(--native-safe-top) + 3.75rem);
+  bottom: auto;
   left: 0.75rem;
   right: 0.75rem;
   width: auto;
   padding: 0;
+  transform: none;
 }
 html[data-native-app="true"][data-native-keyboard="true"] .mobile-bottom-dock,
 html[data-native-app="true"][data-native-keyboard="true"]
@@ -161,6 +164,9 @@ html[data-native-app="true"][data-native-keyboard="true"] .native-shell-dock {
   padding: 1rem;
 }
 .native-toolbar {
+  /* Cover the full width so a selection ring does not show at the sides. */
+  margin-inline: -1rem;
+  padding-inline: 1rem;
   position: sticky;
   top: calc(3.5rem + var(--native-safe-top));
   z-index: 20;
@@ -176,6 +182,9 @@ html[data-native-app="true"][data-native-keyboard="true"] .native-shell-dock {
 .native-content .native-log-card {
   border-radius: var(--radius-box);
   box-shadow: none;
+}
+.native-content .native-log-card > .h-1 {
+  border-radius: var(--radius-box) var(--radius-box) 0 0;
 }
 .native-content .native-log-card header {
   flex-wrap: nowrap;
@@ -212,7 +221,15 @@ html[data-native-app="true"] .native-web-only {
 html[data-native-app="true"] .native-profile-banner {
   height: auto;
   min-height: 10rem;
+}
+/* Pad inside the overlay so its gradient covers the banner up to the top edge. */
+html[data-native-app="true"] .native-profile-banner > .relative {
   padding-top: 1rem;
+}
+/* Pages that open with a banner start directly below the header. */
+.native-content
+  > div:has(.native-profile-banner, .native-club-banner, .native-media-banner) {
+  padding-top: 0;
 }
 html[data-native-app="true"] .native-profile-identity {
   min-width: 0;
@@ -231,6 +248,29 @@ html[data-native-app="true"] .native-profile-identity > div:nth-child(2) {
 html[data-native-app="true"] .native-profile-identity > div:nth-child(2) > div {
   align-items: start;
 }
+/* Keep the name on its own line and put the title and supporter badges side by side. */
+html[data-native-app="true"]
+  .native-profile-identity
+  > div:nth-child(2)
+  > div:first-child {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+html[data-native-app="true"]
+  .native-profile-identity
+  > div:nth-child(2)
+  > div:first-child
+  > h1 {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+}
+/* Decorative frames extend past the portrait, so keep them inside the screen. */
+html[data-native-app="true"] .native-profile-identity > div:first-child {
+  margin-inline: 0.5rem;
+  flex-shrink: 0;
+}
 html[data-native-app="true"]
   .native-profile-identity
   > div:nth-child(2)
@@ -240,18 +280,14 @@ html[data-native-app="true"]
 }
 html[data-native-app="true"] .native-profile-identity > div:last-child {
   width: 100%;
-  justify-content: end;
+  margin-bottom: 0.5rem;
 }
-html[data-native-app="true"]
-  .native-profile-identity.native-profile-identity-other {
-  flex-wrap: nowrap;
-  align-items: flex-end;
+html[data-native-app="true"] .native-profile-identity > div:last-child:empty {
+  display: none;
 }
-html[data-native-app="true"]
-  .native-profile-identity.native-profile-identity-other
-  > div:last-child {
-  width: auto;
-  flex: 0 0 auto;
+html[data-native-app="true"] .native-profile-identity > div:last-child > * {
+  flex: 1 1 0;
+  min-width: 0;
 }
 html[data-native-app="true"] .native-profile-identity .w-24 {
   width: 4rem;
@@ -403,4 +439,62 @@ html[data-native-app="true"] .native-calendar .rdp-root {
   --rdp-day_button-height: 3rem;
   margin: 0 auto;
   width: fit-content;
+}
+.native-pull-indicator {
+  top: calc(3.5rem + var(--native-safe-top));
+}
+html[data-native-app="true"] .btn.native-chip {
+  min-height: 2.25rem;
+  height: 2.25rem;
+}
+/* Let chip rows scroll to the screen edges. */
+.native-chip-row {
+  width: calc(100% + 2rem);
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  scrollbar-width: none;
+}
+/* Tooltips need a hover. On touch screens they stick and leave the screen. */
+html[data-native-app="true"] .tooltip::before,
+html[data-native-app="true"] .tooltip::after,
+html[data-native-app="true"] .tooltip > .tooltip-content {
+  display: none;
+}
+/* Keep the last list item clear of the floating create button. */
+.native-shell-dock[data-native-screen="records"] .native-content {
+  padding-bottom: 4.5rem;
+}
+/* Some section titles are stored in lowercase for use inside sentences. */
+.native-header h1::first-letter {
+  text-transform: uppercase;
+}
+/* The native banner is short, so the default gradient leaves text over bright images. */
+html[data-native-app="true"] .native-profile-banner > .relative {
+  background-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.75),
+    rgb(0 0 0 / 0.35) 65%,
+    rgb(0 0 0 / 0.1)
+  );
+}
+html[data-native-app="true"] .native-profile-identity {
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+/* Win over the rule that keeps scroll containers inside the page width. */
+html[data-native-app="true"] .native-content :is(.native-chip-row, .native-toolbar) {
+  max-width: none;
+}
+/* Media actions: the main action and the status span the row, the rest share it. */
+html[data-native-app="true"] .native-media-actions {
+  max-width: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+html[data-native-app="true"] .native-media-actions > * {
+  flex: 1 1 40%;
+  min-width: 0;
+}
+html[data-native-app="true"] .native-media-actions > :first-child,
+html[data-native-app="true"] .native-media-actions > :last-child {
+  flex-basis: 100%;
 }

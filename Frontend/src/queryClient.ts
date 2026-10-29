@@ -8,6 +8,8 @@ declare module '@tanstack/react-query' {
     queryMeta: {
       /** Skip the global error toast. The component shows the failure itself. */
       silentError?: boolean;
+      /** Set to false to keep the result out of the saved native cache. */
+      persist?: boolean;
     };
   }
 }
@@ -15,7 +17,8 @@ declare module '@tanstack/react-query' {
 const queryClient = new QueryClient({
   defaultOptions: isNativeApp()
     ? {
-        queries: { networkMode: 'always', retry: 0 },
+        // gcTime must cover the persisted cache lifetime, or restored screens are discarded.
+        queries: { networkMode: 'always', retry: 0, gcTime: 24 * 60 * 60 * 1000 },
         mutations: { networkMode: 'always' },
       }
     : undefined,
