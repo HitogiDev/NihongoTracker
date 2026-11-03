@@ -42,6 +42,10 @@ COPY Frontend ./Frontend
 WORKDIR /app/Frontend
 # Remove .env.local to ensure production build uses .env.production
 RUN rm -f .env.local
+# git ignores .env.production, so CI and git archive builds do not have it.
+# Vite prefers these process values. Override them with --build-arg for another domain.
+ARG VITE_APP_ENV=production
+ARG VITE_DOMAIN_URL=https://nihongotracker.app
 RUN npm run build
 RUN cp -r dist ../Backend/dist
 

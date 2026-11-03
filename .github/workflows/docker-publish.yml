@@ -1,0 +1,72 @@
+name: Docker image
+
+# Build on GitHub and push to Docker Hub, so no local upload is necessary.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Backend/**'
+      - 'Frontend/**'
+      - 'dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/docker-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push replaces an older build that has not finished.
+concurrency:
+  group: docker-publish
+  cancel-in-progress: true
+
+env:
+  IMAGE: elaxdev/nihongotracker
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check Docker Hub secrets
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          for name in DOCKERHUB_USERNAME DOCKERHUB_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Set the $name repository secret."
+              exit 1
+            fi
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Prepare image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Reuse unchanged layers, such as npm ci, from earlier runs.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
