@@ -14,7 +14,16 @@ try {
 } catch {
   pushEnabled = false;
 }
+// vite --mode capacitor reads .env.local but not .env.production.
+// Process variables override .env files, so set the production values here.
+const productionEnv = local ? {} : {
+  VITE_APP_ENV: 'production',
+  VITE_DOMAIN_URL: 'https://nihongotracker.app',
+  // The WebView origin is https://localhost, so the texthooker socket needs an explicit URL.
+  VITE_API_URL: 'https://nihongotracker.app',
+};
 const env = {
+  ...productionEnv,
   ...process.env,
   VITE_PUSH_ENABLED: process.env.VITE_PUSH_ENABLED || String(pushEnabled),
   CAPACITOR_LOCAL: String(local),

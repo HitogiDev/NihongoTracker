@@ -70,6 +70,21 @@ This build reads the sibling `../Frontend` package. After a fresh clone, install
 
 `npm run sync` packages the web frontend with the production API URL and disables development HTTP access. It does not deploy the backend or publish the app. RevenueCat and iOS publication are separate work.
 
+## GitHub releases
+
+`.github/workflows/android-release.yml` builds a signed release APK and attaches it to a GitHub release. Push a tag such as `android-v1.2.0`, or run the workflow manually with a version. The version code is the workflow run number.
+
+The workflow requires these repository secrets:
+
+| Secret                      | Value                                   |
+| --------------------------- | --------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | The release keystore, encoded as Base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | The keystore password                   |
+| `ANDROID_KEY_ALIAS`         | The key alias                           |
+| `ANDROID_KEY_PASSWORD`      | The key password                        |
+
+Keep the same keystore for all releases. Android installs an update only when its signature matches the installed app. Add the SHA-256 fingerprint of this certificate to `ANDROID_APP_SHA256_FINGERPRINTS` so App Links verify.
+
 ## Revisión de la interfaz móvil
 
 La cabecera mide 56 px más el margen superior del sistema. La navegación inferior y los diálogos usan los márgenes de Capacitor. El teclado oculta las pestañas y deja disponible la acción del formulario. La app abre Acceso sin sesión e Inicio con sesión, sin mostrar la landing web.
