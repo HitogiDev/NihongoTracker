@@ -79,6 +79,7 @@ const App = lazy(() => import('./App.tsx'));
 const CalculatorScreen = lazy(() => import('./screens/CalculatorScreen.tsx'));
 const FeaturesScreen = lazy(() => import('./screens/FeaturesScreen.tsx'));
 const DesktopAppScreen = lazy(() => import('./screens/DesktopAppScreen.tsx'));
+const AndroidAppScreen = lazy(() => import('./screens/AndroidAppScreen.tsx'));
 const HomeScreen = lazy(() => import('./screens/HomeScreen.tsx'));
 const NativeRecordsScreen = lazy(() => import('./native/NativeRecordsScreen'));
 const ListScreen = lazy(() => import('./screens/ListScreen.tsx'));
@@ -200,6 +201,7 @@ const router = createBrowserRouter(
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
         <Route path="desktop" element={<DesktopAppScreen />} />
+        <Route path="android" element={<AndroidAppScreen />} />
         <Route path="guidelines" element={<GuidelinesScreen />} />
         <Route path="support" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />

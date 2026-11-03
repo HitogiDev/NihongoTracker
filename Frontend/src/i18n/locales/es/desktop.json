@@ -11,7 +11,8 @@
   "beta": {
     "badge": "Beta",
     "notice": "El companion está en beta, así que puede tener errores o funciones incompletas.",
-    "report": "Reportar un problema"
+    "report": "Reporta un problema en",
+    "or": "o en"
   },
   "screenshots": {
     "alt": "Captura del Desktop Companion {{number}}"

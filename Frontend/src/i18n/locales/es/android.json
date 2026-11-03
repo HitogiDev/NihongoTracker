@@ -1,0 +1,63 @@
+{
+  "hero": {
+    "title": "NihongoTracker para Android",
+    "subtitle": "La misma cuenta y los mismos datos que en la web, con un diseño pensado para tu móvil. Loguea tu inmersión en cualquier sitio, incluso sin conexión.",
+    "download": "Descargar el APK",
+    "downloadLatest": "Descargar la última versión",
+    "versionWithSize": "Versión {{version}} · {{size}} · Android 7.0 o posterior",
+    "requirements": "Requiere Android 7.0 o posterior",
+    "openOnPhone": "Abre esta página en tu móvil Android para descargar la app, o descarga aquí el APK y cópialo a tu móvil.",
+    "inApp": "Ya estás usando la app de Android."
+  },
+  "beta": {
+    "badge": "Beta",
+    "notice": "La app de Android está en beta, así que puede tener errores o funciones incompletas.",
+    "report": "Reporta un problema en",
+    "or": "o en"
+  },
+  "screenshots": {
+    "alt": "Captura de la app de Android {{number}}"
+  },
+  "features": {
+    "title": "Qué hace",
+    "items": {
+      "navigation": {
+        "title": "Pensada para el móvil",
+        "description": "El diseño está hecho específicamente para móviles, así que navegar y loguear es más cómodo que en la web."
+      },
+      "offline": {
+        "title": "Loguea sin internet",
+        "description": "Loguea aunque no tengas conexión. Tus logs se guardan y, cuando vuelvas a estar en línea, puedes enviarlos automática o manualmente, como prefieras."
+      },
+      "notifications": {
+        "title": "Notificaciones push",
+        "description": "Recibe en tu móvil seguidores, menciones, comentarios y logros."
+      }
+    }
+  },
+  "setup": {
+    "title": "Cómo instalarla",
+    "download": {
+      "title": "Descarga el APK",
+      "description": "Pulsa el botón de descarga en tu móvil. La app todavía no está en Google Play, así que se instala desde un archivo."
+    },
+    "allow": {
+      "title": "Permite la instalación",
+      "description": "Abre el archivo descargado. Si Android lo pide, permite que tu navegador o tu gestor de archivos instale apps y pulsa Instalar."
+    },
+    "signIn": {
+      "title": "Inicia sesión",
+      "description": "Abre NihongoTracker desde tu lista de apps e inicia sesión con tu cuenta."
+    }
+  },
+  "updates": {
+    "title": "Actualizaciones",
+    "description": "La app todavía no se actualiza sola. Para actualizarla, descarga el nuevo APK desde esta página e instálalo encima del anterior. Tu cuenta y tus datos se mantienen."
+  },
+  "safety": {
+    "title": "¿Es seguro?",
+    "description": "GitHub compila el APK a partir del código fuente público y lo firma con la clave de NihongoTracker. Cada versión incluye una suma SHA-256 para verificar el archivo.",
+    "checksum": "Descargar la suma de verificación",
+    "allReleases": "Todas las versiones en GitHub"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "hero": {
+    "title": "NihongoTracker for Android",
+    "subtitle": "The same account and data as the website, with a layout made for your phone. Log immersion anywhere, even without a connection.",
+    "download": "Download the APK",
+    "downloadLatest": "Download the latest version",
+    "versionWithSize": "Version {{version}} · {{size}} · Android 7.0 or later",
+    "requirements": "Requires Android 7.0 or later",
+    "openOnPhone": "Open this page on your Android phone to download the app, or download the APK here and copy it to your phone.",
+    "inApp": "You are already using the Android app."
+  },
+  "beta": {
+    "badge": "Beta",
+    "notice": "The Android app is in beta, so you may find bugs or missing features.",
+    "report": "Report a problem on",
+    "or": "or"
+  },
+  "screenshots": {
+    "alt": "Android app screenshot {{number}}"
+  },
+  "features": {
+    "title": "What it does",
+    "items": {
+      "navigation": {
+        "title": "Made for phones",
+        "description": "The layout is designed specifically for phones, so browsing and logging are more comfortable than on the website."
+      },
+      "offline": {
+        "title": "Log without internet",
+        "description": "Log even when you have no connection. Your logs are saved, and when you are back online you can send them automatically or manually, as you prefer."
+      },
+      "notifications": {
+        "title": "Push notifications",
+        "description": "Get follows, mentions, comments, and achievements on your phone."
+      }
+    }
+  },
+  "setup": {
+    "title": "How to install",
+    "download": {
+      "title": "Download the APK",
+      "description": "Tap the download button on your phone. The app is not on Google Play yet, so it installs from a file."
+    },
+    "allow": {
+      "title": "Allow the installation",
+      "description": "Open the downloaded file. If Android asks, allow your browser or file manager to install apps, then tap Install."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "description": "Open NihongoTracker from your app list and sign in with your account."
+    }
+  },
+  "updates": {
+    "title": "Updates",
+    "description": "The app does not update itself yet. To update, download the new APK from this page and install it over the old one. Your account and data stay the same."
+  },
+  "safety": {
+    "title": "Is it safe?",
+    "description": "GitHub builds the APK from the public source code and signs it with the NihongoTracker key. Each release includes a SHA-256 checksum to verify the file.",
+    "checksum": "Download the checksum",
+    "allReleases": "All releases on GitHub"
+  }
+}
