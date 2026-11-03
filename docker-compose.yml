@@ -46,7 +46,7 @@ services:
 
   migration:
     profiles: ['migration']
-    image: elaxdev/nihongo-tracker:latest
+    image: elaxdev/nihongotracker:latest
     env_file:
       - Backend/.env
     depends_on:

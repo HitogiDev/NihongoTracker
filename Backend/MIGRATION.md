@@ -98,7 +98,7 @@ npm run verify:indexes
    ```yaml
    services:
      migration:
-       image: elaxdev/nihongo-tracker:latest
+       image: elaxdev/nihongotracker:latest
        env_file:
          - Backend/.env
        depends_on:
@@ -244,7 +244,7 @@ Add to your deployment pipeline:
       --network host \
       -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
       -e NODE_ENV=production \
-      elaxdev/nihongo-tracker:latest \
+      elaxdev/nihongotracker:latest \
       sh -c "cd /app/Backend && npm run migrate:indexes:prod"
 ```
 
