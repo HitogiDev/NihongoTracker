@@ -6,7 +6,8 @@ build
 .prettierrc
 Planning.md
 Changelog.md
-.github
+.github/*
+!.github/workflows/
 migrateClubMediaVotings.mongo.js
 fix-anilist-images.ts
 vite.config.ts.timestamp-*
