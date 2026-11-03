@@ -356,6 +356,23 @@ const MIGRATIONS = [
   },
 ];
 
+// MongoDB code for a collection that does not exist yet.
+const NAMESPACE_NOT_FOUND = 26;
+
+/**
+ * List the indexes of a collection.
+ * A new feature can add a collection before it stores a document.
+ * createIndex creates that collection, so treat it as a collection without indexes.
+ */
+async function listExistingIndexes(collection) {
+  try {
+    return await collection.listIndexes().toArray();
+  } catch (error) {
+    if (error.code === NAMESPACE_NOT_FOUND) return [];
+    throw error;
+  }
+}
+
 async function createProductionIndexes() {
   let retries = 0;
 
@@ -401,19 +418,16 @@ async function createProductionIndexes() {
         const collection = db.collection(migration.collection);
         console.log(`\n📦 Collection: ${migration.collection}`);
 
-        // Get collection stats
+        // The MongoDB 6 driver removed collection.stats().
         try {
-          const stats = await collection.stats();
-          console.log(
-            `📊 Collection stats: ${stats.count} documents, ${(stats.size / 1024 / 1024).toFixed(2)} MB`
-          );
+          const count = await collection.estimatedDocumentCount();
+          console.log(`📊 Collection stats: ${count} documents`);
         } catch (statsError) {
           console.log(`📊 Collection stats unavailable: ${statsError.message}`);
         }
 
-        // Check existing indexes
         console.log('🔍 Checking existing indexes...');
-        const existingIndexes = await collection.listIndexes().toArray();
+        const existingIndexes = await listExistingIndexes(collection);
         const existingIndexNames = new Set(
           existingIndexes.map((idx) => idx.name)
         );
