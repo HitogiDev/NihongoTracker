@@ -172,6 +172,14 @@ docker network create nginx_default
 docker compose --env-file Backend/.env -f docker-compose.nginx.yml up -d
 ```
 
+#### Image publication
+
+`.github/workflows/docker-publish.yml` builds `elaxdev/nihongotracker` on GitHub and pushes it to Docker Hub. It runs when a push to `main` changes `Backend/`, `Frontend/`, or the Docker files. You can also run it manually. Each image gets the `latest` tag and a `sha-<commit>` tag.
+
+The workflow requires the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets. Use a Docker Hub personal access token with read and write access.
+
+The image bakes `VITE_APP_ENV` and `VITE_DOMAIN_URL` into the frontend with the `nihongotracker.app` defaults. To build for another domain, pass `--build-arg VITE_DOMAIN_URL=https://example.com`.
+
 ### Manual Setup (for Development)
 
 #### Backend Setup
