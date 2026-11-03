@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
+import { DISCORD_URL } from '../constants/links';
 
 function GitHubIcon() {
   return (
@@ -94,6 +95,9 @@ function Footer() {
         <Link to="/desktop" className="link link-hover">
           {t('links.desktop')}
         </Link>
+        <Link to="/android" className="link link-hover">
+          {t('links.android')}
+        </Link>
         <Link to="/changelog" className="link link-hover">
           {t('footer.changelog')}
         </Link>
@@ -130,7 +134,7 @@ function Footer() {
           {t('footer.support')}
         </Link>
         <a
-          href="https://discord.gg/6QtXrVdwmx"
+          href={DISCORD_URL}
           target="_blank"
           rel="noreferrer"
           className="link link-hover flex items-center gap-2"

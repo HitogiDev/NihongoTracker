@@ -11,7 +11,8 @@
   "beta": {
     "badge": "Beta",
     "notice": "The companion is in beta, so you may find bugs or missing features.",
-    "report": "Report a problem"
+    "report": "Report a problem on",
+    "or": "or"
   },
   "screenshots": {
     "alt": "Desktop Companion screenshot {{number}}"

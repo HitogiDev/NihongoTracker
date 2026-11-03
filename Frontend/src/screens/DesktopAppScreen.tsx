@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import PageContainer from '../components/ui/PageContainer';
 import { Skeleton } from '../components/ui/Skeleton';
 import { BTN } from '../components/ui/buttons';
+import { DISCORD_URL } from '../constants/links';
 
 const COMPANION_REPO = 'HitogiDev/NihongoTrackerDesktopCompanion';
 const RELEASES_URL = `https://github.com/${COMPANION_REPO}/releases/latest`;
@@ -204,13 +205,24 @@ export default function DesktopAppScreen() {
 
         <p className="max-w-xl text-sm text-base-content/60">
           {t('beta.notice')}{' '}
+          {t('beta.report')}{' '}
           <a
             href={ISSUES_URL}
             target="_blank"
             rel="noreferrer"
             className="link link-hover inline-flex items-center gap-1"
           >
-            {t('beta.report')}
+            GitHub
+            <ExternalLink className="size-3.5" />
+          </a>{' '}
+          {t('beta.or')}{' '}
+          <a
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="link link-hover inline-flex items-center gap-1"
+          >
+            Discord
             <ExternalLink className="size-3.5" />
           </a>
         </p>
