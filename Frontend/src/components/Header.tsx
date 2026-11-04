@@ -24,6 +24,7 @@ import {
   Bell,
   Layers,
   Send,
+  Swords,
 } from 'lucide-react';
 
 import LanguageSwitcher, { LanguageMenuItem } from './LanguageSwitcher';
@@ -265,6 +266,15 @@ function Header() {
                   >
                     <Send className="w-4 h-4" />
                     {t('links.recommendations')}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/duels"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    <Swords className="w-4 h-4" />
+                    {t('links.duels')}
                   </Link>
                 </li>
                 <li>

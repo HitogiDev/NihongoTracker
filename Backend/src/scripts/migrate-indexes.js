@@ -296,6 +296,31 @@ const MIGRATIONS = [
     ],
   },
   {
+    collection: 'duels',
+    indexes: [
+      {
+        key: { challenger: 1, status: 1, endDate: 1 },
+        name: 'challenger_1_status_1_endDate_1',
+        description: 'Duels a user started, by state',
+      },
+      {
+        key: { opponent: 1, status: 1, endDate: 1 },
+        name: 'opponent_1_status_1_endDate_1',
+        description: 'Duels a user received, by state',
+      },
+      {
+        key: { status: 1, endDate: 1 },
+        name: 'status_1_endDate_1',
+        description: 'Finalization of overdue duels',
+      },
+      {
+        key: { status: 1, expiresAt: 1 },
+        name: 'status_1_expiresAt_1',
+        description: 'Expiry of unanswered challenges',
+      },
+    ],
+  },
+  {
     collection: 'immersionforecasts',
     indexes: [
       {

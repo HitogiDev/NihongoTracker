@@ -23,6 +23,7 @@ import { addMediaToIndex } from './meilisearch/mediaIndex.js';
 import { recalculateStreaksForUser } from './streaks.js';
 import { recalculateUserXpFromLogs } from './updateStats.js';
 import { checkAchievements } from './achievements/achievementEngine.js';
+import { evaluateDuelsForUser } from './duels.service.js';
 import {
   computeXp,
   continuousLevel,
@@ -685,6 +686,7 @@ export async function syncAnilistForUser(
       // the client reveals these on its next /achievements/me/pending drain.
       await checkAchievements(user._id, { trigger: 'log' });
       await checkAchievements(user._id, { trigger: 'streak' });
+      await evaluateDuelsForUser(user._id);
     }
 
     await markSyncSuccess(

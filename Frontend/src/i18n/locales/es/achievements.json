@@ -555,6 +555,14 @@
       "name": "Reto aceptado",
       "description": "Completa un reto individual de un club."
     },
+    "duels_won_1": {
+      "name": "Primera sangre",
+      "description": "Gana tu primer duelo de inmersión."
+    },
+    "duels_won_10": {
+      "name": "Duelista",
+      "description": "Gana 10 duelos de inmersión."
+    },
     "reading_listening_level_10": {
       "name": "Habilidades equilibradas",
       "description": "Alcanza el nivel 10 tanto en lectura como en escucha."

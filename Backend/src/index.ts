@@ -25,6 +25,7 @@ import { initIgdbDumpScheduler } from './services/igdbDumpScheduler.js';
 import { initVndbDumpScheduler } from './services/vndbDumpScheduler.js';
 import { initAchievementCronScheduler } from './services/achievements/cronAchievements.service.js';
 import { initAnilistSyncScheduler } from './services/anilistSyncScheduler.js';
+import { initDuelScheduler } from './services/duelScheduler.js';
 
 
 
@@ -140,6 +141,7 @@ async function startServer() {
   initVndbDumpScheduler();
   initAchievementCronScheduler();
   initAnilistSyncScheduler();
+  initDuelScheduler();
   const port = process.env.PORT || 3000;
   httpServer.listen(port, () => console.log('Server on port:', port));
 }

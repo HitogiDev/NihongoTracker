@@ -156,6 +156,7 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
   if (segments[0] === 'notifications') return { key: 'titles.notifications' };
   if (segments[0] === 'recommendations')
     return { key: 'titles.recommendations' };
+  if (segments[0] === 'duels') return { key: 'titles.duels' };
 
   if (segments[0] === 'ranking') return { key: 'titles.ranking' };
 

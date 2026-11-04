@@ -43,6 +43,7 @@ import {
   deleteActivitiesBySource,
 } from '../services/activity.service.js';
 import { recordLogActivity } from '../services/activityEvents.service.js';
+import { evaluateDuelsForUser } from '../services/duels.service.js';
 import { bulkEditLogs } from '../services/bulkEditLogs.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
@@ -1571,6 +1572,8 @@ export async function updateLog(
       await recalculateStreaksForUser(res.locals.user._id);
     }
 
+    await evaluateDuelsForUser(res.locals.user._id);
+
     // Re-evaluate auto-complete after an updated log
     try {
       if (updatedLog.mediaId) {
@@ -1701,6 +1704,7 @@ async function recoverInterruptedMobileLog(log: ILog) {
   await recalculateStreaksForUser(userId);
   await checkAchievements(userId, { trigger: 'log', log });
   await checkAchievements(userId, { trigger: 'streak' });
+  await evaluateDuelsForUser(userId);
   await Log.updateOne({ _id: log._id }, { $set: { clientOperationFinalized: true } });
 }
 
@@ -2061,6 +2065,7 @@ export async function createLog(
       logMedia?.title?.contentTitleNative ||
       savedLog.mediaTitle;
     await recordLogActivity(savedLog, res.locals.user, activityMediaTitle);
+    await evaluateDuelsForUser(res.locals.user._id);
     if (clientOperationId) {
       await Log.updateOne({ _id: savedLog._id }, { $set: { clientOperationFinalized: true } });
     }
@@ -2311,6 +2316,7 @@ export async function importLogs(
     if (insertedLogs.length > 0) {
       await checkAchievements(res.locals.user._id, { trigger: 'log' });
       await checkAchievements(res.locals.user._id, { trigger: 'streak' });
+      await evaluateDuelsForUser(res.locals.user._id);
     }
 
     let statusMessage = `${insertedLogs.length} log${

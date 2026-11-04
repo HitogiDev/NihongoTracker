@@ -1,0 +1,105 @@
+{
+  "actions": {
+    "accept": "Aceptar",
+    "cancel": "Cancelar reto",
+    "decline": "Rechazar",
+    "rematch": "Revancha"
+  },
+  "card": {
+    "awaiting": "Esperando la respuesta de {{username}}",
+    "draw": "Empate",
+    "ended": "Se acabó el tiempo",
+    "expiresIn": "Expira en {{time}}",
+    "incoming": "{{username}} te ha retado",
+    "lost": "Perdiste",
+    "progress": "{{current}} / {{target}}",
+    "timeLeft": "Quedan {{time}}",
+    "won": "Ganaste",
+    "you": "Tú"
+  },
+  "empty": {
+    "active": "No hay duelos activos. Reta a alguien para empezar uno.",
+    "history": "Todavía no hay duelos terminados.",
+    "pending": "No hay retos pendientes."
+  },
+  "h2h": {
+    "chip": "Duelos: {{wins}} G, {{losses}} P, {{draws}} E",
+    "title": "Tu récord de duelos contra {{username}}"
+  },
+  "metrics": {
+    "chars": "caracteres",
+    "episodes": "episodios",
+    "pages": "páginas",
+    "time": "minutos"
+  },
+  "modal": {
+    "anyMedia": "Cualquier contenido",
+    "challengeButton": "Duelo",
+    "days": "{{count}} días",
+    "duration": "Duración (días)",
+    "durationHint": "El reloj empieza cuando tu oponente acepta. Solo cuentan los registros desde ese momento.",
+    "mediaType": "Tipo de contenido",
+    "metric": "Métrica",
+    "noResults": "No se encontraron usuarios",
+    "opponent": "Oponente",
+    "searchPlaceholder": "Busca un usuario",
+    "submit": "Enviar reto",
+    "target": "Meta",
+    "title": "Retar a un duelo"
+  },
+  "page": {
+    "loadFailed": "No se pudieron cargar los duelos.",
+    "loadMore": "Cargar más",
+    "newDuel": "Nuevo duelo",
+    "retry": "Reintentar",
+    "subtitle": "Reta a otros estudiantes. Gana quien llegue primero a la meta.",
+    "title": "Duelos"
+  },
+  "stats": {
+    "bestRival": "Mejor rival",
+    "bestStreak": "Mejor racha de victorias",
+    "currentStreak": "Racha de victorias",
+    "draws": "Empates",
+    "empty": "Todavía no hay duelos terminados.",
+    "losses": "Derrotas",
+    "mostFrequent": "Rival más frecuente",
+    "openDuels": "Duelos abiertos",
+    "record": "{{wins}} G, {{losses}} P, {{draws}} E",
+    "rivals": "Rivales",
+    "title": "Duelos",
+    "total": "Duelos jugados",
+    "winRate": "Porcentaje de victorias",
+    "wins": "Victorias"
+  },
+  "status": {
+    "active": "Activo",
+    "cancelled": "Cancelado",
+    "completed": "Terminado",
+    "declined": "Rechazado",
+    "expired": "Expirado",
+    "pending": "Pendiente"
+  },
+  "summary": {
+    "any_one": "El primero en llegar a {{target}} {{metric}} en {{count}} día",
+    "any_other": "El primero en llegar a {{target}} {{metric}} en {{count}} días",
+    "media_one": "El primero en llegar a {{target}} {{metric}} de {{media}} en {{count}} día",
+    "media_other": "El primero en llegar a {{target}} {{metric}} de {{media}} en {{count}} días"
+  },
+  "tabs": {
+    "active": "Activos",
+    "history": "Historial",
+    "pending": "Pendientes"
+  },
+  "toasts": {
+    "accepted": "Duelo aceptado. ¡Suerte!",
+    "cancelled": "Reto cancelado",
+    "declined": "Reto rechazado",
+    "rematchSent": "Revancha enviada",
+    "sent": "Reto enviado"
+  },
+  "validation": {
+    "duration": "Elige una duración de entre 1 y 90 días",
+    "opponent": "Elige un oponente",
+    "target": "Introduce una meta mayor que 0"
+  }
+}
