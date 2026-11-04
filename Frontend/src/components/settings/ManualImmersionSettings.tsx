@@ -78,10 +78,10 @@ export default function ManualImmersionSettings() {
         </p>
       </div>
 
-      <div className="join" role="group" aria-label={t('manualImmersion.mode')}>
+      <div className="join w-full" role="group" aria-label={t('manualImmersion.mode')}>
         <Button
           type="button"
-          className="join-item"
+          className="join-item h-auto min-h-10 flex-1 px-2 py-2 leading-tight"
           variant={mode === 'split' ? 'primary' : 'default'}
           appearance={mode === 'split' ? 'solid' : 'outline'}
           aria-pressed={mode === 'split'}
@@ -91,7 +91,7 @@ export default function ManualImmersionSettings() {
         </Button>
         <Button
           type="button"
-          className="join-item"
+          className="join-item h-auto min-h-10 flex-1 px-2 py-2 leading-tight"
           variant={mode === 'total' ? 'primary' : 'default'}
           appearance={mode === 'total' ? 'solid' : 'outline'}
           aria-pressed={mode === 'total'}
