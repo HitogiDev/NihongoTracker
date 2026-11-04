@@ -1,0 +1,105 @@
+{
+  "actions": {
+    "accept": "Accept",
+    "cancel": "Cancel challenge",
+    "decline": "Decline",
+    "rematch": "Rematch"
+  },
+  "card": {
+    "awaiting": "Waiting for {{username}} to respond",
+    "draw": "Draw",
+    "ended": "Time is up",
+    "expiresIn": "Expires in {{time}}",
+    "incoming": "{{username}} challenged you",
+    "lost": "You lost",
+    "progress": "{{current}} / {{target}}",
+    "timeLeft": "{{time}} left",
+    "won": "You won",
+    "you": "You"
+  },
+  "empty": {
+    "active": "No active duels. Challenge someone to start one.",
+    "history": "No finished duels yet.",
+    "pending": "No pending challenges."
+  },
+  "h2h": {
+    "chip": "Duels: {{wins}} W, {{losses}} L, {{draws}} D",
+    "title": "Your duel record against {{username}}"
+  },
+  "metrics": {
+    "chars": "characters",
+    "episodes": "episodes",
+    "pages": "pages",
+    "time": "minutes"
+  },
+  "modal": {
+    "anyMedia": "Any media",
+    "challengeButton": "Duel",
+    "days": "{{count}} days",
+    "duration": "Duration (days)",
+    "durationHint": "The clock starts when your opponent accepts. Only logs from that moment count.",
+    "mediaType": "Media type",
+    "metric": "Metric",
+    "noResults": "No users found",
+    "opponent": "Opponent",
+    "searchPlaceholder": "Search a user",
+    "submit": "Send challenge",
+    "target": "Goal",
+    "title": "Challenge to a duel"
+  },
+  "page": {
+    "loadFailed": "Could not load duels.",
+    "loadMore": "Load more",
+    "newDuel": "New duel",
+    "retry": "Retry",
+    "subtitle": "Challenge other learners. The first to reach the goal wins.",
+    "title": "Duels"
+  },
+  "stats": {
+    "bestRival": "Best rival",
+    "bestStreak": "Best win streak",
+    "currentStreak": "Win streak",
+    "draws": "Draws",
+    "empty": "No finished duels yet.",
+    "losses": "Losses",
+    "mostFrequent": "Most frequent rival",
+    "openDuels": "Open duels",
+    "record": "{{wins}} W, {{losses}} L, {{draws}} D",
+    "rivals": "Rivals",
+    "title": "Duels",
+    "total": "Duels played",
+    "winRate": "Win rate",
+    "wins": "Wins"
+  },
+  "status": {
+    "active": "Active",
+    "cancelled": "Cancelled",
+    "completed": "Finished",
+    "declined": "Declined",
+    "expired": "Expired",
+    "pending": "Pending"
+  },
+  "summary": {
+    "any_one": "First to {{target}} {{metric}} in {{count}} day",
+    "any_other": "First to {{target}} {{metric}} in {{count}} days",
+    "media_one": "First to {{target}} {{metric}} of {{media}} in {{count}} day",
+    "media_other": "First to {{target}} {{metric}} of {{media}} in {{count}} days"
+  },
+  "tabs": {
+    "active": "Active",
+    "history": "History",
+    "pending": "Pending"
+  },
+  "toasts": {
+    "accepted": "Duel accepted. Good luck!",
+    "cancelled": "Challenge cancelled",
+    "declined": "Challenge declined",
+    "rematchSent": "Rematch sent",
+    "sent": "Challenge sent"
+  },
+  "validation": {
+    "duration": "Choose a duration between 1 and 90 days",
+    "opponent": "Choose an opponent",
+    "target": "Enter a goal greater than 0"
+  }
+}

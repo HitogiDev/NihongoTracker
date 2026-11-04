@@ -253,6 +253,7 @@
   "subtitle": "Track your immersion progress with detailed breakdowns",
   "tabs": {
     "charts": "Charts",
+    "duels": "Duels",
     "overview": "Overview",
     "ranking": "Ranking",
     "timeline": "Timeline"

@@ -29,6 +29,7 @@ import {
   Scale,
   Search,
   Star,
+  Swords,
   Timer,
   Trophy,
   TrendingUp,
@@ -68,6 +69,7 @@ import ImmersionRanking from '../components/ImmersionRanking';
 import TagFilter from '../components/TagFilter';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
+import DuelStatsSection from '../components/duels/DuelStatsSection';
 import {
   OutletProfileContextType,
   StatsGroupId,
@@ -84,6 +86,7 @@ const CATEGORY_OPTIONS = [
   { id: 'charts', labelKey: 'tabs.charts', Icon: LineChart },
   { id: 'timeline', labelKey: 'tabs.timeline', Icon: BarChart3 },
   { id: 'ranking', labelKey: 'tabs.ranking', Icon: Trophy },
+  { id: 'duels', labelKey: 'tabs.duels', Icon: Swords },
 ] as const;
 
 type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
@@ -2193,6 +2196,7 @@ function StatsScreen() {
             end={ganttCustomEnd || undefined}
           />
         )}
+        {activeCategory === 'duels' && <DuelStatsSection username={username} />}
       </div>
     </div>
   );

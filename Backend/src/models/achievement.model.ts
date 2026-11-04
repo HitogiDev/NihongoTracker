@@ -38,6 +38,7 @@ const ConditionSchema = new Schema(
         'earlyAdopter',
         'completedMediaCount',
         'completedClubChallenges',
+        'duelsWon',
         'readingListeningLevel',
         'readingListeningDays',
         'manualGrant',

@@ -161,6 +161,7 @@ const MediaListDetailScreen = lazy(
 );
 const UserListsScreen = lazy(() => import('./screens/UserListsScreen.tsx'));
 const ConnectionsScreen = lazy(() => import('./screens/ConnectionsScreen.tsx'));
+const DuelsScreen = lazy(() => import('./screens/DuelsScreen.tsx'));
 const RecommendationsScreen = lazy(
   () => import('./screens/RecommendationsScreen.tsx'),
 );
@@ -237,6 +238,7 @@ const router = createBrowserRouter(
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
           <Route path="recommendations" element={<RecommendationsScreen />} />
+          <Route path="duels" element={<DuelsScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
           <Route path="media-request" element={<MediaRequestScreen />} />
           <Route path="achievements" element={<AchievementsScreen />} />

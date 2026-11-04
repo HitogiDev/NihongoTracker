@@ -20,6 +20,7 @@ const TRIGGERS: IAchievementCheckContext['trigger'][] = [
   'levelup',
   'mediaComplete',
   'clubChallengeComplete',
+  'duelComplete',
   'clubJoin',
 ];
 

@@ -13,9 +13,12 @@ import {
   Inbox,
   Lock,
   Share2,
+  Swords,
   UserRoundCheck,
   UserRoundPlus,
 } from 'lucide-react';
+import { getDuelHeadToHeadFn } from '../api/duelsApi';
+import CreateDuelModal from './duels/CreateDuelModal';
 import {
   followUserFn,
   getUserFn,
@@ -135,6 +138,16 @@ export default function ProfileHeader() {
     user?.signature?.value
   );
   const isOwnProfile = currentUser?.username === user?.username;
+  const [duelOpen, setDuelOpen] = useState(false);
+  const { t: tDuels } = useTranslation('duels');
+  const headToHeadQuery = useQuery({
+    queryKey: ['duels', 'h2h', user?.username],
+    queryFn: () => getDuelHeadToHeadFn(user?.username as string),
+    enabled: Boolean(currentUser && user && !isOwnProfile),
+    staleTime: 60_000,
+    meta: { persist: false },
+  });
+  const headToHead = headToHeadQuery.data;
   const followMutation = useMutation({
     mutationFn: () =>
       user?.social?.isFollowing
@@ -254,8 +267,40 @@ export default function ProfileHeader() {
                   </Link>
                 </div>
               )}
+              {currentUser && !isOwnProfile && user && headToHead && headToHead.total > 0 && (
+                <div
+                  className="mt-1 flex items-center justify-center gap-1.5 text-sm text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] sm:justify-start"
+                  title={tDuels('h2h.title', { username: user.username })}
+                >
+                  <Swords className="h-4 w-4" aria-hidden="true" />
+                  {tDuels('h2h.chip', {
+                    wins: headToHead.wins,
+                    losses: headToHead.losses,
+                    draws: headToHead.draws,
+                  })}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 sm:ml-auto sm:mb-2">
+              {currentUser && isOwnProfile && (
+                <Link
+                  to="/duels"
+                  className="btn btn-sm gap-2 bg-base-100/95 text-base-content shadow-sm backdrop-blur-sm hover:bg-base-100"
+                >
+                  <Swords className="h-4 w-4" />
+                  {tDuels('page.title')}
+                </Link>
+              )}
+              {currentUser && !isOwnProfile && user && (
+                <button
+                  type="button"
+                  onClick={() => setDuelOpen(true)}
+                  className="btn btn-sm gap-2 bg-base-100/95 text-base-content shadow-sm backdrop-blur-sm hover:bg-base-100"
+                >
+                  <Swords className="h-4 w-4" />
+                  {tDuels('modal.challengeButton')}
+                </button>
+              )}
               {currentUser && isOwnProfile && (
                 <Link
                   to="/recommendations"
@@ -309,6 +354,13 @@ export default function ProfileHeader() {
           </div>
         </div>
       </div>
+      {currentUser && !isOwnProfile && user && (
+        <CreateDuelModal
+          open={duelOpen}
+          onClose={() => setDuelOpen(false)}
+          opponent={{ username: user.username, avatar: user.avatar }}
+        />
+      )}
       {username && (
         <ShareStatsModal
           username={username}

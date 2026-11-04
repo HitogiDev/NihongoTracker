@@ -126,6 +126,8 @@ const ACHIEVEMENT_ICON_BY_KEY: Record<string, string> = {
   'completed_media_5': 'checkered-flag',
   'completed_media_10': 'medal-skull',
   'club_challenge_1': 'flag-objective',
+  'duels_won_1': 'trophy',
+  'duels_won_10': 'medal-skull',
   'reading_listening_level_10': 'yin-yang',
   'reading_listening_days_7': 'duality',
 };

@@ -364,6 +364,12 @@ export default function ActivityCard({
           action: t("activity.challengeCompleted"),
           subject: challengeTitle,
         };
+      case "duel_won":
+        return {
+          Icon: Award,
+          action: t("activity.duelWon"),
+          subject: metadataString(activity, "opponentUsername"),
+        };
       case "cooperative_goal_progress":
         return {
           Icon: Target,

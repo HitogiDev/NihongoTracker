@@ -566,7 +566,8 @@ export const ACTIVITY_TYPES = [
   'club_challenge_started',
   'cooperative_goal_progress',
   'cooperative_goal_completed',
-  'post'
+  'post',
+  'duel_won'
 ] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
@@ -1411,6 +1412,40 @@ export interface IClubGoal {
   createdAt?: Date;
 }
 
+export const DUEL_METRICS = ['time', 'chars', 'pages', 'episodes'] as const;
+export type DuelMetric = (typeof DUEL_METRICS)[number];
+export const DUEL_STATUSES = [
+  'pending',
+  'active',
+  'completed',
+  'declined',
+  'cancelled',
+  'expired'
+] as const;
+export type DuelStatus = (typeof DUEL_STATUSES)[number];
+
+export interface IDuel extends Document {
+  _id: Types.ObjectId;
+  challenger: Types.ObjectId;
+  opponent: Types.ObjectId;
+  metric: DuelMetric;
+  target: number;
+  mediaType: string | null;
+  durationDays: number;
+  status: DuelStatus;
+  startDate?: Date;
+  endDate?: Date;
+  acceptedAt?: Date;
+  winner?: Types.ObjectId | null;
+  isDraw: boolean;
+  finishedAt?: Date;
+  rematchOf?: Types.ObjectId | null;
+  /** Pending challenges expire at this instant. */
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const CLUB_CHALLENGE_METRICS = [
   'time',
   'chars',
@@ -1570,6 +1605,13 @@ export const NOTIFICATION_TYPES = [
   'club_voting_started',
   'club_voting_finished',
   'club_leadership_transferred',
+  // Duels
+  'duel_challenge',
+  'duel_accepted',
+  'duel_declined',
+  'duel_won',
+  'duel_lost',
+  'duel_draw',
   // Media requests
   'media_request_approved',
   'media_request_rejected',
@@ -1867,6 +1909,7 @@ export type AchievementConditionType =
   | 'earlyAdopter'
   | 'completedMediaCount'
   | 'completedClubChallenges'
+  | 'duelsWon'
   | 'readingListeningLevel'
   | 'readingListeningDays'
   | 'manualGrant';
@@ -1932,6 +1975,7 @@ export interface IAchievementCheckContext {
     | 'levelup'
     | 'mediaComplete'
     | 'clubChallengeComplete'
+    | 'duelComplete'
     | 'clubJoin'
     | 'manual';
   log?: ILog;

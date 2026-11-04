@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 import { useState } from 'react';
-import { Ellipsis, Settings } from 'lucide-react';
+import { Ellipsis, Settings, Swords } from 'lucide-react';
 import { isMobileApp } from '../utils/nativeRuntime';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -62,6 +62,7 @@ function ProfileNavbar({
     <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title={nt('native.more')}>
       <nav className="flex flex-col gap-2">
         {(['list', 'lists', 'goals', 'achievements', 'wrapped', ...(showModerationTab ? ['moderation'] : [])] as const).filter((tab) => (tab !== 'list' || canViewImmersionActivity) && (tab !== 'wrapped' || showWrappedTab)).map((tab) => <Link key={tab} to={`/user/${username}/${tab}`} className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}>{t(tab === 'list' ? 'tabs.immersionList' : `tabs.${tab}` as 'tabs.lists')}</Link>)}
+        {isOwnProfile && <Link to="/duels" className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}><Swords className="h-5 w-5" />{nt('links.duels')}</Link>}
         {isOwnProfile && <Link to="/settings" className="btn btn-ghost justify-start" onClick={() => setMoreOpen(false)}><Settings className="h-5 w-5" />{nt('titles.settings')}</Link>}
       </nav>
     </Modal>

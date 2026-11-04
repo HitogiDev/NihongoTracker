@@ -80,6 +80,23 @@
     "locked": "Todavía no has desbloqueado esa opción de personalización",
     "titleNotUnlocked": "Todavía no has desbloqueado ese título"
   },
+  "duel": {
+    "expired": "Este reto ha expirado",
+    "invalidDuration": "El duelo debe durar entre 1 y {{max}} días",
+    "invalidId": "ID de duelo no válido",
+    "invalidMediaType": "Tipo de contenido no válido para el duelo",
+    "invalidMetric": "Métrica de duelo no válida",
+    "invalidTarget": "La meta del duelo debe ser mayor que 0",
+    "notChallenger": "Solo quien retó puede cancelar este duelo",
+    "notFinished": "Solo se puede repetir un duelo terminado",
+    "notFound": "Duelo no encontrado",
+    "notOpponent": "Solo el usuario retado puede responder a este duelo",
+    "notParticipant": "No participas en este duelo",
+    "notPending": "Este duelo ya no está pendiente",
+    "opponentRequired": "Elige un oponente",
+    "self": "No puedes retarte a ti mismo",
+    "tooMany": "Demasiados duelos abiertos (máximo {{max}})"
+  },
   "favorites": {
     "invalidAction": "La acción debe ser añadir o quitar",
     "invalidMediaType": "Ese tipo de contenido no es válido: {{mediaType}}",

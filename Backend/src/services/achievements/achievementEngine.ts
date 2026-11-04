@@ -33,6 +33,7 @@ import { evaluateSecretAchievementCount } from './conditions/secretAchievementCo
 import { evaluateEarlyAdopter } from './conditions/earlyAdopter.condition.js';
 import { evaluateCompletedMediaCount } from './conditions/completedMediaCount.condition.js';
 import { evaluateCompletedClubChallenges } from './conditions/completedClubChallenges.condition.js';
+import { evaluateDuelsWon } from './conditions/duelsWon.condition.js';
 import { evaluateReadingListeningLevel } from './conditions/readingListeningLevel.condition.js';
 import { evaluateReadingListeningDays } from './conditions/readingListeningDays.condition.js';
 import {
@@ -196,6 +197,9 @@ export async function evaluateCondition(
 
     case 'completedClubChallenges':
       return evaluateCompletedClubChallenges(userId, condition.threshold ?? 1);
+
+    case 'duelsWon':
+      return evaluateDuelsWon(userId, condition.threshold ?? 1);
 
     case 'readingListeningLevel':
       return evaluateReadingListeningLevel(userId, condition.threshold ?? 1);
@@ -587,6 +591,8 @@ function getRelevantConditions(context: IAchievementCheckContext): string[] {
       return ['completedMediaCount'];
     case 'clubChallengeComplete':
       return ['completedClubChallenges'];
+    case 'duelComplete':
+      return ['duelsWon'];
     case 'clubJoin':
       return ['clubsJoined'];
     case 'manual':

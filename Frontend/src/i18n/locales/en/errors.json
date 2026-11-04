@@ -80,6 +80,23 @@
     "locked": "You have not unlocked that customization option yet",
     "titleNotUnlocked": "You have not unlocked that title yet"
   },
+  "duel": {
+    "expired": "This challenge has expired",
+    "invalidDuration": "The duel must last between 1 and {{max}} days",
+    "invalidId": "Invalid duel ID",
+    "invalidMediaType": "Invalid media type for the duel",
+    "invalidMetric": "Invalid duel metric",
+    "invalidTarget": "The duel target must be greater than 0",
+    "notChallenger": "Only the challenger can cancel this duel",
+    "notFinished": "Only finished duels can be replayed",
+    "notFound": "Duel not found",
+    "notOpponent": "Only the challenged user can respond to this duel",
+    "notParticipant": "You are not part of this duel",
+    "notPending": "This duel is no longer pending",
+    "opponentRequired": "Choose an opponent",
+    "self": "You cannot duel yourself",
+    "tooMany": "Too many open duels (maximum {{max}})"
+  },
   "favorites": {
     "invalidAction": "The action must be add or remove",
     "invalidMediaType": "That media type is not valid: {{mediaType}}",

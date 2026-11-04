@@ -123,6 +123,7 @@ export function nativeRoute(
     matchmedia: "titles.matchMedia",
     notifications: "titles.notifications",
     recommendations: "titles.recommendations",
+    duels: "titles.duels",
     lists: "titles.lists",
     calculator: "titles.calculator",
     achievements: "native.achievements",

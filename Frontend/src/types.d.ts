@@ -257,7 +257,8 @@ export type ActivityType =
   | 'club_challenge_started'
   | 'cooperative_goal_progress'
   | 'cooperative_goal_completed'
-  | 'post';
+  | 'post'
+  | 'duel_won';
 
 export type ActivityReactionType = 'like';
 
@@ -1851,6 +1852,12 @@ export type NotificationType =
   | 'club_voting_started'
   | 'club_voting_finished'
   | 'club_leadership_transferred'
+  | 'duel_challenge'
+  | 'duel_accepted'
+  | 'duel_declined'
+  | 'duel_won'
+  | 'duel_lost'
+  | 'duel_draw'
   | 'media_request_approved'
   | 'media_request_rejected'
   | 'achievement_unlocked'
@@ -2238,4 +2245,82 @@ export interface IMediaListComment {
   editedAt?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type DuelMetric = 'time' | 'chars' | 'pages' | 'episodes';
+export type DuelStatus =
+  | 'pending'
+  | 'active'
+  | 'completed'
+  | 'declined'
+  | 'cancelled'
+  | 'expired';
+export type DuelListGroup = 'active' | 'pending' | 'history';
+
+export interface IDuelUser {
+  _id: string;
+  username: string;
+  avatar?: string;
+}
+
+export interface IDuel {
+  _id: string;
+  challenger: IDuelUser;
+  opponent: IDuelUser;
+  metric: DuelMetric;
+  target: number;
+  mediaType: GoalMediaType | null;
+  durationDays: number;
+  status: DuelStatus;
+  startDate?: string;
+  endDate?: string;
+  acceptedAt?: string;
+  finishedAt?: string;
+  expiresAt: string;
+  winner: string | null;
+  isDraw: boolean;
+  rematchOf: string | null;
+  createdAt: string;
+  progress: { challenger: number; opponent: number };
+}
+
+export interface IDuelListResponse {
+  duels: IDuel[];
+  page: number;
+  hasMore: boolean;
+}
+
+export interface IDuelCounts {
+  active: number;
+  incoming: number;
+  outgoing: number;
+}
+
+export interface IDuelRecord {
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
+}
+
+export interface IDuelRival extends IDuelRecord {
+  user: IDuelUser;
+}
+
+export interface IDuelStats extends IDuelRecord {
+  winRate: number;
+  currentStreak: number;
+  bestStreak: number;
+  openDuels: number;
+  rivals: IDuelRival[];
+  bestRival: IDuelRival | null;
+  mostFrequentRival: IDuelRival | null;
+}
+
+export interface ICreateDuelPayload {
+  opponentUsername: string;
+  metric: DuelMetric;
+  target: number;
+  mediaType: GoalMediaType | null;
+  durationDays: number;
 }
