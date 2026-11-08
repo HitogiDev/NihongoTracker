@@ -1041,6 +1041,7 @@ const VALID_PROFILE_WIDGET_IDS = new Set<ProfileWidgetId>([
   'progressStats',
   'immersionActivity',
   'immersionGoals',
+  'duels',
   'achievements',
 ]);
 

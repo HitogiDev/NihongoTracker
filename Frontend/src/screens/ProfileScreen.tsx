@@ -9,6 +9,7 @@ import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import FavoriteMedia from '../components/FavoriteMedia';
 import CurrentMedia from '../components/CurrentMedia';
+import DuelsWidget from '../components/duels/DuelsWidget';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
@@ -771,6 +772,7 @@ function ProfileScreen() {
       </div>
     ) : null,
     immersionGoals: username ? <ImmersionGoals username={username} /> : null,
+    duels: username && isOwner ? <DuelsWidget username={username} /> : null,
     achievements: username ? (
       <AchievementShowcaseWidget username={username} />
     ) : null,

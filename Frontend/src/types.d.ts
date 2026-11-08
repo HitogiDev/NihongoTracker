@@ -48,6 +48,7 @@ export type ProfileWidgetId =
   | 'progressStats'
   | 'immersionActivity'
   | 'immersionGoals'
+  | 'duels'
   | 'achievements';
 
 export interface ProfileWidgetLayout {

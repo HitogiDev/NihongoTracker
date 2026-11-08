@@ -532,6 +532,10 @@
       "label": "Current Content",
       "description": "Up to three works you have logged recently and have not finished."
     },
+    "duels": {
+      "description": "Your current duel, or your duel stats when none is active (only visible to you).",
+      "label": "Duels"
+    },
     "hide": "Hide widget",
     "immersionActivity": {
       "description": "Heatmap of your immersion over time.",
