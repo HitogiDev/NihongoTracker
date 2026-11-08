@@ -34,6 +34,7 @@ const swaggerDocument = {
     { name: 'Media', description: 'Media search, details & reviews' },
     { name: 'Goals', description: 'Daily and custom period goals' },
     { name: 'Clubs', description: 'Club management & media votings' },
+    { name: 'Duels', description: 'Immersion duels between two users' },
     { name: 'Tags', description: 'User tag management' },
     { name: 'Changelogs', description: 'Application changelogs' },
     { name: 'Notifications', description: 'User notifications' },
@@ -3058,6 +3059,205 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'Like toggled' },
+        },
+      },
+    },
+
+    // ──────────────── Duels ────────────────
+    '/duels': {
+      get: {
+        tags: ['Duels'],
+        summary: 'List your duels',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'status',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['active', 'pending', 'history'],
+              default: 'active',
+            },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+          },
+        ],
+        responses: {
+          200: { description: 'Duels with the progress of both players' },
+        },
+      },
+      post: {
+        tags: ['Duels'],
+        summary: 'Challenge a user to a duel',
+        description:
+          'The duel starts when the opponent accepts. Only logs made after that moment count.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['opponentUsername', 'metric', 'target', 'durationDays'],
+                properties: {
+                  opponentUsername: { type: 'string' },
+                  metric: {
+                    type: 'string',
+                    enum: ['time', 'chars', 'pages', 'episodes'],
+                  },
+                  target: { type: 'number', minimum: 1 },
+                  mediaType: { ...goalMediaTypeSchema, nullable: true },
+                  durationDays: { type: 'integer', minimum: 1, maximum: 90 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Pending duel' },
+          400: { description: 'Invalid duel or dueling yourself' },
+          409: { description: 'Too many open duels' },
+        },
+      },
+    },
+    '/duels/counts': {
+      get: {
+        tags: ['Duels'],
+        summary: 'Count active, incoming, and outgoing duels',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: { 200: { description: 'Duel counts' } },
+      },
+    },
+    '/duels/h2h/{username}': {
+      get: {
+        tags: ['Duels'],
+        summary: 'Your duel record against a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Wins, losses, draws, and total from your side' },
+        },
+      },
+    },
+    '/duels/stats/{username}': {
+      get: {
+        tags: ['Duels'],
+        summary: 'Duel statistics and rivals for a user',
+        description: 'Follows the profile and statistics privacy settings.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Record, streaks, rivals, and best rival' },
+          403: { description: 'The user restricted their statistics' },
+        },
+      },
+    },
+    '/duels/{duelId}': {
+      get: {
+        tags: ['Duels'],
+        summary: 'Get one of your duels',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'duelId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Duel with progress' },
+          404: { description: 'Duel not found or you are not a participant' },
+        },
+      },
+    },
+    '/duels/{duelId}/accept': {
+      post: {
+        tags: ['Duels'],
+        summary: 'Accept a challenge and start the duel',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'duelId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'Active duel' },
+          403: { description: 'Only the challenged user can respond' },
+          409: { description: 'The duel is no longer pending' },
+          410: { description: 'The challenge expired' },
+        },
+      },
+    },
+    '/duels/{duelId}/decline': {
+      post: {
+        tags: ['Duels'],
+        summary: 'Decline a challenge',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'duelId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Declined duel' } },
+      },
+    },
+    '/duels/{duelId}/cancel': {
+      post: {
+        tags: ['Duels'],
+        summary: 'Cancel a challenge you sent',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'duelId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Cancelled duel' } },
+      },
+    },
+    '/duels/{duelId}/rematch': {
+      post: {
+        tags: ['Duels'],
+        summary: 'Challenge the same opponent again with the same rules',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'duelId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          201: { description: 'New pending duel' },
+          409: { description: 'Only finished duels can be replayed' },
         },
       },
     },
