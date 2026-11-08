@@ -49,6 +49,12 @@ export const PROFILE_WIDGETS: ProfileWidgetMeta[] = [
     ownerOnly: true,
   },
   {
+    id: 'duels',
+    labelKey: 'profileWidgets.duels.label',
+    descriptionKey: 'profileWidgets.duels.description',
+    ownerOnly: true,
+  },
+  {
     id: 'achievements',
     labelKey: 'profileWidgets.achievements.label',
     descriptionKey: 'profileWidgets.achievements.description',

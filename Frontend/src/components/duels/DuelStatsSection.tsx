@@ -52,7 +52,13 @@ function RivalHighlight({
   );
 }
 
-export default function DuelStatsSection({ username }: { username: string }) {
+export default function DuelStatsSection({
+  username,
+  showLink = false,
+}: {
+  username: string;
+  showLink?: boolean;
+}) {
   const { t } = useTranslation('duels');
   const statsQuery = useQuery({
     queryKey: ['duels', 'stats', username],
@@ -69,10 +75,17 @@ export default function DuelStatsSection({ username }: { username: string }) {
   return (
     <section className="card surface">
       <div className="card-body gap-4">
-        <h2 className="card-title">
-          <Swords className="h-5 w-5" />
-          {t('stats.title')}
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="card-title">
+            <Swords className="h-5 w-5" />
+            {t('stats.title')}
+          </h2>
+          {showLink && (
+            <Link to="/duels" className="btn btn-ghost btn-xs text-primary">
+              {t('stats.viewAll')}
+            </Link>
+          )}
+        </div>
         {statsQuery.isLoading || !stats ? (
           <Skeleton className="h-24 w-full" />
         ) : stats.total === 0 ? (

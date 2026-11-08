@@ -532,6 +532,10 @@
       "label": "Contenido actual",
       "description": "Hasta tres obras que registraste hace poco y no has terminado."
     },
+    "duels": {
+      "description": "Tu duelo actual, o tus estadísticas de duelos si no hay ninguno activo (solo visible para ti).",
+      "label": "Duelos"
+    },
     "hide": "Ocultar el widget",
     "immersionActivity": {
       "description": "Mapa de calor de tu inmersión en el tiempo.",
