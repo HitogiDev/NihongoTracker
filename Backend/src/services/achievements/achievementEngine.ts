@@ -44,6 +44,7 @@ import User from '../../models/user.model.js';
 import { isValidTimezone } from '../../constants/timezone.js';
 import { recordAchievementActivity } from '../activityEvents.service.js';
 import { isRankingAchievementKey } from './rankingVisibility.js';
+import { grantWeekendWarriorOnLog } from './cronAchievements.service.js';
 
 // Condition types whose result depends on where calendar days / clock hours fall
 const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
@@ -255,6 +256,63 @@ export async function getAchievementTimezone(
  * Returns the list of achievements that were newly granted in this call.
  */
 export async function checkAchievements(
+  userId: Types.ObjectId,
+  context: IAchievementCheckContext
+): Promise<IAchievement[]> {
+  const weekendWarrior =
+    context.trigger === 'log'
+      ? await grantWeekendWarriorWithNotice(userId, context)
+      : [];
+  const others = await checkEvaluatedAchievements(userId, context);
+  return [...weekendWarrior, ...others];
+}
+
+/**
+ * Weekend Warrior has no condition evaluator, so it is granted after a log.
+ * It gets the same notification and activity as any other unlock.
+ */
+async function grantWeekendWarriorWithNotice(
+  userId: Types.ObjectId,
+  context: IAchievementCheckContext
+): Promise<IAchievement[]> {
+  try {
+    if (!(await grantWeekendWarriorOnLog(userId))) return [];
+
+    const achievement = await Achievement.findOne({
+      key: 'weekend_warrior',
+      isActive: true,
+    }).lean();
+    if (!achievement) return [];
+
+    await createNotification({
+      recipient: userId,
+      type: 'achievement_unlocked',
+      title: `Achievement unlocked: ${achievement.name}`,
+      titleKey: 'achievement.unlocked',
+      body: achievement.description,
+      bodyKey: 'achievement.unlockedBody',
+      link: '/achievements',
+      entityType: 'achievement',
+      entityId: achievement._id.toString(),
+      meta: {
+        iconSlug: achievement.iconSlug,
+        achievementKey: achievement.key,
+      },
+    });
+    if (context.recordActivity !== false) {
+      await recordAchievementActivity(
+        userId,
+        achievement as unknown as IAchievement
+      );
+    }
+    return [achievement as unknown as IAchievement];
+  } catch (err) {
+    console.error('Weekend Warrior check failed:', err);
+    return [];
+  }
+}
+
+async function checkEvaluatedAchievements(
   userId: Types.ObjectId,
   context: IAchievementCheckContext
 ): Promise<IAchievement[]> {

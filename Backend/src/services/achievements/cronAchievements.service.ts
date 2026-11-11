@@ -224,18 +224,24 @@ async function checkClockwork14Days(
  * WEEKEND WARRIOR
  * User must have logged on every Saturday AND Sunday for the last 4 weekends,
  * with weekends resolved against the user's own calendar.
- * We look back 28 days and find the 4 most recent complete weekends.
+ * Only finished weekends count. The job runs early on Sunday UTC, so for users
+ * ahead of UTC the current Sunday has barely started. Counting it would make
+ * the check fail for them almost every week.
+ * With `includeToday`, a Sunday that already has a log counts as complete. The
+ * log hook uses this to grant the achievement as soon as the fourth Sunday is logged.
  */
 async function checkWeekendWarrior(
   userId: Types.ObjectId,
-  timezone: string
+  timezone: string,
+  includeToday = false
 ): Promise<boolean> {
   const todayKey = getUserDayKey(new Date(), timezone);
 
-  // Most recent Saturday, skipping today if today is Saturday (0=Sun … 6=Sat)
+  // Most recent Sunday to count (0=Sun … 6=Sat). Today counts only on request.
   const weekday = dayKeyWeekday(todayKey);
-  const daysToLastSat = weekday === 6 ? 7 : weekday + 1;
-  const lastSatKey = shiftDayKey(todayKey, -daysToLastSat);
+  const daysBack = weekday === 0 && !includeToday ? 7 : weekday;
+  const lastSunKey = shiftDayKey(todayKey, -daysBack);
+  const lastSatKey = shiftDayKey(lastSunKey, -1);
 
   // Oldest day we need is the Saturday 3 weeks before that
   const oldestKey = shiftDayKey(lastSatKey, -21);
@@ -250,6 +256,24 @@ async function checkWeekendWarrior(
   }
 
   return true;
+}
+
+/**
+ * Grant Weekend Warrior right after a log, without waiting for the weekly job.
+ * Only a log on a Sunday can complete the fourth weekend, so other days return early.
+ * Returns true when the achievement was newly granted.
+ */
+export async function grantWeekendWarriorOnLog(
+  userId: Types.ObjectId
+): Promise<boolean> {
+  const user = await User.findById(userId).select('settings.timezone').lean();
+  const rawTimezone = user?.settings?.timezone;
+  const timezone =
+    rawTimezone && isValidTimezone(rawTimezone) ? rawTimezone : 'UTC';
+
+  if (dayKeyWeekday(getUserDayKey(new Date(), timezone)) !== 0) return false;
+  if (!(await checkWeekendWarrior(userId, timezone, true))) return false;
+  return grantIfUnowned(userId, 'weekend_warrior');
 }
 
 /** How many weeks of history the Monday check scans. */
