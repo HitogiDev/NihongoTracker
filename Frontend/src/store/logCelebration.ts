@@ -34,6 +34,23 @@ export const useLogCelebrationStore = create<LogCelebrationState>((set) => ({
       if (merged.levelUp && merged.levelUp.to <= merged.levelUp.from) {
         merged.levelUp = undefined;
       }
+      // Keep every duel touched in the batch. The newest snapshot wins and the
+      // gained amounts add up.
+      if (state.pending.duels || payload.duels) {
+        const byId = new Map(
+          (state.pending.duels ?? []).map((duel) => [duel._id, duel])
+        );
+        for (const duel of payload.duels ?? []) {
+          const previous = byId.get(duel._id);
+          byId.set(
+            duel._id,
+            previous
+              ? { ...duel, gained: previous.gained + duel.gained }
+              : duel
+          );
+        }
+        merged.duels = [...byId.values()].slice(-3);
+      }
       return { pending: merged };
     }),
 

@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Flag, Handshake, Trophy } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { respondToDuelFn } from '../../api/duelsApi';
-import type { DuelStatus, IDuel, IDuelUser } from '../../types';
+import type { DuelStatus, IDuel } from '../../types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import {
   formatDuelTimeLeft,
@@ -12,8 +13,8 @@ import {
 } from '../../utils/duels';
 import { goalMediaTypeKey } from '../../utils/goalMediaTypes';
 import { useUserDataStore } from '../../store/userData';
-import UserAvatar from '../UserAvatar';
 import Button from '../ui/Button';
+import DuelVersus from './DuelVersus';
 
 const STATUS_BADGE: Record<DuelStatus, string> = {
   pending: 'badge badge-warning badge-sm',
@@ -24,74 +25,15 @@ const STATUS_BADGE: Record<DuelStatus, string> = {
   expired: 'badge badge-ghost badge-sm',
 };
 
-const OUTCOME_BADGE: Record<DuelOutcome, string> = {
-  won: 'badge badge-success badge-sm',
-  lost: 'badge badge-error badge-sm',
-  draw: 'badge badge-info badge-sm',
+// A finished duel shows its result as an accent strip and a footer line.
+const OUTCOME_STYLE: Record<
+  DuelOutcome,
+  { strip: string; text: string; icon: LucideIcon }
+> = {
+  won: { strip: 'bg-success', text: 'text-success', icon: Trophy },
+  lost: { strip: 'bg-error', text: 'text-error', icon: Flag },
+  draw: { strip: 'bg-info', text: 'text-info', icon: Handshake },
 };
-
-interface ParticipantRowProps {
-  user: IDuelUser;
-  isViewer: boolean;
-  current: number;
-  target: number;
-  isWinner: boolean;
-  tone: 'challenger' | 'opponent';
-  showProgress: boolean;
-}
-
-function ParticipantRow({
-  user,
-  isViewer,
-  current,
-  target,
-  isWinner,
-  tone,
-  showProgress,
-}: ParticipantRowProps) {
-  const { t } = useTranslation('duels');
-  const value = Math.min(current, target);
-  return (
-    <div className="flex items-center gap-3">
-      <UserAvatar
-        username={user.username}
-        avatar={user.avatar}
-        containerClassName="w-9 h-9 rounded-full shrink-0"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <Link
-            to={`/user/${encodeURIComponent(user.username)}`}
-            className="truncate font-medium link link-hover"
-          >
-            {isViewer ? t('card.you') : user.username}
-          </Link>
-          {showProgress && (
-            <span
-              className={`tabular-nums ${isWinner ? 'font-semibold text-success' : 'text-base-content/70'}`}
-            >
-              {t('card.progress', {
-                current: Math.round(current).toLocaleString(),
-                target: target.toLocaleString(),
-              })}
-            </span>
-          )}
-        </div>
-        {showProgress && (
-          <progress
-            className={
-              tone === 'challenger'
-                ? 'progress progress-primary w-full'
-                : 'progress progress-secondary w-full'
-            }
-            value={value}
-            max={target}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function DuelCard({ duel }: { duel: IDuel }) {
   const { t } = useTranslation(['duels', 'common']);
@@ -102,6 +44,20 @@ export default function DuelCard({ duel }: { duel: IDuel }) {
   const isOpponent = duel.opponent._id === viewerId;
   const outcome = getDuelOutcome(duel, viewerId);
   const rival = isChallenger ? duel.opponent : duel.challenger;
+  // The viewer always faces the rival from the left side.
+  const viewerOnLeft = isChallenger || isOpponent;
+  const leftUser = isOpponent ? duel.opponent : duel.challenger;
+  const rightUser = isOpponent ? duel.challenger : duel.opponent;
+  const leftProgress = isOpponent
+    ? duel.progress.opponent
+    : duel.progress.challenger;
+  const rightProgress = isOpponent
+    ? duel.progress.challenger
+    : duel.progress.opponent;
+  let winnerSide: 'left' | 'right' | null = null;
+  if (duel.status === 'completed' && duel.winner && !duel.isDraw) {
+    winnerSide = duel.winner === leftUser._id ? 'left' : 'right';
+  }
 
   const mutation = useMutation({
     mutationFn: (action: 'accept' | 'decline' | 'cancel' | 'rematch') =>
@@ -156,45 +112,51 @@ export default function DuelCard({ duel }: { duel: IDuel }) {
         {t('card.expiresIn', { time: formatDuelTimeLeft(pendingMsLeft) })}
       </span>
     );
+  } else if (outcome) {
+    const { text, icon: OutcomeIcon } = OUTCOME_STYLE[outcome];
+    footer = (
+      <span className={`flex items-center gap-2 text-lg font-extrabold ${text}`}>
+        <OutcomeIcon className="h-5 w-5" />
+        {t(`card.${outcome}`)}
+      </span>
+    );
   }
 
   return (
-    <article className="card surface">
+    <article className="card surface relative overflow-hidden">
+      {outcome && (
+        <div
+          className={`absolute inset-x-0 top-0 h-1 ${OUTCOME_STYLE[outcome].strip}`}
+          aria-hidden="true"
+        />
+      )}
       <div className="card-body gap-4 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h2 className="text-base font-semibold">{summary}</h2>
-          <div className="flex items-center gap-2">
-            {outcome && (
-              <span className={OUTCOME_BADGE[outcome]}>
-                {t(`card.${outcome}`)}
-              </span>
-            )}
+          {!outcome && (
             <span className={STATUS_BADGE[duel.status]}>
               {t(`status.${duel.status}`)}
             </span>
-          </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <ParticipantRow
-            user={duel.challenger}
-            isViewer={isChallenger}
-            current={duel.progress.challenger}
-            target={duel.target}
-            isWinner={duel.winner === duel.challenger._id}
-            tone="challenger"
-            showProgress={showProgress}
-          />
-          <ParticipantRow
-            user={duel.opponent}
-            isViewer={isOpponent}
-            current={duel.progress.opponent}
-            target={duel.target}
-            isWinner={duel.winner === duel.opponent._id}
-            tone="opponent"
-            showProgress={showProgress}
-          />
-        </div>
+        <DuelVersus
+          left={{
+            username: leftUser.username,
+            avatar: leftUser.avatar,
+            label: viewerOnLeft ? t('card.you') : leftUser.username,
+            current: leftProgress,
+          }}
+          right={{
+            username: rightUser.username,
+            avatar: rightUser.avatar,
+            label: rightUser.username,
+            current: rightProgress,
+          }}
+          target={duel.target}
+          showProgress={showProgress}
+          winner={winnerSide}
+        />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>{footer}</div>

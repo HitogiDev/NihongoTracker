@@ -12,7 +12,10 @@ vi.mock('../models/media.model.js', () => ({ MediaBase: { findOne: vi.fn().mockR
 vi.mock('../services/updateStats.js', () => ({ default: mocks.stats, recalculateUserXpFromLogs: mocks.recalculateXp }));
 vi.mock('../services/streaks.js', () => ({ updateStreakWithLog: mocks.streak, recalculateStreaksForUser: mocks.recalculateStreak, getLiveCurrentStreak: vi.fn() }));
 vi.mock('../services/achievements/achievementEngine.js', () => ({ checkAchievements: mocks.achievements, dismissAchievementNotifications: vi.fn() }));
-vi.mock('../services/duels.service.js', () => ({ evaluateDuelsForUser: vi.fn() }));
+vi.mock('../services/duels.service.js', () => ({
+  evaluateDuelsForUser: vi.fn().mockResolvedValue([]),
+  getDuelCelebration: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('../services/meilisearch/meiliClient.js', () => ({ default: {} }));
 
 const ownerId = new Types.ObjectId();

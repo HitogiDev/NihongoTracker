@@ -361,12 +361,20 @@ function logMetricValue(
 
 async function getUserProgress(duel: IDuel, userId: Types.ObjectId) {
   if (!duel.startDate || !duel.endDate) return 0;
+  // A finished duel keeps the progress it had when it ended. Later logs
+  // inside the original window must not change the final score.
+  const endDate =
+    duel.status === 'completed' &&
+    duel.finishedAt &&
+    duel.finishedAt.getTime() < duel.endDate.getTime()
+      ? duel.finishedAt
+      : duel.endDate;
   const rows = await aggregateVisibleLogMetricByUser({
     ownerIds: [userId],
     viewerId: userId,
     metric: duel.metric,
     startDate: duel.startDate,
-    endDate: duel.endDate,
+    endDate,
     mediaType: duel.mediaType ?? undefined,
   });
   return rows[0]?.value ?? 0;
@@ -518,8 +526,12 @@ async function finishDuel(duel: IDuel, outcome: DuelOutcome) {
   return updated;
 }
 
-/** Best-effort check after a user's logs change. Never throws. */
+/**
+ * Best-effort check after a user's logs change. Never throws.
+ * Returns the duels that this check finished.
+ */
 export async function evaluateDuelsForUser(userId: Types.ObjectId) {
+  const finished: IDuel[] = [];
   try {
     const duels = await Duel.find({
       status: 'active',
@@ -528,10 +540,95 @@ export async function evaluateDuelsForUser(userId: Types.ObjectId) {
     });
     for (const duel of duels) {
       const outcome = await resolveDuel(duel, false);
-      if (outcome) await finishDuel(duel, outcome);
+      if (!outcome) continue;
+      const updated = await finishDuel(duel, outcome);
+      if (updated) finished.push(updated);
     }
   } catch (error) {
     console.error('Duel evaluation failed:', error);
+  }
+  return finished;
+}
+
+export interface DuelCelebrationItem {
+  _id: string;
+  metric: DuelMetric;
+  target: number;
+  mediaType: string | null;
+  rival: { username: string; avatar?: string };
+  /** Value this log added to the duel metric. */
+  gained: number;
+  you: number;
+  rivalProgress: number;
+  outcome: 'won' | 'lost' | 'draw' | null;
+}
+
+const MAX_CELEBRATION_DUELS = 3;
+
+/**
+ * Builds the duel progress shown after a log. It covers the duels this log
+ * counted toward, plus the duels that this log just finished. Never throws.
+ */
+export async function getDuelCelebration(
+  userId: Types.ObjectId,
+  log: Pick<ILog, 'type' | 'date' | 'time' | 'episodes' | 'chars' | 'pages'> & {
+    unknownDate?: boolean;
+  },
+  finished: IDuel[]
+): Promise<DuelCelebrationItem[]> {
+  try {
+    if (log.unknownDate) return [];
+    const logTime = new Date(log.date).getTime();
+    const active = await Duel.find({
+      status: 'active',
+      endDate: { $gt: new Date() },
+      $or: [{ challenger: userId }, { opponent: userId }],
+    });
+    const counted = (duel: IDuel) =>
+      (!duel.mediaType || duel.mediaType === log.type) &&
+      duel.startDate != null &&
+      duel.endDate != null &&
+      logTime >= new Date(duel.startDate).getTime() &&
+      logTime <= new Date(duel.endDate).getTime();
+
+    const candidates = [
+      ...finished.filter(counted),
+      ...active.filter(counted),
+    ].slice(0, MAX_CELEBRATION_DUELS);
+    if (candidates.length === 0) return [];
+
+    const users = await loadUsers(
+      candidates.flatMap((duel) => [duel.challenger, duel.opponent])
+    );
+    return await Promise.all(
+      candidates.map(async (duel) => {
+        const isChallenger = duel.challenger.equals(userId);
+        const progress = await getDuelProgress(duel);
+        const rival = userSummary(
+          users,
+          isChallenger ? duel.opponent : duel.challenger
+        );
+        let outcome: DuelCelebrationItem['outcome'] = null;
+        if (duel.status === 'completed') {
+          if (duel.isDraw) outcome = 'draw';
+          else outcome = duel.winner?.equals(userId) ? 'won' : 'lost';
+        }
+        return {
+          _id: duel._id.toString(),
+          metric: duel.metric,
+          target: duel.target,
+          mediaType: duel.mediaType ?? null,
+          rival: { username: rival.username, avatar: rival.avatar },
+          gained: logMetricValue(log, duel.metric),
+          you: isChallenger ? progress.challenger : progress.opponent,
+          rivalProgress: isChallenger ? progress.opponent : progress.challenger,
+          outcome,
+        };
+      })
+    );
+  } catch (error) {
+    console.error('Duel celebration failed:', error);
+    return [];
   }
 }
 
