@@ -865,6 +865,17 @@ export interface ILogCelebration {
     previousRank: number;
     overtaken: { username: string; avatar?: string; xp: number }[];
   };
+  duels?: {
+    _id: string;
+    metric: DuelMetric;
+    target: number;
+    mediaType: string | null;
+    rival: { username: string; avatar?: string };
+    gained: number;
+    you: number;
+    rivalProgress: number;
+    outcome: 'won' | 'lost' | 'draw' | null;
+  }[];
 }
 
 export interface SearchAnilistArgs {

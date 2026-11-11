@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { confetti } from '@tsparticles/confetti';
-import { Volume2, VolumeX, TrendingUp, Flame } from 'lucide-react';
+import { Volume2, VolumeX, TrendingUp, Flame, Swords } from 'lucide-react';
 import { ILogCelebration } from '../types';
 import LevelUpAnimation from './LevelUpAnimation';
+import DuelVersus from './duels/DuelVersus';
+import { useUserDataStore } from '../store/userData';
 import { haptic } from '../native/haptics';
 import { isNativeApp } from '../utils/nativeRuntime';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +18,7 @@ import {
   toggleSfx,
 } from '../utils/sfx';
 
-type Step = 'xp' | 'levelup' | 'overtake';
+type Step = 'xp' | 'levelup' | 'overtake' | 'duels';
 
 interface LogCelebrationProps {
   celebration: ILogCelebration;
@@ -27,9 +29,11 @@ export default function LogCelebration({
   celebration,
   onClose,
 }: LogCelebrationProps) {
-  const { t } = useTranslation(['logs', 'common']);
-  const { xpGained, streak, levelUp, xp, rank } = celebration;
+  const { t } = useTranslation(['logs', 'common', 'duels']);
+  const { xpGained, streak, levelUp, xp, rank, duels } = celebration;
   const hasOvertake = !!rank && rank.overtaken.length > 0;
+  const hasDuels = !!duels && duels.length > 0;
+  const viewer = useUserDataStore((state) => state.user);
 
   const [step, setStep] = useState<Step>('xp');
   const [muted, setMuted] = useState(isSfxMuted);
@@ -43,14 +47,16 @@ export default function LogCelebration({
   const overtakeCardRef = useRef<HTMLDivElement>(null);
   const rankFromRef = useRef<HTMLSpanElement>(null);
   const rankToRef = useRef<HTMLSpanElement>(null);
+  const duelsCardRef = useRef<HTMLDivElement>(null);
   const closingRef = useRef(false);
 
   const steps = useMemo<Step[]>(() => {
     const s: Step[] = ['xp'];
     if (levelUp) s.push('levelup');
     if (hasOvertake) s.push('overtake');
+    if (hasDuels) s.push('duels');
     return s;
-  }, [levelUp, hasOvertake]);
+  }, [levelUp, hasOvertake, hasDuels]);
 
   const isLastStep = steps.indexOf(step) === steps.length - 1;
 
@@ -212,6 +218,53 @@ export default function LogCelebration({
       tl.kill();
     };
   }, [step, rank]);
+
+  // ── Step 4: duel progress ───────────────────────────────────────────────
+  useEffect(() => {
+    if (step !== 'duels' || !duels) return;
+
+    const won = duels.some((duel) => duel.outcome === 'won');
+    if (won) {
+      playLevelUp();
+      void confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        zIndex: 10000,
+      });
+    } else {
+      playOvertake();
+    }
+    navigator.vibrate?.(40);
+
+    const tl = gsap.timeline();
+    tl.fromTo(
+      duelsCardRef.current,
+      { opacity: 0, y: 60, scale: 0.9 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.6)' }
+    );
+    const bars = duelsCardRef.current?.querySelectorAll('progress') ?? [];
+    bars.forEach((bar) => {
+      const target = Number(bar.dataset.value ?? 0);
+      const state = { value: bar.value };
+      tl.to(
+        state,
+        {
+          value: target,
+          duration: 0.9,
+          ease: 'power2.out',
+          onUpdate: () => {
+            bar.value = state.value;
+          },
+        },
+        '-=0.3'
+      );
+    });
+
+    return () => {
+      tl.kill();
+    };
+  }, [step, duels]);
 
   const overtaken = rank?.overtaken ?? [];
   const shownOvertaken = overtaken.slice(0, 3);
@@ -395,6 +448,81 @@ export default function LogCelebration({
                 #{rank.rank}
               </span>
             </div>
+          </div>
+        )}
+
+        {step === 'duels' && duels && (
+          <div
+            ref={duelsCardRef}
+            className="w-full max-w-sm rounded-2xl border border-primary/40 bg-base-100/95 shadow-lg shadow-primary/20 p-6 flex flex-col gap-5"
+            style={{ opacity: 0 }}
+          >
+            <div className="flex items-center justify-center gap-2 text-primary font-bold uppercase tracking-widest text-xs">
+              <Swords className="w-4 h-4" />
+              {t('celebration.duels.title')}
+            </div>
+
+            {duels.map((duel, index) => {
+              const metric = t(`duels:metrics.${duel.metric}`);
+              let winner: 'left' | 'right' | null = null;
+              if (duel.outcome === 'won') winner = 'left';
+              if (duel.outcome === 'lost') winner = 'right';
+              return (
+                <div
+                  key={duel._id}
+                  className={`flex flex-col gap-3 ${
+                    index > 0 ? 'border-t border-base-content/10 pt-4' : ''
+                  }`}
+                >
+                  <DuelVersus
+                    left={{
+                      username: viewer?.username ?? '',
+                      avatar: viewer?.avatar,
+                      label: t('celebration.duels.you'),
+                      current: duel.you,
+                      from: Math.max(0, duel.you - duel.gained),
+                    }}
+                    right={{
+                      username: duel.rival.username,
+                      avatar: duel.rival.avatar,
+                      label: duel.rival.username,
+                      current: duel.rivalProgress,
+                    }}
+                    target={duel.target}
+                    showProgress
+                    winner={winner}
+                    linkNames={false}
+                    size={duels.length === 1 ? 'lg' : 'md'}
+                  />
+
+                  <div className="self-center rounded-full bg-success/15 px-3 py-1 text-xs font-bold text-success">
+                    {t('celebration.duels.gained', {
+                      amount: Math.round(duel.gained).toLocaleString(),
+                      metric,
+                    })}
+                  </div>
+
+                  {duel.outcome && (
+                    <div
+                      className={`text-sm font-bold text-center ${
+                        duel.outcome === 'won'
+                          ? 'text-success'
+                          : duel.outcome === 'lost'
+                            ? 'text-error'
+                            : 'text-info'
+                      }`}
+                    >
+                      {duel.outcome === 'won' && t('celebration.duels.won')}
+                      {duel.outcome === 'lost' &&
+                        t('celebration.duels.lost', {
+                          username: duel.rival.username,
+                        })}
+                      {duel.outcome === 'draw' && t('celebration.duels.draw')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

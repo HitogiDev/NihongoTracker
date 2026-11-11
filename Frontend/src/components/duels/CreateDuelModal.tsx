@@ -11,6 +11,8 @@ import Button from '../ui/Button';
 import DropdownSelect from '../ui/DropdownSelect';
 import Field from '../ui/Field';
 import Modal from '../ui/Modal';
+import { useUserDataStore } from '../../store/userData';
+import DuelVersus from './DuelVersus';
 import UserPicker, { type PickedUser } from './UserPicker';
 
 interface CreateDuelModalProps {
@@ -42,16 +44,20 @@ export default function CreateDuelModal({
   const [mediaType, setMediaType] = useState<GoalMediaType | ''>('anime');
   const [durationDays, setDurationDays] = useState('7');
   const [error, setError] = useState<string | null>(null);
+  const viewer = useUserDataStore((state) => state.user);
   const initialUsername = initialOpponent?.username;
+  const initialAvatar = initialOpponent?.avatar;
 
   useEffect(() => {
     if (open) {
       setOpponent(
-        initialUsername ? { username: initialUsername } : null
+        initialUsername
+          ? { username: initialUsername, avatar: initialAvatar }
+          : null
       );
       setError(null);
     }
-  }, [open, initialUsername]);
+  }, [open, initialUsername, initialAvatar]);
 
   const mutation = useMutation({
     mutationFn: createDuelFn,
@@ -104,6 +110,27 @@ export default function CreateDuelModal({
       }
     >
       <div className="flex flex-col gap-3">
+        {viewer && opponent && (
+          <div className="surface-muted rounded-box px-4 pb-4">
+            <DuelVersus
+              left={{
+                username: viewer.username,
+                avatar: viewer.avatar,
+                label: t('card.you'),
+                current: 0,
+              }}
+              right={{
+                username: opponent.username,
+                avatar: opponent.avatar,
+                label: opponent.username,
+                current: 0,
+              }}
+              target={Math.max(Number(target) || 1, 1)}
+              showProgress={false}
+              linkNames={false}
+            />
+          </div>
+        )}
         <Field label={t('modal.opponent')} required error={error ?? undefined}>
           {(id) => (
             <UserPicker id={id} value={opponent} onChange={setOpponent} />
