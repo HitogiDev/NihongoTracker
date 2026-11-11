@@ -19,12 +19,15 @@ import { evaluateLogCount } from '../../services/achievements/conditions/logCoun
 import { evaluateStreak } from '../../services/achievements/conditions/streak.condition.js';
 import { evaluateTotalHours } from '../../services/achievements/conditions/totalHours.condition.js';
 import { recordAchievementActivity } from '../../services/activityEvents.service.js';
+import { createNotification } from '../../services/notifications.service.js';
+import { grantWeekendWarriorOnLog } from '../../services/achievements/cronAchievements.service.js';
 
 // ─── Mock all models ──────────────────────────────────────────────────────────
 
 vi.mock('../../models/achievement.model.js', () => ({
   default: {
     find: vi.fn(),
+    findOne: vi.fn(),
     findById: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       lean: vi.fn().mockResolvedValue(null),
@@ -33,6 +36,10 @@ vi.mock('../../models/achievement.model.js', () => ({
 }));
 
 // Notification delivery is a side effect of unlocking. Keep it out of these tests.
+vi.mock('../../services/achievements/cronAchievements.service.js', () => ({
+  grantWeekendWarriorOnLog: vi.fn().mockResolvedValue(false),
+}));
+
 vi.mock('../../services/notifications.service.js', () => ({
   createNotification: vi.fn().mockResolvedValue(null),
 }));
@@ -146,6 +153,33 @@ describe('checkAchievements', () => {
     } as unknown as ReturnType<typeof Achievement.find>);
     const result = await checkAchievements(userId, { trigger: 'log' });
     expect(result).toEqual([]);
+  });
+
+  it('notifies and records activity when a log grants Weekend Warrior', async () => {
+    const achievement = makeAchievement({
+      key: 'weekend_warrior',
+      name: 'Weekend Warrior',
+      condition: { type: 'manualGrant' },
+    });
+    vi.mocked(grantWeekendWarriorOnLog).mockResolvedValueOnce(true);
+    vi.mocked(Achievement.findOne).mockReturnValue({
+      lean: vi.fn().mockResolvedValue(achievement),
+    } as unknown as ReturnType<typeof Achievement.findOne>);
+    vi.mocked(Achievement.find).mockReturnValue({
+      lean: vi.fn().mockResolvedValue([]),
+    } as unknown as ReturnType<typeof Achievement.find>);
+
+    const result = await checkAchievements(userId, { trigger: 'log' });
+
+    expect(result.map((a) => a.key)).toEqual(['weekend_warrior']);
+    expect(createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipient: userId,
+        type: 'achievement_unlocked',
+        meta: expect.objectContaining({ achievementKey: 'weekend_warrior' }),
+      })
+    );
+    expect(recordAchievementActivity).toHaveBeenCalledTimes(1);
   });
 
   it('does not evaluate logDuringAiring for a non-anime log', async () => {
