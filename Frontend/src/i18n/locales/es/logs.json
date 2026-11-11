@@ -38,6 +38,14 @@
     "untitled": "Log sin título"
   },
   "celebration": {
+    "duels": {
+      "draw": "El duelo terminó en empate",
+      "gained": "+{{amount}} {{metric}}",
+      "lost": "{{username}} ganó este duelo",
+      "title": "Progreso de duelos",
+      "won": "¡Ganaste el duelo!",
+      "you": "Tú"
+    },
     "monthlyRanking": "Clasificación mensual",
     "success": "Log guardado"
   },
@@ -191,6 +199,8 @@
     "date": "Fecha",
     "description": "Descripción",
     "descriptionPlaceholder": "Introduce una descripción",
+    "title": "Título",
+    "titlePlaceholder": "Título de la obra",
     "markdownSupported": "Admite Markdown",
     "episodesPlaceholder": "Número de episodios",
     "fixErrors": "Corrige los siguientes errores:",

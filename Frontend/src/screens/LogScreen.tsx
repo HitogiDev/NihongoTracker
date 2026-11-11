@@ -590,6 +590,7 @@ function LogScreen() {
           mediaId: data.mediaId,
           description:
             data.description || (data.mediaId ? '' : data.mediaName),
+          mediaTitle: data.mediaId ? undefined : data.mediaName.trim(),
           episodes: data.watchedEpisodes,
           time: getVideoMinutes(data) || undefined,
           date,
@@ -1003,6 +1004,7 @@ function LogScreen() {
       type: logData.type,
       mediaId: logData.mediaId,
       description: logData.description || (logData.mediaId ? '' : logData.mediaName),
+      mediaTitle: logData.mediaId ? undefined : logData.mediaName.trim(),
       mediaData,
       episodes: logData.watchedEpisodes,
       volume:
