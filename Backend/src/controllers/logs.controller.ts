@@ -43,7 +43,10 @@ import {
   deleteActivitiesBySource,
 } from '../services/activity.service.js';
 import { recordLogActivity } from '../services/activityEvents.service.js';
-import { evaluateDuelsForUser } from '../services/duels.service.js';
+import {
+  evaluateDuelsForUser,
+  getDuelCelebration,
+} from '../services/duels.service.js';
 import { bulkEditLogs } from '../services/bulkEditLogs.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
@@ -1513,6 +1516,7 @@ export async function updateLog(
     type,
     xp,
     tags,
+    mediaTitle,
   } = req.body;
 
   try {
@@ -1547,6 +1551,9 @@ export async function updateLog(
     const originalDate = log.date ? new Date(log.date) : null;
 
     log.description = description !== undefined ? description : log.description;
+    if (typeof mediaTitle === 'string') {
+      log.mediaTitle = mediaTitle.trim() || undefined;
+    }
     log.time = time !== undefined ? time : log.time;
     log.date = date !== undefined ? date : log.date;
     log.mediaId = mediaId !== undefined ? mediaId : log.mediaId;
@@ -1610,6 +1617,7 @@ export async function adminUpdateLog(
     chars,
     type,
     xp,
+    mediaTitle,
   } = req.body;
 
   try {
@@ -1643,6 +1651,9 @@ export async function adminUpdateLog(
     const originalDate = log.date ? new Date(log.date) : null;
 
     log.description = description !== undefined ? description : log.description;
+    if (typeof mediaTitle === 'string') {
+      log.mediaTitle = mediaTitle.trim() || undefined;
+    }
     log.time = time !== undefined ? time : log.time;
     log.date = date !== undefined ? date : log.date;
     log.mediaId = mediaId !== undefined ? mediaId : log.mediaId;
@@ -2065,7 +2076,7 @@ export async function createLog(
       logMedia?.title?.contentTitleNative ||
       savedLog.mediaTitle;
     await recordLogActivity(savedLog, res.locals.user, activityMediaTitle);
-    await evaluateDuelsForUser(res.locals.user._id);
+    const finishedDuels = await evaluateDuelsForUser(res.locals.user._id);
     if (clientOperationId) {
       await Log.updateOne({ _id: savedLog._id }, { $set: { clientOperationFinalized: true } });
     }
@@ -2103,6 +2114,12 @@ export async function createLog(
           );
           if (rank) celebration.rank = rank;
         }
+        const duels = await getDuelCelebration(
+          res.locals.user._id,
+          savedLog,
+          finishedDuels
+        );
+        if (duels.length > 0) celebration.duels = duels;
       }
     } catch (err) {
       console.error('celebration payload failed after createLog', err);

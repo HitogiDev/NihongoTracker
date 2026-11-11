@@ -38,6 +38,14 @@
     "tagsLabel": "Tags (optional)"
   },
   "celebration": {
+    "duels": {
+      "draw": "The duel ended in a draw",
+      "gained": "+{{amount}} {{metric}}",
+      "lost": "{{username}} won this duel",
+      "title": "Duel progress",
+      "won": "You won the duel!",
+      "you": "You"
+    },
     "monthlyRanking": "Monthly ranking",
     "success": "Log successful!"
   },
@@ -187,6 +195,8 @@
     "date": "Date",
     "description": "Description",
     "descriptionPlaceholder": "Enter description",
+    "title": "Title",
+    "titlePlaceholder": "Title of the work",
     "markdownSupported": "Markdown supported",
     "episodesPlaceholder": "Number of episodes",
     "fixErrors": "Please fix the following errors:",

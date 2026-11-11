@@ -130,6 +130,7 @@ const logTypeConfig = {
 
 type EditLogFormState = {
   description: string;
+  mediaTitle: string;
   type: ILog['type'];
   /** Calendar day (YYYY-MM-DD) in the user's configured timezone. */
   date: string;
@@ -178,9 +179,11 @@ function LogCard({
     time,
     chars,
     media,
+    mediaTitle,
     manabeId,
     unknownDate,
   } = log;
+  const customTitle = !log.mediaId ? mediaTitle?.trim() || '' : '';
   const { user } = useUserDataStore();
   const { formatRelativeDate, formatDateTime, formatNumber } =
     useDateFormatting();
@@ -212,7 +215,9 @@ function LogCard({
   const shouldUseAdminLogEndpoints = isAdmin && !isOwner;
 
   const buildEditState = (): EditLogFormState => ({
-    description: description || '',
+    // Logs without a comment store the custom title as the description.
+    description: customTitle && description === customTitle ? '' : description || '',
+    mediaTitle: customTitle,
     type,
     // Convert the saved date to the user's timezone. This matches streak and heatmap dates.
     // The edit form then preserves the displayed date and original time.
@@ -253,7 +258,7 @@ function LogCard({
   const logTitle =
     media && typeof media === 'object' && media.title?.contentTitleNative
       ? media.title.contentTitleNative
-      : description || t('card.untitled');
+      : customTitle || description || t('card.untitled');
 
   const displayTitle =
     !isMobileApp() && logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
@@ -315,8 +320,11 @@ function LogCard({
   function handleEditSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    const editedTitle = editData.mediaTitle.trim();
+    const editedDescription = editData.description.trim() ? editData.description : editedTitle;
+
     const validation = validateUpdateLogData({
-      description: editData.description,
+      description: editedDescription,
       type: editData.type,
       hours: editData.hours,
       minutes: editData.minutes,
@@ -342,7 +350,8 @@ function LogCard({
       editData.date !== originalDay || editData.timeOfDay !== originalTime;
 
     const updateData: IUpdateLogRequest = {
-      description: editData.description,
+      description: editedDescription,
+      mediaTitle: !log.mediaId ? editedTitle : undefined,
       type: editData.type,
       // Only send the date when the day or the time of day actually moved. The
       // instant is rebuilt from the user's timezone so the log lands on the day
@@ -1351,6 +1360,22 @@ function LogCard({
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {!log.mediaId && (
+                    <Field label={t('edit.title')} className="md:col-span-2">
+                      <input
+                        type="text"
+                        className="input w-full focus:input-primary"
+                        value={editData.mediaTitle}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            mediaTitle: e.target.value,
+                          }))
+                        }
+                        placeholder={t('edit.titlePlaceholder')}
+                      />
+                    </Field>
+                  )}
                   <Field
                     label={t('edit.description')}
                     aside={
@@ -1366,7 +1391,7 @@ function LogCard({
                         />
                       </span>
                     }
-                    required
+                    required={!editData.mediaTitle.trim()}
                     className="md:col-span-2"
                   >
                     <textarea
@@ -1381,7 +1406,7 @@ function LogCard({
                         })
                       }
                       placeholder={t('edit.descriptionPlaceholder')}
-                      required
+                      required={!editData.mediaTitle.trim()}
                     ></textarea>
                   </Field>
 
