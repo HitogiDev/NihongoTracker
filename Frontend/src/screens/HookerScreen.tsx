@@ -1,6 +1,7 @@
 import DropdownSelect from '../components/ui/DropdownSelect';
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import Field from '../components/ui/Field';
+import { MentionButton } from '../components/mentions/MentionPicker';
 import useTexthookerSocket from '../hooks/useTexthookerSocket';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useRef, useState, useEffect, Fragment, useMemo } from 'react';
@@ -371,6 +372,8 @@ function TextHooker() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [privateLog, setPrivateLog] = useState(false);
+  const [logComment, setLogComment] = useState('');
+  const logCommentRef = useRef<HTMLTextAreaElement>(null);
   const [selectedIntelligenceEntry, setSelectedIntelligenceEntry] =
     useState<ITextSessionHistoryEntry | null>(null);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
@@ -1876,6 +1879,7 @@ function TextHooker() {
     mutationFn: createLogFn,
     onSuccess: async () => {
       setPrivateLog(false);
+      setLogComment('');
       await persistPendingHistoryEntry();
       triggerLogAnimation(clearSessionLineHistoryAfterLog);
       queryClient.invalidateQueries({ queryKey: ['logs'] });
@@ -1923,6 +1927,7 @@ function TextHooker() {
         hours: Math.floor(totalMinutes / 60),
         minutes: totalMinutes % 60,
         private: privateLog,
+        comment: logComment,
       });
       setIsQuickLogOpen(true);
       return;
@@ -1934,7 +1939,7 @@ function TextHooker() {
       time: Math.floor(seconds / 60),
       chars: currentSessionChars,
       type: media.type,
-      description: '',
+      description: logComment.trim(),
       isAdult: media.isAdult,
       private: privateLog,
     });
@@ -3197,6 +3202,29 @@ function TextHooker() {
               </div>
 
               <div className="pt-4 border-t border-base-content/10 space-y-4">
+                <Field
+                  label={t('hooker.logComment')}
+                  aside={
+                    <span className="inline-flex items-center gap-1">
+                      {t('hooker.markdownSupported')}
+                      <MentionButton
+                        className="btn btn-ghost btn-xs btn-square"
+                        value={logComment}
+                        onChange={setLogComment}
+                        textareaRef={logCommentRef}
+                      />
+                    </span>
+                  }
+                >
+                  <textarea
+                    ref={logCommentRef}
+                    className="textarea w-full focus:input-primary"
+                    rows={2}
+                    placeholder={t('hooker.logCommentPlaceholder')}
+                    value={logComment}
+                    onChange={(e) => setLogComment(e.target.value)}
+                  ></textarea>
+                </Field>
                 <LogPrivacyToggle
                   checked={privateLog}
                   onChange={setPrivateLog}

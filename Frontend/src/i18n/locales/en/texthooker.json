@@ -244,6 +244,9 @@
     "charsPerHour": "chars/h",
     "logged": "Logged!",
     "logSession": "Log Session",
+    "logComment": "Comment (optional)",
+    "logCommentPlaceholder": "Add a comment about this session",
+    "markdownSupported": "Markdown supported",
     "native": {
       "name": "LunaHook",
       "connected": "LunaHook connected",
