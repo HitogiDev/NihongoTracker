@@ -59,6 +59,7 @@ import ActivityCard from './social/ActivityCard';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 import GettingStartedModal from './GettingStartedModal';
 import ImmersionGoals from './ImmersionGoals';
+import LevelRecommendations from './LevelRecommendations';
 import { isMobileApp } from '../utils/nativeRuntime';
 import { useNativePageState } from '../native/useNativePageState';
 
@@ -562,6 +563,7 @@ function Dashboard() {
         </div></section>
         <ImmersionGoals username={user.username} />
         <RecentMediaRail allLogs={recentMediaHighlights} limit={recentMediaLimit} onQuickLog={handleQuickLogOpen} onRemove={handleRemoveMedia} onManage={() => setManageHiddenOpen(true)} />
+        <LevelRecommendations limit={6} compact />
         <section className="space-y-3">
           <h2 className="font-semibold">{nt('native.activity')}</h2>
           <div className="join flex w-full">{ACTIVITY_SCOPES.map(({ value, icon: Icon }) => <Button key={value} className="join-item flex-1" variant={activityScope === value ? 'primary' : 'default'} appearance={activityScope === value ? 'solid' : 'outline'} aria-pressed={activityScope === value} onClick={() => setActivityScope(value)}><Icon className="h-4 w-4" /><span className="text-xs">{t(`dashboard.feed.scopes.${value}`)}</span></Button>)}</div>
@@ -979,6 +981,8 @@ function Dashboard() {
               onManage={() => setManageHiddenOpen(true)}
             />
           </div>}
+
+          <LevelRecommendations limit={6} compact />
 
           {!hideRankingFeatures && <ClubRanking username={user.username} />}
         </div>
