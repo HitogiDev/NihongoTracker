@@ -95,6 +95,18 @@ const SettingsSchema = new Schema<IUserSettings>(
     statsLayout: { type: [Schema.Types.Mixed], default: [] },
     profileLayout: { type: [Schema.Types.Mixed], default: [] },
     notificationsLastViewedAt: { type: Date, default: null },
+    insightsDigest: {
+      type: new Schema(
+        {
+          weekly: { type: Boolean, default: false },
+          monthly: { type: Boolean, default: false },
+          lastWeeklyKey: { type: String, default: null },
+          lastMonthlyKey: { type: String, default: null },
+        },
+        { _id: false }
+      ),
+      default: () => ({}),
+    },
     dismissedNotificationClubIds: { type: [String], default: [] },
     dismissedNotificationClubAt: { type: Schema.Types.Mixed, default: {} },
     lastSeenChangelogAt: { type: Date, default: null },

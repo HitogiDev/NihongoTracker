@@ -196,6 +196,12 @@ export const ERROR_CODES = [
   'forecast.alreadyExists',
   'forecast.notFound',
   'forecast.alreadyComplete',
+
+  // Insights
+  'insights.tierRequired',
+  'insights.invalidPeriod',
+  'insights.invalidDigest',
+
   'goal.targetInFuture',
   'goal.alreadyActive',
   'duel.notFound',

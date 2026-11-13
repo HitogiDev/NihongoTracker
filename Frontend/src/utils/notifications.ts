@@ -9,6 +9,7 @@ import {
   Star,
   Swords,
   Target,
+  TrendingUp,
   Trophy,
   UserMinus,
   UserPlus,
@@ -51,6 +52,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   level_up: Award,
   goal_completed: Target,
   streak_lost: Flame,
+  insights_digest: TrendingUp,
   changelog: Megaphone,
   system: Bell,
 };
@@ -87,6 +89,7 @@ const ACCENTS: Partial<Record<NotificationKind, string>> = {
   club_join_rejected: 'text-error bg-error/10',
   club_member_removed: 'text-error bg-error/10',
   streak_lost: 'text-error bg-error/10',
+  insights_digest: 'text-accent bg-accent/10',
   changelog: 'text-primary bg-primary/10',
 };
 
@@ -125,6 +128,7 @@ const BADGE_ACCENTS: Partial<Record<NotificationKind, string>> = {
   club_join_rejected: 'bg-error text-error-content',
   club_member_removed: 'bg-error text-error-content',
   streak_lost: 'bg-error text-error-content',
+  insights_digest: 'bg-accent text-accent-content',
   changelog: 'bg-primary text-primary-content',
   system: 'bg-neutral text-neutral-content',
 };

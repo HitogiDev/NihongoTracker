@@ -180,6 +180,11 @@ Banner effects use `BannerEffectOverlay` and vector canvas drawing in `utils/ban
 
 `ImmersionForecast` stores private, media-linked finish plans. Target totals are snapshotted at creation; progress and daily pacing are derived from matching logs by `services/immersionForecast.service.ts`. Creation and deadline edits require active Enthusiast/Consumer access, while owners retain read/delete access after downgrade. Keep these records out of username-based public goal responses.
 
+### Insights
+
+`/api/insights` gives private advanced statistics to the authenticated owner. Access requires active Enthusiast or Consumer access, or the admin role, through `services/premiumAccess.ts`. `services/insights.service.ts` builds 12 local months of reading speed, by type and by Jiten band, from reading logs with both chars and time. Speeds outside 800 to 60000 chars per hour are ignored. The speed comparison uses the last 30 days and a 30-day window centered 3, 6, or 12 months ago. The comfort timeline rebuilds the category level at each month end, then applies `effectiveComfort` from `services/xp.ts`. Keep it aligned with the XP formula. `GET /api/insights/compare` summarizes two inclusive local periods of at most 731 days.
+Weekly and monthly digests are opt-in through `settings.insightsDigest` and `PUT /api/insights/digest`. `services/insightsDigestScheduler.ts` runs every hour. A digest is due after 09:00 local time on the first day of the next period, with `weekStartsOn` and `dayStartHour` applied. The scheduler claims each period key atomically before it sends an `insights_digest` notification, so each period sends once. The frontend shows the Insights tab in `StatsScreen` only to the owner, and `?tab=insights` opens it.
+
 ### Notifications
 
 Stored notifications use `models/notification.model.ts` and `services/notifications.service.ts`. For a new notification kind:

@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import type { ParseKeys } from 'i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DayPicker } from 'react-day-picker';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import {
   Activity,
   ArrowUpDown,
@@ -29,6 +29,7 @@ import {
   Scale,
   Search,
   Star,
+  Lightbulb,
   Swords,
   Timer,
   Trophy,
@@ -70,6 +71,7 @@ import TagFilter from '../components/TagFilter';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
 import DuelStatsSection from '../components/duels/DuelStatsSection';
+import InsightsSection from '../components/insights/InsightsSection';
 import {
   OutletProfileContextType,
   StatsGroupId,
@@ -87,7 +89,15 @@ const CATEGORY_OPTIONS = [
   { id: 'timeline', labelKey: 'tabs.timeline', Icon: BarChart3 },
   { id: 'ranking', labelKey: 'tabs.ranking', Icon: Trophy },
   { id: 'duels', labelKey: 'tabs.duels', Icon: Swords },
+  { id: 'insights', labelKey: 'tabs.insights', Icon: Lightbulb },
 ] as const;
+
+/** Insights are private: only the owner sees the tab. */
+const OWNER_ONLY_CATEGORIES: ReadonlySet<string> = new Set(['insights']);
+
+function isCategoryId(value: string | null): value is CategoryId {
+  return CATEGORY_OPTIONS.some((option) => option.id === value);
+}
 
 type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
 
@@ -492,7 +502,27 @@ function StatsScreen() {
   const isOwner = username === loggedInUser?.username;
   const [timeRange, setTimeRange] = useState<TimeRange>('total');
   const [selectedTypes, setSelectedTypes] = useState<string[]>(LOG_TYPES);
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const [activeCategory, setActiveCategoryState] = useState<CategoryId>(() =>
+    isCategoryId(requestedTab) ? requestedTab : 'overview'
+  );
+  const setActiveCategory = (id: CategoryId) => {
+    setActiveCategoryState(id);
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        if (id === 'overview') next.delete('tab');
+        else next.set('tab', id);
+        return next;
+      },
+      { replace: true }
+    );
+  };
+  const visibleCategory: CategoryId =
+    OWNER_ONLY_CATEGORIES.has(activeCategory) && !isOwner
+      ? 'overview'
+      : activeCategory;
   const [progressChartView, setProgressChartView] = useState<'line' | 'bar'>(
     'line'
   );
@@ -1126,10 +1156,12 @@ function StatsScreen() {
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
                 <div className="join w-full overflow-x-auto sm:w-auto">
-                  {CATEGORY_OPTIONS.map(({ id, labelKey, Icon }) => (
+                  {CATEGORY_OPTIONS.filter(
+                    ({ id }) => isOwner || !OWNER_ONLY_CATEGORIES.has(id)
+                  ).map(({ id, labelKey, Icon }) => (
                     <button
                       key={id}
-                      className={`join-item btn btn-sm flex-1 shrink-0 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
+                      className={`join-item btn btn-sm flex-1 shrink-0 sm:flex-none ${visibleCategory === id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => setActiveCategory(id)}
                     >
                       <Icon className="hidden w-4 h-4 sm:block" />
@@ -1137,6 +1169,8 @@ function StatsScreen() {
                     </button>
                   ))}
                 </div>
+                {visibleCategory !== 'insights' && (
+                  <>
                 <div className="dropdown dropdown-bottom">
                   <div
                     tabIndex={0}
@@ -1365,7 +1399,9 @@ function StatsScreen() {
                     </div>
                   </div>
                 </div>
-                {activeCategory === 'timeline' && (
+                  </>
+                )}
+                {visibleCategory === 'timeline' && (
                   <>
                     <div className="dropdown dropdown-bottom">
                       <div
@@ -1530,6 +1566,7 @@ function StatsScreen() {
                   </>
                 )}
               </div>
+              {visibleCategory !== 'insights' && (
               <TagFilter
                 includedTags={includedTags}
                 excludedTags={excludedTags}
@@ -1537,7 +1574,9 @@ function StatsScreen() {
                 onExcludeChange={setExcludedTags}
                 username={username ?? ''}
               />
+              )}
             </div>
+            {visibleCategory !== 'insights' && (
             <label className="label cursor-pointer gap-3 w-full lg:w-auto justify-between lg:justify-end">
               <span className="text-sm text-base-content whitespace-nowrap">
                 {t('filters.immersedDaysOnly')}
@@ -1549,10 +1588,11 @@ function StatsScreen() {
                 onChange={(event) => setOnlyImmersedDays(event.target.checked)}
               />
             </label>
+            )}
           </div>
         </div>
 
-        {activeCategory === 'overview' &&
+        {visibleCategory === 'overview' &&
           (() => {
             // Build the card content map (condition-gated cards return null when not applicable)
             const cardMap: Partial<Record<string, React.ReactNode>> = {
@@ -1976,7 +2016,7 @@ function StatsScreen() {
             return renderLayoutSection(cardMap, 'overview');
           })()}
 
-        {activeCategory === 'charts' &&
+        {visibleCategory === 'charts' &&
           (() => {
             const chartCardMap: Partial<Record<string, React.ReactNode>> = {
               logCountChart: showDistributionCharts ? (
@@ -2159,7 +2199,7 @@ function StatsScreen() {
 
             return renderLayoutSection(chartCardMap, 'charts');
           })()}
-        {activeCategory === 'timeline' && (
+        {visibleCategory === 'timeline' && (
           <div className="space-y-4">
             <div className="card surface">
               <div className="card-body">
@@ -2186,7 +2226,7 @@ function StatsScreen() {
             </div>
           </div>
         )}
-        {activeCategory === 'ranking' && (
+        {visibleCategory === 'ranking' && (
           <ImmersionRanking
             username={username}
             timezone={timezone}
@@ -2196,7 +2236,8 @@ function StatsScreen() {
             end={ganttCustomEnd || undefined}
           />
         )}
-        {activeCategory === 'duels' && <DuelStatsSection username={username} />}
+        {visibleCategory === 'duels' && <DuelStatsSection username={username} />}
+        {visibleCategory === 'insights' && <InsightsSection />}
       </div>
     </div>
   );

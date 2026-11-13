@@ -49,7 +49,21 @@
     "social.commented": "{{username}} comentó en tu actividad",
     "social.replied": "{{username}} respondió a tu comentario",
     "social.replyLiked": "A {{username}} le gustó tu respuesta",
-    "social.mentionedInPost": "{{username}} te citó en una publicación"
+    "social.mentionedInPost": "{{username}} te citó en una publicación",
+    "insights.weeklyTitle": "Tu semana: {{hours}} h de inmersión y {{xp}} XP",
+    "insights.monthlyTitle": "Tu mes: {{hours}} h de inmersión y {{xp}} XP",
+    "insights.trendUp_zero": "Un {{change}}% más de inmersión que el periodo anterior.",
+    "insights.trendUp_one": "Un {{change}}% más de inmersión que el periodo anterior. Desbloqueaste 1 logro.",
+    "insights.trendUp_other": "Un {{change}}% más de inmersión que el periodo anterior. Desbloqueaste {{count}} logros.",
+    "insights.trendDown_zero": "Un {{change}}% menos de inmersión que el periodo anterior.",
+    "insights.trendDown_one": "Un {{change}}% menos de inmersión que el periodo anterior. Desbloqueaste 1 logro.",
+    "insights.trendDown_other": "Un {{change}}% menos de inmersión que el periodo anterior. Desbloqueaste {{count}} logros.",
+    "insights.trendFlat_zero": "Una inmersión similar a la del periodo anterior.",
+    "insights.trendFlat_one": "Una inmersión similar a la del periodo anterior. Desbloqueaste 1 logro.",
+    "insights.trendFlat_other": "Una inmersión similar a la del periodo anterior. Desbloqueaste {{count}} logros.",
+    "insights.trendNew_zero": "Un nuevo comienzo. ¡Sigue así!",
+    "insights.trendNew_one": "Un nuevo comienzo. ¡Sigue así! Desbloqueaste 1 logro.",
+    "insights.trendNew_other": "Un nuevo comienzo. ¡Sigue así! Desbloqueaste {{count}} logros."
   },
   "list": {
     "empty": {
