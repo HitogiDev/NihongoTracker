@@ -252,13 +252,33 @@ export function buildClubMediaReviewFilter(
   };
 }
 
+const CLUB_FEED_LOG_TYPES: ActivityType[] = [
+  'immersion_log',
+  'notable_immersion_session',
+];
+
+/** Match global immersion log activities by active members, so member logs appear in the club feed. */
+export function buildClubMemberLogFilter(
+  club: Pick<IClub, 'members'>
+): FilterQuery<IActivity> | null {
+  const memberIds = (club.members ?? [])
+    .filter((member) => member.status === 'active')
+    .map((member) => member.user);
+  if (memberIds.length === 0) return null;
+  return {
+    type: { $in: CLUB_FEED_LOG_TYPES },
+    club: null,
+    actor: { $in: memberIds },
+  };
+}
+
 export async function getActivityFeed(input: {
   viewerId: Types.ObjectId;
   clubIds: Types.ObjectId[];
   scope: 'global' | 'following' | 'clubs' | 'user';
   clubId?: Types.ObjectId;
   /** Extra activities without a club that belong in the club feed. */
-  clubMediaReviews?: FilterQuery<IActivity> | null;
+  clubGlobalActivities?: (FilterQuery<IActivity> | null)[];
   targetUserId?: Types.ObjectId;
   before?: unknown;
   limit?: unknown;
@@ -298,9 +318,14 @@ export async function getActivityFeed(input: {
     const clubClause: FilterQuery<IActivity> = {
       club: { $in: allowedClubIds },
     };
+    const globalClauses = input.clubId
+      ? (input.clubGlobalActivities ?? []).filter(
+          (clause): clause is FilterQuery<IActivity> => clause !== null
+        )
+      : [];
     clauses.push(
-      input.clubId && input.clubMediaReviews
-        ? { $or: [clubClause, input.clubMediaReviews] }
+      globalClauses.length > 0
+        ? { $or: [clubClause, ...globalClauses] }
         : clubClause
     );
     clauses.push(visibility);

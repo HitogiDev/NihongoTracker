@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Types } from 'mongoose';
-import { buildClubMediaReviewFilter } from '../services/activity.service.js';
+import {
+  buildClubMediaReviewFilter,
+  buildClubMemberLogFilter,
+} from '../services/activity.service.js';
 import { IClub } from '../types.js';
 
 type ClubInput = Pick<IClub, 'members' | 'currentMedia'>;
@@ -59,6 +62,22 @@ describe('buildClubMediaReviewFilter', () => {
           },
         ])
       )
+    ).toBeNull();
+  });
+});
+
+describe('buildClubMemberLogFilter', () => {
+  it('matches global log activities by active members only', () => {
+    expect(buildClubMemberLogFilter(club([]))).toEqual({
+      type: { $in: ['immersion_log', 'notable_immersion_session'] },
+      club: null,
+      actor: { $in: [active] },
+    });
+  });
+
+  it('returns null when the club has no active members', () => {
+    expect(
+      buildClubMemberLogFilter({ members: [] } as unknown as ClubInput)
     ).toBeNull();
   });
 });
