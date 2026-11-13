@@ -1,4 +1,12 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { useNavigate } from 'react-router-dom';
@@ -554,6 +562,64 @@ function SearchModal({
     [navigate, onClose]
   );
 
+  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+  const [typeMenuPosition, setTypeMenuPosition] = useState<{
+    top: number;
+    right: number;
+    maxHeight: number;
+  } | null>(null);
+  const typeTriggerRef = useRef<HTMLButtonElement>(null);
+  const typeMenuRef = useRef<HTMLUListElement>(null);
+  const typeMenuOpenRef = useRef(typeMenuOpen);
+  typeMenuOpenRef.current = typeMenuOpen;
+
+  useEffect(() => {
+    if (!isOpen) setTypeMenuOpen(false);
+  }, [isOpen]);
+
+  // The modal box clips overflow, so the menu uses fixed viewport coordinates.
+  useLayoutEffect(() => {
+    if (!typeMenuOpen) {
+      setTypeMenuPosition(null);
+      return undefined;
+    }
+
+    const updatePosition = () => {
+      const trigger = typeTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const viewportPadding = 8;
+      setTypeMenuPosition({
+        top: rect.bottom + 4,
+        right: Math.max(viewportPadding, window.innerWidth - rect.right),
+        maxHeight: Math.max(
+          120,
+          window.innerHeight - rect.bottom - 4 - viewportPadding
+        ),
+      });
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !typeTriggerRef.current?.contains(target) &&
+        !typeMenuRef.current?.contains(target)
+      ) {
+        setTypeMenuOpen(false);
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [typeMenuOpen]);
+
   // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
@@ -585,7 +651,11 @@ function SearchModal({
         }
         case 'Escape':
           e.preventDefault();
-          onClose();
+          if (typeMenuOpenRef.current) {
+            setTypeMenuOpen(false);
+          } else {
+            onClose();
+          }
           break;
       }
     }
@@ -643,13 +713,16 @@ function SearchModal({
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
           {!isMobileApp() && (
-          <div className="dropdown dropdown-end flex-shrink-0">
-            <div
-              tabIndex={0}
-              role="button"
+          <div className="flex-shrink-0">
+            <button
+              ref={typeTriggerRef}
+              type="button"
               className="btn btn-ghost btn-sm gap-1.5 font-normal"
               title={t('search.filterByType')}
               aria-label={t('search.filterByType')}
+              aria-haspopup="menu"
+              aria-expanded={typeMenuOpen}
+              onClick={() => setTypeMenuOpen((open) => !open)}
             >
               <Filter className="w-3.5 h-3.5 opacity-60" />
               <span className="text-sm">
@@ -659,32 +732,42 @@ function SearchModal({
                 )}
               </span>
               <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu menu-sm z-50 mt-2 w-44 surface-raised p-1"
-            >
-              {MEDIA_TYPE_FILTERS.map((opt) => (
-                <li key={opt.value}>
-                  <button
-                    type="button"
-                    className={mediaTypeFilter === opt.value ? 'active' : ''}
-                    onClick={(e) => {
-                      setMediaTypeFilter(opt.value);
-                      // A type filter only makes sense against media results
-                      if (opt.value !== 'all' && activeTab === 'users') {
-                        setActiveTab('media');
-                      }
-                      // Close the dropdown, then refocus the input
-                      (e.currentTarget as HTMLElement).blur();
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    {tCommon(opt.labelKey)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            </button>
+            {typeMenuOpen && typeMenuPosition && createPortal(
+              <ul
+                ref={typeMenuRef}
+                role="menu"
+                className="menu menu-sm flex-nowrap z-[1000] w-44 overflow-y-auto surface-raised p-1"
+                style={{
+                  position: 'fixed',
+                  top: typeMenuPosition.top,
+                  right: typeMenuPosition.right,
+                  maxHeight: typeMenuPosition.maxHeight,
+                }}
+              >
+                {MEDIA_TYPE_FILTERS.map((opt) => (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={mediaTypeFilter === opt.value ? 'active' : ''}
+                      onClick={() => {
+                        setMediaTypeFilter(opt.value);
+                        // A type filter only makes sense against media results
+                        if (opt.value !== 'all' && activeTab === 'users') {
+                          setActiveTab('media');
+                        }
+                        setTypeMenuOpen(false);
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      {tCommon(opt.labelKey)}
+                    </button>
+                  </li>
+                ))}
+              </ul>,
+              typeTriggerRef.current?.closest('dialog') ?? document.body,
+            )}
           </div>
           )}
           <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
