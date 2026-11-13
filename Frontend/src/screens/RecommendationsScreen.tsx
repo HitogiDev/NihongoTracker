@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Clock3, ExternalLink, Inbox, Send, X } from 'lucide-react';
+import { Check, Clock3, ExternalLink, Inbox, Send, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -13,6 +13,7 @@ import { formatRelativeDateInTimezone } from '../utils/timezone';
 import UserAvatar from '../components/UserAvatar';
 import PageContainer from '../components/ui/PageContainer';
 import Spinner from '../components/ui/Spinner';
+import LevelRecommendations from '../components/LevelRecommendations';
 
 const STATUS_CLASS: Record<MediaRecommendationStatus, string> = {
   pending: 'badge badge-warning badge-sm',
@@ -34,11 +35,14 @@ export default function RecommendationsScreen() {
   const { t } = useTranslation('media');
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const direction = searchParams.get('tab') === 'sent' ? 'sent' : 'received';
+  const tab = searchParams.get('tab');
+  const showLevel = tab === 'level';
+  const direction = tab === 'sent' ? 'sent' : 'received';
   const page = Math.max(Number(searchParams.get('page')) || 1, 1);
   const recommendationsQuery = useQuery({
     queryKey: ['mediaRecommendations', direction, page],
     queryFn: () => getMediaRecommendationsFn({ direction, page, limit: 20 }),
+    enabled: !showLevel,
   });
   const statusMutation = useMutation({
     mutationFn: ({
@@ -53,7 +57,7 @@ export default function RecommendationsScreen() {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
-  const setDirection = (nextDirection: 'received' | 'sent') => {
+  const setDirection = (nextDirection: 'received' | 'sent' | 'level') => {
     setSearchParams({ tab: nextDirection });
   };
   const setPage = (nextPage: number) => {
@@ -72,7 +76,7 @@ export default function RecommendationsScreen() {
       <div className="join mb-6" role="tablist">
         <button
           role="tab"
-          className={`join-item btn gap-2 ${direction === 'received' ? 'btn-primary' : 'btn-outline'}`}
+          className={`join-item btn gap-2 ${!showLevel && direction === 'received' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setDirection('received')}
         >
           <Inbox className="h-4 w-4" />
@@ -80,15 +84,25 @@ export default function RecommendationsScreen() {
         </button>
         <button
           role="tab"
-          className={`join-item btn gap-2 ${direction === 'sent' ? 'btn-primary' : 'btn-outline'}`}
+          className={`join-item btn gap-2 ${!showLevel && direction === 'sent' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setDirection('sent')}
         >
           <Send className="h-4 w-4" />
           {t('recommendations.sent')}
         </button>
+        <button
+          role="tab"
+          className={`join-item btn gap-2 ${showLevel ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setDirection('level')}
+        >
+          <Sparkles className="h-4 w-4" />
+          {t('levelRecommendations.tab')}
+        </button>
       </div>
 
-      {recommendationsQuery.isLoading ? (
+      {showLevel ? (
+        <LevelRecommendations limit={24} />
+      ) : recommendationsQuery.isLoading ? (
         <div className="flex justify-center py-16" aria-busy="true">
           <Spinner size="lg" />
         </div>
