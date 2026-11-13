@@ -1121,7 +1121,7 @@
         },
         "features": {
           "title": "Desarrollar funciones para mecenas",
-          "description": "Tu apoyo me ayuda a desarrollar funciones como el Planificador de inmersión y Session Intelligence, y a seguir mejorándolas."
+          "description": "Tu apoyo me ayuda a desarrollar funciones como el Planificador de inmersión, Session Intelligence e Insights, y a seguir mejorándolas."
         }
       }
     },
@@ -1150,6 +1150,7 @@
           "benefits": [
             "Planificador de inmersión con pronósticos adaptativos",
             "Session Intelligence para analizar enfoque y ritmo en el texthooker",
+            "Insights: evolución de tu velocidad de lectura, dificultad cómoda, comparación de periodos y resúmenes semanales o mensuales",
             "Avatares y banners GIF animados",
             "Texto personalizado en la insignia de mecenas del perfil",
             "Marcos de avatar animados y efectos ambientales en la cabecera",

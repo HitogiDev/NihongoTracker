@@ -1121,7 +1121,7 @@
         },
         "features": {
           "title": "Build supporter features",
-          "description": "Support helps me build features like Immersion Planner and Session Intelligence, and keep improving them."
+          "description": "Support helps me build features like Immersion Planner, Session Intelligence, and Insights, and keep improving them."
         }
       }
     },
@@ -1150,6 +1150,7 @@
           "benefits": [
             "Immersion Planner with adaptive finish forecasts",
             "Session Intelligence for texthooker focus and pace insights",
+            "Insights: reading speed trends, comfortable difficulty, period comparisons, and weekly or monthly summaries",
             "Animated GIF avatars and banners",
             "Custom text in the profile donator badge",
             "Animated avatar frames and ambient banner effects",
