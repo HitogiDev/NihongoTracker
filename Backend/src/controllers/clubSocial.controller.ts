@@ -19,6 +19,7 @@ import {
 } from '../types.js';
 import {
   buildClubMediaReviewFilter,
+  buildClubMemberLogFilter,
   createActivity,
   deleteActivityComment,
   getActivityFeed,
@@ -92,7 +93,10 @@ export async function getClubFeed(
       clubIds: [club._id],
       scope: 'clubs',
       clubId: club._id,
-      clubMediaReviews: buildClubMediaReviewFilter(club),
+      clubGlobalActivities: [
+        buildClubMediaReviewFilter(club),
+        buildClubMemberLogFilter(club),
+      ],
       before: req.query.before,
       limit: req.query.limit,
     });
