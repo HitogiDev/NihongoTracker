@@ -234,6 +234,17 @@ const MIGRATIONS = [
     ],
   },
   {
+    collection: 'levelrecommendationdismissals',
+    indexes: [
+      {
+        key: { user: 1, mediaType: 1, mediaId: 1 },
+        name: 'user_1_mediaType_1_mediaId_1',
+        description: 'One dismissal per user and title',
+        unique: true,
+      },
+    ],
+  },
+  {
     collection: 'usermediastatuses',
     indexes: [
       {

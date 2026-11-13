@@ -267,6 +267,11 @@
   "follow": {
     "self": "You cannot follow yourself"
   },
+  "levelRecommendations": {
+    "dismissalLimit": "You reached the limit of hidden titles",
+    "invalidMedia": "Choose a valid title to hide",
+    "tierRequired": "Filters and hidden titles require an active Enthusiast or Consumer tier"
+  },
   "mediaRecommendation": {
     "alreadyResolved": "This recommendation was already resolved",
     "duplicate": "You already recommended this title to this user",

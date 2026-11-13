@@ -407,6 +407,47 @@
     "compareSelf": "That's you! Enter a different username",
     "you": "You"
   },
+  "levelRecommendations": {
+    "categories": {
+      "listening": "Listening",
+      "reading": "Reading"
+    },
+    "empty": "No titles match your level yet. Keep logging and check back soon.",
+    "emptyFiltered": "No titles match these filters. Try a wider difficulty range or fewer filters.",
+    "filters": {
+      "allGenres": "All genres",
+      "allTypes": "All types",
+      "difficulty": "Difficulty",
+      "easier": "Easier",
+      "genresCount_one": "{{count}} genre",
+      "genresCount_other": "{{count}} genres",
+      "harder": "Harder",
+      "reset": "Clear filters",
+      "selectAll": "Select all",
+      "selectNone": "Clear",
+      "typesCount_one": "{{count}} type",
+      "typesCount_other": "{{count}} types",
+      "yourLevel": "Your level"
+    },
+    "fit": {
+      "challenge": "Small challenge",
+      "comfortable": "Comfortable"
+    },
+    "hidden": "Title hidden",
+    "hide": "Hide this title",
+    "loadFailed": "Could not load recommendations for your level.",
+    "locked": "Filter by type and genre, adjust the difficulty, and hide titles with an Enthusiast or Consumer plan.",
+    "lockedCta": "See plans",
+    "readers_one": "{{count}} learner",
+    "readers_other": "{{count}} learners",
+    "seeAll": "See more",
+    "subtitle": "Your comfort level is Jiten {{comfort}}. These titles are between {{min}} and {{max}}, and you have not logged them yet.",
+    "subtitleLoading": "Titles that match your level, based on Jiten difficulty.",
+    "subtitleNoHistory": "Easy titles to start with. Log some immersion and these suggestions will adapt to your level.",
+    "tab": "For your level",
+    "title": "For your level",
+    "undo": "Undo"
+  },
   "recommendations": {
     "accept": "Accept",
     "chooseRecipient": "Choose someone who follows you",

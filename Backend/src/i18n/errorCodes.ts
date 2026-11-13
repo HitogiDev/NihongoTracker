@@ -240,6 +240,9 @@ export const ERROR_CODES = [
   'mediaRecommendation.alreadyResolved',
   'mediaRecommendation.invalidId',
   'mediaRecommendation.invalidStatus',
+  'levelRecommendations.tierRequired',
+  'levelRecommendations.invalidMedia',
+  'levelRecommendations.dismissalLimit',
 
   // Changelog
   'changelog.notFound',

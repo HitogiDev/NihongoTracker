@@ -2110,6 +2110,33 @@ export interface IMediaRecommendation {
   updatedAt: string;
 }
 
+export type LevelRecommendationCategory = 'reading' | 'listening';
+
+export interface ILevelRecommendationItem {
+  contentId: string;
+  type: IMediaDocument['type'];
+  title: IMediaDocument['title'];
+  contentImage: string | null;
+  coverImage: string | null;
+  isAdult: boolean;
+  isAdultImage: boolean;
+  jitenDifficulty: number;
+  readers: number;
+  fit: 'comfortable' | 'challenge';
+}
+
+export interface ILevelRecommendationsResponse {
+  category: LevelRecommendationCategory;
+  hasHistory: boolean;
+  comfortJiten: number;
+  minJiten: number;
+  maxJiten: number;
+  items: ILevelRecommendationItem[];
+  /** True when the user can use filters and hide titles. */
+  canFilter: boolean;
+  availableGenres?: string[];
+}
+
 export interface IMediaListEntry {
   mediaId: string;
   mediaType: MediaListMediaType;

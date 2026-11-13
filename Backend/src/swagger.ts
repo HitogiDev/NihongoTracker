@@ -1401,6 +1401,85 @@ const swaggerDocument = {
         },
       },
     },
+    '/media-recommendations/level': {
+      get: {
+        tags: ['Media Social'],
+        summary: 'List unlogged titles that match the user Jiten comfort level',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'category',
+            in: 'query',
+            schema: { type: 'string', enum: ['reading', 'listening'], default: 'reading' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 30, default: 12 },
+          },
+          {
+            name: 'types',
+            in: 'query',
+            description: 'Comma-separated media types. Enthusiast, Consumer, or admin only.',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'genres',
+            in: 'query',
+            description: 'Comma-separated genres, up to 5. Enthusiast, Consumer, or admin only.',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'shift',
+            in: 'query',
+            description: 'Moves the difficulty window, from -1 to 1 Jiten. Enthusiast, Consumer, or admin only.',
+            schema: { type: 'number', minimum: -1, maximum: 1 },
+          },
+        ],
+        responses: {
+          200: { description: 'Comfort window and recommended titles' },
+          403: { description: 'Filters require an Enthusiast or Consumer tier' },
+        },
+      },
+    },
+    '/media-recommendations/level/dismissals': {
+      post: {
+        tags: ['Media Social'],
+        summary: 'Hide a title from level recommendations',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['mediaId', 'mediaType'],
+                properties: {
+                  mediaId: { type: 'string' },
+                  mediaType: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          204: { description: 'Title hidden' },
+          403: { description: 'Requires an Enthusiast or Consumer tier' },
+        },
+      },
+    },
+    '/media-recommendations/level/dismissals/{mediaType}/{mediaId}': {
+      delete: {
+        tags: ['Media Social'],
+        summary: 'Show a hidden title in level recommendations again',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          { name: 'mediaType', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'mediaId', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: { 204: { description: 'Title restored' } },
+      },
+    },
     '/media-recommendations/{recommendationId}/status': {
       patch: {
         tags: ['Media Social'],

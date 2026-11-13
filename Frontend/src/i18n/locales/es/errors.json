@@ -267,6 +267,11 @@
   "follow": {
     "self": "No puedes seguirte a ti mismo"
   },
+  "levelRecommendations": {
+    "dismissalLimit": "Alcanzaste el límite de títulos ocultos",
+    "invalidMedia": "Elige un título válido para ocultar",
+    "tierRequired": "Los filtros y ocultar títulos requieren un nivel Enthusiast o Consumer activo"
+  },
   "mediaRecommendation": {
     "alreadyResolved": "Esta recomendación ya se resolvió",
     "duplicate": "Ya recomendaste este contenido a esta persona",

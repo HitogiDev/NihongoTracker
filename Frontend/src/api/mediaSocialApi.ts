@@ -2,7 +2,9 @@ import api from './axiosConfig';
 import {
   IMediaCommunityResponse,
   IMediaDocument,
+  ILevelRecommendationsResponse,
   IMediaRecommendation,
+  LevelRecommendationCategory,
   MediaRecommendationStatus,
 } from '../types';
 
@@ -54,4 +56,51 @@ export async function updateMediaRecommendationStatusFn(
     { status }
   );
   return data;
+}
+
+export interface LevelRecommendationFilters {
+  types: IMediaDocument['type'][];
+  genres: string[];
+  /** Moves the difficulty window, in Jiten. */
+  shift: number;
+}
+
+export async function getLevelRecommendationsFn(params: {
+  category: LevelRecommendationCategory;
+  limit?: number;
+  filters?: LevelRecommendationFilters;
+}): Promise<ILevelRecommendationsResponse> {
+  const { category, limit, filters } = params;
+  const { data } = await api.get<ILevelRecommendationsResponse>(
+    '/media-recommendations/level',
+    {
+      params: {
+        category,
+        limit,
+        types: filters?.types.length ? filters.types.join(',') : undefined,
+        genres: filters?.genres.length ? filters.genres.join(',') : undefined,
+        shift: filters?.shift ? filters.shift : undefined,
+      },
+    }
+  );
+  return data;
+}
+
+export async function dismissLevelRecommendationFn(
+  mediaType: IMediaDocument['type'],
+  mediaId: string
+): Promise<void> {
+  await api.post('/media-recommendations/level/dismissals', {
+    mediaType,
+    mediaId,
+  });
+}
+
+export async function restoreLevelRecommendationFn(
+  mediaType: IMediaDocument['type'],
+  mediaId: string
+): Promise<void> {
+  await api.delete(
+    `/media-recommendations/level/dismissals/${encodeURIComponent(mediaType)}/${encodeURIComponent(mediaId)}`
+  );
 }

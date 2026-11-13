@@ -427,6 +427,47 @@
     "noUsersFound": "No se encontraron usuarios.",
     "you": "Tú"
   },
+  "levelRecommendations": {
+    "categories": {
+      "listening": "Escucha",
+      "reading": "Lectura"
+    },
+    "empty": "Todavía no hay títulos para tu nivel. Sigue registrando y vuelve pronto.",
+    "emptyFiltered": "Ningún título coincide con estos filtros. Prueba con un rango de dificultad más amplio o con menos filtros.",
+    "filters": {
+      "allGenres": "Todos los géneros",
+      "allTypes": "Todos los tipos",
+      "difficulty": "Dificultad",
+      "easier": "Más fácil",
+      "genresCount_one": "{{count}} género",
+      "genresCount_other": "{{count}} géneros",
+      "harder": "Más difícil",
+      "reset": "Quitar filtros",
+      "selectAll": "Seleccionar todo",
+      "selectNone": "Limpiar",
+      "typesCount_one": "{{count}} tipo",
+      "typesCount_other": "{{count}} tipos",
+      "yourLevel": "Tu nivel"
+    },
+    "fit": {
+      "challenge": "Pequeño reto",
+      "comfortable": "Cómodo"
+    },
+    "hidden": "Título oculto",
+    "hide": "Ocultar este título",
+    "loadFailed": "No se pudieron cargar las recomendaciones para tu nivel.",
+    "locked": "Filtra por tipo y género, ajusta la dificultad y oculta títulos con un plan Enthusiast o Consumer.",
+    "lockedCta": "Ver planes",
+    "readers_one": "{{count}} estudiante",
+    "readers_other": "{{count}} estudiantes",
+    "seeAll": "Ver más",
+    "subtitle": "Tu nivel cómodo es Jiten {{comfort}}. Estos títulos están entre {{min}} y {{max}}, y aún no los has registrado.",
+    "subtitleLoading": "Títulos que encajan con tu nivel, según la dificultad de Jiten.",
+    "subtitleNoHistory": "Títulos fáciles para empezar. Registra algo de inmersión y estas sugerencias se adaptarán a tu nivel.",
+    "tab": "Para tu nivel",
+    "title": "Para tu nivel",
+    "undo": "Deshacer"
+  },
   "recommendations": {
     "accept": "Aceptar",
     "chooseRecipient": "Elige a alguien que te sigue",
