@@ -180,6 +180,7 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
   if (segments[0] === 'calculator') return { key: 'titles.calculator' };
   if (segments[0] === 'features') return { key: 'titles.features' };
   if (segments[0] === 'desktop') return { key: 'titles.desktop' };
+  if (segments[0] === 'extension') return { key: 'titles.extensionConnect' };
   if (segments[0] === 'android') return { key: 'titles.android' };
   if (segments[0] === 'guidelines') return { key: 'titles.guidelines' };
   if (segments[0] === 'about') return { key: 'titles.about' };

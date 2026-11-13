@@ -278,6 +278,27 @@
     "syncing": "Syncing...",
     "title": "Data Management"
   },
+  "extensionConnect": {
+    "title": "Connect NTExtended",
+    "intro": "NTExtended is the NihongoTracker browser extension. It tracks YouTube, streaming sites, Ttsu and Yatsu Reader, and article reading.",
+    "permissionsTitle": "When you authorize it, the extension can:",
+    "permissionLogs": "Create logs that you review and confirm first",
+    "permissionRead": "Read your profile, level, streak and goals",
+    "permissionKey": "Use a new API key named \"{{name}}\"",
+    "revokeHint": "You can revoke the key at any time in Settings, API keys.",
+    "authorize": "Authorize",
+    "authorizing": "Authorizing",
+    "detecting": "Looking for the extension",
+    "notDetected": "The extension did not answer. Open this page from the Connect button of the extension, or copy the key below and paste it in the extension settings.",
+    "connected": "Connected. You can close this tab.",
+    "failed": "The extension did not accept the key: {{error}}",
+    "manualKey": "Copy this key now. It appears only once.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "generateFailed": "Could not create the API key.",
+    "loginRequired": "Log in to NihongoTracker first. Then press Connect in the extension again.",
+    "login": "Log in"
+  },
   "header": {
     "subtitle": "Manage your account and preferences",
     "title": "Settings"
