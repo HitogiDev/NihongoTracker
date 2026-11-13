@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:id="@+id/streak_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/streak_flame"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_widget_flame" />
+
+            <TextView
+                android:id="@+id/streak_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="@string/widget_preview_streak"
+                android:textColor="@color/widget_text"
+                android:textSize="32sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/streak_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/widget_preview_streak_label"
+            android:textColor="@color/widget_text"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/streak_status"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="2dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="@string/widget_preview_status"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/streak_level"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="@string/widget_preview_level"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/streak_level_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="4dp"
+            android:max="1000"
+            android:progress="620"
+            android:progressDrawable="@drawable/widget_progress" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/streak_signed_out"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="@string/widget_sign_in"
+        android:textColor="@color/widget_text"
+        android:textSize="13sp"
+        android:visibility="gone" />
+</FrameLayout>

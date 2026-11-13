@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_streak_name">Streak and level</string>
+    <string name="widget_streak_description">Your immersion streak and level progress.</string>
+    <string name="widget_goals_name">Today\'s goals</string>
+    <string name="widget_goals_description">Daily and weekly goal progress, with a button to log immersion.</string>
+    <string name="widget_sign_in">Open NihongoTracker to sign in.</string>
+    <string name="widget_create_log">Create log</string>
+    <string name="widget_preview_today">Today</string>
+    <string name="widget_preview_streak_label">day streak</string>
+    <string name="widget_preview_status">Logged today</string>
+    <string name="widget_preview_level">Level 12</string>
+    <string name="widget_preview_goal_time">Time</string>
+    <string name="widget_preview_goal_chars">Characters</string>
+    <string name="widget_preview_streak" translatable="false">12</string>
+    <string name="widget_preview_goal_time_value" translatable="false">35min / 1h</string>
+    <string name="widget_preview_goal_chars_value" translatable="false">8k / 20k</string>
+</resources>

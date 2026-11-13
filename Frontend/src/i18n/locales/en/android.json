@@ -59,5 +59,18 @@
     "description": "GitHub builds the APK from the public source code and signs it with the NihongoTracker key. Each release includes a SHA-256 checksum to verify the file.",
     "checksum": "Download the checksum",
     "allReleases": "All releases on GitHub"
+  },
+  "widgets": {
+    "streakOne": "day streak",
+    "streakOther": "day streak",
+    "loggedToday": "Logged today",
+    "keepStreak": "Log today to keep your streak",
+    "startStreak": "Log today to start a streak",
+    "level": "Level {level}",
+    "today": "Today",
+    "noGoals": "No goals yet. Create one in the app.",
+    "allDone": "All goals done for now",
+    "weekly": "{{goal}} (week)",
+    "goal": "{{type}} · {{media}}"
   }
 }

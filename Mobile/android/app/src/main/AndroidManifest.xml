@@ -40,6 +40,31 @@
 
         </activity>
 
+        <!-- Home screen widgets. The web app sends their data through WidgetsPlugin. -->
+        <receiver
+            android:name=".widgets.StreakWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_streak_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.GoalsWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_goals_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_goals_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

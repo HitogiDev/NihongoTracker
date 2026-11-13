@@ -4,6 +4,8 @@ import LanguageSync from './LanguageSync';
 import LogCelebrationHost from './LogCelebrationHost';
 import OfflineSyncStatus from './OfflineSyncStatus';
 import NativeAppLifecycle from './NativeAppLifecycle';
+import NativeWidgetSync from '../native/NativeWidgetSync';
+import { isNativeApp } from '../utils/nativeRuntime';
 
 /**
  * Outermost layout: sits above both the texthooker routes and the main
@@ -18,6 +20,7 @@ export default function RootLayout() {
       <AchievementRevealHost />
       <OfflineSyncStatus />
       <NativeAppLifecycle />
+      {isNativeApp() && <NativeWidgetSync />}
       <Outlet />
     </>
   );

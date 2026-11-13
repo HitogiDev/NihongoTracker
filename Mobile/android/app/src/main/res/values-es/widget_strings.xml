@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_streak_name">Racha y nivel</string>
+    <string name="widget_streak_description">Tu racha de inmersión y el progreso de tu nivel.</string>
+    <string name="widget_goals_name">Metas de hoy</string>
+    <string name="widget_goals_description">Progreso de tus metas diarias y semanales, con un botón para registrar inmersión.</string>
+    <string name="widget_sign_in">Abre NihongoTracker para iniciar sesión.</string>
+    <string name="widget_create_log">Crear log</string>
+    <string name="widget_preview_today">Hoy</string>
+    <string name="widget_preview_streak_label">días de racha</string>
+    <string name="widget_preview_status">Registrado hoy</string>
+    <string name="widget_preview_level">Nivel 12</string>
+    <string name="widget_preview_goal_time">Tiempo</string>
+    <string name="widget_preview_goal_chars">Caracteres</string>
+</resources>
