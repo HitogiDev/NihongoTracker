@@ -59,5 +59,18 @@
     "description": "GitHub compila el APK a partir del código fuente público y lo firma con la clave de NihongoTracker. Cada versión incluye una suma SHA-256 para verificar el archivo.",
     "checksum": "Descargar la suma de verificación",
     "allReleases": "Todas las versiones en GitHub"
+  },
+  "widgets": {
+    "streakOne": "día de racha",
+    "streakOther": "días de racha",
+    "loggedToday": "Registrado hoy",
+    "keepStreak": "Registra hoy para mantener tu racha",
+    "startStreak": "Registra hoy para empezar una racha",
+    "level": "Nivel {level}",
+    "today": "Hoy",
+    "noGoals": "Todavía no tienes metas. Crea una en la app.",
+    "allDone": "Metas completadas por ahora",
+    "weekly": "{{goal}} (semana)",
+    "goal": "{{type}} · {{media}}"
   }
 }
