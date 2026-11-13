@@ -161,6 +161,9 @@ const MediaListDetailScreen = lazy(
 );
 const UserListsScreen = lazy(() => import('./screens/UserListsScreen.tsx'));
 const ConnectionsScreen = lazy(() => import('./screens/ConnectionsScreen.tsx'));
+const ExtensionConnectScreen = lazy(
+  () => import('./screens/ExtensionConnectScreen.tsx'),
+);
 const DuelsScreen = lazy(() => import('./screens/DuelsScreen.tsx'));
 const RecommendationsScreen = lazy(
   () => import('./screens/RecommendationsScreen.tsx'),
@@ -203,6 +206,7 @@ const router = createBrowserRouter(
         <Route path="features" element={<FeaturesScreen />} />
         <Route path="desktop" element={<DesktopAppScreen />} />
         <Route path="android" element={<AndroidAppScreen />} />
+        <Route path="extension/connect" element={<ExtensionConnectScreen />} />
         <Route path="guidelines" element={<GuidelinesScreen />} />
         <Route path="support" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
