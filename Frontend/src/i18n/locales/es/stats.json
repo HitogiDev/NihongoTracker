@@ -258,7 +258,8 @@
     "duels": "Duelos",
     "overview": "Resumen",
     "ranking": "Ranking",
-    "timeline": "Cronología"
+    "timeline": "Cronología",
+    "insights": "Insights"
   },
   "typeDescriptor": {
     "all": "todos los tipos",
@@ -277,5 +278,90 @@
     "charsPerHour": "caracteres/h",
     "days": "días",
     "hours": "horas"
+  },
+  "insights": {
+    "title": "Insights",
+    "private": "Solo tú puedes ver tus insights.",
+    "error": "No se pudieron cargar los insights. Inténtalo más tarde.",
+    "locked": {
+      "badge": "Enthusiast+",
+      "description": "Estadísticas avanzadas para quienes apoyan con Enthusiast o Consumer.",
+      "speed": "Sigue tu velocidad de lectura con el tiempo, por tipo de medio y por dificultad Jiten.",
+      "comfort": "Descubre la dificultad que manejas cómodamente y cómo sube mes a mes.",
+      "compare": "Compara dos periodos cualesquiera, como este mes y el mismo mes del año pasado.",
+      "digest": "Recibe un resumen semanal o mensual de tu inmersión, logros y tendencias.",
+      "cta": "Hazte supporter"
+    },
+    "speed": {
+      "title": "Velocidad de lectura",
+      "value": "{{value}} car./h",
+      "allReading": "Toda la lectura",
+      "monthsAgo_one": "{{count}} mes",
+      "monthsAgo_other": "{{count}} meses",
+      "vsMonthsAgo_one": "vs hace {{count}} mes",
+      "vsMonthsAgo_other": "vs hace {{count}} meses",
+      "faster": "Lees un {{change}}% más rápido que hace {{months}} meses",
+      "slower": "Lees un {{change}}% más lento que hace {{months}} meses",
+      "same": "Lees a una velocidad similar a la de hace {{months}} meses",
+      "notEnoughData": "Para comparar, necesitas al menos 2 registros de lectura con caracteres y tiempo, que sumen 30 minutos, tanto en los últimos 30 días como hace unos {{months}} meses.",
+      "windows": "Últimos 30 días: {{current}}. Entonces: {{previous}}.",
+      "band": "Jiten {{from}}-{{to}}",
+      "byType": "Por tipo de medio",
+      "byDifficulty": "Por dificultad Jiten",
+      "noDifficulty": "Vincula tus registros a obras con dificultad Jiten para ver este gráfico.",
+      "empty": "Registra sesiones de lectura con caracteres y tiempo para ver tu velocidad.",
+      "note": "La velocidad es el total de caracteres dividido entre el tiempo total de los registros que tienen ambos valores. Se ignoran los valores inverosímiles.",
+      "noData": "sin datos suficientes"
+    },
+    "comfort": {
+      "title": "Dificultad cómoda",
+      "description": "La dificultad Jiten que la fórmula de XP usa como tu punto de comodidad, al final de cada mes.",
+      "comfort": "Comodidad",
+      "consumed": "Dificultad consumida",
+      "reading": "Lectura",
+      "listening": "Escucha",
+      "jiten": "Jiten {{value}}",
+      "since": "desde {{month}}",
+      "note": "Es una estimación de reto relativo según tu nivel y la dificultad reciente. No mide la comprensión."
+    },
+    "compare": {
+      "title": "Comparar periodos",
+      "preset": "Comparación",
+      "presetHint": "Las comparaciones predefinidas usan el mismo número de días en ambos periodos.",
+      "presets": {
+        "monthVsLastYear": "Este mes vs el mismo mes del año pasado",
+        "monthVsLastMonth": "Este mes vs el mes pasado",
+        "quarterVsLastQuarter": "Este trimestre vs el trimestre pasado",
+        "quarterVsLastYear": "Este trimestre vs el mismo trimestre del año pasado",
+        "yearVsLastYear": "Este año vs el año pasado",
+        "custom": "Periodos personalizados"
+      },
+      "periodA": "Periodo A",
+      "periodB": "Periodo B",
+      "start": "Fecha de inicio",
+      "end": "Fecha de fin",
+      "change": "Cambio",
+      "xp": "XP",
+      "time": "Tiempo de inmersión",
+      "readingTime": "Tiempo de lectura",
+      "listeningTime": "Tiempo de escucha",
+      "chars": "Caracteres",
+      "activeDays": "Días activos",
+      "speed": "Velocidad de lectura (car./h)",
+      "logs": "Registros",
+      "achievements": "Logros",
+      "byType": "Tiempo por tipo de medio",
+      "invalid": "Cada periodo necesita una fecha de inicio igual o anterior a su fecha de fin.",
+      "error": "No se pudo cargar la comparación. Cada periodo puede durar como máximo dos años."
+    },
+    "digest": {
+      "title": "Notificaciones de resumen",
+      "description": "Recibe un resumen de tu inmersión, logros y tendencias como notificación. En la app de Android llega como notificación push.",
+      "weekly": "Resumen semanal",
+      "weeklyDescription": "Se envía al empezar cada semana, después de las 9:00 en tu zona horaria.",
+      "monthly": "Resumen mensual",
+      "monthlyDescription": "Se envía el primer día de cada mes, después de las 9:00 en tu zona horaria.",
+      "error": "No se pudo guardar la configuración del resumen."
+    }
   }
 }

@@ -195,11 +195,21 @@ export interface IUserSettings {
   statsLayout?: StatsGroupLayout[];
   profileLayout?: ProfileWidgetLayout[];
   notificationsLastViewedAt?: Date | null;
+  insightsDigest?: IInsightsDigestSettings;
   dismissedNotificationClubIds?: string[];
   dismissedNotificationClubAt?: Record<string, Date | string>;
   lastSeenChangelogAt?: Date | null;
   socialPrivacy?: ISocialPrivacySettings;
   achievementShowcase?: string[];
+}
+
+export interface IInsightsDigestSettings {
+  weekly: boolean;
+  monthly: boolean;
+  /** Last period key that received a digest: the week start day, YYYY-MM-DD. */
+  lastWeeklyKey?: string | null;
+  /** Last period key that received a digest: YYYY-MM. */
+  lastMonthlyKey?: string | null;
 }
 
 export interface IUserCustomTheme {
@@ -1632,6 +1642,7 @@ export const NOTIFICATION_TYPES = [
   'level_up',
   'goal_completed',
   'streak_lost',
+  'insights_digest',
   // Platform
   'changelog',
   'system'

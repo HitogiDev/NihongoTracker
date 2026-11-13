@@ -48,7 +48,21 @@
     "social.commented": "{{username}} commented on your activity",
     "social.replied": "{{username}} replied to your comment",
     "social.replyLiked": "{{username}} liked your reply",
-    "social.mentionedInPost": "{{username}} mentioned you in a post"
+    "social.mentionedInPost": "{{username}} mentioned you in a post",
+    "insights.weeklyTitle": "Your week: {{hours}} h of immersion and {{xp}} XP",
+    "insights.monthlyTitle": "Your month: {{hours}} h of immersion and {{xp}} XP",
+    "insights.trendUp_zero": "{{change}}% more immersion than the period before.",
+    "insights.trendUp_one": "{{change}}% more immersion than the period before. You unlocked 1 achievement.",
+    "insights.trendUp_other": "{{change}}% more immersion than the period before. You unlocked {{count}} achievements.",
+    "insights.trendDown_zero": "{{change}}% less immersion than the period before.",
+    "insights.trendDown_one": "{{change}}% less immersion than the period before. You unlocked 1 achievement.",
+    "insights.trendDown_other": "{{change}}% less immersion than the period before. You unlocked {{count}} achievements.",
+    "insights.trendFlat_zero": "About the same immersion as the period before.",
+    "insights.trendFlat_one": "About the same immersion as the period before. You unlocked 1 achievement.",
+    "insights.trendFlat_other": "About the same immersion as the period before. You unlocked {{count}} achievements.",
+    "insights.trendNew_zero": "A fresh start. Keep it going!",
+    "insights.trendNew_one": "A fresh start. Keep it going! You unlocked 1 achievement.",
+    "insights.trendNew_other": "A fresh start. Keep it going! You unlocked {{count}} achievements."
   },
   "list": {
     "empty": {

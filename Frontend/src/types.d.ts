@@ -1867,6 +1867,7 @@ export type NotificationType =
   | 'level_up'
   | 'goal_completed'
   | 'streak_lost'
+  | 'insights_digest'
   | 'changelog'
   | 'system';
 
@@ -2337,4 +2338,110 @@ export interface ICreateDuelPayload {
   target: number;
   mediaType: GoalMediaType | null;
   durationDays: number;
+}
+
+export interface IInsightsSpeedPoint {
+  month: string;
+  charsPerHour: number | null;
+  hours: number;
+  logs: number;
+}
+
+export interface IInsightsSpeedWindow {
+  start: string;
+  end: string;
+  charsPerHour: number;
+  hours: number;
+  logs: number;
+}
+
+export interface IInsightsSpeedComparison {
+  monthsAgo: number;
+  current: IInsightsSpeedWindow | null;
+  previous: IInsightsSpeedWindow | null;
+  changePct: number | null;
+}
+
+export interface IInsightsComfortPoint {
+  month: string;
+  comfort: number;
+  levelComfort: number;
+  recentDifficulty: number | null;
+  monthDifficulty: number | null;
+  taggedHours: number;
+}
+
+export interface IInsightsComfortTimeline {
+  category: 'reading' | 'listening';
+  points: IInsightsComfortPoint[];
+  current: IInsightsComfortPoint | null;
+  change: number | null;
+}
+
+export interface IInsightsDigestSettings {
+  weekly: boolean;
+  monthly: boolean;
+}
+
+export interface IInsightsResponse {
+  generatedAt: string;
+  months: string[];
+  readingSpeed: {
+    overall: IInsightsSpeedPoint[];
+    byType: {
+      type: string;
+      points: IInsightsSpeedPoint[];
+      charsPerHour: number | null;
+      comparison: IInsightsSpeedComparison;
+    }[];
+    byDifficulty: {
+      band: number;
+      points: IInsightsSpeedPoint[];
+      charsPerHour: number | null;
+      hours: number;
+    }[];
+    comparison: IInsightsSpeedComparison;
+  };
+  comfort: IInsightsComfortTimeline[];
+  digest: IInsightsDigestSettings;
+}
+
+export interface IInsightsPeriodSummary {
+  start: string;
+  end: string;
+  startKey: string;
+  endKey: string;
+  days: number;
+  xp: number;
+  time: number;
+  readingTime: number;
+  listeningTime: number;
+  chars: number;
+  pages: number;
+  episodes: number;
+  logs: number;
+  activeDays: number;
+  charsPerHour: number | null;
+  achievements: number;
+  byType: {
+    type: string;
+    time: number;
+    xp: number;
+    logs: number;
+    chars: number;
+    pages: number;
+    episodes: number;
+  }[];
+}
+
+export interface IInsightsComparisonResponse {
+  a: IInsightsPeriodSummary;
+  b: IInsightsPeriodSummary;
+  change: {
+    xp: number | null;
+    time: number | null;
+    chars: number | null;
+    activeDays: number | null;
+    charsPerHour: number | null;
+  };
 }

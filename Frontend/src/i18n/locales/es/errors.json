@@ -354,5 +354,10 @@
     "invalidDecoration": "La decoración de la publicación no es válida",
     "decorationTierRequired": "Las decoraciones de publicaciones requieren la membresía Enthusiast o Consumer",
     "decorationImageRequired": "Elige una imagen de fondo"
+  },
+  "insights": {
+    "tierRequired": "Los insights requieren un nivel Enthusiast o Consumer activo",
+    "invalidPeriod": "Elige dos periodos válidos de dos años como máximo",
+    "invalidDigest": "Elige una configuración de resumen válida"
   }
 }

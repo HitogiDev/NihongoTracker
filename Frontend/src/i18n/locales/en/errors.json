@@ -354,5 +354,10 @@
     "invalidDecoration": "The post decoration is invalid",
     "decorationTierRequired": "Post decorations require an Enthusiast or Consumer membership",
     "decorationImageRequired": "Choose a background image"
+  },
+  "insights": {
+    "tierRequired": "Insights require an active Enthusiast or Consumer tier",
+    "invalidPeriod": "Choose two valid periods of at most two years",
+    "invalidDigest": "Choose a valid summary setting"
   }
 }

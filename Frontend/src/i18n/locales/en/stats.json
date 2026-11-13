@@ -256,7 +256,8 @@
     "duels": "Duels",
     "overview": "Overview",
     "ranking": "Ranking",
-    "timeline": "Timeline"
+    "timeline": "Timeline",
+    "insights": "Insights"
   },
   "typeDescriptor": {
     "all": "all types",
@@ -274,5 +275,90 @@
     "charsPerHour": "chars/hr",
     "days": "days",
     "hours": "hours"
+  },
+  "insights": {
+    "title": "Insights",
+    "private": "Only you can see your insights.",
+    "error": "Insights could not be loaded. Try again later.",
+    "locked": {
+      "badge": "Enthusiast+",
+      "description": "Advanced statistics for Enthusiast and Consumer supporters.",
+      "speed": "Follow your reading speed over time, by media type and by Jiten difficulty.",
+      "comfort": "See the difficulty you handle comfortably and how it rises month by month.",
+      "compare": "Compare any two periods, such as this month and the same month last year.",
+      "digest": "Get a weekly or monthly summary of your immersion, achievements, and trends.",
+      "cta": "Become a supporter"
+    },
+    "speed": {
+      "title": "Reading speed",
+      "value": "{{value}} chars/h",
+      "allReading": "All reading",
+      "monthsAgo_one": "{{count}} month",
+      "monthsAgo_other": "{{count}} months",
+      "vsMonthsAgo_one": "vs {{count}} month ago",
+      "vsMonthsAgo_other": "vs {{count}} months ago",
+      "faster": "You read {{change}}% faster than {{months}} months ago",
+      "slower": "You read {{change}}% slower than {{months}} months ago",
+      "same": "You read at about the same speed as {{months}} months ago",
+      "notEnoughData": "To compare, you need at least 2 reading logs with characters and time, totaling 30 minutes, in both the last 30 days and around {{months}} months ago.",
+      "windows": "Last 30 days: {{current}}. Then: {{previous}}.",
+      "band": "Jiten {{from}}-{{to}}",
+      "byType": "By media type",
+      "byDifficulty": "By Jiten difficulty",
+      "noDifficulty": "Link logs to works with a Jiten difficulty to see this chart.",
+      "empty": "Log reading sessions with both characters and time to see your speed.",
+      "note": "Speed is the total characters divided by the total time of logs with both values. Implausible values are ignored.",
+      "noData": "not enough data"
+    },
+    "comfort": {
+      "title": "Comfortable difficulty",
+      "description": "The Jiten difficulty that the XP formula uses as your comfort point, at the end of each month.",
+      "comfort": "Comfort",
+      "consumed": "Difficulty consumed",
+      "reading": "Reading",
+      "listening": "Listening",
+      "jiten": "Jiten {{value}}",
+      "since": "since {{month}}",
+      "note": "This is a relative challenge estimate from your level and recent difficulty. It does not measure comprehension."
+    },
+    "compare": {
+      "title": "Compare periods",
+      "preset": "Comparison",
+      "presetHint": "Presets compare the same number of days in both periods.",
+      "presets": {
+        "monthVsLastYear": "This month vs same month last year",
+        "monthVsLastMonth": "This month vs last month",
+        "quarterVsLastQuarter": "This quarter vs last quarter",
+        "quarterVsLastYear": "This quarter vs same quarter last year",
+        "yearVsLastYear": "This year vs last year",
+        "custom": "Custom periods"
+      },
+      "periodA": "Period A",
+      "periodB": "Period B",
+      "start": "Start date",
+      "end": "End date",
+      "change": "Change",
+      "xp": "XP",
+      "time": "Immersion time",
+      "readingTime": "Reading time",
+      "listeningTime": "Listening time",
+      "chars": "Characters",
+      "activeDays": "Active days",
+      "speed": "Reading speed (chars/h)",
+      "logs": "Logs",
+      "achievements": "Achievements",
+      "byType": "Time by media type",
+      "invalid": "Each period needs a start date on or before its end date.",
+      "error": "The comparison could not be loaded. Each period can be at most two years long."
+    },
+    "digest": {
+      "title": "Summary notifications",
+      "description": "Get a summary of your immersion, achievements, and trends as a notification. The Android app shows it as a push notification.",
+      "weekly": "Weekly summary",
+      "weeklyDescription": "Sent at the start of each week, after 9:00 in your time zone.",
+      "monthly": "Monthly summary",
+      "monthlyDescription": "Sent on the first day of each month, after 9:00 in your time zone.",
+      "error": "Your summary settings could not be saved."
+    }
   }
 }
