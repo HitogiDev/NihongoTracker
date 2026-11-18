@@ -85,7 +85,7 @@ describe('IGDB dump game eligibility', () => {
         games: `id,name,${typeField},updated_at\n${rows.join('\n')}\n`,
       };
       mocks.dumpStream.mockImplementation(async (endpoint: string) =>
-        Readable.from([dumps[endpoint]])
+        Readable.from([dumps[endpoint] ?? ''])
       );
       mocks.find.mockImplementation((filter: { contentId: unknown }) => ({
         select: () => ({

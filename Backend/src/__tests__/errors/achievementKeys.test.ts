@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -6,6 +6,10 @@ import { describe, expect, it } from 'vitest';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const seedPath = path.resolve(here, '../../scripts/seedAchievements.ts');
 const localesPath = path.resolve(here, '../../../../Frontend/src/i18n/locales');
+
+// The seed script is gitignored, so public checkouts do not have it.
+// Run these checks only where the script exists.
+const hasSeedScript = existsSync(seedPath);
 
 function seededKeys(): string[] {
   const source = readFileSync(seedPath, 'utf-8');
@@ -25,8 +29,8 @@ function translatedItems(language: string): Record<string, unknown> {
  * Achievement text is stored in English and translated on the client by key.
  * A missing translation falls back to English. This test catches that gap.
  */
-describe('achievement translations', () => {
-  const keys = seededKeys();
+describe.skipIf(!hasSeedScript)('achievement translations', () => {
+  const keys = hasSeedScript ? seededKeys() : [];
 
   it('finds the seeded achievements', () => {
     expect(keys.length).toBeGreaterThan(0);

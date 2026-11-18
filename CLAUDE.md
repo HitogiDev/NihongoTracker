@@ -17,6 +17,7 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 ## Working rules
 
 - Run npm commands from `Backend/`, `Frontend/`, or `Mobile/`, never from the repository root.
+- Use npm 11. The lock files come from npm 11, and npm 10 rejects them during `npm ci` (for example, "Missing: esbuild@... from lock file").
 - Work directly on `main`. Do not create or switch to other branches.
 - Commit only when asked. Do not add a Co-Authored-By trailer. Do not push.
 - Preserve unrelated user changes. The worktree may already be dirty.
