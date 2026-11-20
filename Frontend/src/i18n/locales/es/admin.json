@@ -172,6 +172,10 @@
     "wrapped": {
       "label": "Nihongo Wrapped",
       "description": "Muestra la pestaña Wrapped en todos los perfiles."
+    },
+    "posts": {
+      "label": "Publicaciones",
+      "description": "Permite a todos publicar en el feed. Las imágenes subidas siguen limitadas a los supporters."
     }
   }
 }

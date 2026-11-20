@@ -320,5 +320,22 @@
     "usernameLength": "Your username must be between 1 and 20 characters",
     "usernameRequired": "username is required",
     "usernameTaken": "That username is already taken"
+  },
+  "post": {
+    "disabled": "Posts are not available yet",
+    "notFound": "Post not found",
+    "empty": "Write something or add an image",
+    "contentTooLong": "Posts must be {{max}} characters or less",
+    "tooManyImages": "A post can have at most {{max}} images",
+    "invalidImageList": "The image list is invalid",
+    "invalidImageUrl": "That image link is not valid",
+    "unsupportedImageHost": "Images from {{host}} are not supported. Use a link from a supported site.",
+    "hostedImagesTierRequired": "Uploading images requires an Enthusiast or Consumer membership. You can still add image links.",
+    "hostedImageQuota": "You can upload {{max}} images every 30 days. You have {{remaining}} left.",
+    "invalidImage": "Only JPEG, PNG, WebP, and GIF images are allowed",
+    "imageTooLarge": "Images must be {{max}} MB or less",
+    "invalidDecoration": "The post decoration is invalid",
+    "decorationTierRequired": "Post decorations require an Enthusiast or Consumer membership",
+    "decorationImageRequired": "Choose a background image"
   }
 }

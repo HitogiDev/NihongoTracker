@@ -281,6 +281,21 @@ const MIGRATIONS = [
     ],
   },
   {
+    collection: 'posts',
+    indexes: [
+      {
+        key: { author: 1, createdAt: -1 },
+        name: 'author_1_createdAt_-1',
+        description: 'Posts by author, newest first',
+      },
+      {
+        key: { author: 1, 'images.uploadedAt': -1 },
+        name: 'author_1_images.uploadedAt_-1',
+        description: 'Hosted post image upload quota',
+      },
+    ],
+  },
+  {
     collection: 'immersionforecasts',
     indexes: [
       {

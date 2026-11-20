@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 
-export const FEATURE_FLAGS = ['wrapped'] as const;
+export const FEATURE_FLAGS = ['wrapped', 'posts'] as const;
 export type FeatureFlag = (typeof FEATURE_FLAGS)[number];
 
 export interface IFeatureFlag {

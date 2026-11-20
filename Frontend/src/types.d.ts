@@ -256,9 +256,60 @@ export type ActivityType =
   | 'club_milestone'
   | 'club_challenge_started'
   | 'cooperative_goal_progress'
-  | 'cooperative_goal_completed';
+  | 'cooperative_goal_completed'
+  | 'post';
 
 export type ActivityReactionType = 'like';
+
+export type PostImageSource = 'external' | 'hosted';
+
+export interface IPostImage {
+  _id: string;
+  url: string;
+  source: PostImageSource;
+  width?: number;
+  height?: number;
+}
+
+export type PostBorderStyle =
+  | 'none'
+  | 'solid'
+  | 'dashed'
+  | 'dotted'
+  | 'double'
+  | 'gradient'
+  | 'glow';
+export type PostBackgroundType = 'none' | 'color' | 'pattern' | 'image';
+export type PostBackgroundPattern =
+  | 'dots'
+  | 'grid'
+  | 'stripes'
+  | 'checks'
+  | 'zigzag'
+  | 'seigaiha';
+
+export interface IPostDecoration {
+  border: { style: PostBorderStyle; color1: string; color2: string };
+  background: {
+    type: PostBackgroundType;
+    color: string;
+    pattern: PostBackgroundPattern;
+    patternColor: string;
+    /** 0 to 100. */
+    opacity: number;
+    image: { url: string; source: PostImageSource } | null;
+  };
+}
+
+/** Activity metadata of a `post` activity. */
+export interface IPostActivityMetadata {
+  postId: string;
+  content: string;
+  sensitive: boolean;
+  decoration: IPostDecoration | null;
+  editedAt: string | null;
+  images: IPostImage[];
+}
 
 export interface ISocialActivity {
   _id: string;

@@ -14,7 +14,7 @@ export interface NotifyMentionsInput {
   /** Text before an edit. Users that it already mentioned are not notified again. */
   previousContent?: string;
   actor: MentionActor;
-  entityType: 'activityComment' | 'mediaReview';
+  entityType: 'activityComment' | 'mediaReview' | 'post';
   entityId: string;
   link: string;
   title: string;

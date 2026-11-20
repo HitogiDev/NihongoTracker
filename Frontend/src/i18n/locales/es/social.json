@@ -75,5 +75,84 @@
   },
   "reactions": {
     "like": "Me gusta"
+  },
+  "posts": {
+    "composerPlaceholder": "Comparte algo con la comunidad...",
+    "publish": "Publicar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "count": "{{count}}/{{max}}",
+    "edit": "Editar publicación",
+    "editTitle": "Editar publicación",
+    "delete": "Eliminar publicación",
+    "deleteTitle": "¿Eliminar esta publicación?",
+    "deleteBody": "Se eliminarán la publicación, sus comentarios y sus me gusta. No se puede deshacer.",
+    "deleteConfirm": "Eliminar",
+    "deleted": "Publicación eliminada",
+    "published": "Publicación creada",
+    "saved": "Publicación guardada",
+    "edited": "Editado",
+    "visibility": "Quién puede verla",
+    "visibilityOptions": {
+      "public": "Todos",
+      "followers": "Seguidores",
+      "following": "Personas que sigo",
+      "private": "Solo yo"
+    },
+    "sensitive": "Imágenes sensibles o con spoilers",
+    "sensitiveHint": "Las imágenes se muestran borrosas hasta que se pulsan.",
+    "reveal": "Mostrar imagen sensible",
+    "imagesLabel": "Imágenes ({{count}}/{{max}})",
+    "addLink": "Añadir enlace de imagen",
+    "linkPlaceholder": "https://i.imgur.com/...",
+    "addLinkButton": "Añadir",
+    "linkHint": "Se admiten, entre otros, Imgur, Catbox, ImgBB, Postimages, Discord, Reddit, X, Tenor y Giphy.",
+    "upload": "Subir imagen",
+    "uploadHint": "JPEG, PNG, WebP o GIF de hasta 8 MB.",
+    "uploadLocked": "Subir imágenes está disponible para supporters Enthusiast y Consumer. Los enlaces de imágenes son gratis para todos.",
+    "uploadLockedShort": "Supporters",
+    "removeImage": "Quitar imagen",
+    "imageAlt": "Imagen {{index}} de la publicación de {{username}}",
+    "imageFailed": "Esta imagen no está disponible",
+    "openImage": "Abrir imagen",
+    "hostedBadge": "Subida",
+    "linkBadge": "Enlace",
+    "decoration": {
+      "title": "Decoración",
+      "locked": "Los bordes y fondos están disponibles para supporters Enthusiast y Consumer.",
+      "preview": "Vista previa",
+      "previewBody": "Así se verá tu publicación en el feed.",
+      "border": "Borde",
+      "borderStyles": {
+        "none": "Ninguno",
+        "solid": "Sólido",
+        "dashed": "Discontinuo",
+        "dotted": "Punteado",
+        "double": "Doble",
+        "gradient": "Degradado",
+        "glow": "Brillo"
+      },
+      "color1": "Color",
+      "color2": "Segundo color",
+      "background": "Fondo",
+      "backgroundTypes": {
+        "none": "Ninguno",
+        "color": "Color",
+        "pattern": "Patrón",
+        "image": "Imagen"
+      },
+      "color": "Color de fondo",
+      "patternColor": "Color del patrón",
+      "patterns": {
+        "dots": "Puntos",
+        "grid": "Cuadrícula",
+        "stripes": "Rayas",
+        "checks": "Cuadros",
+        "zigzag": "Zigzag",
+        "seigaiha": "Seigaiha"
+      },
+      "imageLink": "Enlace de la imagen de fondo",
+      "opacity": "Opacidad"
+    }
   }
 }

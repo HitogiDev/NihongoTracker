@@ -56,6 +56,7 @@ import {
   getActivityFeedFn,
 } from '../api/activitiesApi';
 import ActivityCard from './social/ActivityCard';
+import FeedPostComposer from './social/FeedPostComposer';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 import GettingStartedModal from './GettingStartedModal';
 import ImmersionGoals from './ImmersionGoals';
@@ -567,6 +568,7 @@ function Dashboard() {
         <section className="space-y-3">
           <h2 className="font-semibold">{nt('native.activity')}</h2>
           <div className="join flex w-full">{ACTIVITY_SCOPES.map(({ value, icon: Icon }) => <Button key={value} className="join-item flex-1" variant={activityScope === value ? 'primary' : 'default'} appearance={activityScope === value ? 'solid' : 'outline'} aria-pressed={activityScope === value} onClick={() => setActivityScope(value)}><Icon className="h-4 w-4" /><span className="text-xs">{t(`dashboard.feed.scopes.${value}`)}</span></Button>)}</div>
+          <FeedPostComposer />
           {activityLoading ? <div className="skeleton h-28" /> : activityError ? <div role="alert" className="alert flex flex-col items-start"><p>{navigator.onLine ? t('dashboard.feed.loadError') : nt('native.offline')}</p><Button onClick={() => void refetchActivity()}>{nt('native.retry')}</Button></div> : socialActivities.length ? socialActivities.map((activity) => <ActivityCard key={activity._id} activity={activity} highlighted={activity._id === focusedActivityId} />) : <p className="surface-muted p-4 text-sm text-base-content/65">{t(`dashboard.feed.emptyScopes.${activityScope}`)}</p>}
           <InfiniteScrollSentinel hasNextPage={Boolean(hasNextActivityPage)} isFetchingNextPage={isFetchingNextActivityPage} onLoadMore={() => void fetchNextActivityPage()} />
         </section>
@@ -920,6 +922,7 @@ function Dashboard() {
               </div>
 
               <div className="space-y-3">
+                <FeedPostComposer />
                 {activityLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <div key={index} className="skeleton h-32 w-full" />
