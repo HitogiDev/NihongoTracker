@@ -73,9 +73,6 @@ export default function ManualImmersionSettings() {
     >
       <div>
         <h3 className="font-semibold">{t('manualImmersion.title')}</h3>
-        <p className="mt-1 text-sm text-base-content/70">
-          {t('manualImmersion.description')}
-        </p>
       </div>
 
       <div className="join" role="group" aria-label={t('manualImmersion.mode')}>

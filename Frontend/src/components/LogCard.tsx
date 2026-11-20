@@ -1319,9 +1319,6 @@ function LogCard({
                 <h3 id="edit-modal-title" className="font-bold text-xl">
                   {t('edit.title')}
                 </h3>
-                <p className="text-sm text-base-content/70 mt-1">
-                  {t('edit.subtitle')}
-                </p>
               </div>
             </div>
             <form method="dialog" onSubmit={(event) => { if (isMobileApp()) { event.preventDefault(); requestEditClose(); } }}><button className="btn btn-ghost btn-sm btn-circle" aria-label={t('common.a11y.closeModal')}><X className="w-4 h-4" /></button></form>

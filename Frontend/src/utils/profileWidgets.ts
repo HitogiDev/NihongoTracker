@@ -5,7 +5,8 @@ interface ProfileWidgetMeta {
   id: ProfileWidgetId;
   /** Translation keys: this module is pure, callers render them with `t`. */
   labelKey: ParseKeys<'settings'>;
-  descriptionKey: ParseKeys<'settings'>;
+  /** Set only when the label does not explain what the widget shows. */
+  descriptionKey?: ParseKeys<'settings'>;
   /** Only shown on the owner's own profile (never rendered for other visitors). */
   ownerOnly?: boolean;
 }
@@ -14,18 +15,15 @@ interface ProfileWidgetMeta {
 export const PROFILE_WIDGETS: ProfileWidgetMeta[] = [
   {
     id: 'profileStats',
-    labelKey: 'profileWidgets.profileStats.label',
-    descriptionKey: 'profileWidgets.profileStats.description',
+    labelKey: 'profileWidgets.profileStats.label',
   },
   {
     id: 'about',
-    labelKey: 'profileWidgets.about.label',
-    descriptionKey: 'profileWidgets.about.description',
+    labelKey: 'profileWidgets.about.label',
   },
   {
     id: 'favorites',
-    labelKey: 'profileWidgets.favorites.label',
-    descriptionKey: 'profileWidgets.favorites.description',
+    labelKey: 'profileWidgets.favorites.label',
   },
   {
     id: 'currentMedia',
@@ -34,30 +32,25 @@ export const PROFILE_WIDGETS: ProfileWidgetMeta[] = [
   },
   {
     id: 'progressStats',
-    labelKey: 'profileWidgets.progressStats.label',
-    descriptionKey: 'profileWidgets.progressStats.description',
+    labelKey: 'profileWidgets.progressStats.label',
   },
   {
     id: 'immersionActivity',
-    labelKey: 'profileWidgets.immersionActivity.label',
-    descriptionKey: 'profileWidgets.immersionActivity.description',
+    labelKey: 'profileWidgets.immersionActivity.label',
   },
   {
     id: 'immersionGoals',
-    labelKey: 'profileWidgets.immersionGoals.label',
-    descriptionKey: 'profileWidgets.immersionGoals.description',
+    labelKey: 'profileWidgets.immersionGoals.label',
     ownerOnly: true,
   },
   {
     id: 'duels',
-    labelKey: 'profileWidgets.duels.label',
-    descriptionKey: 'profileWidgets.duels.description',
+    labelKey: 'profileWidgets.duels.label',
     ownerOnly: true,
   },
   {
     id: 'achievements',
-    labelKey: 'profileWidgets.achievements.label',
-    descriptionKey: 'profileWidgets.achievements.description',
+    labelKey: 'profileWidgets.achievements.label',
   },
 ];
 

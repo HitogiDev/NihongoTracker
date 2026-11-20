@@ -142,7 +142,7 @@
       "clearCustomCss": "Borrar el CSS personalizado",
       "copyAllLines": "Copiar todas las líneas",
       "customCss": "CSS personalizado",
-      "customCssHint": "Añade reglas CSS para personalizar la interfaz del texthooker. Se guardan en tu navegador.",
+      "customCssHint": "Se guardan en tu navegador.",
       "displayHeading": "Pantalla",
       "fontFamily": "Tipografía",
       "fontSize": "Tamaño de fuente (px)",

@@ -518,3 +518,19 @@ html[data-native-app="true"] .Toastify__close-button {
   justify-content: center;
   opacity: 0.8;
 }
+/* Buttons over a cover image look small but keep a 48 px touch target. */
+html[data-native-app="true"] .btn.native-compact-touch {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0;
+}
+html[data-native-app="true"] .btn.native-compact-touch:not(.absolute) {
+  position: relative;
+}
+html[data-native-app="true"] .btn.native-compact-touch::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+}

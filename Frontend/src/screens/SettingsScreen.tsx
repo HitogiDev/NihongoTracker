@@ -2515,7 +2515,6 @@ function SettingsScreen() {
           <h1 className="text-3xl font-bold text-base-content mb-2">
             {t('header.title')}
           </h1>
-          <p className="text-base-content/70">{t('header.subtitle')}</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -2571,9 +2570,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('profile.tab')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('profile.subtitle')}
-                        </p>
                       </div>
                     </div>
 
@@ -3143,9 +3139,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('preferences.title')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('preferences.subtitle')}
-                        </p>
                       </div>
                     </div>
 
@@ -3219,9 +3212,6 @@ function SettingsScreen() {
                           onChange={setTimezone}
                           disabled={isPending || isPreferencesPending}
                         />
-                        <p className="label text-base-content/70 text-wrap">
-                          {t('preferences.timezoneHint')}
-                        </p>
                       </fieldset>
 
                       <div>
@@ -3229,9 +3219,6 @@ function SettingsScreen() {
                           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
                             <span className="font-medium">
                               {t('preferences.blurAdult')}
-                            </span>
-                            <span className="text-sm text-base-content/70">
-                              {t('preferences.blurAdultHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
@@ -3254,9 +3241,6 @@ function SettingsScreen() {
                           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
                             <span className="font-medium">
                               {t('preferences.hideAdultFromSearch')}
-                            </span>
-                            <span className="text-sm text-base-content/70">
-                              {t('preferences.hideAdultFromSearchHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
@@ -3281,9 +3265,6 @@ function SettingsScreen() {
                           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
                             <span className="font-medium">
                               {t('preferences.hideUnmatched')}
-                            </span>
-                            <span className="text-sm text-base-content/70">
-                              {t('preferences.hideUnmatchedHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
@@ -3343,9 +3324,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('tags.title')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('tags.subtitle')}
-                        </p>
                       </div>
                     </div>
                     <TagManager />
@@ -3365,9 +3343,6 @@ function SettingsScreen() {
                       <h2 className="text-2xl font-bold">
                         {t('privacy.title')}
                       </h2>
-                      <p className="text-base-content/70">
-                        {t('privacy.subtitle')}
-                      </p>
                     </div>
                   </div>
                   <SocialPrivacySettings />
@@ -3387,9 +3362,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('patreon.title')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('patreon.subtitle')}
-                        </p>
                       </div>
                     </div>
 
@@ -3517,9 +3489,6 @@ function SettingsScreen() {
                             <h3 className="text-xl font-bold">
                               {t('patreon.badgeVisibility')}
                             </h3>
-                            <p className="text-base-content/70 text-sm">
-                              {t('patreon.badgeVisibilityHint')}
-                            </p>
                           </div>
                         </div>
                         <input
@@ -3649,9 +3618,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('patreon.badgeColors')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('patreon.badgeColorsSubtitle')}
-                        </p>
                       </div>
                     </div>
 
@@ -4022,9 +3988,6 @@ function SettingsScreen() {
                           <h3 className="font-semibold">
                             {t('anilist.connection')}
                           </h3>
-                          <p className="text-sm text-base-content/70">
-                            {t('anilist.connectionHint')}
-                          </p>
                         </div>
                         <Button
                           variant="error"
@@ -4201,9 +4164,6 @@ function SettingsScreen() {
                         <h2 className="text-2xl font-bold">
                           {t('data.title')}
                         </h2>
-                        <p className="text-base-content/70">
-                          {t('data.subtitle')}
-                        </p>
                       </div>
                     </div>
 
@@ -4355,9 +4315,6 @@ function SettingsScreen() {
                           <Download className="h-4 w-4 text-success" />
                           {t('data.export')}
                         </h3>
-                        <p className="text-base-content/70 text-sm mb-3">
-                          {t('data.exportHint')}
-                        </p>
                         <button
                           type="button"
                           className="btn btn-success btn-outline w-full"
@@ -4683,7 +4640,6 @@ function SettingsScreen() {
                         <Info className="stroke-current shrink-0 h-6 w-6" />
                         <div>
                           <h3 className="font-bold">{t('logs.matchMedia')}</h3>
-                          <div className="text-xs">{t('logs.matchHint')}</div>
                         </div>
                       </div>
 
@@ -5177,7 +5133,7 @@ function SettingsScreen() {
 type SortableWidgetRowProps = {
   id: string;
   label: string;
-  description: string;
+  description?: string;
   visible: boolean;
   ownerOnly?: boolean;
   onToggle: () => void;
@@ -5233,7 +5189,9 @@ function SortableWidgetRow({
             </span>
           )}
         </div>
-        <p className="truncate text-xs text-base-content/70">{description}</p>
+        {description && (
+          <p className="truncate text-xs text-base-content/70">{description}</p>
+        )}
       </div>
       <button
         type="button"
@@ -5366,7 +5324,9 @@ function ProfileLayoutEditor() {
                     key={w.id}
                     id={w.id}
                     label={tSettings(meta.labelKey)}
-                    description={tSettings(meta.descriptionKey)}
+                    description={
+                      meta.descriptionKey && tSettings(meta.descriptionKey)
+                    }
                     visible={w.visible}
                     ownerOnly={meta.ownerOnly}
                     onToggle={() => toggleVisibility(w.id)}

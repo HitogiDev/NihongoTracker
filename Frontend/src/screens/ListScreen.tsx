@@ -1477,7 +1477,7 @@ function MediaCard({
       {isOwnProfile && !selectionMode && !hasStatus && (
         <button
           type="button"
-          className="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 z-40 bg-base-100/80 border-base-300 text-error"
+          className="btn btn-ghost btn-xs btn-circle native-compact-touch absolute top-2 right-2 z-40 bg-base-100/80 border-base-300 text-error"
           disabled={isToggling}
           onClick={(e) => {
             e.stopPropagation();
@@ -1508,7 +1508,7 @@ function MediaCard({
           <button
             type="button"
             tabIndex={0}
-            className={`btn btn-xs btn-circle ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
+            className={`btn btn-xs btn-circle native-compact-touch ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
             disabled={isToggling}
             aria-label={t('list.setStatus')}
           >
@@ -1598,7 +1598,7 @@ function MediaCard({
         {isOwnProfile && !selectionMode && (
           <button
             type="button"
-            className={`btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100'}`}
+            className={`btn btn-primary btn-sm btn-circle native-compact-touch absolute bottom-2 right-2 z-20 shadow-sm transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100'}`}
             aria-label={t('list.quickLog')}
             onClick={(e) => {
               e.stopPropagation();

@@ -23,7 +23,7 @@
     "requiredForChanges": "Required for changes below",
     "resendVerification": "Resend Verification Email",
     "sending": "Sending...",
-    "subtitle": "Update username, email and password. Your current password is required to confirm sensitive changes.",
+    "subtitle": "Your current password is required to confirm sensitive changes.",
     "tab": "Account & Security",
     "update": "Update Account",
     "updating": "Updating...",
@@ -58,7 +58,6 @@
     "connect": "Connect AniList account",
     "connected": "Connected",
     "connection": "Connection",
-    "connectionHint": "Manage access to your AniList account.",
     "errors": {
       "accountAlreadyLinked": "This AniList account is already linked to another user",
       "invalidState": "Invalid or expired authorization state",
@@ -160,7 +159,7 @@
     "accentPreviewLabel": "Accent preview",
     "accentPreviewText": "Popular Choice",
     "avatarFrame": "Avatar frame",
-    "avatarFrameHint": "A ring around your avatar. Metal frames are earned by leveling up; animated ones come with a Patreon tier.",
+    "avatarFrameHint": "Metal frames are earned by leveling up. Animated ones come with a Patreon tier.",
     "avatarFrames": {
       "segmented": "Segmented",
       "gradient": "Custom gradient",
@@ -184,7 +183,6 @@
       "starlight": "Starlight"
     },
     "bannerEffect": "Banner effect",
-    "bannerEffectHint": "Ambient particles drifting over your profile banner.",
     "bannerEffects": {
       "fireflies": "Fireflies",
       "none": "None",
@@ -216,7 +214,6 @@
       "patreonPlus": "Enthusiast or Consumer tier"
     },
     "nameEffect": "Name effect",
-    "nameEffectHint": "How your username is painted on your profile.",
     "nameEffects": {
       "aura": "Rainbow aura",
       "glow": "Glow",
@@ -228,7 +225,6 @@
     "namePulseSpeed": "Pulse speed",
     "noTitleOption": "No title",
     "noTitles": "Unlock achievements to earn titles you can wear next to your name.",
-    "previewSubtitle": "This is what visitors will see on your profile.",
     "previewTitle": "Preview",
     "reducedMotionBody": "Your system has \"reduce motion\" turned on, so animated cosmetics (shimmer, name aura, animated frames, banner particles) are shown still instead of moving. Everyone else sees them animate.",
     "reducedMotionTitle": "Animations are paused on your device",
@@ -237,7 +233,6 @@
     "saved": "Customization updated",
     "saving": "Saving...",
     "signatureStat": "Signature stat",
-    "signatureStatHint": "One number shown under your name. It can show total XP, level, total hours, or characters read.",
     "signatureStats": {
       "chars": "Characters read",
       "hours": "Total hours",
@@ -247,8 +242,7 @@
       "streak": "Current streak",
       "xp": "Total XP"
     },
-    "title": "Equipped title",
-    "titleHint": "Wear one of your unlocked achievements as a title."
+    "title": "Equipped title"
   },
   "danger": {
     "cannotBeUndone": "cannot be undone",
@@ -266,13 +260,11 @@
     "csvFormatHelp": "CSV Format Help",
     "export": "Export Data",
     "exportCsv": "Export as CSV",
-    "exportHint": "Download all your logs as a CSV file that can be re-imported later.",
     "exporting": "Exporting...",
     "import": "Import File",
     "importFrom": "Import from File",
     "importing": "Importing...",
     "kechimochiHelp": "Kechimochi Import Help",
-    "subtitle": "Import, sync, and export your data",
     "syncExternal": "Sync External Data",
     "syncLogs": "Sync Logs",
     "syncing": "Syncing...",
@@ -300,7 +292,6 @@
     "login": "Log in"
   },
   "header": {
-    "subtitle": "Manage your account and preferences",
     "title": "Settings"
   },
   "layout": {
@@ -313,7 +304,6 @@
   },
   "logs": {
     "goToMatch": "Go to Match Media",
-    "matchHint": "Link your untracked logs to the correct media type.",
     "matchMedia": "Match Media",
     "matchSubtitle": "Match untracked logs with media",
     "title": "Log Management"
@@ -321,7 +311,6 @@
   "manualImmersion": {
     "add": "Add past totals",
     "characters": "Past characters",
-    "description": "Add your immersion totals from before you started using NihongoTracker.",
     "error": "Could not add these totals. Check the values and try again.",
     "listeningHours": "Listening hours",
     "mode": "Past immersion entry mode",
@@ -387,10 +376,8 @@
     "background": "Background",
     "badgeBackgroundColor": "Badge Background Color",
     "badgeColors": "Badge Color Customization",
-    "badgeColorsSubtitle": "Personalize your Consumer tier badge colors",
     "badgeTextColor": "Badge Text Color",
     "badgeVisibility": "Show Supporter Badge",
-    "badgeVisibilityHint": "Turn this off to hide your tier badge on your profile and in rankings.",
     "becomeConsumer": "Become a Consumer patron to unlock custom badge colors",
     "benefits": "Benefits",
     "connect": "Connect with Patreon",
@@ -420,7 +407,6 @@
     "saveBadgeColors": "Save Badge Colors",
     "secondary": "Secondary",
     "secondaryText": "Secondary Text",
-    "subtitle": "Link your Patreon account to unlock supporter perks",
     "support": "Support on Patreon",
     "text": "Text",
     "title": "Patreon",
@@ -429,18 +415,13 @@
   },
   "preferences": {
     "blurAdult": "Blur Adult Content",
-    "blurAdultHint": "Hide explicit content by default",
     "hideAdultFromSearch": "Hide adult media from search results",
-    "hideAdultFromSearchHint": "Remove adult media from the global search results",
     "hideUnmatched": "Hide Unmatched Logs Alert",
-    "hideUnmatchedHint": "Don't show alerts about unmatched logs",
     "hideRankingFeatures": "Hide ranking features",
     "hideRankingFeaturesHint": "Hide ranking positions, leaderboards, and overtake messages for you. You will still appear in rankings for others.",
     "language": {
-      "help": "Language used across the interface. Saved to your account and synced across devices.",
       "label": "Language"
     },
-    "subtitle": "Customize your experience",
     "theme": "Theme",
     "customTheme": {
       "title": "Custom themes",
@@ -463,7 +444,6 @@
       "failed": "Could not save custom theme"
     },
     "timezone": "Timezone",
-    "timezoneHint": "All dates and times will be displayed in your selected timezone",
     "weekStartsOn": "Week starts on",
     "monday": "Monday",
     "sunday": "Sunday",
@@ -475,25 +455,21 @@
   "privacy": {
     "fields": {
       "immersionActivity": {
-        "help": "Controls who can see immersion sessions in your social activity feed.",
         "label": "Immersion activity"
       },
       "profile": {
-        "help": "Controls who can open your profile and see its public sections.",
         "label": "Profile"
       },
       "statistics": {
-        "help": "Controls who can see your totals, charts, rankings, and progress statistics.",
         "label": "Statistics"
       },
       "commenting": {
-        "help": "Controls who can comment on your log activity. Existing comments remain visible.",
+        "help": "Existing comments remain visible.",
         "label": "Comments on my logs"
       }
     },
     "save": "Save privacy settings",
     "saved": "Privacy settings updated",
-    "subtitle": "Choose who can see each part of your social activity.",
     "title": "Social privacy",
     "visibility": {
       "following": "People you follow",
@@ -531,22 +507,18 @@
     "save": "Save Profile",
     "saveAbout": "Save About",
     "saving": "Saving...",
-    "subtitle": "Update your avatar, banner and about me",
     "tab": "Profile",
     "avatarTooLarge": "Avatar must be smaller than {{size}}MB",
     "bannerTooLarge": "Banner must be smaller than {{size}}MB"
   },
   "profileWidgets": {
     "about": {
-      "description": "Your bio / introduction.",
       "label": "About"
     },
     "achievements": {
-      "description": "Your top earned achievements.",
       "label": "Featured Achievements"
     },
     "favorites": {
-      "description": "Your favorite media and notes.",
       "label": "Favorite Media"
     },
     "currentMedia": {
@@ -554,24 +526,19 @@
       "description": "Up to three works you have logged recently and have not finished."
     },
     "duels": {
-      "description": "Your current duel, or your duel stats when none is active (only visible to you).",
       "label": "Duels"
     },
     "hide": "Hide widget",
     "immersionActivity": {
-      "description": "Heatmap of your immersion over time.",
       "label": "Immersion Activity"
     },
     "immersionGoals": {
-      "description": "Your active goals (only visible to you).",
       "label": "Immersion Goals"
     },
     "profileStats": {
-      "description": "Rankings, totals and ranking-over-time graph.",
       "label": "Profile Stats"
     },
     "progressStats": {
-      "description": "Overall, listening and reading levels.",
       "label": "Progress Stats"
     },
     "show": "Show widget"
@@ -634,7 +601,6 @@
       "maxReachedTier": "You've reached the maximum of {{max}} tags for your tier",
       "selected": "{{total}} selected"
     },
-    "subtitle": "Create and manage tags to organize your logs",
     "title": "Tags"
   },
   "timezonePicker": {

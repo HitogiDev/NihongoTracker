@@ -2307,9 +2307,7 @@ function ClubDetailScreen() {
 
             <div className="flex items-center justify-between gap-3 mb-4">
               <p className="text-sm text-base-content/70">
-                {clubGoalsForm.length === 0
-                  ? t('goals.empty')
-                  : t('goals.adjustHint')}
+                {clubGoalsForm.length === 0 ? t('goals.empty') : null}
               </p>
               <button
                 type="button"
