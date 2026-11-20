@@ -320,5 +320,22 @@
     "usernameLength": "Tu nombre de usuario debe tener entre 1 y 20 caracteres",
     "usernameRequired": "El nombre de usuario es obligatorio",
     "usernameTaken": "Ese nombre de usuario ya está en uso"
+  },
+  "post": {
+    "disabled": "Las publicaciones aún no están disponibles",
+    "notFound": "Publicación no encontrada",
+    "empty": "Escribe algo o añade una imagen",
+    "contentTooLong": "Las publicaciones deben tener {{max}} caracteres o menos",
+    "tooManyImages": "Una publicación puede tener como máximo {{max}} imágenes",
+    "invalidImageList": "La lista de imágenes no es válida",
+    "invalidImageUrl": "Ese enlace de imagen no es válido",
+    "unsupportedImageHost": "No se admiten imágenes de {{host}}. Usa un enlace de un sitio compatible.",
+    "hostedImagesTierRequired": "Subir imágenes requiere la membresía Enthusiast o Consumer. Puedes seguir añadiendo enlaces de imágenes.",
+    "hostedImageQuota": "Puedes subir {{max}} imágenes cada 30 días. Te quedan {{remaining}}.",
+    "invalidImage": "Solo se permiten imágenes JPEG, PNG, WebP y GIF",
+    "imageTooLarge": "Las imágenes deben pesar {{max}} MB o menos",
+    "invalidDecoration": "La decoración de la publicación no es válida",
+    "decorationTierRequired": "Las decoraciones de publicaciones requieren la membresía Enthusiast o Consumer",
+    "decorationImageRequired": "Elige una imagen de fondo"
   }
 }

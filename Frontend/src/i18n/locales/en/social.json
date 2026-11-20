@@ -75,5 +75,84 @@
   },
   "reactions": {
     "like": "Like"
+  },
+  "posts": {
+    "composerPlaceholder": "Share something with the community...",
+    "publish": "Publish",
+    "save": "Save",
+    "cancel": "Cancel",
+    "count": "{{count}}/{{max}}",
+    "edit": "Edit post",
+    "editTitle": "Edit post",
+    "delete": "Delete post",
+    "deleteTitle": "Delete this post?",
+    "deleteBody": "This removes the post, its comments, and its likes. This cannot be undone.",
+    "deleteConfirm": "Delete",
+    "deleted": "Post deleted",
+    "published": "Post published",
+    "saved": "Post saved",
+    "edited": "Edited",
+    "visibility": "Who can see this",
+    "visibilityOptions": {
+      "public": "Everyone",
+      "followers": "Followers",
+      "following": "People I follow",
+      "private": "Only me"
+    },
+    "sensitive": "Sensitive or spoiler images",
+    "sensitiveHint": "Images stay blurred until a viewer reveals them.",
+    "reveal": "Show sensitive image",
+    "imagesLabel": "Images ({{count}}/{{max}})",
+    "addLink": "Add image link",
+    "linkPlaceholder": "https://i.imgur.com/...",
+    "addLinkButton": "Add",
+    "linkHint": "Supported sites include Imgur, Catbox, ImgBB, Postimages, Discord, Reddit, X, Tenor, and Giphy.",
+    "upload": "Upload image",
+    "uploadHint": "JPEG, PNG, WebP, or GIF up to 8 MB.",
+    "uploadLocked": "Uploading images is available for Enthusiast and Consumer supporters. Image links are free for everyone.",
+    "uploadLockedShort": "Supporters",
+    "removeImage": "Remove image",
+    "imageAlt": "Image {{index}} of the post by {{username}}",
+    "imageFailed": "This image is not available",
+    "openImage": "Open image",
+    "hostedBadge": "Uploaded",
+    "linkBadge": "Link",
+    "decoration": {
+      "title": "Decoration",
+      "locked": "Borders and backgrounds are available for Enthusiast and Consumer supporters.",
+      "preview": "Preview",
+      "previewBody": "This is how your post will look in the feed.",
+      "border": "Border",
+      "borderStyles": {
+        "none": "None",
+        "solid": "Solid",
+        "dashed": "Dashed",
+        "dotted": "Dotted",
+        "double": "Double",
+        "gradient": "Gradient",
+        "glow": "Glow"
+      },
+      "color1": "Color",
+      "color2": "Second color",
+      "background": "Background",
+      "backgroundTypes": {
+        "none": "None",
+        "color": "Color",
+        "pattern": "Pattern",
+        "image": "Image"
+      },
+      "color": "Background color",
+      "patternColor": "Pattern color",
+      "patterns": {
+        "dots": "Dots",
+        "grid": "Grid",
+        "stripes": "Stripes",
+        "checks": "Checks",
+        "zigzag": "Zigzag",
+        "seigaiha": "Seigaiha"
+      },
+      "imageLink": "Background image link",
+      "opacity": "Opacity"
+    }
   }
 }

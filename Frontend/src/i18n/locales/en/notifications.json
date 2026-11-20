@@ -41,7 +41,8 @@
     "social.reacted": "{{username}} liked your activity",
     "social.commented": "{{username}} commented on your activity",
     "social.replied": "{{username}} replied to your comment",
-    "social.replyLiked": "{{username}} liked your reply"
+    "social.replyLiked": "{{username}} liked your reply",
+    "social.mentionedInPost": "{{username}} mentioned you in a post"
   },
   "list": {
     "empty": {

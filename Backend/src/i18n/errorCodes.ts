@@ -94,6 +94,23 @@ export const ERROR_CODES = [
   'activity.commentNotFound',
   'activity.commentNotFoundOrForbidden',
 
+  // Posts
+  'post.disabled',
+  'post.notFound',
+  'post.empty',
+  'post.contentTooLong',
+  'post.tooManyImages',
+  'post.invalidImageList',
+  'post.invalidImageUrl',
+  'post.unsupportedImageHost',
+  'post.hostedImagesTierRequired',
+  'post.hostedImageQuota',
+  'post.invalidImage',
+  'post.imageTooLarge',
+  'post.invalidDecoration',
+  'post.decorationTierRequired',
+  'post.decorationImageRequired',
+
   // Avatar / banner uploads
   'upload.cropWithoutFile',
   'upload.avatarCropWithoutFile',

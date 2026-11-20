@@ -111,13 +111,16 @@ interface CommentFormattingToolbarProps {
   onChange: (value: string) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   maxLength: number;
+  /** false hides the inline image tool. Posts attach images separately. */
+  allowImages?: boolean;
 }
 
-function CommentFormattingToolbar({
+export function CommentFormattingToolbar({
   value,
   onChange,
   textareaRef,
   maxLength,
+  allowImages = true,
 }: CommentFormattingToolbarProps) {
   const { t } = useTranslation('settings');
 
@@ -188,16 +191,20 @@ function CommentFormattingToolbar({
           t('markdown.snippets.link'),
         ),
     },
-    {
-      label: t('markdown.image'),
-      icon: Image,
-      action: () =>
-        insertSnippet(
-          '![',
-          '](https://example.com/image.png)',
-          t('markdown.snippets.imageAlt'),
-        ),
-    },
+    ...(allowImages
+      ? [
+          {
+            label: t('markdown.image'),
+            icon: Image,
+            action: () =>
+              insertSnippet(
+                '![',
+                '](https://example.com/image.png)',
+                t('markdown.snippets.imageAlt'),
+              ),
+          },
+        ]
+      : []),
     {
       label: t('markdown.bulletedList'),
       icon: List,

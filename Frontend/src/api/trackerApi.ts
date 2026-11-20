@@ -559,6 +559,7 @@ export async function removeMediaFromImmersionListFn(payload: {
 
 export interface IFeatureFlags {
   wrapped: boolean;
+  posts: boolean;
 }
 
 export async function getFeatureFlagsFn() {

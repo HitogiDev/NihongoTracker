@@ -137,6 +137,16 @@ Club member leaderboards support `scope: all-media` (default) and `scope: club-m
 
 Club feeds also show global `media_review` activities by active members. A review appears when its media ID and type match a `currentMedia` entry and it was written between that entry's start date and the end of its end date (UTC). `buildClubMediaReviewFilter` in `services/activity.service.ts` applies this rule when the feed is read, so period edits and membership changes apply to existing reviews.
 
+### Posts
+
+User posts live in `models/post.model.ts` and `services/posts.service.ts`. Each post has a mirrored `post` activity (`targetType: post`) that carries its content and images in `metadata`, so the feed, comments, likes, and visibility reuse the activity system. Keep the activity metadata aligned when a post changes. The `posts` feature flag controls `/api/posts`, and admins can always use it.
+
+- A post has up to 4 images. Markdown images in the text are removed when rendered (`renderMarkdownWithSpoilers(..., { allowImages: false })`), so all images go through the image list.
+- External image links are free. They must use a host in `POST_IMAGE_HOSTS` (`services/remoteImage.ts`), mirrored in `Frontend/src/utils/postAccess.ts`. Viewers load them through the public `GET /api/posts/image` proxy, which re-encodes them as WebP. Viewers never contact the external host.
+- Hosted uploads require active Enthusiast, Consumer, or admin access (`services/postImageAccess.ts`). They are re-encoded as WebP (animation kept), stored in Firebase through `FileUploadBatch`, and limited to `HOSTED_POST_IMAGE_QUOTA` images every 30 days. Hosted images that a post already has stay after a downgrade.
+- Deleting a post, an account, or its social data removes the hosted files.
+- Post decorations (`decoration` on `Post` and in the activity metadata) add a border (solid, dashed, dotted, double, gradient, or glow) and a background (color, CSS pattern, or image) with an opacity from 0 to 100. They require the same tiers as hosted images (`hasPostDecorations`). A downgraded user can keep an unchanged decoration (`assertDecorationAllowed` compares signatures). A background image is an allowlisted link or a hosted upload (`backgroundImage` field) that counts toward the upload quota. `services/postDecoration.ts` parses input, and `Frontend/src/utils/postDecoration.ts` maps decorations to styles. Keep defaults, patterns, and border styles aligned in both.
+
 ### Achievements
 
 `services/achievements/achievementEngine.ts` dispatches by `condition.type`; implementations live in `services/achievements/conditions/*.condition.ts`. When adding a condition type, add its evaluator, its engine switch case, and a test under `Backend/src/__tests__/achievements/conditions/`.

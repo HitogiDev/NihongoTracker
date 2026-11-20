@@ -42,7 +42,8 @@
     "social.reacted": "A {{username}} le gustó tu actividad",
     "social.commented": "{{username}} comentó en tu actividad",
     "social.replied": "{{username}} respondió a tu comentario",
-    "social.replyLiked": "A {{username}} le gustó tu respuesta"
+    "social.replyLiked": "A {{username}} le gustó tu respuesta",
+    "social.mentionedInPost": "{{username}} te citó en una publicación"
   },
   "list": {
     "empty": {

@@ -144,7 +144,15 @@ export function isMentionableMediaType(
   return MENTIONABLE_MEDIA_TYPES.includes(value as MentionableMediaType);
 }
 
-export function renderMarkdownWithSpoilers(markdownText: string): string {
+interface MarkdownRenderOptions {
+  /** false removes inline images. Posts show images only through their own image list. */
+  allowImages?: boolean;
+}
+
+export function renderMarkdownWithSpoilers(
+  markdownText: string,
+  { allowImages = true }: MarkdownRenderOptions = {}
+): string {
   if (!markdownText || !markdownText.trim()) {
     return '';
   }
@@ -157,6 +165,7 @@ export function renderMarkdownWithSpoilers(markdownText: string): string {
   const rawHtml = marked.parse(withSpoilers, { async: false }) as string;
 
   return DOMPurify.sanitize(rawHtml, {
+    ...(allowImages ? {} : { FORBID_TAGS: ['img', 'picture', 'source'] }),
     ALLOWED_ATTR: [
       'class',
       'href',

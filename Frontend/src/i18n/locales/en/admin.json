@@ -171,6 +171,10 @@
     "wrapped": {
       "label": "Nihongo Wrapped",
       "description": "Show the Wrapped tab on every profile."
+    },
+    "posts": {
+      "label": "Posts",
+      "description": "Let every user publish posts in the feed. Uploaded images stay limited to supporters."
     }
   }
 }
