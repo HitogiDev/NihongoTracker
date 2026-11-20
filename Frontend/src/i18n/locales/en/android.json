@@ -72,5 +72,42 @@
     "allDone": "All goals done for now",
     "weekly": "{{goal}} (week)",
     "goal": "{{type}} · {{media}}"
+  },
+  "sessionTimer": {
+    "notification": {
+      "channel": "Immersion timer",
+      "running": "Session in progress",
+      "paused": "Paused: {time}",
+      "pause": "Pause",
+      "resume": "Resume",
+      "log": "Log"
+    },
+    "start": "Start session",
+    "startTimer": "Start timer",
+    "running": "In progress",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume",
+    "log": "Log session",
+    "discard": "Discard",
+    "discardTitle": "Discard this session?",
+    "discardBody": "The timer stops and its time is not logged.",
+    "keep": "Keep session",
+    "replaceTitle": "Replace the current session?",
+    "replaceBody": "A session for {{title}} is active. Its time is not logged if you start a new one.",
+    "replace": "Start new session",
+    "openCurrent": "Open current session",
+    "empty": "No active session",
+    "emptyBody": "Start a session from a media page, from Home, or from Quick log.",
+    "goHome": "Go to Home",
+    "notificationsOff": "Notifications are off, so the timer shows only in the app.",
+    "pickTitle": "Start a session",
+    "recent": "Recent media",
+    "search": "Search media",
+    "searchPlaceholder": "Title",
+    "noRecent": "No recent media yet.",
+    "noResults": "No results",
+    "startedAt": "Started at {{time}}",
+    "openSession": "Open session"
   }
 }

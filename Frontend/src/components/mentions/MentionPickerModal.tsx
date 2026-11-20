@@ -133,13 +133,13 @@ export default function MentionPickerModal({
 
         <div className="max-h-[24rem] overflow-y-auto overscroll-contain">
           {!hasQuery && (
-            <p className="px-4 py-10 text-center text-sm text-base-content/50">
+            <p className="px-4 py-10 text-center text-sm text-base-content/70">
               {t('mentions.typeToSearch')}
             </p>
           )}
 
           {hasQuery && !activeQuery.isFetching && resultCount === 0 && (
-            <p className="px-4 py-10 text-center text-sm text-base-content/50">
+            <p className="px-4 py-10 text-center text-sm text-base-content/70">
               {t('mentions.noResults', { query: debouncedQuery })}
             </p>
           )}
@@ -198,7 +198,7 @@ export default function MentionPickerModal({
                     </span>
                     {media.title.contentTitleNative &&
                       media.title.contentTitleNative !== title && (
-                        <span className="block truncate text-xs text-base-content/60">
+                        <span className="block truncate text-xs text-base-content/70">
                           {media.title.contentTitleNative}
                         </span>
                       )}

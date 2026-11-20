@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import {
   useState,
   useEffect,
@@ -279,7 +280,7 @@ function MediaResultRow({
           </p>
           {media.title.contentTitleEnglish &&
             media.title.contentTitleNative && (
-              <p className="text-xs text-base-content/50 truncate mt-0.5">
+              <p className="text-xs text-base-content/70 truncate mt-0.5">
                 {media.title.contentTitleEnglish}
               </p>
             )}
@@ -352,7 +353,7 @@ function UserResultRow({
               <img src={user.avatar} alt={user.username} loading="lazy" />
             ) : (
               <div className="flex items-center justify-center w-full h-full bg-base-300">
-                <User className="w-4 h-4 text-base-content/40" />
+                <User className="w-4 h-4 text-base-content/70" />
               </div>
             )}
           </div>
@@ -360,7 +361,7 @@ function UserResultRow({
         <div className="flex-1 text-left min-w-0">
           <p className="font-semibold text-sm truncate">{user.username}</p>
           {user.stats?.xp != null && (
-            <p className="text-xs text-base-content/50">
+            <p className="text-xs text-base-content/70">
               {user.stats.xp.toLocaleString()} XP
             </p>
           )}
@@ -700,7 +701,7 @@ function SearchModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
-          <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
+          <Search className="w-5 h-5 text-base-content/70 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -710,7 +711,7 @@ function SearchModal({
             onChange={(e) => setQuery(e.target.value)}
           />
           {isSearching && (
-            <span className="loading loading-spinner loading-sm text-primary" />
+            <Spinner size="sm" className="text-primary" />
           )}
           {!isMobileApp() && (
           <div className="flex-shrink-0">
@@ -825,7 +826,7 @@ function SearchModal({
           className="max-h-[28rem] overflow-y-auto overscroll-contain"
         >
           {!hasQuery && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{t('search.typeToSearch')}</p>
               <p className="text-xs mt-1 text-base-content/25">
@@ -835,7 +836,7 @@ function SearchModal({
           )}
 
           {hasQuery && !isSearching && !hasResults && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <p className="text-sm">
                 {t('search.noResults', { query: debouncedQuery })}
               </p>
@@ -887,7 +888,7 @@ function SearchModal({
         </div>
 
         {!isMobileApp() && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-base-content/10 text-[11px] text-base-content/30">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-base-content/10 text-xs text-base-content/70">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <kbd className="kbd kbd-xs">↑</kbd>

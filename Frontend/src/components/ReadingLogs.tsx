@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { ILog, IMediaDocument } from '../types';
 import { useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -55,7 +57,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
   const queryClient = useQueryClient();
 
   if (searchReadingError && searchReadingError instanceof AxiosError) {
-    toast.error(searchReadingError.response?.data.message);
+    toast.error(getApiErrorMessage(searchReadingError));
   }
 
   const handleCheckboxChange = useCallback((log: ILog) => {
@@ -125,7 +127,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('matcher.assignError'));
       }
@@ -292,7 +294,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -328,7 +330,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
               <span
                 className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
@@ -339,7 +341,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
               ></span>
             </div>
 
-            <div className="text-xs text-base-content/50 mt-2">
+            <div className="text-xs text-base-content/70 mt-2">
               {t('matcher.fetching')}
             </div>
           </div>
@@ -423,7 +425,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -574,7 +576,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingReading ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.light-novel'),
@@ -717,7 +719,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

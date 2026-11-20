@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import '../utils/gsapReducedMotion';
 import { confetti } from '@tsparticles/confetti';
 import { useTranslation } from 'react-i18next';
 
@@ -86,6 +87,7 @@ function LevelUpAnimation({
     const perTick = Math.min(6 + Math.floor(finalLevel * 0.2), 14);
     const streamInterval = setInterval(() => {
       confetti({
+        disableForReducedMotion: true,
         particleCount: perTick,
         angle: 60,
         spread: 60,
@@ -93,6 +95,7 @@ function LevelUpAnimation({
         zIndex: 10000,
       });
       confetti({
+        disableForReducedMotion: true,
         particleCount: perTick,
         angle: 120,
         spread: 60,
@@ -107,6 +110,7 @@ function LevelUpAnimation({
 
     // Central celebratory burst
     confetti({
+      disableForReducedMotion: true,
       particleCount,
       spread: 180,
       origin: { y: 0.35 },

@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -36,6 +37,7 @@ import {
   UsersRound,
   LayoutGrid,
   List,
+  Timer,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -63,6 +65,8 @@ import ImmersionGoals from './ImmersionGoals';
 import LevelRecommendations from './LevelRecommendations';
 import { isMobileApp } from '../utils/nativeRuntime';
 import { useNativePageState } from '../native/useNativePageState';
+import { useStartSession } from '../native/useStartSession';
+import StartSessionModal from './StartSessionModal';
 
 type DashboardActivityScope = Exclude<ActivityFeedScope, 'user'>;
 type DashboardLayout = 'classic' | 'compact';
@@ -83,10 +87,10 @@ const DEFAULT_RECENT_MEDIA_LIMIT = 4;
 const DEFAULT_COMPACT_MEDIA_LIMIT = 7;
 const MAX_RECENT_MEDIA_LIMIT = 12;
 const DASHBOARD_CARD_EYEBROW_CLASS =
-  'text-[11px] uppercase tracking-[0.2em] text-base-content/60';
+  'text-xs uppercase tracking-[0.2em] text-base-content/70';
 const DASHBOARD_CARD_TITLE_CLASS =
   'card-title text-xl font-semibold leading-snug text-base-content';
-const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/65';
+const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/70';
 
 function getStoredRecentMediaLimit(storageKey: string, defaultLimit: number) {
   try {
@@ -118,6 +122,9 @@ function getStoredDashboardLayout(): DashboardLayout {
 function Dashboard() {
   const { t } = useTranslation('home');
   const { t: nt } = useTranslation('nav');
+  const { t: at } = useTranslation('android');
+  const [startSessionOpen, setStartSessionOpen] = useState(false);
+  const sessionStarter = useStartSession();
   const { user, setUser } = useUserDataStore();
   const hideRankingFeatures = useHideRankingFeatures();
   const username = user?.username;
@@ -508,6 +515,11 @@ function Dashboard() {
     t('dashboard.ranking.notRanked')
   );
 
+  const recentSessionMedia = recentMediaHighlights
+    .map((log) => transformMediaToDocument(log.media))
+    .filter((media): media is IMediaDocument => Boolean(media))
+    .slice(0, 8);
+
   const closeQuickLog = () => {
     setQuickLogOpen(false);
     setSelectedMedia(undefined);
@@ -552,14 +564,24 @@ function Dashboard() {
 
       {isMobileApp() && <div className="space-y-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0"><p className="text-sm text-base-content/65">{t('dashboard.welcomeBack')}</p><h2 className="truncate text-2xl font-bold">{user.username}</h2></div>
+          <div className="min-w-0"><p className="text-sm text-base-content/70">{t('dashboard.welcomeBack')}</p><h2 className="truncate text-2xl font-bold">{user.username}</h2></div>
           <span className="badge badge-secondary gap-1"><Flame className="h-4 w-4" />{streak}</span>
         </div>
-        <Link to="/log" state={{ nativeFrom: '/' }} className="btn btn-primary w-full"><Plus className="h-5 w-5" />{nt('native.createLog')}</Link>
+        <div className="space-y-2">
+          <Link to="/log" state={{ nativeFrom: '/' }} className="btn btn-primary w-full"><Plus className="h-5 w-5" />{nt('native.createLog')}</Link>
+          <Button appearance="outline" block onClick={() => setStartSessionOpen(true)}><Timer className="h-5 w-5" />{at('sessionTimer.start')}</Button>
+        </div>
+        <StartSessionModal
+          open={startSessionOpen}
+          onClose={() => setStartSessionOpen(false)}
+          recent={recentSessionMedia}
+          onPick={(media) => sessionStarter.start(media, () => setStartSessionOpen(false))}
+        />
+        {sessionStarter.dialog}
         <section className="card surface"><div className="card-body space-y-3">
           <h2 className="font-semibold">{nt('native.thisMonth')}</h2>
           {hoursPending ? <div className="skeleton h-16" /> : hoursError ? <div role="alert" className="text-sm space-y-2"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void refetchHours()}>{nt('native.retry')}</Button></div> : <div className="grid grid-cols-3 gap-2">
-            {(['reading', 'listening', 'total'] as const).map((key) => <div key={key} className="min-w-0"><p className="text-xs text-base-content/65">{t(`dashboard.stats.${key}`)}</p><p className="text-xl font-bold">{immersionStats.currentMonth[key]}<span className="text-sm font-normal text-base-content/65"> h</span></p></div>)}
+            {(['reading', 'listening', 'total'] as const).map((key) => <div key={key} className="min-w-0"><p className="text-xs text-base-content/70">{t(`dashboard.stats.${key}`)}</p><p className="text-xl font-bold">{immersionStats.currentMonth[key]}<span className="text-sm font-normal text-base-content/70"> h</span></p></div>)}
           </div>}
         </div></section>
         <ImmersionGoals username={user.username} />
@@ -569,7 +591,7 @@ function Dashboard() {
           <h2 className="font-semibold">{nt('native.activity')}</h2>
           <div className="join flex w-full">{ACTIVITY_SCOPES.map(({ value, icon: Icon }) => <Button key={value} className="join-item flex-1" variant={activityScope === value ? 'primary' : 'default'} appearance={activityScope === value ? 'solid' : 'outline'} aria-pressed={activityScope === value} onClick={() => setActivityScope(value)}><Icon className="h-4 w-4" /><span className="text-xs">{t(`dashboard.feed.scopes.${value}`)}</span></Button>)}</div>
           <FeedPostComposer />
-          {activityLoading ? <div className="skeleton h-28" /> : activityError ? <div role="alert" className="alert flex flex-col items-start"><p>{navigator.onLine ? t('dashboard.feed.loadError') : nt('native.offline')}</p><Button onClick={() => void refetchActivity()}>{nt('native.retry')}</Button></div> : socialActivities.length ? socialActivities.map((activity) => <ActivityCard key={activity._id} activity={activity} highlighted={activity._id === focusedActivityId} />) : <p className="surface-muted p-4 text-sm text-base-content/65">{t(`dashboard.feed.emptyScopes.${activityScope}`)}</p>}
+          {activityLoading ? <div className="skeleton h-28" /> : activityError ? <div role="alert" className="alert flex flex-col items-start"><p>{navigator.onLine ? t('dashboard.feed.loadError') : nt('native.offline')}</p><Button onClick={() => void refetchActivity()}>{nt('native.retry')}</Button></div> : socialActivities.length ? socialActivities.map((activity) => <ActivityCard key={activity._id} activity={activity} highlighted={activity._id === focusedActivityId} />) : <p className="surface-muted p-4 text-sm text-base-content/70">{t(`dashboard.feed.emptyScopes.${activityScope}`)}</p>}
           <InfiniteScrollSentinel hasNextPage={Boolean(hasNextActivityPage)} isFetchingNextPage={isFetchingNextActivityPage} onLoadMore={() => void fetchNextActivityPage()} />
         </section>
       </div>}
@@ -685,7 +707,7 @@ function Dashboard() {
                 <Flame className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase text-secondary">
+                <p className="text-xs font-semibold uppercase text-secondary">
                   {t('dashboard.streak.label')}
                 </p>
                 <p className="truncate text-sm font-bold">
@@ -702,7 +724,7 @@ function Dashboard() {
                   <Trophy className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[11px] font-semibold uppercase text-primary">
+                  <p className="truncate text-xs font-semibold uppercase text-primary">
                     {t('dashboard.monthlyRanking')}
                   </p>
                   <p className="text-sm font-bold">
@@ -723,14 +745,14 @@ function Dashboard() {
                   key={key}
                   className="surface-muted col-span-2 flex min-w-0 items-center justify-between gap-2 px-3 py-2 lg:col-span-1"
                 >
-                  <span className="truncate text-[11px] font-semibold uppercase text-base-content/65">
+                  <span className="truncate text-xs font-semibold uppercase text-base-content/70">
                     {t(`dashboard.stats.${key}`)}
                   </span>
                   <span className={`shrink-0 text-sm font-bold ${accent}`}>
                     {immersionStats.currentMonth[key]}h
                   </span>
                   <span
-                    className={`shrink-0 text-xs ${change > 0 ? 'text-success' : change < 0 ? 'text-error' : 'text-base-content/60'}`}
+                    className={`shrink-0 text-xs ${change > 0 ? 'text-success' : change < 0 ? 'text-error' : 'text-base-content/70'}`}
                     aria-label={
                       change === 0
                         ? t('dashboard.stats.noChange')
@@ -868,7 +890,7 @@ function Dashboard() {
                           ? 'text-success'
                           : stat.change < 0
                             ? 'text-error'
-                            : 'text-base-content/60'
+                            : 'text-base-content/70'
                       }`}
                     >
                       {stat.change > 0 && (
@@ -1022,7 +1044,7 @@ function Dashboard() {
               disabled={hideMediaMutation.isPending}
             >
               {hideMediaMutation.isPending ? (
-                <span className="loading loading-spinner loading-sm" />
+                <Spinner size="sm" />
               ) : (
                 t('dashboard.actions.hide')
               )}
@@ -1159,7 +1181,7 @@ function RecentMediaRail({
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             {showSwipeHint && (
-              <span className="text-xs text-base-content/60">
+              <span className="text-xs text-base-content/70">
                 {t('dashboard.swipe')}
               </span>
             )}
@@ -1259,18 +1281,18 @@ function RecentMediaRailTile({
         />
       ) : (
         <div className="w-full h-full bg-base-300 flex items-center justify-center">
-          <Play className="w-8 h-8 text-base-content/40" />
+          <Play className="w-8 h-8 text-base-content/70" />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-2 text-left">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-white/70">
+        <span className="text-xs uppercase tracking-[0.3em] text-white/70">
           {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight text-white line-clamp-2">
           {title}
         </p>
-        <p className="text-[11px] text-white/80">
+        <p className="text-xs text-white/80">
           {log.formattedTime} · {log.formattedDate}
         </p>
       </div>
@@ -1328,7 +1350,7 @@ function RecentMediaTile({
         <button
           type="button"
           onClick={handleRemoveClick}
-          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
+          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100 transition-opacity hover:bg-error"
           aria-label={t('dashboard.hideAria')}
         >
           <Minus className="w-4 h-4" />
@@ -1346,7 +1368,7 @@ function RecentMediaTile({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-base-300">
-          <Play className="w-10 h-10 text-base-content/40" />
+          <Play className="w-10 h-10 text-base-content/70" />
         </div>
       )}
       <div
@@ -1363,13 +1385,13 @@ function RecentMediaTile({
           textShadow: '0 2px 6px rgba(0, 0, 0, 0.65)',
         }}
       >
-        <span className="text-[10px] uppercase tracking-[0.3em] text-white/80">
+        <span className="text-xs uppercase tracking-[0.3em] text-white/80">
           {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight line-clamp-2">
           {title}
         </p>
-        <p className="text-[11px] text-white/80">
+        <p className="text-xs text-white/80">
           {log.formattedTime} · {log.formattedDate}
         </p>
       </div>
@@ -1469,7 +1491,7 @@ function ManageHiddenMedia({
         </div>
       ) : hiddenMedia.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <Settings2 className="w-8 h-8 text-base-content/40" />
+          <Settings2 className="w-8 h-8 text-base-content/70" />
           <p className="text-sm text-base-content/70">
             {t('dashboard.manageHiddenEmpty')}
           </p>
@@ -1499,12 +1521,12 @@ function ManageHiddenMedia({
                   />
                 ) : (
                   <div className="w-12 h-16 rounded-lg bg-base-300 flex items-center justify-center shrink-0">
-                    <Play className="w-5 h-5 text-base-content/40" />
+                    <Play className="w-5 h-5 text-base-content/70" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{title}</p>
-                  <p className="text-xs text-base-content/60">
+                  <p className="text-xs text-base-content/70">
                     {tCommon(hiddenMediaTypeLabelKey[media.type])}
                   </p>
                 </div>

@@ -456,7 +456,7 @@ export default function ActivityComments({
         <div className="surface-muted p-3 shadow-sm sm:p-4">
           <div className="space-y-2">
             {replyingTo && (
-              <div className="flex items-center justify-between gap-2 text-xs text-base-content/60">
+              <div className="flex items-center justify-between gap-2 text-xs text-base-content/70">
                 <span>
                   {t('comments.replyingTo', {
                     username: replyingTo.user.username,
@@ -492,7 +492,7 @@ export default function ActivityComments({
             />
             {composerOpen && (
               <div className="flex items-end justify-between gap-3">
-                <span className="text-xs text-base-content/60">
+                <span className="text-xs text-base-content/70">
                   {t('comments.count', { count: content.length })}
                 </span>
                 <div className="flex flex-col items-end gap-2">
@@ -588,15 +588,15 @@ export default function ActivityComments({
                     <div
                       className={
                         isReply && parentReference
-                          ? 'flex min-w-0 flex-col justify-center gap-0.5 text-xs text-base-content/60'
-                          : 'flex flex-wrap items-center gap-2 text-xs text-base-content/60'
+                          ? 'flex min-w-0 flex-col justify-center gap-0.5 text-xs text-base-content/70'
+                          : 'flex flex-wrap items-center gap-2 text-xs text-base-content/70'
                       }
                     >
                       {isReply && parentReference ? (
                         <>
                           <a
                             href={`#comment-${parentReference._id}`}
-                            className="flex min-w-0 items-center gap-1 text-xs text-base-content/60 hover:text-primary"
+                            className="flex min-w-0 items-center gap-1 text-xs text-base-content/70 hover:text-primary"
                             title={t('comments.jumpToParent')}
                             data-comment-navigation
                             onClick={(event) =>
@@ -637,7 +637,7 @@ export default function ActivityComments({
                         </>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-1 text-xs text-base-content/60">
+                    <div className="flex shrink-0 items-center gap-1 text-xs text-base-content/70">
                       {!isEditing && (
                         <button
                           type="button"
@@ -801,7 +801,7 @@ export default function ActivityComments({
           )}
         </ul>
       ) : (
-        <p className="surface-muted p-4 text-sm text-base-content/60">
+        <p className="surface-muted p-4 text-sm text-base-content/70">
           {t('comments.empty')}
         </p>
       )}

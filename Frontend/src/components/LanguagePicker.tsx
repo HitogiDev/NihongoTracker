@@ -34,7 +34,7 @@ export default function LanguagePicker() {
           </option>
         ))}
       </DropdownSelect>
-      <p className="label text-base-content/60 text-wrap">
+      <p className="label text-base-content/70 text-wrap">
         {t('preferences.language.help')}
       </p>
     </fieldset>

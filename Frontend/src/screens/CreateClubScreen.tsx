@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useState, useRef, useCallback } from 'react';
 import Field from '../components/ui/Field';
 import { useMutation } from '@tanstack/react-query';
@@ -430,7 +431,7 @@ function CreateClubScreen() {
                       }
                       maxLength={100}
                     />
-                    <span className="label text-base-content/60">
+                    <span className="label text-base-content/70">
                       {formData.name.length}/100 characters
                     </span>
                   </fieldset>
@@ -455,7 +456,7 @@ function CreateClubScreen() {
                       }
                       maxLength={500}
                     />
-                    <span className="label text-base-content/60">
+                    <span className="label text-base-content/70">
                       {formData.description?.length || 0}/500 characters
                     </span>
                   </fieldset>
@@ -475,7 +476,7 @@ function CreateClubScreen() {
                           <span className="font-medium">
                             {t('create.public')}
                           </span>
-                          <div className="text-xs text-base-content/60">
+                          <div className="text-xs text-base-content/70">
                             {t('create.publicHint')}
                           </div>
                         </div>
@@ -496,7 +497,7 @@ function CreateClubScreen() {
                           <span className="font-medium">
                             {t('create.private')}
                           </span>
-                          <div className="text-xs text-base-content/60">
+                          <div className="text-xs text-base-content/70">
                             {t('create.privateHint')}
                           </div>
                         </div>
@@ -528,7 +529,7 @@ function CreateClubScreen() {
                         )
                       }
                     />
-                    <span className="text-sm text-base-content/60">
+                    <span className="text-sm text-base-content/70">
                       {t('clubs:create.membersMax')}
                     </span>
                   </div>
@@ -538,7 +539,7 @@ function CreateClubScreen() {
                     </label>
                   )}
                   <div className="mt-1 space-y-1">
-                    <p className="text-xs text-base-content/60">
+                    <p className="text-xs text-base-content/70">
                       Current tier max: {maxAllowedMemberLimit} members
                     </p>
                     <p className="text-xs text-base-content/70">
@@ -559,7 +560,7 @@ function CreateClubScreen() {
                   <Tag className="text-primary w-6 h-6" />
                   {t('common.tags')}
                 </h2>
-                <p className="text-sm text-base-content/60 mb-4">
+                <p className="text-sm text-base-content/70 mb-4">
                   {t('create.tagsHint')}
                 </p>
 
@@ -641,7 +642,7 @@ function CreateClubScreen() {
                   <Image className="text-primary w-6 h-6" />
                   {t('activity.clubMedia')}
                 </h2>
-                <p className="text-sm text-base-content/60 mb-4">
+                <p className="text-sm text-base-content/70 mb-4">
                   {t('create.imagesHint')}
                 </p>
 
@@ -661,7 +662,7 @@ function CreateClubScreen() {
                             />
                           ) : (
                             <div className="flex items-center justify-center w-full h-full">
-                              <Users className="text-4xl text-base-content/40" />
+                              <Users className="text-4xl text-base-content/70" />
                             </div>
                           )}
                         </div>
@@ -688,7 +689,7 @@ function CreateClubScreen() {
                           </button>
                         )}
                       </div>
-                      <span className="text-xs text-base-content/60">
+                      <span className="text-xs text-base-content/70">
                         {t('create.maxSize')}
                       </span>
                     </div>
@@ -707,7 +708,7 @@ function CreateClubScreen() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Image className="text-4xl text-base-content/40" />
+                          <Image className="text-4xl text-base-content/70" />
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -732,7 +733,7 @@ function CreateClubScreen() {
                           </button>
                         )}
                       </div>
-                      <span className="text-xs text-base-content/60">
+                      <span className="text-xs text-base-content/70">
                         {t('create.bannerHint')}
                       </span>
                     </div>
@@ -747,7 +748,7 @@ function CreateClubScreen() {
                   <Info className="text-primary w-6 h-6" />
                   {t('create.rules')}
                 </h2>
-                <p className="text-sm text-base-content/60 mb-4">
+                <p className="text-sm text-base-content/70 mb-4">
                   {t('create.rulesHint')}
                 </p>
 
@@ -775,7 +776,7 @@ function CreateClubScreen() {
                       maxLength={1000}
                       style={{ whiteSpace: 'pre-line' }}
                     />
-                    <span className="label text-base-content/60">
+                    <span className="label text-base-content/70">
                       {formData.rules?.length || 0}/1000 characters
                     </span>
                   </fieldset>
@@ -802,7 +803,7 @@ function CreateClubScreen() {
                 disabled={createClubMutation.isPending}
               >
                 {createClubMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   <Users className="w-4 h-4" />
                 )}

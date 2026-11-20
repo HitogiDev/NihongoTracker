@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOutletContext } from 'react-router-dom';
@@ -297,7 +298,7 @@ function ProfileModerationScreen() {
                   <p className="font-semibold text-base-content">
                     {t('moderation.recalculateTitle')}
                   </p>
-                  <p className="text-xs text-base-content/60 mt-1">
+                  <p className="text-xs text-base-content/70 mt-1">
                     <Trans
                       t={t}
                       i18nKey="moderation.recalculateBody"
@@ -313,7 +314,7 @@ function ProfileModerationScreen() {
                   disabled={isRecalculatingStreak || isLoading}
                 >
                   {isRecalculatingStreak ? (
-                    <span className="loading loading-spinner loading-sm" />
+                    <Spinner size="sm" />
                   ) : (
                     <RefreshCw className="w-4 h-4" />
                   )}
@@ -329,7 +330,7 @@ function ProfileModerationScreen() {
                   <span className="font-semibold text-base-content">
                     {t('moderation.rankingBanTitle')}
                   </span>
-                  <p className="text-xs text-base-content/60 mt-1">
+                  <p className="text-xs text-base-content/70 mt-1">
                     {t('moderation.rankingBanBody')}
                   </p>
                 </div>
@@ -349,7 +350,7 @@ function ProfileModerationScreen() {
                   <span className="font-semibold text-base-content">
                     {t('moderation.banTitle')}
                   </span>
-                  <p className="text-xs text-base-content/60 mt-1">
+                  <p className="text-xs text-base-content/70 mt-1">
                     {t('moderation.banBody')}
                   </p>
                 </div>
@@ -367,7 +368,7 @@ function ProfileModerationScreen() {
                 <span className="text-sm font-medium text-base-content">
                   {t('moderation.banReason')}
                 </span>
-                <span className="text-xs text-base-content/60">
+                <span className="text-xs text-base-content/70">
                   {banReason.length}/500
                 </span>
               </div>
@@ -388,7 +389,7 @@ function ProfileModerationScreen() {
                 disabled={isSaving || isLoading}
               >
                 {isSaving ? (
-                  <span className="loading loading-spinner loading-sm" />
+                  <Spinner size="sm" />
                 ) : (
                   <Save className="w-4 h-4" />
                 )}
@@ -406,7 +407,7 @@ function ProfileModerationScreen() {
                   <Award className="w-5 h-5 text-warning" />
                   {t('moderation.grantAchievementTitle')}
                 </h3>
-                <p className="mt-1 text-sm text-base-content/60">
+                <p className="mt-1 text-sm text-base-content/70">
                   {t('moderation.grantAchievementBody')}
                 </p>
                 <select
@@ -434,7 +435,7 @@ function ProfileModerationScreen() {
                 disabled={!selectedAchievementKey || isGrantingAchievement}
               >
                 {isGrantingAchievement ? (
-                  <span className="loading loading-spinner loading-sm" />
+                  <Spinner size="sm" />
                 ) : (
                   <Award className="w-4 h-4" />
                 )}
@@ -452,7 +453,7 @@ function ProfileModerationScreen() {
             </h3>
 
             {sortedHistory.length === 0 ? (
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('moderation.timelineEmpty')}
               </p>
             ) : (
@@ -471,14 +472,14 @@ function ProfileModerationScreen() {
                         >
                           {t(getHistoryBadgeLabelKey(entry))}
                         </span>
-                        <span className="text-xs text-base-content/60">
+                        <span className="text-xs text-base-content/70">
                           {t('moderation.by', {
                             username:
                               entry.updatedByUsername ||
                               t('moderation.unknownAdmin'),
                           })}
                         </span>
-                        <span className="text-xs text-base-content/50">
+                        <span className="text-xs text-base-content/70">
                           {Number.isNaN(new Date(entry.updatedAt).getTime())
                             ? t('moderation.unknownDate')
                             : formatDate(entry.updatedAt)}
@@ -508,7 +509,7 @@ function ProfileModerationScreen() {
                       </p>
 
                       {entry.reasonSnapshot ? (
-                        <p className="mt-2 text-xs text-base-content/60">
+                        <p className="mt-2 text-xs text-base-content/70">
                           {t('moderation.reasonSnapshot', {
                             reason: entry.reasonSnapshot,
                           })}

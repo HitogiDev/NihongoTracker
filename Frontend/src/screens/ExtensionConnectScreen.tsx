@@ -121,7 +121,7 @@ function ExtensionConnectScreen() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-base-content/60">{t('extensionConnect.revokeHint')}</p>
+            <p className="mt-3 text-xs text-base-content/70">{t('extensionConnect.revokeHint')}</p>
           </div>
 
           {!user && (

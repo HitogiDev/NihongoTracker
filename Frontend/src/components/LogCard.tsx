@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import DropdownSelect from './ui/DropdownSelect';
 import { isMobileApp } from '../utils/nativeRuntime';
 import OfflineImage from './OfflineImage';
@@ -656,7 +657,7 @@ function LogCard({
                   typeof media === 'object' &&
                   media.title?.contentTitleEnglish &&
                   media.title.contentTitleEnglish.trim() !== logTitle.trim() && (
-                    <p className="text-sm text-base-content/60 mt-1 leading-tight">
+                    <p className="text-sm text-base-content/70 mt-1 leading-tight">
                       {media.title.contentTitleEnglish.length > 45
                         ? `${media.title.contentTitleEnglish.slice(0, 45)}...`
                         : media.title.contentTitleEnglish}
@@ -675,7 +676,7 @@ function LogCard({
                     description !== media.title.contentTitleEnglish) && (
                     <MarkdownContent
                       inlineOnly
-                      className="prose prose-sm max-w-none text-base-content/60 mt-1 leading-tight line-clamp-2 [&>*]:my-0 [&_p]:my-0"
+                      className="prose prose-sm max-w-none text-base-content/70 mt-1 leading-tight line-clamp-2 [&>*]:my-0 [&_p]:my-0"
                       html={renderedDescription}
                     />
                   )}
@@ -800,7 +801,7 @@ function LogCard({
 
             <div className="tooltip tooltip-left" data-tip={fullDate}>
               <time
-                className="text-xs text-base-content/60 hover:text-base-content transition-colors duration-200 cursor-help flex items-center gap-1"
+                className="text-xs text-base-content/70 hover:text-base-content transition-colors duration-200 cursor-help flex items-center gap-1"
                 dateTime={
                   !unknownDate && date
                     ? typeof date === 'string'
@@ -1067,7 +1068,7 @@ function LogCard({
                     <span className="font-medium">{t('details.created')}</span>
                     <p className="text-base-content mt-1">{fullDate}</p>
                     {!unknownDate ? (
-                      <p className="text-sm text-base-content/60">
+                      <p className="text-sm text-base-content/70">
                         {relativeDate}
                       </p>
                     ) : null}
@@ -1240,7 +1241,7 @@ function LogCard({
               >
                 {t('delete.title')}
               </h3>
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('delete.irreversible')}
               </p>
             </div>
@@ -1282,7 +1283,7 @@ function LogCard({
             >
               {loadingDeleteLog ? (
                 <>
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                   {t('delete.deleting')}
                 </>
               ) : (
@@ -1318,7 +1319,7 @@ function LogCard({
                 <h3 id="edit-modal-title" className="font-bold text-xl">
                   {t('edit.title')}
                 </h3>
-                <p className="text-sm text-base-content/60 mt-1">
+                <p className="text-sm text-base-content/70 mt-1">
                   {t('edit.subtitle')}
                 </p>
               </div>
@@ -1676,7 +1677,7 @@ function LogCard({
               >
                 {loadingUpdateLog ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                     {t('edit.updating')}
                   </>
                 ) : (

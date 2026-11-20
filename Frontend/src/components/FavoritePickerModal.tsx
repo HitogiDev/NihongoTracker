@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -183,7 +184,7 @@ function FavoritePickerModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
-          <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
+          <Search className="w-5 h-5 text-base-content/70 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -193,7 +194,7 @@ function FavoritePickerModal({
             onChange={(e) => setQuery(e.target.value)}
           />
           {isSearching && (
-            <span className="loading loading-spinner loading-sm text-primary" />
+            <Spinner size="sm" className="text-primary" />
           )}
           <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
@@ -202,14 +203,14 @@ function FavoritePickerModal({
 
         <div className="max-h-[28rem] overflow-y-auto overscroll-contain">
           {!hasQuery && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{t('search.typeToSearch')}</p>
             </div>
           )}
 
           {hasQuery && !isSearching && visibleResults.length === 0 && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <p className="text-sm">
                 No results found for &ldquo;{debouncedQuery}&rdquo;
               </p>
@@ -259,7 +260,7 @@ function FavoritePickerModal({
                       </p>
                       {media.title.contentTitleEnglish &&
                         media.title.contentTitleNative && (
-                          <p className="text-xs text-base-content/50 truncate mt-0.5">
+                          <p className="text-xs text-base-content/70 truncate mt-0.5">
                             {media.title.contentTitleEnglish}
                           </p>
                         )}

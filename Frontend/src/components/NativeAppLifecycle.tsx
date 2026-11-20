@@ -9,6 +9,32 @@ import { dispatchNativeDismiss } from "../native/useNativeDismiss";
 import { installTouchHaptics } from "../native/haptics";
 import { applyAppTheme } from "../utils/appTheme";
 
+/**
+ * Close a daisyUI dropdown that has no `useNativeDismiss`.
+ * A `<details>` dropdown closes when it loses `open`.
+ * A CSS dropdown stays open while it contains the focus.
+ * Return true when a dropdown consumed the back press.
+ */
+function closeOpenDropdown() {
+  const details = document.querySelectorAll<HTMLDetailsElement>(
+    "details.dropdown[open]",
+  );
+  if (details.length) {
+    details[details.length - 1].open = false;
+    return true;
+  }
+  const focused = document.activeElement;
+  if (
+    focused instanceof HTMLElement &&
+    focused !== document.body &&
+    focused.closest(".dropdown:not(details):not(.dropdown-open)")
+  ) {
+    focused.blur();
+    return true;
+  }
+  return false;
+}
+
 export default function NativeAppLifecycle() {
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -84,6 +110,7 @@ export default function NativeAppLifecycle() {
         return;
       }
       if (dispatchNativeDismiss()) return;
+      if (closeOpenDropdown()) return;
       const dialogs =
         document.querySelectorAll<HTMLDialogElement>("dialog[open], dialog.modal-open");
       const dialog = dialogs[dialogs.length - 1];

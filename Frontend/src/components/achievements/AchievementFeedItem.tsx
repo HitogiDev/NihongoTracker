@@ -97,7 +97,7 @@ export default function AchievementFeedItem({
               {user.username}
             </Link>
           ) : null}
-          <span className="text-base-content/60 text-xs">
+          <span className="text-base-content/70 text-xs">
             {showUser ? t('feed.earned') : t('feed.unlocked')}
           </span>
           <span className="font-medium text-sm">
@@ -115,7 +115,7 @@ export default function AchievementFeedItem({
           >
             {t(`rarity.${rarity}`)}
           </span>
-          <span className="text-xs text-base-content/50">{dateLabel}</span>
+          <span className="text-xs text-base-content/70">{dateLabel}</span>
         </div>
       </div>
 

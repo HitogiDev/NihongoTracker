@@ -10,7 +10,7 @@ import { Skeleton } from '../ui/Skeleton';
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="surface-muted rounded-box p-3">
-      <div className="text-xs text-base-content/60">{label}</div>
+      <div className="text-xs text-base-content/70">{label}</div>
       <div className="text-xl font-bold tabular-nums">{value}</div>
     </div>
   );
@@ -33,7 +33,7 @@ function RivalHighlight({
         containerClassName="w-10 h-10 rounded-full shrink-0"
       />
       <div className="min-w-0">
-        <div className="text-xs text-base-content/60">{label}</div>
+        <div className="text-xs text-base-content/70">{label}</div>
         <Link
           to={`/user/${encodeURIComponent(rival.user.username)}`}
           className="block truncate font-semibold link link-hover"

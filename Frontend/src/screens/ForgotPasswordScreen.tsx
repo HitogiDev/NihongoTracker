@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPasswordFn } from '../api/trackerApi';
@@ -71,7 +72,7 @@ function ForgotPasswordScreen() {
                 components={{ strong: <strong /> }}
               />
             </p>
-            <p className="text-sm text-base-content/60 mb-6">
+            <p className="text-sm text-base-content/70 mb-6">
               {t('forgotPassword.sent.spamHint')}
             </p>
             <div className="card-actions justify-center">
@@ -123,7 +124,7 @@ function ForgotPasswordScreen() {
                 disabled={!isFormValid || isPending}
               >
                 {isPending ? (
-                  <span className="loading loading-spinner loading-sm" />
+                  <Spinner size="sm" />
                 ) : (
                   t('forgotPassword.submit')
                 )}

@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import DropdownSelect from './ui/DropdownSelect';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import Field from './ui/Field';
@@ -22,6 +24,8 @@ import { isMobileApp } from '../utils/nativeRuntime';
 import Modal from './ui/Modal';
 import { MentionButton } from './mentions/MentionPicker';
 import Button from './ui/Button';
+import { Timer } from 'lucide-react';
+import { useStartSession } from '../native/useStartSession';
 
 interface QuickLogProps {
   open: boolean;
@@ -30,6 +34,8 @@ interface QuickLogProps {
   onLogged?: () => void | Promise<void>;
   initialValues?: QuickLogInitialValues;
   allowedTypes?: ILog['type'][];
+  /** Show the session timer button when a media is preselected in the mobile app. */
+  allowTimer?: boolean;
 }
 
 export interface QuickLogInitialValues {
@@ -118,6 +124,7 @@ function QuickLog({
   onLogged,
   initialValues,
   allowedTypes,
+  allowTimer = true,
 }: QuickLogProps) {
   const { t } = useTranslation('logs');
   const { t: tCommon } = useTranslation('common');
@@ -168,6 +175,11 @@ function QuickLog({
     undefined
   );
   const [privateLog, setPrivateLog] = useState(false);
+  // A seeded time (for example from the session timer) wins over type resets and episode math.
+  const [seededTimeType, setSeededTimeType] = useState<ILog['type'] | null>(null);
+  const timeSeeded = seededTimeType !== null && seededTimeType === logType;
+  const timerSession = useStartSession();
+  const { t: at } = useTranslation('android');
   const suggestionRef = useRef<HTMLDivElement>(null);
   const lastSeedRef = useRef<string | null>(null);
   const pendingVolumeRef = useRef<{
@@ -303,7 +315,9 @@ function QuickLog({
       setLoggedVolume(undefined);
       setSeriesVolumes(undefined);
     }
-    if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
+    if (seededTimeType !== null && seededTimeType === logType) {
+      // Keep the seeded time.
+    } else if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
       // Do not reset time for anime as it is auto-calculated
     } else if (
       logType !== 'video' &&
@@ -319,7 +333,7 @@ function QuickLog({
       setHours(0);
       setMinutes(0);
     }
-  }, [logType, defaultDuration, episodes]);
+  }, [logType, defaultDuration, episodes, seededTimeType]);
 
   const { data: searchResult, isLoading: isSearching } = useSearch(
     logType ?? '',
@@ -374,10 +388,13 @@ function QuickLog({
     if (Object.prototype.hasOwnProperty.call(initialValues, 'minutes')) {
       setMinutes(initialValues.minutes ?? 0);
     }
+    const seedsTime =
+      (initialValues.hours ?? 0) > 0 || (initialValues.minutes ?? 0) > 0;
+    setSeededTimeType(seedsTime ? initialValues.type ?? media?.type ?? null : null);
     if (Object.prototype.hasOwnProperty.call(initialValues, 'private')) {
       setPrivateLog(initialValues.private ?? false);
     }
-  }, [open, initialValues]);
+  }, [open, initialValues, media?.type]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: createLogFn,
@@ -443,7 +460,7 @@ function QuickLog({
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -472,6 +489,7 @@ function QuickLog({
     setCustomDuration(undefined);
     setShowTime(false);
     setPrivateLog(false);
+    setSeededTimeType(null);
     lastSeedRef.current = null;
     onClose();
   }
@@ -740,7 +758,9 @@ function QuickLog({
                                 setEpisodes(count);
 
                                 // Auto-calculate time based on duration for anime
-                                if (logType === 'anime') {
+                                if (timeSeeded) {
+                                  // Keep the measured time.
+                                } else if (logType === 'anime') {
                                   const effectiveDuration =
                                     customDuration || defaultDuration || 24;
                                   if (count > 0) {
@@ -772,7 +792,7 @@ function QuickLog({
                             />
 
                             {/* Custom Episode/Movie Duration for anime and movies */}
-                            {logType === 'anime' || logType === 'tv show' ? (
+                            {(logType === 'anime' || logType === 'tv show') && !timeSeeded ? (
                               <>
                                 <div>
                                   <label className="label cursor-pointer">
@@ -946,6 +966,7 @@ function QuickLog({
                           logType === 'book' ||
                           logType === 'vn' ||
                           logType === 'game' ||
+                          timeSeeded ||
                           (logType === 'movie' && !episodes)) && (
                           <Field label={t('quick.timeSpent')}>
                             <div className="flex gap-2">
@@ -1060,6 +1081,17 @@ function QuickLog({
 
                 {logType && (
                   <div className="card-actions justify-end mt-4">
+                    {allowTimer && media && isMobileApp() && (
+                      <Button
+                        appearance="outline"
+                        className="mr-auto"
+                        disabled={timerSession.starting}
+                        onClick={() => timerSession.start(media, onClose)}
+                      >
+                        <Timer className="h-4 w-4" />
+                        {at('sessionTimer.startTimer')}
+                      </Button>
+                    )}
                     <button
                       className="btn btn-outline"
                       type="button"
@@ -1073,7 +1105,7 @@ function QuickLog({
                       disabled={isSubmitDisabled}
                     >
                       {isPending ? (
-                        <span className="loading loading-spinner loading-md"></span>
+                        <Spinner size="md" />
                       ) : (
                         'Log'
                       )}
@@ -1088,6 +1120,7 @@ function QuickLog({
           </form>
         </dialog>
       )}
+      {timerSession.dialog}
       <Modal open={discardOpen} onClose={() => setDiscardOpen(false)} title={nt('native.unsavedTitle')} actions={<><Button appearance="ghost" onClick={() => setDiscardOpen(false)}>{nt('native.keepEditing')}</Button><Button variant="error" onClick={() => { setNativeDirty(false); setDiscardOpen(false); onClose(); }}>{nt('native.discard')}</Button></>}><p>{nt('native.unsavedMessage')}</p></Modal>
     </>
   );

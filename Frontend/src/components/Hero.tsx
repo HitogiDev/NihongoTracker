@@ -9,6 +9,7 @@ import type { ParseKeys } from 'i18next';
 const TAGLINE_VERB_KEYS = ['track', 'gamify', 'celebrate', 'share'] as const;
 import { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
+import '../utils/gsapReducedMotion';
 import { TypeAnimation } from 'react-type-animation';
 import { Trans, useTranslation } from 'react-i18next';
 import {
@@ -62,7 +63,7 @@ function ScreenshotWindow({
           <div className="w-2.5 h-2.5 rounded-full bg-warning/60" />
           <div className="w-2.5 h-2.5 rounded-full bg-success/60" />
         </div>
-        <div className="flex-1 bg-base-200 rounded-full px-3 py-0.5 text-xs text-base-content/40 text-center max-w-[240px] mx-auto truncate">
+        <div className="flex-1 bg-base-200 rounded-full px-3 py-0.5 text-xs text-base-content/70 text-center max-w-[240px] mx-auto truncate">
           {url}
         </div>
       </div>
@@ -200,7 +201,7 @@ function Hero() {
 
             <p
               ref={subtitleRef}
-              className="text-xl md:text-2xl text-base-content/65 mb-10 max-w-2xl mx-auto leading-relaxed"
+              className="text-xl md:text-2xl text-base-content/70 mb-10 max-w-2xl mx-auto leading-relaxed"
             >
               {/* TypeAnimation memoizes its sequence on mount and ignores
                   later prop changes, so the verbs stay in whatever language
@@ -227,20 +228,16 @@ function Hero() {
               ref={ctaRef}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5"
             >
-              <Link to="/register">
-                <button className="btn btn-primary btn-lg gap-2 px-8">
-                  {t('hero.startTracking')}
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+              <Link to="/register" className="btn btn-primary btn-lg gap-2 px-8">
+                {t('hero.startTracking')}
+                <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link to="/features">
-                <button className="btn btn-ghost btn-lg px-8">
-                  {t('hero.seeFeatures')}
-                </button>
+              <Link to="/features" className="btn btn-ghost btn-lg px-8">
+                {t('hero.seeFeatures')}
               </Link>
             </div>
 
-            <p className="text-sm text-base-content/35">
+            <p className="text-sm text-base-content/70">
               {t('hero.freeForever')}
             </p>
           </div>
@@ -256,7 +253,7 @@ function Hero() {
                   <div className="w-3 h-3 rounded-full bg-warning/60" />
                   <div className="w-3 h-3 rounded-full bg-success/60" />
                 </div>
-                <div className="flex-1 bg-base-200 rounded-full px-3 py-0.5 text-xs text-base-content/40 text-center max-w-xs mx-auto">
+                <div className="flex-1 bg-base-200 rounded-full px-3 py-0.5 text-xs text-base-content/70 text-center max-w-xs mx-auto">
                   nihongotracker.app
                 </div>
               </div>
@@ -283,7 +280,7 @@ function Hero() {
 
         <section className="py-14 px-4 bg-base-200/50 border-y border-base-300/50">
           <div className="max-w-3xl mx-auto text-center scroll-reveal">
-            <p className="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-5">
+            <p className="text-xs font-semibold text-base-content/70 uppercase tracking-widest mb-5">
               {t('hero.trackEveryType')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -317,7 +314,7 @@ function Hero() {
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
                 {t('hero.logInstant')}
               </h2>
-              <p className="text-lg text-base-content/60 leading-relaxed">
+              <p className="text-lg text-base-content/70 leading-relaxed">
                 {t('hero.logBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
@@ -369,7 +366,7 @@ function Hero() {
                   components={{ br: <br /> }}
                 />
               </h2>
-              <p className="text-lg text-base-content/60 leading-relaxed">
+              <p className="text-lg text-base-content/70 leading-relaxed">
                 {t('hero.statsBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
@@ -403,7 +400,7 @@ function Hero() {
                   components={{ br: <br /> }}
                 />
               </h2>
-              <p className="text-lg text-base-content/60 leading-relaxed">
+              <p className="text-lg text-base-content/70 leading-relaxed">
                 {t('hero.rankBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
@@ -455,7 +452,7 @@ function Hero() {
                   components={{ br: <br /> }}
                 />
               </h2>
-              <p className="text-lg text-base-content/60 leading-relaxed">
+              <p className="text-lg text-base-content/70 leading-relaxed">
                 {t('hero.hookerBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
@@ -489,7 +486,7 @@ function Hero() {
                   components={{ br: <br /> }}
                 />
               </h2>
-              <p className="text-lg text-base-content/60 leading-relaxed">
+              <p className="text-lg text-base-content/70 leading-relaxed">
                 {t('hero.clubBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
@@ -524,22 +521,18 @@ function Hero() {
             <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
               {t('cta.title')}
             </h2>
-            <p className="text-lg text-base-content/55 mb-10">
+            <p className="text-lg text-base-content/70 mb-10">
               {t('cta.body')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/register">
-                <button className="btn btn-primary btn-lg px-8">
-                  {t('cta.joinNow')}
-                </button>
+              <Link to="/register" className="btn btn-primary btn-lg px-8">
+                {t('cta.joinNow')}
               </Link>
-              <Link to="/features">
-                <button className="btn btn-ghost btn-lg px-8">
-                  {t('cta.seeFeatures')}
-                </button>
+              <Link to="/features" className="btn btn-ghost btn-lg px-8">
+                {t('cta.seeFeatures')}
               </Link>
             </div>
-            <p className="mt-8 text-sm text-base-content/50">
+            <p className="mt-8 text-sm text-base-content/70">
               {t('cta.madeBy')}
             </p>
           </div>

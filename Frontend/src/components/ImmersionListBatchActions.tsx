@@ -168,7 +168,7 @@ export default function ImmersionListBatchActions({
         <p className="text-sm font-medium" aria-live="polite">
           {t('list.batch.selected', { count: selectedMedia.length })}
           {hiddenCount > 0 && (
-            <span className="text-base-content/60 ml-2">
+            <span className="text-base-content/70 ml-2">
               {t('list.batch.hidden', { count: hiddenCount })}
             </span>
           )}
@@ -245,7 +245,7 @@ export default function ImmersionListBatchActions({
         ) : (
           <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
             {lists.data?.lists.length === 0 && (
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('addToList.empty')}
               </p>
             )}

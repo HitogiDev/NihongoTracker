@@ -1,3 +1,5 @@
+import Spinner from '../components/ui/Spinner';
+import { confirmDialog } from '../utils/confirmDialog';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import FeatureFlagsCard from '../components/FeatureFlagsCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -652,7 +654,7 @@ function AdminScreen() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <Spinner size="lg" className="text-primary" />
           <p className="mt-4 text-base-content/70">
             Loading admin dashboard...
           </p>
@@ -828,7 +830,7 @@ function AdminScreen() {
             <div className="card-body gap-5">
               <div>
                 <h2 className="card-title">{t('bans.title')}</h2>
-                <p className="mt-1 text-sm text-base-content/60">
+                <p className="mt-1 text-sm text-base-content/70">
                   {t('bans.description')}
                 </p>
               </div>
@@ -864,7 +866,7 @@ function AdminScreen() {
                     {bannedUsersLoading ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center">
-                          <span className="loading loading-spinner loading-md" />
+                          <Spinner size="md" />
                         </td>
                       </tr>
                     ) : bannedUsers?.users.length ? (
@@ -905,7 +907,7 @@ function AdminScreen() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-base-content/60">
+                        <td colSpan={5} className="py-8 text-center text-base-content/70">
                           {t('bans.empty')}
                         </td>
                       </tr>
@@ -978,7 +980,7 @@ function AdminScreen() {
                                     {PATRON_TIER_LABELS[selectedPatronTier]}{' '}
                                     Members
                                   </h3>
-                                  <p className="text-sm text-base-content/60">
+                                  <p className="text-sm text-base-content/70">
                                     {numberWithCommas(
                                       selectedPatronUsers.length
                                     )}{' '}
@@ -1055,7 +1057,7 @@ function AdminScreen() {
                                       <tr>
                                         <td
                                           colSpan={6}
-                                          className="text-center py-8 text-base-content/60"
+                                          className="text-center py-8 text-base-content/70"
                                         >
                                           No members found in this tier.
                                         </td>
@@ -1237,7 +1239,7 @@ function AdminScreen() {
                             <p className="text-sm font-bold">
                               {numberWithCommas(u.totalXp ?? 0)} XP
                             </p>
-                            <p className="text-xs text-base-content/60">
+                            <p className="text-xs text-base-content/70">
                               {(u.totalHours ?? 0).toFixed(1)} hours
                             </p>
                           </div>
@@ -1258,7 +1260,7 @@ function AdminScreen() {
                         disabled={syncPatreonMutation.isPending}
                       >
                         {syncPatreonMutation.isPending ? (
-                          <span className="loading loading-spinner loading-xs"></span>
+                          <Spinner size="xs" />
                         ) : null}
                         Sync Patreon Members
                       </button>
@@ -1415,7 +1417,7 @@ function AdminScreen() {
                         disabled={recalcMutation.isPending}
                       >
                         {recalcMutation.isPending ? (
-                          <span className="loading loading-spinner loading-sm"></span>
+                          <Spinner size="sm" />
                         ) : (
                           'Recalc Streaks'
                         )}
@@ -1428,7 +1430,7 @@ function AdminScreen() {
                         disabled={recalcMutation.isPending}
                       >
                         {recalcMutation.isPending ? (
-                          <span className="loading loading-spinner loading-sm"></span>
+                          <Spinner size="sm" />
                         ) : (
                           'Preview XP v3'
                         )}
@@ -1439,7 +1441,7 @@ function AdminScreen() {
                         disabled={syncManabeIdsMutation.isPending}
                       >
                         {syncManabeIdsMutation.isPending ? (
-                          <span className="loading loading-spinner loading-sm"></span>
+                          <Spinner size="sm" />
                         ) : (
                           'Sync Manabe IDs'
                         )}
@@ -1468,7 +1470,7 @@ function AdminScreen() {
                         {usersLoading ? (
                           <tr>
                             <td colSpan={7} className="text-center py-8">
-                              <span className="loading loading-spinner loading-md"></span>
+                              <Spinner size="md" />
                             </td>
                           </tr>
                         ) : (
@@ -1535,9 +1537,9 @@ function AdminScreen() {
                                     {role !== 'admin' && (
                                       <button
                                         className="btn btn-error btn-xs"
-                                        onClick={() => {
+                                        onClick={async () => {
                                           if (
-                                            confirm(`Delete ${row.username}?`)
+                                            await confirmDialog(`Delete ${row.username}?`, { destructive: true })
                                           )
                                             deleteUserMutation.mutate(row._id);
                                         }}
@@ -1637,7 +1639,7 @@ function AdminScreen() {
                           disabled={updateUserMutation.isPending}
                         >
                           {updateUserMutation.isPending ? (
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                           ) : (
                             <span className="inline-flex items-center gap-2">
                               <svg
@@ -1694,7 +1696,7 @@ function AdminScreen() {
                           disabled={resetPasswordMutation.isPending}
                         >
                           {resetPasswordMutation.isPending ? (
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                           ) : (
                             <span className="inline-flex items-center gap-2">
                               <svg
@@ -1716,7 +1718,7 @@ function AdminScreen() {
                           )}
                         </button>
                       </div>
-                      <p className="text-xs text-base-content/60 mt-1">
+                      <p className="text-xs text-base-content/70 mt-1">
                         Min 6 characters.
                       </p>
                     </fieldset>
@@ -1780,7 +1782,7 @@ function AdminScreen() {
                             disabled={setPatreonMutation.isPending}
                           >
                             {setPatreonMutation.isPending ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : grantTier ? (
                               'Grant Tier'
                             ) : (
@@ -1880,9 +1882,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-warning btn-sm whitespace-nowrap"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'Convert logs with media to in_progress or completed based on totals?'
                           )
                         ) {
@@ -1920,7 +1922,7 @@ function AdminScreen() {
                       {logsLoading ? (
                         <tr>
                           <td colSpan={10} className="text-center py-8">
-                            <span className="loading loading-spinner loading-md"></span>
+                            <Spinner size="md" />
                           </td>
                         </tr>
                       ) : (
@@ -1958,8 +1960,8 @@ function AdminScreen() {
                                   </button>
                                   <button
                                     className="btn btn-error btn-xs"
-                                    onClick={() => {
-                                      if (confirm('Delete this log?'))
+                                    onClick={async () => {
+                                      if (await confirmDialog('Delete this log?', { destructive: true }))
                                         deleteLogMutation.mutate(log._id);
                                     }}
                                     disabled={deleteLogMutation.isPending}
@@ -2136,7 +2138,7 @@ function AdminScreen() {
                       disabled={updateLogMutation.isPending}
                     >
                       {updateLogMutation.isPending ? (
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                       ) : (
                         'Save'
                       )}
@@ -2202,7 +2204,7 @@ function AdminScreen() {
               <div className="card-body">
                 {changelogsLoading ? (
                   <div className="text-center py-8">
-                    <span className="loading loading-spinner loading-md"></span>
+                    <Spinner size="md" />
                   </div>
                 ) : changelogs && changelogs.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -2309,11 +2311,11 @@ function AdminScreen() {
                                   </button>
                                   <button
                                     className="btn btn-error btn-xs"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       if (
-                                        confirm(
+                                        await confirmDialog(
                                           `Delete changelog ${changelog.version}?`
-                                        )
+                                        , { destructive: true })
                                       ) {
                                         deleteChangelogMutation.mutate(
                                           changelog._id
@@ -2430,7 +2432,7 @@ function AdminScreen() {
                           + Add Change
                         </button>
                       </div>
-                      <p className="text-sm text-base-content/60 mb-2">
+                      <p className="text-sm text-base-content/70 mb-2">
                         Use the arrow buttons to set the display order.
                       </p>
                       <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -2666,9 +2668,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'This rewrites every log and user total with XP v3. Run the preview and database backup first. Continue?'
                           )
                         ) {
@@ -2681,9 +2683,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-success w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'This grants newly eligible achievements without revoking existing ones. This may take a while. Continue?'
                           )
                         ) {
@@ -2711,9 +2713,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'This reconstructs weekly global + monthly ranking snapshots from all historical logs. Run this once to seed the ranking-over-time graph. This may take a while. Continue?'
                           )
                         ) {
@@ -2741,9 +2743,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'This replays every completed Sunday-to-Saturday week and awards Top 10 / Podium / King / Consistent to the users who earned them. Run this once to repair the weeks the cron scored with the wrong window. Nothing already granted is duplicated or revoked. This may take a while. Continue?'
                           )
                         ) {
@@ -2771,9 +2773,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             'This creates activity feed entries for all historical logs with known dates. It preserves each log date and privacy setting, and can be run again without creating duplicates. This runs in the background. Continue?'
                           )
                         ) {
@@ -2805,7 +2807,7 @@ function AdminScreen() {
                     {activityBackfillStatus &&
                       !activityBackfillStatus.running &&
                       activityBackfillStatus.finishedAt && (
-                        <p className="text-xs text-base-content/60 -mt-2">
+                        <p className="text-xs text-base-content/70 -mt-2">
                           Last activity backfill:{' '}
                           {activityBackfillStatus.created} created,{' '}
                           {activityBackfillStatus.existing} already present,{' '}
@@ -2817,9 +2819,9 @@ function AdminScreen() {
                       )}
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await confirmDialog(
                             "Downloads Jiten's full deck catalogue and re-tags the cached difficulty on every linkable media, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and takes well under a minute. Continue?"
                           )
                         ) {
@@ -2851,7 +2853,7 @@ function AdminScreen() {
                     {jitenBackfillStatus &&
                       !jitenBackfillStatus.running &&
                       jitenBackfillStatus.finishedAt && (
-                        <p className="text-xs text-base-content/60 -mt-2">
+                        <p className="text-xs text-base-content/70 -mt-2">
                           Last difficulty backfill:{' '}
                           {jitenBackfillStatus.matched} matched /{' '}
                           {jitenBackfillStatus.processed} processed
@@ -2984,7 +2986,7 @@ function AdminScreen() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title">IGDB Dump Sync Status</h3>
                     {igdbDumpStatusLoading ? (
-                      <span className="loading loading-spinner loading-sm"></span>
+                      <Spinner size="sm" />
                     ) : igdbDumpStatus?.isRunning ? (
                       <span className="badge badge-warning">Running</span>
                     ) : igdbDumpStatus?.lastError ? (
@@ -3107,7 +3109,7 @@ function AdminScreen() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title">VNDB Dump Sync Status</h3>
                     {vndbDumpStatusLoading ? (
-                      <span className="loading loading-spinner loading-sm"></span>
+                      <Spinner size="sm" />
                     ) : vndbDumpStatus?.isRunning ? (
                       <span className="badge badge-warning">Running</span>
                     ) : vndbDumpStatus?.lastError ? (

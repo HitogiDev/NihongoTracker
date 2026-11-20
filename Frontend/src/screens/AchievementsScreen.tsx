@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useEffect, useState, useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
@@ -440,7 +441,7 @@ export default function AchievementsScreen() {
             title={grouped ? t('screen.ungroupTitle') : t('screen.groupTitle')}
           >
             {isPendingGroup ? (
-              <span className="loading loading-spinner loading-xs" />
+              <Spinner size="xs" />
             ) : (
               <Layers className="w-4 h-4" />
             )}
@@ -541,7 +542,7 @@ export default function AchievementsScreen() {
                         <h2 className="text-xl font-bold">
                           {t(config.labelKey)}
                         </h2>
-                        <p className="text-sm text-base-content/60">
+                        <p className="text-sm text-base-content/70">
                           {t('screen.earnedOfTotal', {
                             earned: earnedCount,
                             total: items.length,

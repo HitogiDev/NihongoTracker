@@ -322,7 +322,7 @@ export default function ForecastModal({
           {!forecast && !selected && query.trim().length >= 2 && (
             <div className="surface-muted max-h-64 overflow-y-auto p-1">
               {searching ? (
-                <p className="p-4 text-sm text-base-content/60">
+                <p className="p-4 text-sm text-base-content/70">
                   {t('forecast.searching')}
                 </p>
               ) : results.length ? (
@@ -356,7 +356,7 @@ export default function ForecastModal({
                   </RowButton>
                 ))
               ) : (
-                <p className="p-4 text-sm text-base-content/60">
+                <p className="p-4 text-sm text-base-content/70">
                   {t('forecast.noResults')}
                 </p>
               )}
@@ -376,7 +376,7 @@ export default function ForecastModal({
                 <p className="font-semibold truncate">
                   {selected ? displayTitle(selected) : forecast?.mediaTitle}
                 </p>
-                <p className="text-xs text-base-content/60">
+                <p className="text-xs text-base-content/70">
                   {selected
                     ? tCommon(mediaTypeTranslationKey(selected.type))
                     : forecast && tCommon(mediaTypeTranslationKey(forecast.mediaType))}
@@ -445,7 +445,7 @@ export default function ForecastModal({
           )}
 
           {!forecast && selected && (
-            <p className="text-sm text-base-content/60" role="status">
+            <p className="text-sm text-base-content/70" role="status">
               {resolvedTarget === undefined
                 ? t('forecast.checkingMetadata')
                 : resolvedTarget

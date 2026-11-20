@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn, searchMediaFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
@@ -52,7 +54,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
   } = useSearch('vn', shouldSearch ? searchQuery : '');
 
   if (searchError && searchError instanceof AxiosError) {
-    toast.error(searchError.response?.data.message);
+    toast.error(getApiErrorMessage(searchError));
   }
 
   const handleCheckboxChange = useCallback((log: ILog) => {
@@ -124,7 +126,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('matcher.assignError'));
       }
@@ -275,7 +277,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -311,7 +313,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
               <span
                 className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
@@ -322,7 +324,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
               ></span>
             </div>
 
-            <div className="text-xs text-base-content/50 mt-2">
+            <div className="text-xs text-base-content/70 mt-2">
               {t('matcher.fetching')}
             </div>
           </div>
@@ -402,7 +404,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -553,7 +555,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.vn'),
@@ -682,7 +684,7 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

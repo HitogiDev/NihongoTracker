@@ -1,3 +1,5 @@
+import Spinner from './ui/Spinner';
+import ModalBackdrop from './ui/ModalBackdrop';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -84,12 +86,12 @@ function AddToListModal({
 
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <span className="loading loading-spinner loading-md" />
+            <Spinner size="md" />
           </div>
         ) : (
           <div className="flex flex-col gap-1 max-h-72 overflow-y-auto">
             {lists.length === 0 && (
-              <p className="text-sm text-base-content/60 py-4">
+              <p className="text-sm text-base-content/70 py-4">
                 {t('addToList.empty')}
               </p>
             )}
@@ -119,15 +121,15 @@ function AddToListModal({
                   <span className="block truncate font-medium">
                     {list.title}
                   </span>
-                  <span className="block text-xs text-base-content/60">
+                  <span className="block text-xs text-base-content/70">
                     {list.entryCount} items
                   </span>
                 </span>
                 {!list.isPublic && (
-                  <Lock className="w-4 h-4 text-base-content/40" />
+                  <Lock className="w-4 h-4 text-base-content/70" />
                 )}
                 {list.isRanked && (
-                  <ListOrdered className="w-4 h-4 text-base-content/40" />
+                  <ListOrdered className="w-4 h-4 text-base-content/70" />
                 )}
               </button>
             ))}
@@ -164,7 +166,7 @@ function AddToListModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose} />
+      <ModalBackdrop onClose={onClose} />
     </div>
   );
 }

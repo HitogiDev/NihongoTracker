@@ -1,3 +1,5 @@
+import Spinner from '../ui/Spinner';
+import ModalBackdrop from '../ui/ModalBackdrop';
 import DropdownSelect from '../ui/DropdownSelect';
 import { useState } from 'react';
 import Field from '../ui/Field';
@@ -371,7 +373,7 @@ export default function CreateVotingWizard({
                 {t('wizard.stepCount', { current: currentStep, total: 3 })}
               </span>
             </div>
-            <p className="text-sm text-base-content/60 mt-1">
+            <p className="text-sm text-base-content/70 mt-1">
               {t(
                 currentStep === 1
                   ? 'wizard.setupHint'
@@ -440,7 +442,7 @@ export default function CreateVotingWizard({
                   />
                   <span>{t('editVoting.testingMode')}</span>
                 </label>
-                <div className="text-xs text-base-content/60 ml-6">
+                <div className="text-xs text-base-content/70 ml-6">
                   {t('editVoting.testingModeHint')}
                 </div>
               </div>
@@ -552,7 +554,7 @@ export default function CreateVotingWizard({
                           className={
                             votingData.suggestionStartDate
                               ? 'text-base-content'
-                              : 'text-base-content/50'
+                              : 'text-base-content/70'
                           }
                         >
                           {formatDateForDisplay(votingData.suggestionStartDate)}
@@ -607,7 +609,7 @@ export default function CreateVotingWizard({
                           className={
                             votingData.suggestionEndDate
                               ? 'text-base-content'
-                              : 'text-base-content/50'
+                              : 'text-base-content/70'
                           }
                         >
                           {formatDateForDisplay(votingData.suggestionEndDate)}
@@ -662,7 +664,7 @@ export default function CreateVotingWizard({
                       className={
                         votingData.votingStartDate
                           ? 'text-base-content'
-                          : 'text-base-content/50'
+                          : 'text-base-content/70'
                       }
                     >
                       {formatDateForDisplay(votingData.votingStartDate)}
@@ -735,7 +737,7 @@ export default function CreateVotingWizard({
                       className={
                         votingData.votingEndDate
                           ? 'text-base-content'
-                          : 'text-base-content/50'
+                          : 'text-base-content/70'
                       }
                     >
                       {formatDateForDisplay(votingData.votingEndDate)}
@@ -793,7 +795,7 @@ export default function CreateVotingWizard({
                       className={
                         votingData.consumptionStartDate
                           ? 'text-base-content'
-                          : 'text-base-content/50'
+                          : 'text-base-content/70'
                       }
                     >
                       {formatDateForDisplay(votingData.consumptionStartDate)}
@@ -856,7 +858,7 @@ export default function CreateVotingWizard({
                       className={
                         votingData.consumptionEndDate
                           ? 'text-base-content'
-                          : 'text-base-content/50'
+                          : 'text-base-content/70'
                       }
                     >
                       {formatDateForDisplay(votingData.consumptionEndDate)}
@@ -937,7 +939,7 @@ export default function CreateVotingWizard({
                           className="input w-full"
                         />
                         {isSearching && (
-                          <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
+                          <Spinner size="sm" className="absolute right-3 top-1/2 transform -translate-y-1/2" />
                         )}
                       </div>
 
@@ -967,7 +969,7 @@ export default function CreateVotingWizard({
                                         result.title.contentTitleRomaji ||
                                         result.title.contentTitleNative}
                                     </div>
-                                    <div className="text-sm text-base-content/60">
+                                    <div className="text-sm text-base-content/70">
                                       {result.type}
                                     </div>
                                   </div>
@@ -1074,7 +1076,7 @@ export default function CreateVotingWizard({
                             <div className="flex-1 min-w-0">
                               <h5 className="font-medium">{candidate.title}</h5>
                               {candidate.description && (
-                                <p className="text-sm text-base-content/60 line-clamp-2">
+                                <p className="text-sm text-base-content/70 line-clamp-2">
                                   {candidate.description}
                                 </p>
                               )}
@@ -1276,7 +1278,7 @@ export default function CreateVotingWizard({
           )}
         </div>
       </div>
-      <div className="modal-backdrop" onClick={handleClose}></div>
+      <ModalBackdrop onClose={handleClose} />
     </div>
   );
 }

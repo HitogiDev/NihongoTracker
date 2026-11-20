@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useInfiniteQuery,
@@ -233,7 +234,7 @@ function NotificationsScreen() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p
                     className={`text-sm font-medium truncate ${
-                      isUnread ? 'text-base-content' : 'text-base-content/65'
+                      isUnread ? 'text-base-content' : 'text-base-content/70'
                     }`}
                   >
                     {getNotificationLabel(item)}
@@ -248,12 +249,12 @@ function NotificationsScreen() {
                 </div>
 
                 {getNotificationBody(item) && (
-                  <p className="mt-1 text-sm text-base-content/60 line-clamp-2">
+                  <p className="mt-1 text-sm text-base-content/70 line-clamp-2">
                     {getNotificationBody(item)}
                   </p>
                 )}
 
-                <div className="flex items-center gap-2 mt-1 text-xs text-base-content/50">
+                <div className="flex items-center gap-2 mt-1 text-xs text-base-content/70">
                   <Clock3 className="w-3 h-3" />
                   <span>{timeLabel}</span>
                 </div>
@@ -269,7 +270,7 @@ function NotificationsScreen() {
                     {formatBadgeCount(item.count)}
                   </span>
                 )}
-                <ChevronRight className="w-4 h-4 text-base-content/30" />
+                <ChevronRight className="w-4 h-4 text-base-content/70" />
               </div>
             </div>
           </div>
@@ -299,13 +300,13 @@ function NotificationsScreen() {
               <div className="card-body p-4 space-y-3">
                 {!isMobileApp() && <div className="grid grid-cols-2 gap-2">
                   <div className="surface-muted p-3">
-                    <div className="text-xs uppercase tracking-wider text-base-content/50">
+                    <div className="text-xs uppercase tracking-wider text-base-content/70">
                       {t('summary.total')}
                     </div>
                     <div className="text-2xl font-semibold">{totalCount}</div>
                   </div>
                   <div className="surface-muted p-3">
-                    <div className="text-xs uppercase tracking-wider text-base-content/50">
+                    <div className="text-xs uppercase tracking-wider text-base-content/70">
                       {t('summary.unread')}
                     </div>
                     <div className="text-2xl font-semibold">{unreadCount}</div>
@@ -348,7 +349,7 @@ function NotificationsScreen() {
                 <h2 className="text-xl font-semibold text-base-content">
                   {t('list.heading')}
                 </h2>
-                <p className="text-sm text-base-content/60 mt-0.5">
+                <p className="text-sm text-base-content/70 mt-0.5">
                   {t('list.showing', {
                     shown: notificationItems.length,
                     count: totalCount,
@@ -384,7 +385,7 @@ function NotificationsScreen() {
                   <h3 className="text-lg font-semibold">
                     {t('list.error.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60 max-w-sm mt-1">
+                  <p className="text-sm text-base-content/70 max-w-sm mt-1">
                     {t('list.error.description')}
                   </p>
                 </div>
@@ -393,12 +394,12 @@ function NotificationsScreen() {
               <div className="card surface">
                 <div className="card-body items-center text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-base-200 flex items-center justify-center mb-4">
-                    <Inbox className="w-10 h-10 text-base-content/40" />
+                    <Inbox className="w-10 h-10 text-base-content/70" />
                   </div>
                   <h3 className="text-xl font-semibold text-base-content mb-1">
                     {t('list.empty.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60 max-w-sm">
+                  <p className="text-sm text-base-content/70 max-w-sm">
                     {t('list.empty.description')}
                   </p>
                 </div>
@@ -410,14 +411,14 @@ function NotificationsScreen() {
                 <div ref={loadMoreRef} className="h-8" />
 
                 {isFetchingNextPage && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-base-content/60 py-4">
-                    <span className="loading loading-spinner loading-xs"></span>
+                  <div className="flex items-center justify-center gap-2 text-sm text-base-content/70 py-4">
+                    <Spinner size="xs" />
                     {t('list.loadingMore')}
                   </div>
                 )}
 
                 {!hasNextPage && notificationItems.length > 0 && (
-                  <div className="text-center text-sm text-base-content/50 py-2">
+                  <div className="text-center text-sm text-base-content/70 py-2">
                     {t('list.endReached')}
                   </div>
                 )}

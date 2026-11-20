@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -69,7 +70,7 @@ function DismissLogsButton({
               >
                 {isDismissing ? (
                   <>
-                    <span className="loading loading-spinner loading-md"></span>
+                    <Spinner size="md" />
                     {t('dismiss.dismissing')}
                   </>
                 ) : (

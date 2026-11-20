@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useEffect, useState, useRef } from 'react';
 import Field from '../components/ui/Field';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ import {
   validateUsername,
 } from '../utils/validation';
 import { gsap } from 'gsap';
+import '../utils/gsapReducedMotion';
 import { Trans, useTranslation } from 'react-i18next';
 import { getUserTimezone } from '../utils/timezone';
 import type { ValidationKey } from '../utils/validation';
@@ -153,7 +155,10 @@ function RegisterScreen() {
     const newErrors: Record<string, ValidationKey> = {};
 
     if (touched.username) {
-      const usernameError = validateUsername(username);
+      // New accounts need 3 characters. Older accounts with shorter names can still sign in.
+      const usernameError =
+        validateUsername(username) ||
+        (username.trim().length < 3 ? 'username.registerMinLength' : '');
       if (usernameError) newErrors.username = usernameError;
     }
 
@@ -176,8 +181,10 @@ function RegisterScreen() {
         newErrors.passwordConfirmation = passwordMatchError;
     }
 
+    if (touched.terms && !agreedToTerms) newErrors.terms = 'terms.required';
+
     setErrors(newErrors);
-  }, [username, email, password, passwordConfirmation, touched]);
+  }, [username, email, password, passwordConfirmation, agreedToTerms, touched]);
 
   const isFormValid = () => {
     return (
@@ -224,7 +231,12 @@ function RegisterScreen() {
     e.preventDefault();
 
     // Mark all fields as touched for final validation
-    setTouched({ username: true, password: true, passwordConfirmation: true });
+    setTouched({
+      username: true,
+      password: true,
+      passwordConfirmation: true,
+      terms: true,
+    });
 
     if (!isFormValid()) {
       toast.error(t('register.toast.validationErrors'));
@@ -293,8 +305,9 @@ function RegisterScreen() {
         <input id="native-register-terms" type="checkbox" className="checkbox checkbox-primary shrink-0" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} required />
         <label htmlFor="native-register-terms"><Trans t={t} i18nKey="register.form.terms" components={{ terms: <Link className="link link-primary" to="/terms" />, privacy: <Link className="link link-primary" to="/privacy" /> }} /></label>
       </div>
+      {errors.terms && <p role="alert" className="text-sm text-error">{vt(errors.terms)}</p>}
       {error && <p role="alert" className="text-sm text-error">{getApiErrorMessage(error)}</p>}
-      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('register.form.submitting')} disabled={!isFormValid()}>{t('register.form.submit')}</Button>
+      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('register.form.submitting')}>{t('register.form.submit')}</Button>
       <Link to="/login" className="btn btn-ghost w-full">{t('register.form.signIn')}</Link>
     </form>
   </NativeAuthLayout>;
@@ -371,7 +384,7 @@ function RegisterScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('register.features.trackEverything.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('register.features.trackEverything.description')}
                   </p>
                 </div>
@@ -398,7 +411,7 @@ function RegisterScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('register.features.levelUp.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('register.features.levelUp.description')}
                   </p>
                 </div>
@@ -425,7 +438,7 @@ function RegisterScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('register.features.community.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('register.features.community.description')}
                   </p>
                 </div>
@@ -437,7 +450,7 @@ function RegisterScreen() {
                 <div className="text-3xl font-bold text-primary">
                   {stats?.totalUsers ? formatCompact(stats.totalUsers) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.totalUsers')}
                 </div>
               </div>
@@ -445,7 +458,7 @@ function RegisterScreen() {
                 <div className="text-3xl font-bold text-secondary">
                   {stats?.totalXp ? formatCompact(stats.totalXp) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.xpEarned')}
                 </div>
               </div>
@@ -453,7 +466,7 @@ function RegisterScreen() {
                 <div className="text-3xl font-bold text-accent">
                   {stats?.totalLogs ? formatCompact(stats.totalLogs) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.logsTracked')}
                 </div>
               </div>
@@ -472,7 +485,7 @@ function RegisterScreen() {
                 >
                   {t('register.form.title')}
                 </h2>
-                <p className="mb-6 flex items-center justify-center gap-2 text-center text-sm text-base-content/60">
+                <p className="mb-6 flex items-center justify-center gap-2 text-center text-sm text-base-content/70">
                   <Rocket className="h-4 w-4 flex-none text-primary" />
                   <span>{t('register.form.subtitle')}</span>
                 </p>
@@ -501,6 +514,12 @@ function RegisterScreen() {
                   >
                     <input
                       type="text"
+                      name="username"
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      aria-label={t('register.form.username.label')}
+                      aria-invalid={errors.username ? true : undefined}
                       placeholder={t('register.form.username.placeholder')}
                       className={`input w-full transition-all duration-300 ${
                         errors.username
@@ -551,7 +570,7 @@ function RegisterScreen() {
                         </p>
                         <ul className="space-y-1.5">
                           <li
-                            className={`flex items-center gap-2 transition-colors ${usernameValidation.notEmpty ? 'text-success' : 'text-base-content/60'}`}
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.notEmpty ? 'text-success' : 'text-base-content/70'}`}
                           >
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.notEmpty ? 'bg-success/20' : 'bg-base-300'}`}
@@ -577,7 +596,7 @@ function RegisterScreen() {
                             {t('register.usernameRequirements.notEmpty')}
                           </li>
                           <li
-                            className={`flex items-center gap-2 transition-colors ${usernameValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.minLength ? 'text-success' : 'text-base-content/70'}`}
                           >
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
@@ -641,7 +660,7 @@ function RegisterScreen() {
                             {t('register.usernameRequirements.maxLength')}
                           </li>
                           <li
-                            className={`flex items-center gap-2 transition-colors ${usernameValidation.validCharacters ? 'text-success' : 'text-base-content/60'}`}
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.validCharacters ? 'text-success' : 'text-base-content/70'}`}
                           >
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.validCharacters ? 'bg-success/20' : 'bg-base-300'}`}
@@ -697,6 +716,10 @@ function RegisterScreen() {
                   >
                     <input
                       type="email"
+                      name="email"
+                      autoComplete="email"
+                      aria-label={t('register.form.email.label')}
+                      aria-invalid={errors.email ? true : undefined}
                       placeholder={t('register.form.email.placeholder')}
                       className={`input w-full transition-all duration-300 ${
                         errors.email
@@ -732,7 +755,7 @@ function RegisterScreen() {
                       </label>
                     )}
                     <label className="label">
-                      <span className="text-base-content/60 text-xs">
+                      <span className="text-base-content/70 text-xs">
                         {t('register.form.email.hint')}
                       </span>
                     </label>
@@ -763,6 +786,10 @@ function RegisterScreen() {
                   >
                     <input
                       type="password"
+                      name="new-password"
+                      autoComplete="new-password"
+                      aria-label={t('register.form.password.label')}
+                      aria-invalid={errors.password ? true : undefined}
                       placeholder={t('register.form.password.placeholder')}
                       className={`input w-full transition-all duration-300 ${
                         errors.password
@@ -813,7 +840,7 @@ function RegisterScreen() {
                         </p>
                         <ul className="space-y-1.5">
                           <li
-                            className={`flex items-center gap-2 transition-colors ${passwordValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
+                            className={`flex items-center gap-2 transition-colors ${passwordValidation.minLength ? 'text-success' : 'text-base-content/70'}`}
                           >
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center ${passwordValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
@@ -868,6 +895,12 @@ function RegisterScreen() {
                   >
                     <input
                       type="password"
+                      name="new-password-confirmation"
+                      autoComplete="new-password"
+                      aria-label={t('register.form.passwordConfirmation.label')}
+                      aria-invalid={
+                        errors.passwordConfirmation ? true : undefined
+                      }
                       placeholder={t(
                         'register.form.passwordConfirmation.placeholder'
                       )}
@@ -920,6 +953,7 @@ function RegisterScreen() {
                       className="checkbox checkbox-primary mt-0.5 flex-shrink-0"
                       checked={agreedToTerms}
                       onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      required
                     />
                     <span className="min-w-0 flex-1 text-left text-sm leading-relaxed whitespace-normal break-words">
                       <Trans
@@ -946,21 +980,22 @@ function RegisterScreen() {
                       />
                     </span>
                   </label>
+                  {errors.terms && (
+                    <p role="alert" className="px-3 text-sm text-error">
+                      {vt(errors.terms)}
+                    </p>
+                  )}
                 </div>
 
                 <div ref={addToRefs} className="mt-4 items-center">
                   <button
-                    className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
-                      !isFormValid() || isPending
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:scale-[1.02]'
-                    }`}
+                    className="btn btn-primary btn-lg w-full"
                     type="submit"
-                    disabled={!isFormValid() || isPending}
+                    disabled={isPending}
                   >
                     {isPending ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                         {t('register.form.submitting')}
                       </>
                     ) : (
@@ -987,7 +1022,7 @@ function RegisterScreen() {
 
                 <div
                   ref={addToRefs}
-                  className="divider text-xs text-base-content/60"
+                  className="divider text-xs text-base-content/70"
                 >
                   {t('register.form.or')}
                 </div>

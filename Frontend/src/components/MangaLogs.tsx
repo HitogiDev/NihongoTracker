@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useAutoMatch } from '../hooks/useAutoMatch';
 import { useMatchingSelection } from '../hooks/useMatchingSelection';
 import { useMediaAssignment } from '../hooks/useMediaAssignment';
@@ -49,7 +51,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
 
 
   if (searchMangaError && searchMangaError instanceof AxiosError) {
-    toast.error(searchMangaError.response?.data.message);
+    toast.error(getApiErrorMessage(searchMangaError));
   }
 
   const groupedLogs = useGroupLogs(logs, 'manga');
@@ -112,7 +114,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -148,7 +150,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
               <span
                 className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
@@ -159,7 +161,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
               ></span>
             </div>
 
-            <div className="text-xs text-base-content/50 mt-2">
+            <div className="text-xs text-base-content/70 mt-2">
               {t('matcher.fetching')}
             </div>
           </div>
@@ -241,7 +243,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -392,7 +394,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingManga ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.manga'),
@@ -533,7 +535,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

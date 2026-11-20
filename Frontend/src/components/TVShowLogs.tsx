@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { ILog, IMediaDocument } from '../types';
 import { useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -54,7 +56,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
   const queryClient = useQueryClient();
 
   if (searchTvShowError && searchTvShowError instanceof AxiosError) {
-    toast.error(searchTvShowError.response?.data.message);
+    toast.error(getApiErrorMessage(searchTvShowError));
   }
 
   const handleCheckboxChange = useCallback((log: ILog) => {
@@ -122,7 +124,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('matcher.assignError'));
       }
@@ -176,7 +178,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
             <h2 className="card-title justify-center text-2xl mb-2">
               {t('matcher.loadingTitle')}
@@ -380,7 +382,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingTvShow ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.tvShow'),
@@ -528,7 +530,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (

@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -120,10 +121,10 @@ export default function MediaRequestQueue() {
 
         {isLoading ? (
           <div className="py-12 text-center">
-            <span className="loading loading-spinner loading-md"></span>
+            <Spinner size="md" />
           </div>
         ) : !data?.requests.length ? (
-          <div className="py-12 text-center text-base-content/60">
+          <div className="py-12 text-center text-base-content/70">
             {t('queue.empty', { context: status })}
           </div>
         ) : (
@@ -167,7 +168,7 @@ export default function MediaRequestQueue() {
                           .join(' · ')}
                       </p>
                     )}
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       <Trans
                         t={t}
                         i18nKey="queue.requestedBy"
@@ -253,7 +254,7 @@ export default function MediaRequestQueue() {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-2 text-xs text-base-content/60">
+                      <div className="mt-2 text-xs text-base-content/70">
                         {reviewer
                           ? `${t('queue.reviewedBy', { username: reviewer })} `
                           : null}

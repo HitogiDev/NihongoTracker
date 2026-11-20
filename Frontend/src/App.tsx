@@ -1,5 +1,5 @@
 import Header from './components/Header';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
@@ -208,6 +208,7 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
   }
   if (segments[0] === 'goals') return { key: 'titles.goals' };
   if (segments[0] === 'log') return { key: 'titles.createLog' };
+  if (segments[0] === 'session') return { key: 'titles.sessionTimer' };
   if (segments[0] === 'records') return { key: 'native.records' };
   if (segments[0] === 'matchmedia') return { key: 'titles.matchMedia' };
   return { key: null };
@@ -245,8 +246,13 @@ function TitleManager() {
   return null;
 }
 
+/** Scroll positions by history entry, so Back and Forward return to the same place. */
+const scrollPositions = new Map<string, number>();
+const RESTORE_SCROLL_TIMEOUT_MS = 3000;
+
 function ScrollToTop() {
-  const { pathname, search, hash } = useLocation();
+  const { pathname, search, hash, key } = useLocation();
+  const navigationType = useNavigationType();
   const previousPathnameRef = useRef(pathname);
 
   useEffect(() => {
@@ -272,23 +278,62 @@ function ScrollToTop() {
       previousMediaTab.key === currentMediaTab.key &&
       previousMediaTab.section !== currentMediaTab.section;
 
-    if (isSwitchingBetweenMediaTabs) {
-      previousPathnameRef.current = pathname;
-      return;
-    }
-
-    // Reset both window/document scroll and any app-level scroll container.
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    const main = document.querySelector('main');
-    if (main) {
-      main.scrollTop = 0;
-    }
-
     previousPathnameRef.current = pathname;
-  }, [pathname, search, hash]);
+
+    if (isSwitchingBetweenMediaTabs) return;
+
+    const save = () => scrollPositions.set(key, window.scrollY);
+    const target =
+      navigationType === 'POP' ? (scrollPositions.get(key) ?? 0) : 0;
+
+    if (target === 0) {
+      // Reset both window/document scroll and any app-level scroll container.
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
+      window.addEventListener('scroll', save, { passive: true });
+      return () => window.removeEventListener('scroll', save);
+    }
+
+    // The page can be shorter than the saved position until its data loads.
+    // Try again when the content grows. Stop when the user takes control.
+    let restoring = true;
+    const restore = () => {
+      window.scrollTo({ top: target, left: 0, behavior: 'auto' });
+      if (Math.abs(window.scrollY - target) < 2) restoring = false;
+    };
+    const stop = () => {
+      restoring = false;
+    };
+    const onScroll = () => {
+      if (!restoring) save();
+    };
+    const observer = new ResizeObserver(() => {
+      if (restoring) restore();
+    });
+    const main = document.querySelector('main');
+    if (main) observer.observe(main);
+    // A cached page already has its full height, so restore before the first paint.
+    restore();
+    const frame = requestAnimationFrame(restore);
+    const timeout = window.setTimeout(stop, RESTORE_SCROLL_TIMEOUT_MS);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('touchstart', stop, { passive: true });
+    window.addEventListener('keydown', stop);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('touchstart', stop);
+      window.removeEventListener('keydown', stop);
+    };
+  }, [pathname, search, hash, key, navigationType]);
 
   return null;
 }

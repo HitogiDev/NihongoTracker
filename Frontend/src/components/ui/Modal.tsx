@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Button from './Button';
 
 /**
@@ -40,6 +41,7 @@ function Modal({
   children,
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     const dialog = ref.current;
@@ -72,7 +74,7 @@ function Modal({
                 appearance="ghost"
                 size="sm"
                 shape="circle"
-                aria-label="Close"
+                aria-label={t('close')}
                 onClick={onClose}
               >
                 <X className="w-4 h-4" />
@@ -88,7 +90,7 @@ function Modal({
         // A second layer would darken it further.
         <form method="dialog" className="modal-backdrop">
           <button type="button" onClick={onClose}>
-            close
+            {t('close')}
           </button>
         </form>
       )}

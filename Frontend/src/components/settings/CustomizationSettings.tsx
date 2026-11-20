@@ -1,3 +1,5 @@
+import Spinner from '../ui/Spinner';
+import QueryError from '../ui/QueryError';
 import DropdownSelect from '../ui/DropdownSelect';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +33,7 @@ import UserAvatar from '../UserAvatar';
 import Field from '../ui/Field';
 import { isMobileApp } from '../../utils/nativeRuntime';
 import { useNativeUnsavedChanges } from '../../native/NativeDirtyContext';
+import UnsavedChangesGuard from '../UnsavedChangesGuard';
 import Button from '../ui/Button';
 import type {
   AvatarFrame,
@@ -69,7 +72,7 @@ export default function CustomizationSettings() {
   // Settings › Patreon is visible in this preview.
   const patreonBadge = getPatreonBadgeProps(user?.patreon);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, error, isFetching } = useQuery({
     queryKey: ['customization'],
     queryFn: getCustomizationFn,
   });
@@ -200,16 +203,25 @@ export default function CustomizationSettings() {
   }
 
   if (isMobileApp() && !isLoading && !options) return <div className="alert flex flex-col items-start" role="alert"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void refetch()}>{nt('native.retry')}</Button></div>;
+  if (!isLoading && !options && error) {
+    return (
+      <QueryError
+        error={error}
+        onRetry={() => void refetch()}
+        retrying={isFetching}
+      />
+    );
+  }
   if (isLoading || !options) {
     return (
       <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="native-customization space-y-6" onChangeCapture={() => setNativeDirty(true)} onClickCapture={(e) => { if ((e.target as HTMLElement).closest('button')) setNativeDirty(true); }}>
+    <div className="native-customization space-y-6" onChangeCapture={() => setNativeDirty(true)} onClickCapture={(e) => { if ((e.target as HTMLElement).closest('button')) setNativeDirty(true); }}><UnsavedChangesGuard dirty={nativeDirty} />
       {prefersReducedMotion && (
         <div className="alert alert-info">
           <Info className="h-5 w-5 shrink-0" />
@@ -227,7 +239,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.previewTitle')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.previewSubtitle')}
           </p>
 
@@ -300,7 +312,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.nameEffect')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.nameEffectHint')}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -428,7 +440,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.avatarFrame')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.avatarFrameHint')}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -531,11 +543,11 @@ export default function CustomizationSettings() {
       <CustomizationGroup title={t('customization.title')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">{t('customization.title')}</h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.titleHint')}
           </p>
           {titleOptions.length === 0 ? (
-            <p className="mt-3 text-sm text-base-content/60">
+            <p className="mt-3 text-sm text-base-content/70">
               {t('customization.noTitles')}
             </p>
           ) : (
@@ -565,7 +577,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.signatureStat')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.signatureStatHint')}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -590,7 +602,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.profileAccent')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.profileAccentHint')}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -677,7 +689,7 @@ export default function CustomizationSettings() {
             className="mt-4 rounded-lg border border-base-300 p-4"
             style={getProfileAccentStyle(draft)}
           >
-            <p className="mb-2 text-xs uppercase tracking-wide text-base-content/50">
+            <p className="mb-2 text-xs uppercase tracking-wide text-base-content/70">
               {t('customization.accentPreviewLabel')}
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -708,7 +720,7 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.bannerEffect')}
           </h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('customization.bannerEffectHint')}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -734,7 +746,7 @@ export default function CustomizationSettings() {
         >
           {isPending ? (
             <>
-              <span className="loading loading-spinner loading-sm" />
+              <Spinner size="sm" />
               {t('customization.saving')}
             </>
           ) : (

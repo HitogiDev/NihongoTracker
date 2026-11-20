@@ -33,7 +33,7 @@ export default function GuidelinesScreen() {
     <div className="container mx-auto max-w-4xl px-4 py-8 pt-28">
       <header className="mb-8">
         <h1 className="text-4xl font-bold">{data.title}</h1>
-        <p className="mt-3 text-sm text-base-content/60">
+        <p className="mt-3 text-sm text-base-content/70">
           {t('lastUpdated', { date: data.lastUpdated })}
         </p>
         <div className="mt-6 space-y-3 text-base-content/80">

@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import DropdownSelect from './ui/DropdownSelect';
 import { useEffect, useState } from 'react';
 import Field from './ui/Field';
@@ -248,14 +249,14 @@ export default function MediaEditPanel() {
         <div className="mt-4">
           {isFetching ? (
             <div className="py-8 text-center">
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
             </div>
           ) : debounced.length < 2 ? (
-            <p className="text-base-content/60 py-4">
+            <p className="text-base-content/70 py-4">
               Type at least 2 characters to search.
             </p>
           ) : !results?.length ? (
-            <p className="text-base-content/60 py-4">No media found.</p>
+            <p className="text-base-content/70 py-4">No media found.</p>
           ) : (
             <div className="space-y-2">
               {results.map((result) => (
@@ -277,7 +278,7 @@ export default function MediaEditPanel() {
                     <div className="font-medium truncate">
                       {result.title.contentTitleNative}
                     </div>
-                    <div className="text-xs text-base-content/60 truncate">
+                    <div className="text-xs text-base-content/70 truncate">
                       {result.title.contentTitleEnglish ||
                         result.title.contentTitleRomaji}
                     </div>
@@ -296,7 +297,7 @@ export default function MediaEditPanel() {
         <dialog className="modal modal-bottom sm:modal-middle" open>
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg mb-1">Edit Media</h3>
-            <p className="text-sm text-base-content/60 mb-4 capitalize">
+            <p className="text-sm text-base-content/70 mb-4 capitalize">
               {edit.type} · {edit.contentId}
             </p>
 
@@ -474,7 +475,7 @@ export default function MediaEditPanel() {
                 label={
                   <>
                     Description (Japanese){' '}
-                    <span className="text-base-content/50">optional</span>
+                    <span className="text-base-content/70">optional</span>
                   </>
                 }
                 className="md:col-span-2"
@@ -492,7 +493,7 @@ export default function MediaEditPanel() {
                 label={
                   <>
                     Description (Spanish){' '}
-                    <span className="text-base-content/50">optional</span>
+                    <span className="text-base-content/70">optional</span>
                   </>
                 }
                 className="md:col-span-2"
@@ -530,7 +531,7 @@ export default function MediaEditPanel() {
                 disabled={saveMutation.isPending}
               >
                 {saveMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   'Save changes'
                 )}

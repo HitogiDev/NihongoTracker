@@ -212,7 +212,7 @@ function StatTile({
 }) {
   return (
     <div className="surface-muted rounded-box p-3">
-      <div className="text-xs text-base-content/60">{label}</div>
+      <div className="text-xs text-base-content/70">{label}</div>
       <div className="text-xl font-bold tabular-nums">{value}</div>
       {hint ? (
         <div className="mt-1 text-xs text-base-content/70">{hint}</div>
@@ -414,7 +414,7 @@ function ReadingSpeedCard({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" />
             <div>
               <p>{speedHeadline(readingSpeed.comparison, tKey)}</p>
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-base-content/70">
                 {t("insights.speed.windows", {
                   current: readingSpeed.comparison.current
                     ? cph(readingSpeed.comparison.current.charsPerHour)
@@ -483,18 +483,18 @@ function ReadingSpeedCard({
               {difficultyChart.datasets.length ? (
                 <LineChart data={difficultyChart} compact />
               ) : (
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   {t("insights.speed.noDifficulty")}
                 </p>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t("insights.speed.empty")}
           </p>
         )}
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-base-content/70">
           {t("insights.speed.note")}
         </p>
       </div>
@@ -568,7 +568,7 @@ function ComfortCard({ data }: { data: IInsightsResponse }) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-base-content/70">
           {t("insights.comfort.note")}
         </p>
       </div>
@@ -782,13 +782,13 @@ function PeriodComparisonCard() {
                     <th />
                     <th>
                       <div>{t("insights.compare.periodA")}</div>
-                      <div className="font-normal text-base-content/60">
+                      <div className="font-normal text-base-content/70">
                         {range(query.data.a.startKey, query.data.a.endKey)}
                       </div>
                     </th>
                     <th>
                       <div>{t("insights.compare.periodB")}</div>
-                      <div className="font-normal text-base-content/60">
+                      <div className="font-normal text-base-content/70">
                         {range(query.data.b.startKey, query.data.b.endKey)}
                       </div>
                     </th>
@@ -841,7 +841,7 @@ function PeriodComparisonCard() {
                             value={row.b}
                             max={max}
                           />
-                          <span className="w-16 text-right tabular-nums text-base-content/60">
+                          <span className="w-16 text-right tabular-nums text-base-content/70">
                             {hours(row.b)}
                           </span>
                         </div>
@@ -901,7 +901,7 @@ function DigestCard({ data }: { data: IInsightsResponse }) {
               <label className="flex cursor-pointer items-start justify-between gap-4">
                 <span>
                   <span className="block font-medium">{t(option.label)}</span>
-                  <span className="block text-sm text-base-content/60">
+                  <span className="block text-sm text-base-content/70">
                     {t(option.description)}
                   </span>
                 </span>

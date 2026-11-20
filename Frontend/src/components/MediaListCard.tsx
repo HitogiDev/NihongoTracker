@@ -70,7 +70,7 @@ function PosterStack({
       style={{ height, width: totalWidth }}
     >
       {posters.length === 0 ? (
-        <div className="flex items-center justify-center w-full text-base-content/30">
+        <div className="flex items-center justify-center w-full text-base-content/70">
           <Layers style={{ width: height / 4, height: height / 4 }} />
         </div>
       ) : (
@@ -129,7 +129,7 @@ function MediaListCard({
           <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
             {list.title}
           </h3>
-          <p className="text-sm text-base-content/60 mt-1 flex items-center gap-2">
+          <p className="text-sm text-base-content/70 mt-1 flex items-center gap-2">
             <span>{entryLabel}</span>
             {list.likeCount > 0 && (
               <span className="flex items-center gap-1">
@@ -161,14 +161,14 @@ function MediaListCard({
         {list.title}
       </h3>
 
-      <div className="mt-1.5 flex items-center gap-2 text-sm text-base-content/60">
+      <div className="mt-1.5 flex items-center gap-2 text-sm text-base-content/70">
         {showOwner && owner && (
           <span className="flex items-center gap-1.5 min-w-0">
             <UserAvatar
               username={owner.username}
               avatar={owner.avatar}
               containerClassName="w-5 h-5 rounded-full shrink-0"
-              textClassName="text-[10px] font-semibold"
+              textClassName="text-xs font-semibold"
             />
             <span className="truncate">{owner.username}</span>
           </span>

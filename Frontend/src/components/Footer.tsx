@@ -36,7 +36,7 @@ function Footer() {
   const hideRankingFeatures = useHideRankingFeatures();
 
   return (
-    <footer className="footer footer-vertical sm:footer-horizontal mt-auto border-t border-base-300 bg-base-300 p-10 text-base-content">
+    <footer className="site-footer footer footer-vertical sm:footer-horizontal mt-auto border-t border-base-300 bg-base-300 p-10 text-base-content">
       <aside className="max-w-xs">
         <p className="text-xl font-bold">NihongoTracker</p>
         <p className="mt-2 text-sm text-base-content/70">

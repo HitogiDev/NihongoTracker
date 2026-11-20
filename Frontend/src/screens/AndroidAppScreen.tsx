@@ -213,7 +213,7 @@ export default function AndroidAppScreen() {
                   {t('hero.downloadLatest')}
                 </a>
               )}
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {version && apk
                   ? t('hero.versionWithSize', {
                       version,
@@ -222,14 +222,14 @@ export default function AndroidAppScreen() {
                   : t('hero.requirements')}
               </p>
               {!onAndroid && (
-                <p className="max-w-md text-sm text-base-content/60">
+                <p className="max-w-md text-sm text-base-content/70">
                   {t('hero.openOnPhone')}
                 </p>
               )}
             </div>
           )}
 
-          <p className="max-w-xl text-sm text-base-content/60">
+          <p className="max-w-xl text-sm text-base-content/70">
             {t('beta.notice')}{' '}
             {t('beta.report')}{' '}
             <a

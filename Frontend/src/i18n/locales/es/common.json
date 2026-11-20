@@ -4,8 +4,15 @@
   "avatarAlt": "Avatar de {{username}}",
   "cancel": "Cancelar",
   "close": "Cerrar",
+  "confirm": "Confirmar",
+  "confirmTitle": "¿Seguro?",
+  "delete": "Eliminar",
   "errors": {
-    "generic": "Ha ocurrido un error"
+    "generic": "Ha ocurrido un error",
+    "loadFailed": "No se pudo cargar este contenido.",
+    "network": "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "server": "El servidor no pudo completar la solicitud. Inténtalo de nuevo."
   },
   "language": {
     "saveError": "No se pudo guardar tu preferencia de idioma"

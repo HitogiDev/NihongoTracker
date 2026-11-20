@@ -83,7 +83,7 @@ export default function DuelsScreen() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">{t('page.title')}</h1>
-          <p className="mt-1 text-base-content/60">{t('page.subtitle')}</p>
+          <p className="mt-1 text-base-content/70">{t('page.subtitle')}</p>
         </div>
         <Button variant="primary" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />

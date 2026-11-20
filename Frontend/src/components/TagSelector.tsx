@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState } from 'react';
 import Field from './ui/Field';
 import { useTranslation } from 'react-i18next';
@@ -97,8 +98,8 @@ export default function TagSelector({
     return (
       <Field label={fieldLabel}>
         <div className="flex gap-2">
-          <span className="loading loading-spinner loading-sm"></span>
-          <span className="text-sm text-base-content/60">
+          <Spinner size="sm" />
+          <span className="text-sm text-base-content/70">
             {t('tags.selector.loading')}
           </span>
         </div>
@@ -193,7 +194,7 @@ export default function TagSelector({
         </div>
 
         {tags.length === 0 && (
-          <p className="text-sm text-base-content/60 mt-2">
+          <p className="text-sm text-base-content/70 mt-2">
             {t('tags.selector.emptyHint')}
           </p>
         )}
@@ -265,7 +266,7 @@ export default function TagSelector({
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   t('tags.selector.createAndAdd')
                 )}

@@ -156,7 +156,7 @@ function TimezonePicker({
                   <div className="font-medium text-info">
                     {t('timezone.useDetected')}
                   </div>
-                  <div className="text-xs text-base-content/60">
+                  <div className="text-xs text-base-content/70">
                     {commonTimezones.find((tz) => tz.value === detectedTimezone)
                       ?.label || detectedTimezone}
                   </div>
@@ -167,7 +167,7 @@ function TimezonePicker({
 
           <div className="max-h-48 overflow-y-auto">
             {filteredTimezones.length === 0 ? (
-              <div className="p-3 text-center text-base-content/60">
+              <div className="p-3 text-center text-base-content/70">
                 {t('timezone.noResults')}
               </div>
             ) : (
@@ -183,7 +183,7 @@ function TimezonePicker({
                   }`}
                 >
                   <div className="truncate">{timezone.label}</div>
-                  <div className="text-xs text-base-content/60 truncate">
+                  <div className="text-xs text-base-content/70 truncate">
                     {timezone.value}
                   </div>
                 </button>

@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IPlaylistVideo, IPlaylistResult } from '../api/trackerApi';
@@ -52,7 +53,7 @@ function DayPickerChevron({
   size?: number;
   disabled?: boolean;
 }) {
-  const iconClass = 'w-4 h-4 text-base-content/60';
+  const iconClass = 'w-4 h-4 text-base-content/70';
   if (orientation === 'left') return <ChevronLeft className={iconClass} />;
   if (orientation === 'right') return <ChevronRight className={iconClass} />;
   return <ChevronRight className={iconClass} />;
@@ -319,7 +320,7 @@ export default function PlaylistSelectorModal({
                   : t('playlist.title')}
             </h2>
             {!isFetching && playlistResult && (
-              <p className="text-sm text-base-content/60 mt-0.5">
+              <p className="text-sm text-base-content/70 mt-0.5">
                 {playlistResult.videos.length} video
                 {playlistResult.videos.length !== 1 ? 's' : ''} •{' '}
                 {selectedCount} selected
@@ -336,8 +337,8 @@ export default function PlaylistSelectorModal({
 
         {isFetching && (
           <div className="flex flex-col items-center justify-center flex-1 py-16 gap-4">
-            <span className="loading loading-spinner loading-lg text-primary" />
-            <p className="text-base-content/60 text-sm">
+            <Spinner size="lg" className="text-primary" />
+            <p className="text-base-content/70 text-sm">
               Loading playlist videos…
             </p>
           </div>
@@ -373,7 +374,7 @@ export default function PlaylistSelectorModal({
               <div className="flex-1" />
 
               <div className="flex items-center gap-2 relative">
-                <span className="text-sm text-base-content/60">
+                <span className="text-sm text-base-content/70">
                   {t('playlist.dateForAll')}
                 </span>
                 <button
@@ -436,7 +437,7 @@ export default function PlaylistSelectorModal({
                         />
                       ) : (
                         <div className="w-28 h-16 rounded flex-shrink-0 bg-base-300 flex items-center justify-center">
-                          <span className="text-base-content/30 text-xs">
+                          <span className="text-base-content/70 text-xs">
                             {t('playlist.noImage')}
                           </span>
                         </div>
@@ -446,10 +447,10 @@ export default function PlaylistSelectorModal({
                         <p className="text-base font-medium leading-snug line-clamp-2">
                           {override.description}
                         </p>
-                        <p className="text-sm text-base-content/50 mt-0.5">
+                        <p className="text-sm text-base-content/70 mt-0.5">
                           {playlistVideo.channel.title.contentTitleNative}
                         </p>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-base-content/60 flex-wrap">
+                        <div className="flex items-center gap-3 mt-1 text-sm text-base-content/70 flex-wrap">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             {durationLabel}
@@ -508,7 +509,7 @@ export default function PlaylistSelectorModal({
               >
                 {isSubmitting ? (
                   <>
-                    <span className="loading loading-spinner loading-xs" />
+                    <Spinner size="xs" />
                     {t('playlist.logging')}
                   </>
                 ) : (
@@ -520,7 +521,7 @@ export default function PlaylistSelectorModal({
         )}
 
         {!isFetching && !playlistResult && (
-          <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3 text-base-content/50">
+          <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3 text-base-content/70">
             <p className="text-sm">{t('playlist.noData')}</p>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>
               {t('playlist.close')}

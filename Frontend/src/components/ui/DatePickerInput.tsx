@@ -26,7 +26,7 @@ interface DatePickerInputProps {
 }
 
 function DayPickerChevron({ orientation }: { orientation?: string }) {
-  const iconClass = 'w-4 h-4 text-base-content/60';
+  const iconClass = 'w-4 h-4 text-base-content/70';
   return orientation === 'left' ? (
     <ChevronLeft className={iconClass} />
   ) : (

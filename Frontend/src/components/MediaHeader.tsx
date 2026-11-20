@@ -1,5 +1,8 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import OfflineImage from './OfflineImage';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNativeTitle } from '../native/nativeTitle';
 import {
   getAverageColorFn,
   getMediaFn,
@@ -24,7 +27,10 @@ import {
   Trash2,
   TriangleAlert,
   CalendarClock,
+  Timer,
 } from 'lucide-react';
+import { isMobileApp } from '../utils/nativeRuntime';
+import { useStartSession } from '../native/useStartSession';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
@@ -106,6 +112,8 @@ export default function MediaHeader() {
   const { pathname } = useLocation();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const sessionStarter = useStartSession();
+  const { t: at } = useTranslation('android');
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [forecastModalOpen, setForecastModalOpen] = useState(false);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
@@ -200,6 +208,12 @@ export default function MediaHeader() {
     media?.title.contentTitleRomaji,
     media?.title.contentTitleNative,
   ]);
+  useNativeTitle(
+    media &&
+      (media.title.contentTitleEnglish ||
+        media.title.contentTitleRomaji ||
+        media.title.contentTitleNative),
+  );
 
   const { mutate: setMediaStatus, isPending: isUpdatingCompletion } =
     useMutation({
@@ -345,7 +359,7 @@ export default function MediaHeader() {
   if (mediaError) {
     if (mediaError instanceof AxiosError) {
       if (mediaError.status === 404) navigate('/404', { replace: true });
-      toast.error(mediaError.response?.data.message);
+      toast.error(getApiErrorMessage(mediaError));
     } else {
       toast.error(
         mediaError.message ? mediaError.message : 'An error occurred'
@@ -455,6 +469,7 @@ export default function MediaHeader() {
         onClose={() => setLogModalOpen(false)}
         media={media}
       />
+      {sessionStarter.dialog}
       {media && (
         <ForecastModal
           open={forecastModalOpen}
@@ -488,7 +503,7 @@ export default function MediaHeader() {
             <div className="py-4 space-y-3">
               {isLoadingRemovalStats ? (
                 <div className="flex items-center gap-2 text-sm text-base-content/70">
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                   {t('header.checkingLogs')}
                 </div>
               ) : removalStats && removalStats.total.logs > 0 ? (
@@ -558,7 +573,7 @@ export default function MediaHeader() {
                 disabled={isRemovingFromList}
               >
                 {isRemovingFromList ? (
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
@@ -613,7 +628,7 @@ export default function MediaHeader() {
                   />
                 ) : (
                   <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 bg-base-200 flex items-center justify-center">
-                    <div className="text-4xl text-base-content/30">
+                    <div className="text-4xl text-base-content/70">
                       {getMediaTypeIcon(media?.type || '')}
                     </div>
                   </div>
@@ -629,6 +644,17 @@ export default function MediaHeader() {
                   >
                     {t('header.log')}
                   </button>
+                  {user && media && isMobileApp() && (
+                    <button
+                      type="button"
+                      className="btn btn-outline w-full"
+                      disabled={sessionStarter.starting}
+                      onClick={() => sessionStarter.start(media)}
+                    >
+                      <Timer className="w-4 h-4" />
+                      {at('sessionTimer.start')}
+                    </button>
+                  )}
                   {user && isOwnProfile && !isClubContext && media && (
                     <button
                       className="btn btn-outline w-full"
@@ -706,7 +732,7 @@ export default function MediaHeader() {
                           >
                             <span className="flex items-center gap-2">
                               {isUpdatingCompletion ? (
-                                <span className="loading loading-spinner loading-sm" />
+                                <Spinner size="sm" />
                               ) : completionStatus.status ? (
                                 (() => {
                                   const StatusIcon =

@@ -48,7 +48,7 @@ export default function FeatureFlagsCard() {
               <label className="flex cursor-pointer items-start justify-between gap-4">
                 <span>
                   <span className="block font-medium">{t(flag.label)}</span>
-                  <span className="block text-sm text-base-content/60">
+                  <span className="block text-sm text-base-content/70">
                     {t(flag.description)}
                   </span>
                 </span>

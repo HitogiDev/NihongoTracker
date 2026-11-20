@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getChangelogsFn } from '../api/trackerApi';
@@ -135,7 +136,7 @@ export default function ChangelogScreen() {
 
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg"></span>
+            <Spinner size="lg" />
           </div>
         ) : changelogs && changelogs.length > 0 ? (
           <div className="space-y-8">
@@ -147,7 +148,7 @@ export default function ChangelogScreen() {
                       {changelog.version}
                     </span>
                     <h2 className="text-2xl font-bold">{changelog.title}</h2>
-                    <span className="text-base-content/60 ml-auto">
+                    <span className="text-base-content/70 ml-auto">
                       {new Date(changelog.date).toLocaleDateString(
                         getLocale(),
                         {
@@ -189,7 +190,7 @@ export default function ChangelogScreen() {
           <div className="card surface">
             <div className="card-body text-center py-12">
               <svg
-                className="w-16 h-16 mx-auto text-base-content/30 mb-4"
+                className="w-16 h-16 mx-auto text-base-content/70 mb-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -204,7 +205,7 @@ export default function ChangelogScreen() {
               <p className="text-lg text-base-content/70">
                 {t('changelog.empty.title')}
               </p>
-              <p className="text-sm text-base-content/50 mt-2">
+              <p className="text-sm text-base-content/70 mt-2">
                 {t('changelog.empty.description')}
               </p>
             </div>

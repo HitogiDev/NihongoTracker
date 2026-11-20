@@ -80,7 +80,7 @@ function SessionIntelligenceModal({ entry, onClose }: Props) {
                 </div>
               </div>
               <div className="surface-muted p-3">
-                <TimerOff className="w-5 h-5 text-base-content/60 mb-2" />
+                <TimerOff className="w-5 h-5 text-base-content/70 mb-2" />
                 <div className="text-xs text-base-content/70">
                   {t('hooker.intelligence.afkExcluded')}
                 </div>
@@ -129,7 +129,7 @@ function SessionIntelligenceModal({ entry, onClose }: Props) {
               <h4 className="font-semibold">
                 {t('hooker.intelligence.charactersPerMinute')}
               </h4>
-              <span className="text-xs text-base-content/60">
+              <span className="text-xs text-base-content/70">
                 {intelligence.detectionMode === 'automatic' &&
                 intelligence.baselineIntervalSeconds !== null
                   ? t('hooker.intelligence.autoSummary', {

@@ -72,5 +72,42 @@
     "allDone": "Metas completadas por ahora",
     "weekly": "{{goal}} (semana)",
     "goal": "{{type}} · {{media}}"
+  },
+  "sessionTimer": {
+    "notification": {
+      "channel": "Temporizador de inmersión",
+      "running": "Sesión en curso",
+      "paused": "En pausa: {time}",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "log": "Registrar"
+    },
+    "start": "Iniciar sesión",
+    "startTimer": "Iniciar temporizador",
+    "running": "En curso",
+    "paused": "En pausa",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "log": "Registrar sesión",
+    "discard": "Descartar",
+    "discardTitle": "¿Descartar esta sesión?",
+    "discardBody": "El temporizador se detiene y su tiempo no se registra.",
+    "keep": "Mantener sesión",
+    "replaceTitle": "¿Reemplazar la sesión actual?",
+    "replaceBody": "Hay una sesión activa de {{title}}. Su tiempo no se registra si empiezas otra.",
+    "replace": "Empezar otra sesión",
+    "openCurrent": "Abrir la sesión actual",
+    "empty": "No hay ninguna sesión activa",
+    "emptyBody": "Inicia una sesión desde la página de un media, desde Inicio o desde el log rápido.",
+    "goHome": "Ir a Inicio",
+    "notificationsOff": "Las notificaciones están desactivadas, así que el temporizador solo se ve en la app.",
+    "pickTitle": "Iniciar una sesión",
+    "recent": "Media reciente",
+    "search": "Buscar media",
+    "searchPlaceholder": "Título",
+    "noRecent": "Todavía no hay media reciente.",
+    "noResults": "Sin resultados",
+    "startedAt": "Empezó a las {{time}}",
+    "openSession": "Abrir sesión"
   }
 }

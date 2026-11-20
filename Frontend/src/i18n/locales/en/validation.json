@@ -51,10 +51,14 @@
     "mismatch": "Passwords do not match",
     "required": "Password is required"
   },
+  "terms": {
+    "required": "Accept the Terms of Service and Privacy Policy to continue"
+  },
   "username": {
     "charset": "Username can only contain letters, numbers, hyphens, and underscores",
     "maxLength": "Username must be less than 20 characters",
     "minLength": "Username must be at least 1 character",
+    "registerMinLength": "Username must be at least 3 characters",
     "required": "Username is required"
   }
 }

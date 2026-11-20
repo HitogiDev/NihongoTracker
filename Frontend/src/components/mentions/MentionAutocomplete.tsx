@@ -173,7 +173,7 @@ export default function MentionAutocomplete({
               )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{title}</span>
-                <span className="block truncate text-xs text-base-content/60">
+                <span className="block truncate text-xs text-base-content/70">
                   {t(MENTION_MEDIA_TYPE_LABEL_KEYS[media.type])}
                 </span>
               </span>
@@ -423,7 +423,7 @@ export default function MentionAutocomplete({
               {userCount > 0 && (
                 <li
                   role="presentation"
-                  className="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-base-content/50"
+                  className="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-base-content/70"
                 >
                   {t('mentions.users')}
                 </li>
@@ -434,7 +434,7 @@ export default function MentionAutocomplete({
               {mediaCount > 0 && (
                 <li
                   role="presentation"
-                  className="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-base-content/50"
+                  className="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-base-content/70"
                 >
                   {t('mentions.media')}
                 </li>
@@ -447,7 +447,7 @@ export default function MentionAutocomplete({
               {showNoResults && (
                 <li
                   role="presentation"
-                  className="px-2.5 py-2 text-xs text-base-content/60"
+                  className="px-2.5 py-2 text-xs text-base-content/70"
                 >
                   {t('mentions.noResults', { query: debouncedQuery })}
                 </li>
@@ -457,7 +457,7 @@ export default function MentionAutocomplete({
               )}
               {renderOption(options[options.length - 1], options.length - 1)}
             </ul>
-            <p className="hidden border-t border-base-300 px-3 py-1.5 text-[0.7rem] text-base-content/50 sm:block">
+            <p className="hidden border-t border-base-300 px-3 py-1.5 text-[0.7rem] text-base-content/70 sm:block">
               {t('mentions.keyboardHint')}
             </p>
           </div>,

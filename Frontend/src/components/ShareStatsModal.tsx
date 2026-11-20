@@ -433,7 +433,7 @@ export default function ShareStatsModal({
             {effectiveDesign.showTopMedia && (
               <>
                 {stats && !stats.topMedia?.length && (
-                  <p className="text-xs text-base-content/60">
+                  <p className="text-xs text-base-content/70">
                     {t('share.noTopMedia')}
                   </p>
                 )}
@@ -606,7 +606,7 @@ export default function ShareStatsModal({
                   <span>
                     {t('share.useBanner')}
                     {!profile?.banner && (
-                      <span className="block text-xs text-base-content/60">
+                      <span className="block text-xs text-base-content/70">
                         {t('share.noBanner')}
                       </span>
                     )}
@@ -663,7 +663,7 @@ export default function ShareStatsModal({
           aria-busy={busy}
         >
           {mode === 'custom' && !customReady ? (
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-base-content/70">
               {t('share.pickDates')}
             </p>
           ) : failed ? (

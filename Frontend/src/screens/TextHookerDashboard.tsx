@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Field from '../components/ui/Field';
 import { useTranslation } from 'react-i18next';
@@ -356,13 +357,14 @@ function TextHookerDashboard() {
                       />
                     ) : (
                       <div className="w-full aspect-[2/3] surface-muted flex items-center justify-center">
-                        <FileText className="w-10 h-10 text-base-content/30" />
+                        <FileText className="w-10 h-10 text-base-content/70" />
                       </div>
                     )}
                     <button
                       onClick={(e) => handleDelete(e, sessionKey, title)}
-                      className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-error text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-error text-white rounded-full opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100 transition-all duration-200"
                       title={t('dashboard.deleteSession')}
+                      aria-label={t('dashboard.deleteSession')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -400,7 +402,7 @@ function TextHookerDashboard() {
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-base-content/50 mt-2">
+                    <div className="text-xs text-base-content/70 mt-2">
                       {new Date(
                         session.updatedAt || session.createdAt
                       ).toLocaleDateString()}
@@ -414,11 +416,11 @@ function TextHookerDashboard() {
 
         {sessions?.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
-            <BookOpen className="w-16 h-16 text-base-content/30 mb-4" />
+            <BookOpen className="w-16 h-16 text-base-content/70 mb-4" />
             <p className="text-xl text-base-content/70 mb-2">
               {t('dashboard.empty')}
             </p>
-            <p className="text-base-content/50 mb-4 text-center">
+            <p className="text-base-content/70 mb-4 text-center">
               {t('dashboard.emptyBody')}
             </p>
             <button
@@ -569,7 +571,7 @@ function TextHookerDashboard() {
                 }}
               >
                 {isCheckingRoom ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : roomMode === 'host' ? (
                   t('room.create')
                 ) : (
@@ -685,7 +687,7 @@ function TextHookerDashboard() {
                   })}
                 />
                 {isSearching && (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 )}
               </label>
             </div>
@@ -723,7 +725,7 @@ function TextHookerDashboard() {
                         </p>
                         {media.title?.contentTitleEnglish &&
                           media.title?.contentTitleNative && (
-                            <p className="text-xs text-base-content/60 line-clamp-1">
+                            <p className="text-xs text-base-content/70 line-clamp-1">
                               {media.title.contentTitleEnglish}
                             </p>
                           )}
@@ -737,12 +739,12 @@ function TextHookerDashboard() {
                   ))}
                 </div>
               ) : searchQuery.trim() && !isSearching ? (
-                <div className="text-center py-8 text-base-content/50">
+                <div className="text-center py-8 text-base-content/70">
                   <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   <p>{t('mediaSession.noResults')}</p>
                 </div>
               ) : !searchQuery.trim() ? (
-                <div className="text-center py-8 text-base-content/50">
+                <div className="text-center py-8 text-base-content/70">
                   {mediaSessionType === 'vn' ? (
                     <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   ) : (
@@ -842,7 +844,7 @@ function TextHookerDashboard() {
                 onClick={handleCreateBlankSession}
               >
                 {createBlankSessionMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   t('dashboard.startSession')
                 )}
@@ -893,7 +895,7 @@ function TextHookerDashboard() {
                 </p>
               </div>
             )}
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-base-content/70">
               This action cannot be undone. All lines and progress will be
               permanently deleted.
             </p>
@@ -916,7 +918,7 @@ function TextHookerDashboard() {
                 onClick={confirmDelete}
               >
                 {deleteMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4" />

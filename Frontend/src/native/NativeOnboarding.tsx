@@ -91,7 +91,7 @@ export default function NativeOnboarding({ account }: { account: string }) {
           }
         >
           <div className="space-y-2">
-            <p className="text-xs font-medium text-base-content/60">
+            <p className="text-xs font-medium text-base-content/70">
               {t("onboarding.step", {
                 current: step + 1,
                 total: ONBOARDING_STEP_COUNT,
@@ -157,7 +157,7 @@ export default function NativeOnboarding({ account }: { account: string }) {
               <p className="text-center font-medium">
                 {t("onboarding.welcome.media")}
               </p>
-              <p className="text-center text-sm text-base-content/65">
+              <p className="text-center text-sm text-base-content/70">
                 {t("onboarding.welcome.hint")}
               </p>
             </div>
@@ -166,7 +166,7 @@ export default function NativeOnboarding({ account }: { account: string }) {
           {screen === "logs" && (
             <>
               <div className="surface space-y-4 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                <p className="text-xs font-semibold uppercase tracking-wide text-base-content/70">
                   {t("onboarding.logs.example")}
                 </p>
                 <div className="flex items-center gap-3">
@@ -178,14 +178,14 @@ export default function NativeOnboarding({ account }: { account: string }) {
                     <p className="font-semibold">
                       {t("onboarding.logs.session")}
                     </p>
-                    <p className="text-sm text-base-content/65">
+                    <p className="text-sm text-base-content/70">
                       {t("onboarding.logs.duration")}
                     </p>
                   </div>
                   <span className="badge badge-primary shrink-0">+ XP</span>
                 </div>
               </div>
-              <p className="text-center text-sm text-base-content/65">
+              <p className="text-center text-sm text-base-content/70">
                 {t("onboarding.logs.hint")}
               </p>
             </>
@@ -209,7 +209,7 @@ export default function NativeOnboarding({ account }: { account: string }) {
                     <p className="font-semibold">
                       {t(`onboarding.progress.${id}Title`)}
                     </p>
-                    <p className="text-sm text-base-content/65">
+                    <p className="text-sm text-base-content/70">
                       {t(`onboarding.progress.${id}Description`)}
                     </p>
                   </div>
@@ -228,12 +228,12 @@ export default function NativeOnboarding({ account }: { account: string }) {
                       {t("onboarding.plans.price", { price: plan.price })}
                     </p>
                   </div>
-                  <p className="text-sm text-base-content/65">
+                  <p className="text-sm text-base-content/70">
                     {t(`onboarding.plans.${plan.id}`)}
                   </p>
                 </section>
               ))}
-              <p className="text-center text-xs text-base-content/60">
+              <p className="text-center text-xs text-base-content/70">
                 {t("onboarding.plans.hint")}
               </p>
             </div>

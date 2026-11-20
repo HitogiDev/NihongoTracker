@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
+import '../utils/gsapReducedMotion';
 import { confetti } from '@tsparticles/confetti';
 import { Volume2, VolumeX, TrendingUp, Flame, Swords } from 'lucide-react';
 import { ILogCelebration } from '../types';
@@ -98,6 +99,7 @@ export default function LogCelebration({
 
     // Small burst from the center where the check pops.
     void confetti({
+      disableForReducedMotion: true,
       particleCount: 45,
       spread: 75,
       startVelocity: 28,
@@ -200,6 +202,7 @@ export default function LogCelebration({
 
     // Side streams celebrate the pass.
     void confetti({
+      disableForReducedMotion: true,
       particleCount: 60,
       angle: 60,
       spread: 55,
@@ -207,6 +210,7 @@ export default function LogCelebration({
       zIndex: 10000,
     });
     void confetti({
+      disableForReducedMotion: true,
       particleCount: 60,
       angle: 120,
       spread: 55,
@@ -227,6 +231,7 @@ export default function LogCelebration({
     if (won) {
       playLevelUp();
       void confetti({
+        disableForReducedMotion: true,
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
@@ -413,7 +418,7 @@ export default function LogCelebration({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-base-content/60">
+                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-base-content/70">
                       {u.username.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -427,7 +432,7 @@ export default function LogCelebration({
                 @{shownOvertaken[0]?.username}
               </span>
               {overtaken.length > 1 && (
-                <span className="text-base-content/60 font-semibold">
+                <span className="text-base-content/70 font-semibold">
                   {' '}
                   and {overtaken.length - 1} more
                 </span>
@@ -436,7 +441,7 @@ export default function LogCelebration({
             </div>
 
             <div className="flex items-baseline gap-3 text-3xl font-black">
-              <span ref={rankFromRef} className="text-base-content/40">
+              <span ref={rankFromRef} className="text-base-content/70">
                 #{rank.previousRank}
               </span>
               <span className="text-primary text-2xl self-center">→</span>

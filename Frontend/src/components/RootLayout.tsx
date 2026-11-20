@@ -3,9 +3,11 @@ import AchievementRevealHost from './achievements/AchievementRevealHost';
 import LanguageSync from './LanguageSync';
 import LogCelebrationHost from './LogCelebrationHost';
 import OfflineSyncStatus from './OfflineSyncStatus';
+import { ConfirmDialogHost } from './ui/ConfirmDialog';
 import NativeAppLifecycle from './NativeAppLifecycle';
 import NativeWidgetSync from '../native/NativeWidgetSync';
-import { isNativeApp } from '../utils/nativeRuntime';
+import NativeSessionTimerSync from '../native/NativeSessionTimerSync';
+import { isMobileApp, isNativeApp } from '../utils/nativeRuntime';
 
 /**
  * Outermost layout: sits above both the texthooker routes and the main
@@ -19,8 +21,10 @@ export default function RootLayout() {
       <LogCelebrationHost />
       <AchievementRevealHost />
       <OfflineSyncStatus />
+      <ConfirmDialogHost />
       <NativeAppLifecycle />
       {isNativeApp() && <NativeWidgetSync />}
+      {isMobileApp() && <NativeSessionTimerSync />}
       <Outlet />
     </>
   );

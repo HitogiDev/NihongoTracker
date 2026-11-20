@@ -558,7 +558,7 @@ function ListScreen() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-base-200">
-        <div className="bg-base-100 border-b border-base-300 sticky top-0 z-30">
+        <div className="bg-base-100 border-b border-base-300 sticky top-(--site-header-offset) follow-site-header z-30">
           <div className="container mx-auto px-4 py-4">
             <div className="skeleton h-8 w-48 mb-3 rounded-lg" />
             <div className="flex gap-2">
@@ -751,7 +751,7 @@ function ListScreen() {
                 disabled={removeMediaMutation.isPending}
               >
                 {removeMediaMutation.isPending ? (
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
@@ -999,7 +999,7 @@ function ListScreen() {
                       title={grouped ? t('list.ungroupBy') : t('list.groupBy')}
                     >
                       {isPendingGroup ? (
-                        <span className="loading loading-spinner loading-xs" />
+                        <Spinner size="xs" />
                       ) : (
                         <Layers className="w-4 h-4" />
                       )}
@@ -1101,7 +1101,7 @@ function ListScreen() {
           >
             {isPendingGroup && (
               <div className="absolute inset-0 z-10 flex items-center justify-center">
-                <span className="loading loading-spinner loading-md text-primary" />
+                <Spinner size="md" className="text-primary" />
               </div>
             )}
             {Object.keys(groupedMedia).includes('ungrouped') ? (
@@ -1109,7 +1109,7 @@ function ListScreen() {
                 <div className="text-center py-20">
                   <div className="max-w-md mx-auto space-y-4">
                     <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                      <Bookmark className="w-12 h-12 text-base-content/40" />
+                      <Bookmark className="w-12 h-12 text-base-content/70" />
                     </div>
                     <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                     <p className="text-base-content/70">
@@ -1168,7 +1168,7 @@ function ListScreen() {
               <div className="text-center py-20">
                 <div className="max-w-md mx-auto space-y-4">
                   <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                    <Bookmark className="w-12 h-12 text-base-content/40" />
+                    <Bookmark className="w-12 h-12 text-base-content/70" />
                   </div>
                   <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                   <p className="text-base-content/70">
@@ -1301,7 +1301,7 @@ function MediaGroup({
         </div>
         <div>
           <h2 className="text-xl font-bold">{config.label}</h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {tCommon('list.itemsCount', { count, ns: 'media' })}
           </p>
         </div>
@@ -1451,9 +1451,10 @@ function MediaCard({
   const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
+  // `isolate` keeps the z-40 card controls below the z-40 app header.
   return (
     <div
-      className={`card relative focus-within:z-30 bg-base-100 shadow-sm transition-all duration-300 group cursor-pointer border ${isStatusMenuOpen ? '' : 'hover:shadow-lg'} ${config.border} ${selectionMode && selectedKeys.has(mediaSelectionKey(media)) ? 'ring-2 ring-primary' : ''}`}
+      className={`card relative isolate focus-within:z-30 bg-base-100 shadow-sm transition-all duration-300 group cursor-pointer border ${isStatusMenuOpen ? '' : 'hover:shadow-lg'} ${config.border} ${selectionMode && selectedKeys.has(mediaSelectionKey(media)) ? 'ring-2 ring-primary' : ''}`}
       onClick={handleCardClick}
     >
       {isOwnProfile && selectionMode && (
@@ -1512,7 +1513,7 @@ function MediaCard({
             aria-label={t('list.setStatus')}
           >
             {isToggling ? (
-              <span className="loading loading-spinner loading-xs" />
+              <Spinner size="xs" />
             ) : statusCfg ? (
               <statusCfg.icon className="w-4 h-4" />
             ) : (
@@ -1597,7 +1598,8 @@ function MediaCard({
         {isOwnProfile && !selectionMode && (
           <button
             type="button"
-            className={`btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm opacity-0 transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none' : 'group-hover:opacity-100'}`}
+            className={`btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100'}`}
+            aria-label={t('list.quickLog')}
             onClick={(e) => {
               e.stopPropagation();
               onLogMedia(media);
@@ -1620,7 +1622,7 @@ function MediaCard({
 
           {media.title.contentTitleEnglish && (
             <p
-              className="text-xs text-base-content/60 line-clamp-1"
+              className="text-xs text-base-content/70 line-clamp-1"
               title={media.title.contentTitleEnglish}
             >
               {media.title.contentTitleEnglish}
@@ -1860,13 +1862,13 @@ function MediaListItem({
               </div>
 
               {media.title.contentTitleEnglish && (
-                <p className="mb-2 break-words text-sm text-base-content/60">
+                <p className="mb-2 break-words text-sm text-base-content/70">
                   {media.title.contentTitleEnglish}
                 </p>
               )}
 
               {media.title.contentTitleRomaji && (
-                <p className="mb-2 break-words text-xs text-base-content/50">
+                <p className="mb-2 break-words text-xs text-base-content/70">
                   {media.title.contentTitleRomaji}
                 </p>
               )}

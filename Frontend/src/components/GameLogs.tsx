@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useAutoMatch } from '../hooks/useAutoMatch';
 import { useMatchingSelection } from '../hooks/useMatchingSelection';
 import { useMediaAssignment } from '../hooks/useMediaAssignment';
@@ -49,7 +51,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
   } = useSearch('game', shouldSearch ? searchQuery : '');
 
   if (searchError && searchError instanceof AxiosError) {
-    toast.error(searchError.response?.data.message);
+    toast.error(getApiErrorMessage(searchError));
   }
 
   const groupedLogs = useGroupLogs(logs, 'game');
@@ -94,7 +96,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -130,7 +132,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
               <span
                 className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
@@ -141,7 +143,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
               ></span>
             </div>
 
-            <div className="text-xs text-base-content/50 mt-2">
+            <div className="text-xs text-base-content/70 mt-2">
               {t('matcher.fetching')}
             </div>
           </div>
@@ -223,7 +225,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -374,7 +376,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.game'),
@@ -503,7 +505,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

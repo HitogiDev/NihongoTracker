@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import OfflineImage from '../components/OfflineImage';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Field from '../components/ui/Field';
@@ -52,6 +53,7 @@ import LogPrivacyToggle from '../components/LogPrivacyToggle';
 import { useNavigate } from 'react-router-dom';
 import { isMobileApp } from '../utils/nativeRuntime';
 import { useNativeUnsavedChanges } from '../native/NativeDirtyContext';
+import UnsavedChangesGuard from '../components/UnsavedChangesGuard';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -236,14 +238,14 @@ function LogScreen() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const videoQueueKeyRef = useRef(0);
   const mediaInputRef = useRef<HTMLInputElement>(null);
-  const clearNativeDirty = useNativeUnsavedChanges(nativeDirty || Boolean(
+  const hasDraft = nativeDirty || Boolean(
     logData.mediaId || logData.mediaName || logData.hours || logData.minutes ||
     logData.watchedEpisodes || logData.readChars || logData.readPages || selectedTags.length ||
     videoQueue.length
-  ));
+  );
+  const clearNativeDirty = useNativeUnsavedChanges(hasDraft);
   const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [isFormValid, setIsFormValid] = useState(false);
   const parsedDateInput = parseDateValue(dateInput);
   const isDateInputInvalid =
     !logData.unknownDate &&
@@ -768,13 +770,7 @@ function LogScreen() {
     );
 
     setErrors(validation.errors);
-    setIsFormValid(
-      validation.isValid &&
-        !!logData.type &&
-        !!logData.mediaName.trim() &&
-        !isDateInputInvalid
-    );
-  }, [logData, touched, isDateInputInvalid]);
+  }, [logData, touched]);
 
   const handleInputChange = (
     field: keyof typeof logData,
@@ -1071,7 +1067,7 @@ function LogScreen() {
               className="hidden sm:block w-20 aspect-video shrink-0 rounded-box object-cover"
             />
           ) : (
-            <span className="hidden sm:flex w-20 aspect-video shrink-0 items-center justify-center rounded-box bg-base-300 text-base-content/50">
+            <span className="hidden sm:flex w-20 aspect-video shrink-0 items-center justify-center rounded-box bg-base-300 text-base-content/70">
               <Clapperboard className="w-5 h-5" />
             </span>
           )}
@@ -1210,7 +1206,6 @@ function LogScreen() {
                         setActiveVideoIndex(0);
                         setTouched({});
                         setErrors({});
-                        setIsFormValid(false);
                         setIsSuggestionsOpen(false);
                         setIsAdvancedOptions(false);
                       }}
@@ -1325,9 +1320,9 @@ function LogScreen() {
                             }}
                             value={logData.mediaName}
                           />
-                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50">
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/70">
                             {isSearching ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : (
                               <Search className="w-6 h-6" />
                             )}
@@ -1427,7 +1422,7 @@ function LogScreen() {
                             )}
                           {isSuggestionsOpen && isSearching && (
                             <div className="alert mt-1">
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                               <span>
                                 {logData.type === 'video'
                                   ? t('create.searchingYoutube')
@@ -2016,7 +2011,7 @@ function LogScreen() {
                 </div>
 
                 <div className="lg:col-span-2">
-                  <div className="card surface sticky top-24">
+                  <div className="card surface sticky top-[calc(var(--site-header-offset)+1rem)] follow-site-header">
                     <div className="card-body">
                       <h2 className="card-title">{t('create.preview')}</h2>
                       <div className="flex flex-col items-center justify-center min-h-[300px] surface-muted p-4">
@@ -2053,7 +2048,7 @@ function LogScreen() {
                             )}
                           </div>
                         ) : (
-                          <div className="text-center text-base-content/60">
+                          <div className="text-center text-base-content/70">
                             <Info className="w-12 h-12 mx-auto mb-4" />
                             <p>
                               {logData.type
@@ -2112,16 +2107,10 @@ function LogScreen() {
                     <button
                       className="btn btn-primary btn-lg w-full"
                       type="submit"
-                      disabled={
-                        isLogCreating ||
-                        isBatchLogging ||
-                        (hasVideoQueue
-                          ? !isCurrentVideoEmpty && !isFormValid
-                          : !isFormValid)
-                      }
+                      disabled={isLogCreating || isBatchLogging}
                     >
                       {isLogCreating || isBatchLogging ? (
-                        <span className="loading loading-spinner loading-md"></span>
+                        <Spinner size="md" />
                       ) : (
                         <CircleCheck className="w-6 h-6" />
                       )}
@@ -2140,6 +2129,8 @@ function LogScreen() {
           </form>
         </div>
 
+        <UnsavedChangesGuard dirty={hasDraft && !isLogCreating} />
+
         <PlaylistSelectorModal
           isOpen={playlistModalOpen}
           isFetching={isFetchingPlaylist}
@@ -2156,7 +2147,7 @@ function LogScreen() {
 
         {isBatchLogging && batchProgress && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] surface-raised border border-base-content/20 px-6 py-4 flex items-center gap-4 min-w-72">
-            <span className="loading loading-spinner loading-sm text-primary" />
+            <Spinner size="sm" className="text-primary" />
             <div className="flex-1">
               <p className="text-sm font-semibold">
                 {playlistModalOpen
@@ -2168,7 +2159,7 @@ function LogScreen() {
                 value={batchProgress.current}
                 max={batchProgress.total}
               />
-              <p className="text-xs text-base-content/60 mt-0.5">
+              <p className="text-xs text-base-content/70 mt-0.5">
                 {batchProgress.current} / {batchProgress.total}
               </p>
             </div>

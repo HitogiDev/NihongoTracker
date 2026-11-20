@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import DropdownSelect from './ui/DropdownSelect';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -246,7 +247,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       <div className="card surface">
         <div className="card-body">
           <div className="flex justify-center">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
+            <Spinner size="lg" className="text-primary" />
           </div>
         </div>
       </div>
@@ -350,7 +351,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             <div className="text-xs font-medium text-base-content/70">
                               {t(config.labelKey as ParseKeys<'goals'>)}
                             </div>
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-xs text-base-content/70">
                               {goal.mediaType
                                 ? t(
                                     `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
@@ -507,14 +508,14 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             {goal.type !== 'time' ? ` ${config.unit}` : ''}{' '}
                             {t(config.labelKey as ParseKeys<'goals'>)} Goal
                           </h4>
-                          <div className="text-xs text-base-content/60">
+                          <div className="text-xs text-base-content/70">
                             {goal.mediaType
                               ? t(
                                   `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
                                 )
                               : t('common:allMediaTypes')}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-base-content/60 mt-0.5">
+                          <div className="flex items-center gap-2 text-xs text-base-content/70 mt-0.5">
                             <CalendarClock className="w-3 h-3 flex-shrink-0" />
                             <span>
                               Due{' '}
@@ -530,7 +531,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             </span>
                             {progress && (
                               <>
-                                <span className="text-base-content/30">·</span>
+                                <span className="text-base-content/70">·</span>
                                 <span className={`text-${statusColor}`}>
                                   {getRemainingTimeText(goal, isCompleted)}
                                 </span>
@@ -587,7 +588,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                   goal.type
                                 )}
                               </span>
-                              <span className="text-sm text-base-content/50 ml-1">
+                              <span className="text-sm text-base-content/70 ml-1">
                                 /{' '}
                                 {formatLongTermProgress(
                                   goal.totalTarget,
@@ -650,7 +651,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                 {t('widget.done')}
                               </span>
                             ) : (
-                              <span className="text-xs text-base-content/50">
+                              <span className="text-xs text-base-content/70">
                                 {formatLongTermProgress(
                                   pace?.remaining ?? 0,
                                   goal.type
@@ -689,7 +690,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               {goal.type !== 'time' && ` ${config.unit}`}
                             </span>
                             {!pace?.completed && (
-                              <span className="text-base-content/50 tabular-nums">
+                              <span className="text-base-content/70 tabular-nums">
                                 {formatLongTermProgress(
                                   pace?.requirement ?? 0,
                                   goal.type
@@ -701,7 +702,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-base-content/50">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-base-content/70">
                           <span className="tabular-nums">
                             <span className="font-medium text-base-content/70">
                               {t('widget.remaining')}
@@ -778,7 +779,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               </div>
               <div>
                 <h3 className="font-bold text-lg">{t('modal.editGoal')}</h3>
-                <p className="text-xs text-base-content/60">
+                <p className="text-xs text-base-content/70">
                   {t('modal.adjustTarget', {
                     type: t(
                       goalTypeConfig[editingGoal.type]
@@ -973,7 +974,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 >
                   {updateMutation.isPending ? (
                     <>
-                      <span className="loading loading-spinner loading-sm"></span>
+                      <Spinner size="sm" />
                       {t('modal.saving')}
                     </>
                   ) : (
@@ -1025,7 +1026,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                     {t('modal.deleting')}
                   </>
                 ) : (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import gsap from 'gsap';
+import '../../utils/gsapReducedMotion';
 import { confetti } from '@tsparticles/confetti';
 import { IPendingAchievement } from '../../types';
 import { Icon } from '@iconify/react';
@@ -85,6 +86,7 @@ export default function AchievementRevealModal({
 
         const color = RARITY_COLOR[cardRarity] ?? RARITY_COLOR.common;
         void confetti({
+          disableForReducedMotion: true,
           particleCount: RARITY_BURST[cardRarity] ?? 40,
           spread: cardRarity === 'legendary' ? 360 : 90,
           startVelocity: cardRarity === 'legendary' ? 45 : 30,

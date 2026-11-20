@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
@@ -180,7 +181,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
   if (isLoading) {
     return (
       <div className="w-full flex justify-center items-center h-20">
-        <span className="loading loading-spinner loading-md" />
+        <Spinner size="md" />
       </div>
     );
   }
@@ -208,7 +209,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-3 text-xs text-base-content/60">
+      <div className="flex items-center justify-between mt-3 text-xs text-base-content/70">
         <span>{t('heatmap.less')}</span>
         <div className="flex items-center gap-1">
           {[0, 1, 2, 3, 4].map((level) => (

@@ -89,7 +89,8 @@ export function nativeRoute(
       title: parts[2]
         ? (sectionTitles[parts[2]] ?? "native.profile")
         : "native.profile",
-      parent: parts[2] ? profile : own ? null : "/ranking",
+      // Without history, a foreign profile opened from a link returns to Home.
+      parent: parts[2] ? profile : own ? null : "/",
       tab: own ? "profile" : null,
       primary: own && !parts[2],
       screen: "profile",
@@ -159,6 +160,14 @@ export function nativeRoute(
       parent: "/records",
       tab: "records",
       screen: "log",
+    };
+  if (parts[0] === "session")
+    return {
+      ...base,
+      title: "titles.sessionTimer",
+      parent: "/",
+      tab: "home",
+      screen: "session",
     };
   if (titles[parts[0]])
     return {

@@ -1,6 +1,8 @@
+import Spinner from '../components/ui/Spinner';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, Calendar, History } from 'lucide-react';
+import QueryError from '../components/ui/QueryError';
 import { getClubMediaRankingsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
@@ -16,7 +18,13 @@ export default function ClubMediaRankings() {
   );
 
   // Fetch club member rankings for this media
-  const { data: clubRankingsData, isLoading: rankingsLoading } = useQuery({
+  const {
+    data: clubRankingsData,
+    isLoading: rankingsLoading,
+    error: rankingsError,
+    refetch: refetchRankings,
+    isFetching: rankingsFetching,
+  } = useQuery({
     queryKey: ['clubMediaRankings', clubId, mediaId, period],
     queryFn: () => getClubMediaRankingsFn(clubId!, mediaId!, period),
     enabled: !!clubId && !!mediaId && !!clubMedia,
@@ -25,7 +33,7 @@ export default function ClubMediaRankings() {
   if (!clubMedia) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="text-center py-12 text-base-content/60">
+        <div className="text-center py-12 text-base-content/70">
           <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
@@ -42,7 +50,7 @@ export default function ClubMediaRankings() {
                 <h3 className="card-title text-lg">
                   {t('media.rankingsTitle')}
                 </h3>
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   {t('media.rankingsSubtitle')}
                 </p>
               </div>
@@ -93,8 +101,14 @@ export default function ClubMediaRankings() {
 
             {rankingsLoading ? (
               <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-lg"></span>
+                <Spinner size="lg" />
               </div>
+            ) : rankingsError ? (
+              <QueryError
+                error={rankingsError}
+                onRetry={() => void refetchRankings()}
+                retrying={rankingsFetching}
+              />
             ) : clubRankingsData?.rankings &&
               clubRankingsData.rankings.length > 0 ? (
               <div className="space-y-3">
@@ -135,7 +149,7 @@ export default function ClubMediaRankings() {
                         <h4 className="font-semibold">
                           {ranking.user.username}
                         </h4>
-                        <div className="flex gap-4 text-xs text-base-content/60">
+                        <div className="flex gap-4 text-xs text-base-content/70">
                           <span>{ranking.totalLogs} logs</span>
                           {ranking.totalEpisodes > 0 && (
                             <span>{ranking.totalEpisodes} episodes</span>
@@ -154,7 +168,7 @@ export default function ClubMediaRankings() {
                         {ranking.totalXp.toLocaleString()} XP
                       </div>
                       {ranking.firstLog && (
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           Since{' '}
                           {new Date(ranking.firstLog).toLocaleDateString()}
                         </div>
@@ -164,7 +178,7 @@ export default function ClubMediaRankings() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-base-content/60">
+              <div className="text-center py-12 text-base-content/70">
                 <TrendingUp className="mx-auto text-4xl mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">
                   {t('media.rankingsEmpty')}

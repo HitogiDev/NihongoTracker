@@ -100,7 +100,7 @@ function Panel({
   return (
     <section className={`surface-muted flex flex-col gap-3 p-4 ${className}`}>
       {title && (
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/70">
           {title}
         </h3>
       )}
@@ -184,7 +184,7 @@ function TopMedia({
               <p className="line-clamp-3 font-semibold leading-tight">
                 {mediaTitle(first)}
               </p>
-              <p className="mt-1 text-xs text-base-content/60">
+              <p className="mt-1 text-xs text-base-content/70">
                 {formatNumber(hours(first.time), { maximumFractionDigits: 1 })}h
               </p>
             </div>
@@ -204,7 +204,7 @@ function TopMedia({
           )}
         </>
       ) : (
-        <p className="py-6 text-center text-sm text-base-content/60">{empty}</p>
+        <p className="py-6 text-center text-sm text-base-content/70">{empty}</p>
       )}
     </Panel>
   );
@@ -231,7 +231,7 @@ function MonthlyChart({
   });
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between text-[10px] text-base-content/60">
+      <div className="flex justify-between text-xs text-base-content/70">
         <span>{formatNumber(hours(max), { maximumFractionDigits: 0 })}h</span>
       </div>
       {/* Use color attributes, not classes. The PNG export does not copy class styles into SVG shapes. */}
@@ -260,7 +260,7 @@ function MonthlyChart({
             });
         })}
       </svg>
-      <div className="grid grid-cols-12 text-center text-[10px] text-base-content/60">
+      <div className="grid grid-cols-12 text-center text-xs text-base-content/70">
         {monthly.map((month) => (
           <span key={month.month}>
             {monthName.format(new Date(Date.UTC(2000, month.month - 1, 1)))}
@@ -330,7 +330,7 @@ function TypeBreakdown({ byType }: { byType: IWrappedStats['byType'] }) {
                   {TYPE_LABELS[row.type] ? t(TYPE_LABELS[row.type]) : row.type}
                 </span>
                 {amount && (
-                  <span className="block text-xs text-base-content/60">
+                  <span className="block text-xs text-base-content/70">
                     {pt(AMOUNT_KEYS[amount.key], {
                       count: amount.count,
                       value: formatNumber(amount.count),
@@ -338,7 +338,7 @@ function TypeBreakdown({ byType }: { byType: IWrappedStats['byType'] }) {
                   </span>
                 )}
               </span>
-              <span className="ml-auto text-base-content/60">
+              <span className="ml-auto text-base-content/70">
                 {row.time < 60
                   ? '<1h'
                   : `${formatNumber(hours(row.time), { maximumFractionDigits: 0 })}h`}
@@ -383,7 +383,7 @@ function FirstLastMedia({
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-      <span className="text-xs text-base-content/60">{label}</span>
+      <span className="text-xs text-base-content/70">{label}</span>
       {media ? (
         <>
           <Cover media={media} blurAdult={blurAdult} />
@@ -392,7 +392,7 @@ function FirstLastMedia({
           </span>
         </>
       ) : (
-        <span className="text-sm text-base-content/60">-</span>
+        <span className="text-sm text-base-content/70">-</span>
       )}
     </div>
   );
@@ -590,7 +590,7 @@ function WrappedCard({
                 <p className="truncate text-3xl font-black text-primary @5xl:text-4xl">
                   {number(totalHours)}
                 </p>
-                <p className="text-xs text-base-content/60">
+                <p className="text-xs text-base-content/70">
                   {t('wrapped.hours')}
                 </p>
               </div>
@@ -598,13 +598,13 @@ function WrappedCard({
                 <p className="truncate text-3xl font-black @5xl:text-4xl">
                   {number(totals.xp)}
                 </p>
-                <p className="text-xs text-base-content/60">XP</p>
+                <p className="text-xs text-base-content/70">XP</p>
               </div>
               <div>
                 <p className="truncate text-2xl font-bold">
                   {number(totals.chars)}
                 </p>
-                <p className="text-xs text-base-content/60">
+                <p className="text-xs text-base-content/70">
                   {t('wrapped.chars')}
                 </p>
               </div>
@@ -612,7 +612,7 @@ function WrappedCard({
                 <p className="truncate text-2xl font-bold">
                   {number(totals.episodes)}
                 </p>
-                <p className="text-xs text-base-content/60">
+                <p className="text-xs text-base-content/70">
                   {t('wrapped.episodes')}
                 </p>
               </div>
@@ -647,7 +647,7 @@ function WrappedCard({
                   ? t('wrapped.topPercent', { percent: topPercent })
                   : '-'}
               </p>
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-base-content/70">
                 {t('wrapped.percentileHint')}
               </p>
             </Panel>
@@ -659,7 +659,7 @@ function WrappedCard({
                   ? `${delta > 0 ? '+' : ''}${delta}%`
                   : t('wrapped.firstYear')}
               </p>
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-base-content/70">
                 {t('wrapped.vsLastYearHint')}
               </p>
             </Panel>
@@ -798,7 +798,7 @@ export default function WrappedScreen() {
   if (isError || !stats) {
     return (
       <div className="flex justify-center px-4 py-12">
-        <p className="text-base-content/60">{t('wrapped.unavailable')}</p>
+        <p className="text-base-content/70">{t('wrapped.unavailable')}</p>
       </div>
     );
   }

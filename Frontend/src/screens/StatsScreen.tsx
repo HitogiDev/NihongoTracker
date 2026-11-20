@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useRef, useState, useCallback } from 'react';
 import type { ParseKeys } from 'i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -80,6 +81,7 @@ import {
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
 import { useTranslation } from 'react-i18next';
+import Button from '../components/ui/Button';
 
 // Module scope: `t` does not exist here and a plain English label would
 // never react to a language switch, so store keys and translate at render.
@@ -387,7 +389,7 @@ function SortableStatCard({
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="w-4 h-4 text-base-content/40 hover:text-base-content/70" />
+        <GripVertical className="w-4 h-4 text-base-content/70 hover:text-base-content/70" />
       </div>
       <button
         type="button"
@@ -396,9 +398,9 @@ function SortableStatCard({
         title={visible ? t('layout.hideCard') : t('layout.showCard')}
       >
         {visible ? (
-          <Eye className="w-4 h-4 text-base-content/60" />
+          <Eye className="w-4 h-4 text-base-content/70" />
         ) : (
-          <EyeOff className="w-4 h-4 text-base-content/40" />
+          <EyeOff className="w-4 h-4 text-base-content/70" />
         )}
       </button>
       <div className="pl-7 pr-8">{children}</div>
@@ -455,10 +457,10 @@ function SortableGroup({
               {...attributes}
               {...listeners}
             >
-              <GripVertical className="w-4 h-4 text-base-content/40 hover:text-base-content/70" />
+              <GripVertical className="w-4 h-4 text-base-content/70 hover:text-base-content/70" />
             </div>
           )}
-          <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+          <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/70 font-semibold">
             {label}
           </h3>
         </div>
@@ -470,9 +472,9 @@ function SortableGroup({
             title={visible ? t('layout.hideGroup') : t('layout.showGroup')}
           >
             {visible ? (
-              <Eye className="w-4 h-4 text-base-content/50" />
+              <Eye className="w-4 h-4 text-base-content/70" />
             ) : (
-              <EyeOff className="w-4 h-4 text-base-content/30" />
+              <EyeOff className="w-4 h-4 text-base-content/70" />
             )}
           </button>
         )}
@@ -484,6 +486,7 @@ function SortableGroup({
 
 function StatsScreen() {
   const { t } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   // `t` cannot be typed over a union of keys, and CATEGORY_OPTIONS is
   // `as const`. The keys themselves are still checked in the array.
   const tTab = t as (
@@ -675,14 +678,14 @@ function StatsScreen() {
             {!editMode ? (
               <button
                 type="button"
-                className="btn btn-ghost btn-sm gap-2 text-base-content/60 hover:text-base-content"
+                className="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content"
                 onClick={handleEnterEditMode}
               >
                 <Pencil className="w-4 h-4" /> {t('layout.edit')}
               </button>
             ) : (
               <div className="flex items-center gap-2 flex-wrap w-full">
-                <span className="text-sm text-base-content/60">
+                <span className="text-sm text-base-content/70">
                   {t('layout.hint')}
                 </span>
                 <div className="flex gap-2 ml-auto">
@@ -700,7 +703,7 @@ function StatsScreen() {
                     disabled={layoutMutation.isPending}
                   >
                     {layoutMutation.isPending ? (
-                      <span className="loading loading-spinner loading-xs" />
+                      <Spinner size="xs" />
                     ) : (
                       t('layout.save')
                     )}
@@ -795,7 +798,12 @@ function StatsScreen() {
   const includedTagsParam = includedTags.join(',');
   const excludedTagsParam = excludedTags.join(',');
 
-  const { data: userStats, isLoading } = useQuery({
+  const {
+    data: userStats,
+    isLoading,
+    refetch: refetchStats,
+    isFetching: statsFetching,
+  } = useQuery({
     queryKey: [
       'user-stats',
       username,
@@ -1109,7 +1117,7 @@ function StatsScreen() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <Spinner size="lg" className="text-primary" />
           <p className="mt-4 text-base-content/70">{t('loading')}</p>
         </div>
       </div>
@@ -1121,9 +1129,18 @@ function StatsScreen() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-base-content/70">{t('loadFailed')}</p>
-          <p className="text-base-content/50 text-sm mt-2">
+          <p className="text-base-content/70 text-sm mt-2">
             {t('loadFailedHint')}
           </p>
+          <div className="mt-4">
+            <Button
+              size="sm"
+              loading={statsFetching}
+              onClick={() => void refetchStats()}
+            >
+              {tCommon('errors.retry')}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -1248,7 +1265,7 @@ function StatsScreen() {
                               />
                             </div>
                           </div>
-                          <span className="text-center text-base-content/50">
+                          <span className="text-center text-base-content/70">
                             {t('filters.rangeTo')}
                           </span>
                           <div className="dropdown dropdown-bottom">
@@ -1612,7 +1629,7 @@ function StatsScreen() {
                         <Zap className="w-6 h-6 text-primary" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">
+                    <p className="text-xs text-base-content/70 mt-2">
                       {isAllTypesSelected
                         ? t('hints.xpAll', { period: periodLabel })
                         : t('hints.xp', {
@@ -1644,7 +1661,7 @@ function StatsScreen() {
                         <Clock3 className="w-6 h-6 text-secondary" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">
+                    <p className="text-xs text-base-content/70 mt-2">
                       {isAllTypesSelected
                         ? t('hints.timeAll', { period: periodLabel })
                         : t('hints.time', {
@@ -1672,7 +1689,7 @@ function StatsScreen() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-base-content/60">
+                      <p className="text-xs text-base-content/70">
                         {isAllTypesSelected
                           ? t('hints.logCountAll')
                           : t('hints.logCount', {
@@ -1714,7 +1731,7 @@ function StatsScreen() {
                         <Timer className="w-6 h-6 text-secondary" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">
+                    <p className="text-xs text-base-content/70 mt-2">
                       {isAllTypesSelected
                         ? t('hints.dailyAverageAll', { period: periodLabel })
                         : t('hints.dailyAverage', {
@@ -1744,7 +1761,7 @@ function StatsScreen() {
                         <Flame className="w-6 h-6 text-warning" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">
+                    <p className="text-xs text-base-content/70 mt-2">
                       {t('cards.currentStreakHint')}
                     </p>
                   </div>
@@ -1769,7 +1786,7 @@ function StatsScreen() {
                         <Star className="w-6 h-6 text-info" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">
+                    <p className="text-xs text-base-content/70 mt-2">
                       {t('cards.longestStreakHint')}
                     </p>
                   </div>
@@ -1794,7 +1811,7 @@ function StatsScreen() {
                         {t('units.hours')}
                       </span>
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {t('cards.readingHint')}
                     </p>
                   </div>
@@ -1819,7 +1836,7 @@ function StatsScreen() {
                         {t('units.hours')}
                       </span>
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {t('cards.listeningHint')}
                     </p>
                   </div>
@@ -1850,7 +1867,7 @@ function StatsScreen() {
                         return `${rr / d}:${ll / d}`;
                       })()}
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {t('cards.balanceHint')}
                     </p>
                   </div>
@@ -1870,7 +1887,7 @@ function StatsScreen() {
                     <p className="text-2xl font-bold">
                       {numberWithCommas(episodeTotals)}
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {episodeHint}
                     </p>
                   </div>
@@ -1893,7 +1910,7 @@ function StatsScreen() {
                         {t('units.charsPerHour')}
                       </span>
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {t('cards.avgReadingSpeedHint')}
                     </p>
                   </div>
@@ -1937,7 +1954,7 @@ function StatsScreen() {
                         {t('units.chars')}
                       </span>
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {isAllTypesSelected
                         ? t('hints.dailyCharsAll', { period: periodLabel })
                         : t('hints.dailyChars', {
@@ -1981,7 +1998,7 @@ function StatsScreen() {
                     <p className="text-2xl font-bold">
                       {numberWithCommas(totalChars)}
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {isAllTypesSelected
                         ? t('hints.charsAll')
                         : t('hints.chars', { types: selectedTypesDescriptor })}
@@ -2003,7 +2020,7 @@ function StatsScreen() {
                     <p className="text-2xl font-bold">
                       {numberWithCommas(totalPages)}
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-xs text-base-content/70 mt-1">
                       {isAllTypesSelected
                         ? t('hints.pagesAll')
                         : t('hints.pages', { types: selectedTypesDescriptor })}
@@ -2207,7 +2224,7 @@ function StatsScreen() {
                   <BarChart3 className="w-6 h-6 text-primary" />
                   {t('charts.immersionTimeline')}
                 </h3>
-                <p className="text-sm text-base-content/60 mb-4">
+                <p className="text-sm text-base-content/70 mb-4">
                   {t('charts.timelineHint')}
                 </p>
                 <GanttChartSection
@@ -2327,14 +2344,14 @@ function GanttChartSection({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <span className="loading loading-spinner loading-lg text-primary" />
+        <Spinner size="lg" className="text-primary" />
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="text-center py-12 text-base-content/50">
+      <div className="text-center py-12 text-base-content/70">
         <p>{t('charts.timelineFailed')}</p>
       </div>
     );

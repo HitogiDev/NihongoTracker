@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -150,10 +151,10 @@ function ListsDiscoverScreen() {
 
         {isLoading ? (
           <div className="flex justify-center py-16">
-            <span className="loading loading-spinner loading-lg" />
+            <Spinner size="lg" />
           </div>
         ) : lists.length === 0 ? (
-          <p className="text-base-content/60 py-16 text-center">
+          <p className="text-base-content/70 py-16 text-center">
             {t('lists.emptyDiscover')}
           </p>
         ) : (

@@ -53,7 +53,7 @@ function AchievementIcon({
   if (!iconSlug) {
     return (
       <span
-        className={`font-black ${isEarned ? '' : 'text-base-content/30'}`}
+        className={`font-black ${isEarned ? '' : 'text-base-content/70'}`}
         style={{
           fontSize: size * 0.6,
           color: isEarned ? RARITY_COLOR[rarity] : undefined,
@@ -65,7 +65,7 @@ function AchievementIcon({
   }
 
   return (
-    <span className={isEarned ? '' : 'text-base-content/30'}>
+    <span className={isEarned ? '' : 'text-base-content/70'}>
       <Icon
         icon={`game-icons:${getAchievementIconSlug(iconSlug, achievementKey)}`}
         width={size}
@@ -121,7 +121,7 @@ function AchievementProgress({
   return (
     <div className="w-full">
       <div
-        className={`flex justify-between text-xs text-base-content/60 ${compact ? 'mb-1' : 'mb-2'}`}
+        className={`flex justify-between text-xs text-base-content/70 ${compact ? 'mb-1' : 'mb-2'}`}
       >
         <span>{formatNumber(progress)}</span>
         <span>{formatNumber(threshold)}</span>
@@ -234,7 +234,7 @@ export function AchievementDetailModal({
                 <div className="text-xl font-extrabold">
                   {achievement.points}
                 </div>
-                <div className="text-xs text-base-content/50 mt-0.5">
+                <div className="text-xs text-base-content/70 mt-0.5">
                   {t('card.points')}
                 </div>
               </div>
@@ -244,7 +244,7 @@ export function AchievementDetailModal({
                 <div className="text-xl font-extrabold">
                   {achievement.rarityPercent}%
                 </div>
-                <div className="text-xs text-base-content/50 mt-0.5">
+                <div className="text-xs text-base-content/70 mt-0.5">
                   {t('card.ofUsers')}
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function AchievementDetailModal({
                 <div className="text-sm font-bold mt-1.5">
                   {formatDate(achievement.unlockedAt, DATE_ONLY)}
                 </div>
-                <div className="text-xs text-base-content/50 mt-0.5">
+                <div className="text-xs text-base-content/70 mt-0.5">
                   {t('card.unlocked')}
                 </div>
               </div>
@@ -312,16 +312,16 @@ export default function AchievementCard({
       >
         <div className="flex items-center gap-3">
           <div
-            className="shrink-0 flex items-center justify-center rounded-lg bg-base-300/60 text-xl font-black text-base-content/30"
+            className="shrink-0 flex items-center justify-center rounded-lg bg-base-300/60 text-xl font-black text-base-content/70"
             style={{ width: compact ? 40 : 56, height: compact ? 40 : 56 }}
           >
             ?
           </div>
           <div>
-            <p className="font-semibold text-sm text-base-content/60">
+            <p className="font-semibold text-sm text-base-content/70">
               {t('card.hiddenName')}
             </p>
-            <p className="text-xs text-base-content/40 mt-0.5">
+            <p className="text-xs text-base-content/70 mt-0.5">
               {t('card.hiddenHint')}
             </p>
           </div>
@@ -366,7 +366,7 @@ export default function AchievementCard({
             <div className="flex items-center gap-2 flex-wrap">
               <h3
                 className={`font-bold truncate ${compact ? 'text-sm' : 'text-base'} ${
-                  isEarned ? 'text-base-content' : 'text-base-content/60'
+                  isEarned ? 'text-base-content' : 'text-base-content/70'
                 }`}
               >
                 {isSecret
@@ -389,7 +389,7 @@ export default function AchievementCard({
             {!compact && (
               <p
                 className={`text-xs mt-1 line-clamp-2 ${
-                  isEarned ? 'text-base-content/70' : 'text-base-content/50'
+                  isEarned ? 'text-base-content/70' : 'text-base-content/70'
                 }`}
               >
                 {isSecret
@@ -405,7 +405,7 @@ export default function AchievementCard({
             )}
 
             {!compact && (
-              <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-base-content/50">
+              <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-base-content/70">
                 {achievement.rarityPercent !== undefined && (
                   <span>
                     {t('card.rarityPercent', {

@@ -320,7 +320,7 @@ export default function ClubRankingsTab({
                           <div className="text-sm font-bold sm:text-lg">
                             {formatValue(entry.value)}
                           </div>
-                          <div className="text-xs text-base-content/60">
+                          <div className="text-xs text-base-content/70">
                             {unit}
                           </div>
                         </td>
@@ -333,7 +333,7 @@ export default function ClubRankingsTab({
           </div>
         </div>
       ) : (
-        <p className="py-12 text-center text-base-content/60">
+        <p className="py-12 text-center text-base-content/70">
           {t('ranking.empty')}
         </p>
       )}

@@ -491,7 +491,7 @@ export default function ActivityCard({
               >
                 <time
                   dateTime={activity.occurredAt}
-                  className="cursor-help text-xs text-base-content/60"
+                  className="cursor-help text-xs text-base-content/70"
                 >
                   {formatRelativeDateInTimezone(activity.occurredAt)}
                 </time>
@@ -571,7 +571,7 @@ export default function ActivityCard({
                   </span>
                 )}
                 {metricParts.length > 0 && (
-                  <span className="text-xs text-base-content/60">
+                  <span className="text-xs text-base-content/70">
                     {metricParts.join(" · ")}
                   </span>
                 )}
@@ -612,7 +612,7 @@ export default function ActivityCard({
                 {showCommentsButton && (
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm gap-1 px-2 text-base-content/60"
+                    className="btn btn-ghost btn-sm gap-1 px-2 text-base-content/70"
                     aria-controls={commentsId}
                     aria-expanded={commentsOpen}
                     disabled={!currentUser}
@@ -630,7 +630,7 @@ export default function ActivityCard({
                   className={
                     activity.currentReaction === "like"
                       ? "btn btn-primary btn-sm gap-1 px-2"
-                      : "btn btn-ghost btn-sm gap-1 px-2 text-base-content/60"
+                      : "btn btn-ghost btn-sm gap-1 px-2 text-base-content/70"
                   }
                   aria-label={t("reactions.like")}
                   aria-pressed={activity.currentReaction === "like"}

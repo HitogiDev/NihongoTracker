@@ -287,44 +287,44 @@ function SessionIntelligencePreview({
         <h4 className="text-xl font-bold text-base-content">
           {tf('support.showcase.session.previewTitle')}
         </h4>
-        <X className="w-5 h-5 text-base-content/60" aria-hidden="true" />
+        <X className="w-5 h-5 text-base-content/70" aria-hidden="true" />
       </div>
-      <p className="mt-4 text-sm text-base-content/60">
+      <p className="mt-4 text-sm text-base-content/70">
         {tf('support.showcase.session.previewSubtitle')}
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="surface-muted p-3">
           <Brain className="mb-3 w-5 h-5 text-primary" />
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.focus')}
           </p>
           <p className="mt-1 text-xl font-bold tabular-nums">62%</p>
         </div>
         <div className="surface-muted p-3">
           <Clock3 className="mb-3 w-5 h-5 text-success" />
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.focusedTime')}
           </p>
           <p className="mt-1 text-xl font-bold tabular-nums">15m 11s</p>
         </div>
         <div className="surface-muted p-3">
           <Activity className="mb-3 w-5 h-5 text-warning" />
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.distractionTime')}
           </p>
           <p className="mt-1 text-xl font-bold tabular-nums">9m 11s</p>
         </div>
         <div className="surface-muted p-3">
           <Activity className="mb-3 w-5 h-5 text-info" />
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.distractions')}
           </p>
           <p className="mt-1 text-xl font-bold tabular-nums">6</p>
         </div>
         <div className="surface-muted col-span-2 p-3 sm:col-span-1">
-          <TimerOff className="mb-3 w-5 h-5 text-base-content/60" />
-          <p className="text-xs text-base-content/60">
+          <TimerOff className="mb-3 w-5 h-5 text-base-content/70" />
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.afk')}
           </p>
           <p className="mt-1 text-xl font-bold tabular-nums">9m 30s</p>
@@ -333,28 +333,28 @@ function SessionIntelligencePreview({
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="surface p-3">
-          <p className="flex items-center gap-2 text-xs text-base-content/60">
+          <p className="flex items-center gap-2 text-xs text-base-content/70">
             <Gauge className="w-4 h-4" />
             {tf('support.showcase.session.firstThirty')}
           </p>
           <p className="mt-1 font-bold tabular-nums">8,492 chars/h</p>
         </div>
         <div className="surface p-3">
-          <p className="flex items-center gap-2 text-xs text-base-content/60">
+          <p className="flex items-center gap-2 text-xs text-base-content/70">
             <Gauge className="w-4 h-4" />
             {tf('support.showcase.session.lastThirty')}
           </p>
           <p className="mt-1 font-bold tabular-nums">8,492 chars/h</p>
         </div>
         <div className="surface p-3">
-          <p className="flex items-center gap-2 text-xs text-base-content/60">
+          <p className="flex items-center gap-2 text-xs text-base-content/70">
             <Gauge className="w-4 h-4" />
             {tf('support.showcase.session.peak')}
           </p>
           <p className="mt-1 font-bold tabular-nums">9,468 chars/h</p>
         </div>
         <div className="surface p-3">
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-base-content/70">
             {tf('support.showcase.session.longest')}
           </p>
           <p className="mt-1 font-bold tabular-nums">2m 59s</p>
@@ -370,13 +370,13 @@ function SessionIntelligencePreview({
           <h5 className="font-semibold text-base-content">
             {tf('support.showcase.session.chartTitle')}
           </h5>
-          <span className="text-xs text-base-content/55">
+          <span className="text-xs text-base-content/70">
             {tf('support.showcase.session.baseline')}
           </span>
         </div>
 
         <div className="grid grid-cols-[2rem_1fr] gap-2">
-          <div className="flex h-44 flex-col justify-between pb-5 text-right text-xs text-base-content/45">
+          <div className="flex h-44 flex-col justify-between pb-5 text-right text-xs text-base-content/70">
             <span>250</span>
             <span>200</span>
             <span>150</span>
@@ -442,7 +442,7 @@ function SessionIntelligencePreview({
                 />
               ))}
             </svg>
-            <div className="flex justify-between text-xs text-base-content/50">
+            <div className="flex justify-between text-xs text-base-content/70">
               <span>Min 1</span>
               <span>Min 5</span>
               <span>Min 9</span>
@@ -452,7 +452,7 @@ function SessionIntelligencePreview({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-base-content/60">
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-base-content/70">
           <span className="flex items-center gap-1.5">
             <span className="status status-primary" />
             {tf('support.showcase.session.focused')}
@@ -548,7 +548,7 @@ function SupportScreen() {
                 components={{ hl: <span className="text-primary" /> }}
               />
             </h1>
-            <p className="mb-8 max-w-2xl text-lg leading-relaxed text-base-content/65 sm:text-xl">
+            <p className="mb-8 max-w-2xl text-lg leading-relaxed text-base-content/70 sm:text-xl">
               {t('support.hero.subtitle')}
             </p>
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
@@ -570,7 +570,7 @@ function SupportScreen() {
           <div className="relative mx-auto w-full max-w-lg">
             <div className="surface-muted relative border-base-300 p-6 shadow-lg sm:p-7">
               <div className="mb-4">
-                <p className="text-xs font-semibold tracking-widest text-base-content/45 uppercase">
+                <p className="text-xs font-semibold tracking-widest text-base-content/70 uppercase">
                   {t('support.hero.noteEyebrow')}
                 </p>
                 <h2 className="mt-1 text-xl font-bold">
@@ -597,7 +597,7 @@ function SupportScreen() {
             <h2 className="mb-4 text-3xl font-bold text-base-content md:text-4xl">
               {t('support.showcase.title')}
             </h2>
-            <p className="text-lg leading-relaxed text-base-content/60">
+            <p className="text-lg leading-relaxed text-base-content/70">
               {t('support.showcase.subtitle')}
             </p>
           </div>
@@ -615,7 +615,7 @@ function SupportScreen() {
                       {t('support.showcase.session.title')}
                     </h3>
                   </div>
-                  <p className="mt-3 leading-relaxed text-base-content/65">
+                  <p className="mt-3 leading-relaxed text-base-content/70">
                     {t('support.showcase.session.description')}
                   </p>
                   <ul className="mt-4 space-y-3">
@@ -630,7 +630,7 @@ function SupportScreen() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-5 text-xs leading-relaxed text-base-content/50">
+                  <p className="mt-5 text-xs leading-relaxed text-base-content/70">
                     {t('support.showcase.session.note')}
                   </p>
                 </div>
@@ -649,7 +649,7 @@ function SupportScreen() {
                   <Target className="w-6 h-6 text-secondary" />
                   {t('support.showcase.planner.title')}
                 </h3>
-                <p className="text-base-content/60">
+                <p className="text-base-content/70">
                   {t('support.showcase.planner.description')}
                 </p>
 
@@ -681,7 +681,7 @@ function SupportScreen() {
                           <span className="badge badge-success badge-sm">
                             {t('support.showcase.planner.onTrack')}
                           </span>
-                          <span className="flex items-center gap-1 text-xs text-base-content/60">
+                          <span className="flex items-center gap-1 text-xs text-base-content/70">
                             <CalendarClock className="w-3.5 h-3.5" />
                             {plannerDate}
                           </span>
@@ -697,7 +697,7 @@ function SupportScreen() {
 
                     <div className="grid min-w-0 grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                       <div className="min-w-0">
-                        <p className="text-base-content/60">
+                        <p className="text-base-content/70">
                           {t('support.showcase.planner.remaining')}
                         </p>
                         <p className="break-words font-bold tabular-nums">
@@ -710,7 +710,7 @@ function SupportScreen() {
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-base-content/60">
+                        <p className="text-base-content/70">
                           {t('support.showcase.planner.daily')}
                         </p>
                         <p className="break-words font-bold tabular-nums">
@@ -721,7 +721,7 @@ function SupportScreen() {
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-base-content/60">
+                        <p className="text-base-content/70">
                           {t('support.showcase.planner.timeLeft')}
                         </p>
                         <p className="font-bold tabular-nums">
@@ -743,7 +743,7 @@ function SupportScreen() {
                   <Palette className="w-6 h-6 text-accent" />
                   {t('support.showcase.profile.title')}
                 </h3>
-                <p className="text-base-content/60">
+                <p className="text-base-content/70">
                   {t('support.showcase.profile.description')}
                 </p>
                 <PremiumProfilePreview tf={tf} />
@@ -764,12 +764,12 @@ function SupportScreen() {
                     <Palette className="w-6 h-6 text-primary" />
                     {t('support.showcase.themes.title')}
                   </h3>
-                  <p className="mt-2 max-w-2xl text-base-content/60">
+                  <p className="mt-2 max-w-2xl text-base-content/70">
                     {t('support.showcase.themes.subtitle')}
                   </p>
                 </div>
                 <span
-                  className="text-sm text-base-content/55"
+                  className="text-sm text-base-content/70"
                   aria-live="polite"
                 >
                   {t('support.showcase.themes.position', {
@@ -845,7 +845,7 @@ function SupportScreen() {
                 {t('support.why.title')}
               </h2>
             </div>
-            <p className="max-w-2xl text-lg leading-relaxed text-base-content/60 lg:ml-auto">
+            <p className="max-w-2xl text-lg leading-relaxed text-base-content/70 lg:ml-auto">
               {t('support.why.subtitle')}
             </p>
           </div>
@@ -862,7 +862,7 @@ function SupportScreen() {
                 <h3 className="mb-2 text-lg font-bold text-base-content">
                   {tf(`support.why.items.${item.id}.title`)}
                 </h3>
-                <p className="text-sm leading-relaxed text-base-content/60">
+                <p className="text-sm leading-relaxed text-base-content/70">
                   {tf(`support.why.items.${item.id}.description`)}
                 </p>
               </div>
@@ -880,7 +880,7 @@ function SupportScreen() {
             <h2 className="mb-4 text-3xl font-bold text-base-content md:text-4xl">
               {t('support.tiers.title')}
             </h2>
-            <p className="mx-auto max-w-2xl text-base-content/60">
+            <p className="mx-auto max-w-2xl text-base-content/70">
               {t('support.tiers.subtitle')}
             </p>
           </div>
@@ -902,12 +902,12 @@ function SupportScreen() {
 
                   <div className="mt-3 text-3xl font-bold text-base-content">
                     {tier.price}
-                    <span className="text-sm font-normal text-base-content/60">
+                    <span className="text-sm font-normal text-base-content/70">
                       {t('support.tiers.perMonth')}
                     </span>
                   </div>
 
-                  <p className="min-h-24 text-sm leading-relaxed text-base-content/60">
+                  <p className="min-h-24 text-sm leading-relaxed text-base-content/70">
                     {tf(`support.tiers.items.${tier.id}.description`)}
                   </p>
 
@@ -939,7 +939,7 @@ function SupportScreen() {
             ))}
           </div>
 
-          <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-base-content/50">
+          <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-base-content/70">
             {t('support.tiers.noPressure')}
           </p>
         </div>
@@ -955,7 +955,7 @@ function SupportScreen() {
               <h2 className="mb-2 text-2xl font-bold text-base-content">
                 {t('support.oneTime.title')}
               </h2>
-              <p className="text-base-content/60">
+              <p className="text-base-content/70">
                 {t('support.oneTime.subtitle')}
               </p>
             </div>
@@ -1027,7 +1027,7 @@ function SupportScreen() {
           <h2 className="mb-4 text-4xl font-bold text-base-content md:text-5xl">
             {t('support.cta.title')}
           </h2>
-          <p className="mb-8 text-lg leading-relaxed text-base-content/60">
+          <p className="mb-8 text-lg leading-relaxed text-base-content/70">
             {t('support.cta.subtitle')}
           </p>
           <a
@@ -1039,7 +1039,7 @@ function SupportScreen() {
             {t('support.cta.button')}
             <ArrowRight className="w-5 h-5" />
           </a>
-          <p className="mt-6 text-sm text-base-content/50">
+          <p className="mt-6 text-sm text-base-content/70">
             {t('support.cta.thanks')}
           </p>
         </div>

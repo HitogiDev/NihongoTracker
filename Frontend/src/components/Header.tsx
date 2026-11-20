@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from '../utils/apiError';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -43,6 +44,7 @@ import UserAvatar from './UserAvatar';
 import { applyAppTheme } from '../utils/appTheme';
 import { useTranslation } from 'react-i18next';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
+import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
 
 type ThemeMode = 'dark' | 'light' | 'system' | 'custom';
 
@@ -83,6 +85,11 @@ function Header() {
   const { pathname } = useLocation();
   const navigationDialogRef = useRef<HTMLDialogElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const isHeaderHidden = useAutoHideHeader(headerRef, {
+    suspended: isSearchOpen,
+    resetKey: pathname,
+  });
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       return normalizeThemeMode(localStorage.getItem('theme'));
@@ -117,7 +124,7 @@ function Header() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : t('common:errors.generic'));
       }
@@ -199,7 +206,14 @@ function Header() {
 
   return (
     <div className="relative">
-      <div className="site-navbar navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
+      <div
+        ref={headerRef}
+        className={
+          isHeaderHidden
+            ? 'site-navbar navbar transition duration-200 motion-reduce:transition-none bg-neutral/85 hover:bg-neutral/100 text-neutral-content fixed inset-x-0 top-0 z-40 max-h-32 -translate-y-full'
+            : 'site-navbar navbar transition duration-200 motion-reduce:transition-none bg-neutral/85 hover:bg-neutral/100 text-neutral-content fixed inset-x-0 top-0 z-40 max-h-32 translate-y-0'
+        }
+      >
         <div className="navbar-start flex-1 w-auto">
           <>
             <button
@@ -442,7 +456,7 @@ function Header() {
                 </Link>
               </li>
               {!hideRankingFeatures && (
-                <li className="hidden min-[1450px]:block">
+                <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
@@ -451,7 +465,7 @@ function Header() {
                 </Link>
                 </li>
               )}
-              <li className="hidden min-[1450px]:block">
+              <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/clubs"
@@ -467,7 +481,7 @@ function Header() {
                   {t('links.lists')}
                 </Link>
               </li>
-              <li>
+              <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/calculator"
@@ -475,7 +489,7 @@ function Header() {
                   {t('links.calculator')}
                 </Link>
               </li>
-              <li>
+              <li className="hidden min-[1450px]:block">
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to={`/user/${user.username}/list`}
@@ -531,7 +545,7 @@ function Header() {
             aria-label={t('a11y.search')}
           >
             <Search className="w-4 h-4" />
-            <span className="hidden min-[1750px]:inline text-xs text-base-content/50">
+            <span className="hidden min-[1750px]:inline text-xs text-base-content/70">
               <kbd className="kbd kbd-xs">
                 {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
                   ? '⌘'
@@ -575,7 +589,7 @@ function Header() {
                   {t('actions.createLogShort')}
                 </span>
               </Link>
-              <div className="dropdown dropdown-hover dropdown-bottom dropdown-end">
+              <div className="dropdown dropdown-bottom dropdown-end">
                 <div
                   tabIndex={0}
                   role="button"
@@ -603,6 +617,10 @@ function Header() {
                 <ul
                   tabIndex={0}
                   className="dropdown-content z-[50] menu p-2 surface-raised text-base-content w-52"
+                  // The menu stays open while it has focus. Release focus after a selection.
+                  onClick={() =>
+                    (document.activeElement as HTMLElement | null)?.blur()
+                  }
                 >
                   {isAdmin && (
                     <li>
@@ -622,6 +640,24 @@ function Header() {
                     >
                       <User className="w-4 h-4" />
                       {t('links.profile')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/duels"
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      <Swords className="w-4 h-4" />
+                      {t('links.duels')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/recommendations"
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      <Send className="w-4 h-4" />
+                      {t('links.recommendations')}
                     </Link>
                   </li>
                   <li>

@@ -61,7 +61,7 @@ export default function GettingStartedModal({
       </p>
 
       <div className="mb-4 flex items-center justify-between gap-4">
-        <span className="text-sm text-base-content/65">
+        <span className="text-sm text-base-content/70">
           {t('onboarding.stepCounter', {
             current: step + 1,
             total: stepCount,

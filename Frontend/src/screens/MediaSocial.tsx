@@ -167,7 +167,7 @@ function PeopleProgressList({
             ))}
           </ul>
         ) : (
-          <p className="py-4 text-sm text-base-content/60">{empty}</p>
+          <p className="py-4 text-sm text-base-content/70">{empty}</p>
         )}
       </div>
     </section>
@@ -349,7 +349,7 @@ export default function MediaSocial() {
           <h1 className="text-2xl font-bold">
             {t('media:social.title', { title })}
           </h1>
-          <p className="text-sm text-base-content/60">{t('media:social.subtitle')}</p>
+          <p className="text-sm text-base-content/70">{t('media:social.subtitle')}</p>
         </div>
         {currentUser && mediaDocument && (
           <div className="flex flex-wrap gap-2">
@@ -495,7 +495,7 @@ export default function MediaSocial() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   {t('media:social.signInForPeopleProgress')}
                 </p>
               )}
@@ -544,7 +544,7 @@ export default function MediaSocial() {
                         <ul className="dropdown-content menu surface-raised z-50 mt-2 max-h-72 w-full min-w-64 flex-nowrap overflow-y-auto p-2 shadow-lg">
                           {compareUsersQuery.isLoading ? (
                             <li>
-                              <span className="text-sm text-base-content/60">
+                              <span className="text-sm text-base-content/70">
                                 {t('media:social.searchingUsers')}
                               </span>
                             </li>
@@ -573,7 +573,7 @@ export default function MediaSocial() {
                             ))
                           ) : (
                             <li>
-                              <span className="text-sm text-base-content/60">
+                              <span className="text-sm text-base-content/70">
                                 {t('media:social.noUsersFound')}
                               </span>
                             </li>
@@ -603,7 +603,7 @@ export default function MediaSocial() {
                           <h3 className="text-base font-semibold text-base-content">
                             {comparedUser.username}
                             {index === 0 && (
-                              <span className="ml-2 text-xs font-normal text-base-content/60">
+                              <span className="ml-2 text-xs font-normal text-base-content/70">
                                 {t('media:social.you')}
                               </span>
                             )}
@@ -611,7 +611,7 @@ export default function MediaSocial() {
                           <div className="mt-3 grid grid-cols-2 gap-3">
                             {metrics.map((metric) => (
                               <div key={metric.label}>
-                                <div className="text-xs text-base-content/60">
+                                <div className="text-xs text-base-content/70">
                                   {metric.label}
                                 </div>
                                 <div
@@ -624,7 +624,7 @@ export default function MediaSocial() {
                                   {numberWithCommas(metric.value)}
                                 </div>
                                 {metric.description && (
-                                  <div className="text-xs text-base-content/60">
+                                  <div className="text-xs text-base-content/70">
                                     {metric.description}
                                   </div>
                                 )}
@@ -653,7 +653,7 @@ export default function MediaSocial() {
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-base-content/60">
+                <p className="py-8 text-center text-base-content/70">
                   {t('media:social.noRecentActivity')}
                 </p>
               )}
@@ -705,7 +705,7 @@ export default function MediaSocial() {
                       </span>
                     </>
                   ) : (
-                    <span className="flex-1 text-left text-base-content/60">
+                    <span className="flex-1 text-left text-base-content/70">
                       {t('media:recommendations.chooseRecipient')}
                     </span>
                   )}
@@ -738,7 +738,7 @@ export default function MediaSocial() {
             )}
           </Field>
           {connectionsQuery.data?.users.length === 0 && (
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-base-content/70">
               {t('media:recommendations.noRecipients')}
             </p>
           )}

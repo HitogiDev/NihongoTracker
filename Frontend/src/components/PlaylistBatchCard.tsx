@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
@@ -263,11 +264,11 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                   {playlistTitle}
                 </h2>
                 {channelName && (
-                  <p className="text-sm text-base-content/60 mt-1 leading-tight">
+                  <p className="text-sm text-base-content/70 mt-1 leading-tight">
                     {channelName}
                   </p>
                 )}
-                <p className="text-sm text-base-content/50 mt-1">
+                <p className="text-sm text-base-content/70 mt-1">
                   Logged {videoCount} video
                   {videoCount !== 1 ? 's' : ''} from this playlist
                 </p>
@@ -314,7 +315,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
 
               <button
                 type="button"
-                className="btn btn-ghost btn-xs gap-1 text-base-content/60 hover:text-base-content"
+                className="btn btn-ghost btn-xs gap-1 text-base-content/70 hover:text-base-content"
                 onClick={openModal}
               >
                 <ListVideo className="w-3 h-3" />
@@ -324,7 +325,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
 
             <div className="tooltip tooltip-left" data-tip={fullDate}>
               <time
-                className="text-xs text-base-content/60 hover:text-base-content transition-colors duration-200 cursor-help flex items-center gap-1"
+                className="text-xs text-base-content/70 hover:text-base-content transition-colors duration-200 cursor-help flex items-center gap-1"
                 dateTime={
                   !representative.unknownDate && representative.date
                     ? typeof representative.date === 'string'
@@ -363,7 +364,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                     {playlistTitle}
                   </h3>
                 </div>
-                <p className="text-sm text-base-content/60 pl-8">
+                <p className="text-sm text-base-content/70 pl-8">
                   {videoCount} video{videoCount !== 1 ? 's' : ''} •{' '}
                   <span className={`font-semibold ${videoTypeConfig.color}`}>
                     {totalXp} XP
@@ -395,7 +396,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                   ) : someSelected ? (
                     <CheckSquare className="w-4 h-4 text-primary/50" />
                   ) : (
-                    <Square className="w-4 h-4 text-base-content/40" />
+                    <Square className="w-4 h-4 text-base-content/70" />
                   )}
                   <span>
                     {allSelected
@@ -511,7 +512,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             {isModalOpen && contentReady && (
               <div ref={sentinelRef} className="py-1">
                 {hasMore && (
-                  <div className="flex items-center justify-center gap-2 py-3 text-sm text-base-content/50">
+                  <div className="flex items-center justify-center gap-2 py-3 text-sm text-base-content/70">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading more…
                   </div>
@@ -520,7 +521,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             )}
 
             {isModalOpen && contentReady && logs.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-base-content/50">
+              <div className="flex flex-col items-center justify-center py-12 text-base-content/70">
                 <ListVideo className="w-10 h-10 mb-3 opacity-40" />
                 <p className="text-sm">{t('playlist.noVideos')}</p>
               </div>
@@ -528,7 +529,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
           </div>
 
           {isModalOpen && contentReady && logs.length > 0 && (
-            <div className="flex-shrink-0 border-t border-base-content/10 px-5 py-2 text-xs text-base-content/40 text-center">
+            <div className="flex-shrink-0 border-t border-base-content/10 px-5 py-2 text-xs text-base-content/70 text-center">
               Showing {Math.min(visibleCount, logs.length)} of {logs.length}{' '}
               videos
             </div>
@@ -573,7 +574,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                   count: selectedLogIds.size,
                 })}
               </h3>
-              <p className="text-sm text-base-content/60 mt-0.5">
+              <p className="text-sm text-base-content/70 mt-0.5">
                 {t('playlist.bulkDeleteIrreversible')}
               </p>
             </div>
@@ -622,7 +623,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             >
               {loadingBulkDelete ? (
                 <>
-                  <span className="loading loading-spinner loading-sm" />
+                  <Spinner size="sm" />
                   {t('playlist.deleting')}
                 </>
               ) : (

@@ -116,7 +116,7 @@ export default function SupportCustomizationShowcase() {
           {t('support.showcase.cosmetics.title')}
         </h3>
       </div>
-      <p className="mt-3 max-w-3xl leading-relaxed text-base-content/65">
+      <p className="mt-3 max-w-3xl leading-relaxed text-base-content/70">
         {t('support.showcase.cosmetics.description')}
       </p>
 
@@ -158,7 +158,7 @@ export default function SupportCustomizationShowcase() {
         </div>
         <dl className="grid gap-3 border-t border-base-300 p-5 text-sm sm:grid-cols-3 sm:px-8">
           <div>
-            <dt className="text-base-content/60">
+            <dt className="text-base-content/70">
               {t('support.showcase.cosmetics.categories.frames')}
             </dt>
             <dd className="mt-1 font-medium">
@@ -166,7 +166,7 @@ export default function SupportCustomizationShowcase() {
             </dd>
           </div>
           <div>
-            <dt className="text-base-content/60">
+            <dt className="text-base-content/70">
               {t('support.showcase.cosmetics.categories.banners')}
             </dt>
             <dd className="mt-1 font-medium">
@@ -174,7 +174,7 @@ export default function SupportCustomizationShowcase() {
             </dd>
           </div>
           <div>
-            <dt className="text-base-content/60">
+            <dt className="text-base-content/70">
               {t('support.showcase.cosmetics.categories.names')}
             </dt>
             <dd className="mt-1 font-medium">
@@ -205,7 +205,7 @@ export default function SupportCustomizationShowcase() {
           </Button>
         ))}
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-base-content/65">
+      <p className="mt-4 text-sm leading-relaxed text-base-content/70">
         {t(`support.showcase.cosmetics.hints.${category}`)}
       </p>
       <p className="mt-3 text-sm" role="status">
@@ -264,7 +264,7 @@ export default function SupportCustomizationShowcase() {
                   <span className="font-semibold">
                     {settingsT(`customization.avatarFrames.${value}`)}
                   </span>
-                  <span className="mt-2 text-xs text-base-content/60">
+                  <span className="mt-2 text-xs text-base-content/70">
                     {accessLabel(FRAME_ACCESS[value])}
                   </span>
                 </button>
@@ -294,7 +294,7 @@ export default function SupportCustomizationShowcase() {
                   <span className="font-semibold">
                     {settingsT(`customization.bannerEffects.${value}`)}
                   </span>
-                  <span className="mt-2 text-xs text-base-content/60">
+                  <span className="mt-2 text-xs text-base-content/70">
                     {accessLabel('enthusiast')}
                   </span>
                 </button>
@@ -334,7 +334,7 @@ export default function SupportCustomizationShowcase() {
                     <span className="font-semibold">
                       {settingsT(`customization.nameEffects.${value}`)}
                     </span>
-                    <span className="mt-2 text-xs text-base-content/60">
+                    <span className="mt-2 text-xs text-base-content/70">
                       {accessLabel(NAME_ACCESS[value])}
                     </span>
                   </button>

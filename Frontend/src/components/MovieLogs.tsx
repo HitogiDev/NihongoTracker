@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useMatchingSelection } from '../hooks/useMatchingSelection';
 import { useMediaAssignment } from '../hooks/useMediaAssignment';
 import { IMediaDocument } from '../types';
@@ -48,7 +50,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
 
 
   if (searchMovieError && searchMovieError instanceof AxiosError) {
-    toast.error(searchMovieError.response?.data.message);
+    toast.error(getApiErrorMessage(searchMovieError));
   }
 
   const groupedLogs = useGroupLogs(logs, 'video');
@@ -104,7 +106,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -312,7 +314,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingMovie ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.movie'),
@@ -446,7 +448,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (

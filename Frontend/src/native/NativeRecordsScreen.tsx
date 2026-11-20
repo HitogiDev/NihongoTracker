@@ -127,7 +127,7 @@ export default function NativeRecordsScreen() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <label className="input min-w-0 flex-1 focus-within:input-primary">
-            <Search className="h-4 w-4 shrink-0 text-base-content/60" />
+            <Search className="h-4 w-4 shrink-0 text-base-content/70" />
             <input
               type="search"
               className="grow"
@@ -245,11 +245,11 @@ export default function NativeRecordsScreen() {
       )}
       {!query.isPending && !query.isError && !logs.length && (
         <div className="surface p-6 text-center space-y-3">
-          <NotebookPen className="mx-auto h-8 w-8 text-base-content/50" />
+          <NotebookPen className="mx-auto h-8 w-8 text-base-content/70" />
           <h2 className="font-semibold">
             {filtered ? t("native.noResults") : t("native.emptyLogs")}
           </h2>
-          <p className="text-sm text-base-content/65">
+          <p className="text-sm text-base-content/70">
             {t("native.emptyLogsHint")}
           </p>
           {filtered ? (

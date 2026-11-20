@@ -1,3 +1,4 @@
+import ModalBackdrop from '../ui/ModalBackdrop';
 import { useState, useEffect } from 'react';
 import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -169,7 +170,7 @@ export default function EditClubMediaModal({
                     className={
                       mediaData.startDate
                         ? 'text-base-content'
-                        : 'text-base-content/50'
+                        : 'text-base-content/70'
                     }
                   >
                     {formatDateForDisplay(mediaData.startDate)}
@@ -224,7 +225,7 @@ export default function EditClubMediaModal({
                     className={
                       mediaData.endDate
                         ? 'text-base-content'
-                        : 'text-base-content/50'
+                        : 'text-base-content/70'
                     }
                   >
                     {formatDateForDisplay(mediaData.endDate)}
@@ -283,7 +284,7 @@ export default function EditClubMediaModal({
           </div>
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
+      <ModalBackdrop onClose={onClose} />
     </div>
   );
 }

@@ -1,6 +1,8 @@
+import Spinner from '../components/ui/Spinner';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { History } from 'lucide-react';
+import QueryError from '../components/ui/QueryError';
 import { getClubMediaLogsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import UserAvatar from '../components/UserAvatar';
@@ -12,7 +14,13 @@ export default function ClubMediaActivity() {
   const { clubMedia } = useOutletContext<OutletClubMediaContextType>();
 
   // Fetch club member logs for this media
-  const { data: clubLogsData, isLoading: logsLoading } = useQuery({
+  const {
+    data: clubLogsData,
+    isLoading: logsLoading,
+    error: logsError,
+    refetch: refetchLogs,
+    isFetching: logsFetching,
+  } = useQuery({
     queryKey: ['clubMediaLogs', clubId, mediaId],
     queryFn: () => getClubMediaLogsFn(clubId!, mediaId!),
     enabled: !!clubId && !!mediaId && !!clubMedia,
@@ -21,7 +29,7 @@ export default function ClubMediaActivity() {
   if (!clubMedia) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="text-center py-12 text-base-content/60">
+        <div className="text-center py-12 text-base-content/70">
           <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
@@ -43,8 +51,14 @@ export default function ClubMediaActivity() {
 
             {logsLoading ? (
               <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-lg"></span>
+                <Spinner size="lg" />
               </div>
+            ) : logsError ? (
+              <QueryError
+                error={logsError}
+                onRetry={() => void refetchLogs()}
+                retrying={logsFetching}
+              />
             ) : clubLogsData?.logs && clubLogsData.logs.length > 0 ? (
               <div className="space-y-4">
                 {clubLogsData.logs.map((log) => (
@@ -66,13 +80,13 @@ export default function ClubMediaActivity() {
                             <h4 className="font-semibold">
                               {log.user?.username || 'Unknown User'}
                             </h4>
-                            <p className="text-sm text-base-content/60">
+                            <p className="text-sm text-base-content/70">
                               {new Date(log.date).toLocaleDateString()} •{' '}
                               {log.xp} XP
                             </p>
                           </div>
                         </div>
-                        <div className="text-right text-sm text-base-content/60">
+                        <div className="text-right text-sm text-base-content/70">
                           <div className="flex flex-col items-end gap-1">
                             {log.episodes ? (
                               <span>{log.episodes} episodes</span>
@@ -94,7 +108,7 @@ export default function ClubMediaActivity() {
 
                 {clubLogsData.totalPages > 1 && (
                   <div className="text-center mt-6">
-                    <p className="text-sm text-base-content/60">
+                    <p className="text-sm text-base-content/70">
                       Showing page {clubLogsData.page} of{' '}
                       {clubLogsData.totalPages} ({clubLogsData.total} total
                       logs)
@@ -103,7 +117,7 @@ export default function ClubMediaActivity() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 text-base-content/60">
+              <div className="text-center py-12 text-base-content/70">
                 <History className="mx-auto text-4xl mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">
                   {t('media.activityEmpty')}

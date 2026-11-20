@@ -1,5 +1,7 @@
+import Spinner from '../components/ui/Spinner';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import QueryError from '../components/ui/QueryError';
 import { getClubMediaLogsFn, getClubMediaStatsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
@@ -30,7 +32,13 @@ export default function ClubMediaInfo() {
   );
   const [chartView, setChartView] = useState<'progress' | 'bar'>('progress');
 
-  const { data: mediaStats, isLoading } = useQuery({
+  const {
+    data: mediaStats,
+    isLoading,
+    error: statsError,
+    refetch: refetchStats,
+    isFetching: statsFetching,
+  } = useQuery({
     queryKey: ['clubMediaStats', clubId, mediaId, period],
     queryFn: () => getClubMediaStatsFn(clubId!, mediaId!, period),
     enabled: !!clubId && !!mediaId && !!clubMedia,
@@ -52,7 +60,7 @@ export default function ClubMediaInfo() {
   if (!club || !clubMedia) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="text-center py-12 text-base-content/60">
+        <div className="text-center py-12 text-base-content/70">
           <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
@@ -63,11 +71,23 @@ export default function ClubMediaInfo() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="text-center py-12">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content/60">
+          <Spinner size="lg" className="text-primary" />
+          <p className="mt-4 text-base-content/70">
             {t('mediaInfo.loadingStats')}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (statsError && !mediaStats) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <QueryError
+          error={statsError}
+          onRetry={() => void refetchStats()}
+          retrying={statsFetching}
+        />
       </div>
     );
   }
@@ -220,7 +240,7 @@ export default function ClubMediaInfo() {
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
                 <h3 className="card-title text-lg">{t('mediaInfo.title')}</h3>
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   Statistics for{' '}
                   {mediaStats?.mediaInfo.title || clubMedia.title} from club
                   members
@@ -506,7 +526,7 @@ export default function ClubMediaInfo() {
                 {chartView === 'progress' ? (
                   isLogsLoading ? (
                     <div className="flex items-center justify-center h-full">
-                      <span className="loading loading-spinner loading-lg text-primary"></span>
+                      <Spinner size="lg" className="text-primary" />
                     </div>
                   ) : memberChartData ? (
                     <LineChart data={memberChartData} />

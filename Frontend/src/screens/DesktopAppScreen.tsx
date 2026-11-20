@@ -191,7 +191,7 @@ export default function DesktopAppScreen() {
               {t('hero.downloadLatest')}
             </a>
           )}
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {version && primaryAsset
               ? t('hero.versionWithSize', {
                   version,
@@ -203,7 +203,7 @@ export default function DesktopAppScreen() {
           </p>
         </div>
 
-        <p className="max-w-xl text-sm text-base-content/60">
+        <p className="max-w-xl text-sm text-base-content/70">
           {t('beta.notice')}{' '}
           {t('beta.report')}{' '}
           <a
@@ -250,7 +250,7 @@ export default function DesktopAppScreen() {
                   </span>
                 )}
               </div>
-              <p className="mb-4 text-sm text-base-content/60">
+              <p className="mb-4 text-sm text-base-content/70">
                 {t(`downloads.requirements.${id}`)}
               </p>
               <div className="flex flex-col gap-2">
@@ -273,7 +273,7 @@ export default function DesktopAppScreen() {
                           {t(`downloads.formats.${option.id}`)}
                         </span>
                         {asset && (
-                          <span className="text-xs font-normal text-base-content/60">
+                          <span className="text-xs font-normal text-base-content/70">
                             {formatSize(asset.size)}
                           </span>
                         )}

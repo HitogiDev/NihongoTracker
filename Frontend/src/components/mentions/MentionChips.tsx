@@ -42,7 +42,7 @@ export function UserMention({
   });
 
   if (isError) {
-    return <span className="text-base-content/60">@{username}</span>;
+    return <span className="text-base-content/70">@{username}</span>;
   }
 
   const displayName = user?.username ?? username;
@@ -153,7 +153,7 @@ export function MediaMention({
   const mediaPath = `/${encodeURIComponent(mediaType)}/${encodeURIComponent(contentId)}`;
 
   if (isError) {
-    return <span className="text-base-content/60">{title}</span>;
+    return <span className="text-base-content/70">{title}</span>;
   }
 
   if (variant === 'card') {
@@ -170,7 +170,7 @@ export function MediaMention({
             {title}
           </p>
           {nativeTitle && nativeTitle !== title && (
-            <p className="truncate text-sm text-base-content/60">
+            <p className="truncate text-sm text-base-content/70">
               {nativeTitle}
             </p>
           )}

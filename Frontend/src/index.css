@@ -265,6 +265,43 @@ html, body {
   padding-bottom: calc(4rem + env(safe-area-inset-bottom));
 }
 
+/* react-toastify uses its light palette by default. Follow the active app theme.
+   Its stylesheet loads later and sets these on :root, so set them on the container. */
+.Toastify {
+  --toastify-color-light: var(--color-base-100);
+  --toastify-text-color-light: var(--color-base-content);
+  --toastify-color-progress-light: var(--color-primary);
+}
+
+.Toastify__toast {
+  border: 1px solid var(--color-base-300);
+}
+
+/* daisyUI dims footer titles to 60%, which is below the AA ratio on base-300. */
+.site-footer .footer-title {
+  opacity: 0.8;
+}
+
+/* The web header hides while the page scrolls down. Sticky bars use this offset
+   to stay below it. The value is 0 when no web header is mounted, as in the native app. */
+:root {
+  --site-header-offset: 0px;
+}
+
+:root[data-site-header="shown"] {
+  --site-header-offset: 5rem;
+}
+
+.follow-site-header {
+  transition: top 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .follow-site-header {
+    transition: none;
+  }
+}
+
 .th-root {
   min-height: 100dvh;
 }
@@ -354,6 +391,17 @@ html {
 
   .navbar .menu-horizontal > li > a {
     min-height: 2.75rem;
+  }
+
+  /* Footer links are one line of text. Give each a full touch target. */
+  .site-footer nav > a {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  .site-footer nav {
+    gap: 0;
   }
 }
 

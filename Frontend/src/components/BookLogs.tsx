@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useAutoMatch } from '../hooks/useAutoMatch';
 import { useMatchingSelection } from '../hooks/useMatchingSelection';
 import { useMediaAssignment } from '../hooks/useMediaAssignment';
@@ -49,7 +51,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
 
 
   if (searchBookError && searchBookError instanceof AxiosError) {
-    toast.error(searchBookError.response?.data.message);
+    toast.error(getApiErrorMessage(searchBookError));
   }
 
   const groupedLogs = useGroupLogs(logs, 'book');
@@ -115,7 +117,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
             <h2 className="card-title justify-center text-2xl mb-2">
               {t('matcher.loadingTitle')}
@@ -202,7 +204,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -326,7 +328,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingBook ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.book'),
@@ -436,7 +438,7 @@ function BookLogs({ username, isActive = true }: BookLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { Link, useOutletContext } from 'react-router-dom';
 import {
   OutletMediaContextType,
@@ -1179,10 +1180,10 @@ function MediaDetails() {
               {formatter(myValue)}
               {unit}
             </div>
-            <div className="text-xs font-medium text-base-content/50 hidden sm:block">
+            <div className="text-xs font-medium text-base-content/70 hidden sm:block">
               {t('comparison.vs')}
             </div>
-            <div className="stat-value text-base sm:text-lg text-base-content/60 truncate">
+            <div className="stat-value text-base sm:text-lg text-base-content/70 truncate">
               {formatter(theirValue)}
               {unit}
             </div>
@@ -1190,7 +1191,7 @@ function MediaDetails() {
           <div
             className={`stat-desc flex items-center gap-1 text-xs ${
               isEqual
-                ? 'text-base-content/60'
+                ? 'text-base-content/70'
                 : isHigher
                   ? 'text-success'
                   : 'text-error'
@@ -1833,15 +1834,15 @@ function MediaDetails() {
                               ></progress>
                               {isEpisodeProgressCompleted ? (
                                 <>
-                                  <p className="text-xs text-base-content/60">
+                                  <p className="text-xs text-base-content/70">
                                     {t('stats.completed')}
                                   </p>
-                                  <p className="text-xs text-base-content/60">
+                                  <p className="text-xs text-base-content/70">
                                     {t('stats.allCaughtUp')}
                                   </p>
                                 </>
                               ) : (
-                                <p className="text-xs text-base-content/60">
+                                <p className="text-xs text-base-content/70">
                                   {numberWithCommas(totalEpisodesWatched)} /{' '}
                                   {numberWithCommas(totalEpisodeCount)} episodes
                                   ({episodeProgressPercentage.toFixed(1)}%)
@@ -1934,7 +1935,7 @@ function MediaDetails() {
                                   value={currentVolumeReadingPercentage}
                                   max="100"
                                 ></progress>
-                                <p className="text-xs text-base-content/60">
+                                <p className="text-xs text-base-content/70">
                                   {numberWithCommas(currentVolumeCharsRead)} /{' '}
                                   {numberWithCommas(currentVolumeCharCount)}{' '}
                                   chars (
@@ -2004,7 +2005,7 @@ function MediaDetails() {
                                   ? numberWithCommas(progressRemainingChars)
                                   : 'Completed'}
                               </p>
-                              <p className="text-xs text-base-content/60">
+                              <p className="text-xs text-base-content/70">
                                 {progressRemainingChars > 0
                                   ? `${progressPercentRemaining.toFixed(1)}% left`
                                   : 'All caught up'}
@@ -2046,7 +2047,7 @@ function MediaDetails() {
                               <p className="text-3xl font-bold text-warning mt-1">
                                 {numberWithCommas(Math.round(readingSpeed))}
                               </p>
-                              <p className="text-xs text-base-content/60">
+                              <p className="text-xs text-base-content/70">
                                 {t('stats.charsPerHour')}
                               </p>
                             </div>
@@ -2099,7 +2100,7 @@ function MediaDetails() {
                           value={progressPercentage}
                           max="100"
                         ></progress>
-                        <div className="flex justify-between text-xs text-base-content/60">
+                        <div className="flex justify-between text-xs text-base-content/70">
                           <span>
                             {numberWithCommas(progressCharsRead)} chars
                           </span>
@@ -2124,7 +2125,7 @@ function MediaDetails() {
                                       Math.round(recentReadingSpeed)
                                     )}
                                   </p>
-                                  <p className="text-xs text-base-content/60">
+                                  <p className="text-xs text-base-content/70">
                                     chars/hour (last {recentLogs.length} logs)
                                   </p>
                                 </div>
@@ -2148,7 +2149,7 @@ function MediaDetails() {
                                           progressEstimatedTimeToFinish * 60
                                         )}
                                   </p>
-                                  <p className="text-xs text-base-content/60">
+                                  <p className="text-xs text-base-content/70">
                                     {progressEstimatedTimeToFinish >= 1
                                       ? 'hours'
                                       : 'minutes'}{' '}
@@ -2278,7 +2279,7 @@ function MediaDetails() {
 
                 {reviewsLoading ? (
                   <div className="flex justify-center py-8">
-                    <span className="loading loading-spinner loading-lg"></span>
+                    <Spinner size="lg" />
                   </div>
                 ) : mediaReviews.length > 0 ? (
                   <div className="space-y-4">
@@ -2300,7 +2301,7 @@ function MediaDetails() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-base-content/60">
+                  <div className="text-center py-8 text-base-content/70">
                     <MessageSquareText className="mx-auto text-4xl mb-3 opacity-50" />
                     <h3 className="text-lg font-semibold mb-1">
                       {t('reviews.emptyTitle')}
@@ -2497,7 +2498,7 @@ function MediaDetails() {
                           />
                         </div>
                       </div>
-                      <span className="hidden sm:flex items-center text-base-content/50">
+                      <span className="hidden sm:flex items-center text-base-content/70">
                         to
                       </span>
                       <div className="dropdown dropdown-bottom flex-1 sm:flex-initial">
@@ -2546,7 +2547,7 @@ function MediaDetails() {
 
                   {hasActiveFilters && (
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="text-base-content/60">
+                      <span className="text-base-content/70">
                         {t('activity.activeFilters')}
                       </span>
 
@@ -2600,7 +2601,7 @@ function MediaDetails() {
 
                       <button
                         type="button"
-                        className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
+                        className="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content"
                         onClick={handleClearFilters}
                       >
                         {t('activity.clearAll')}
@@ -2664,7 +2665,7 @@ function MediaDetails() {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <div className="text-base-content/30 mb-6">
+                      <div className="text-base-content/70 mb-6">
                         <svg
                           className="w-20 h-20 mx-auto"
                           fill="none"
@@ -2682,14 +2683,14 @@ function MediaDetails() {
                       <h3 className="text-lg font-semibold text-base-content/70 mb-2">
                         {t('activity.noMatches')}
                       </h3>
-                      <p className="text-base-content/50 max-w-md mx-auto">
+                      <p className="text-base-content/70 max-w-md mx-auto">
                         {t('activity.noMatchesBody')}
                       </p>
                     </div>
                   )
                 ) : (
                   <div className="text-center py-12">
-                    <div className="text-base-content/30 mb-6">
+                    <div className="text-base-content/70 mb-6">
                       <svg
                         className="w-20 h-20 mx-auto"
                         fill="none"
@@ -2707,7 +2708,7 @@ function MediaDetails() {
                     <h3 className="text-lg font-semibold text-base-content/70 mb-2">
                       {t('activity.empty')}
                     </h3>
-                    <p className="text-base-content/50 max-w-md mx-auto">
+                    <p className="text-base-content/70 max-w-md mx-auto">
                       {t('activity.emptyBody')}
                     </p>
                   </div>
@@ -2756,7 +2757,7 @@ function MediaDetails() {
                 }}
               >
                 {deleteReviewMutation.isPending ? (
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                 ) : (
                   'Delete'
                 )}
