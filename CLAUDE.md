@@ -19,7 +19,8 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 - Run npm commands from `Backend/`, `Frontend/`, or `Mobile/`, never from the repository root.
 - Use npm 11. The lock files come from npm 11, and npm 10 rejects them during `npm ci` (for example, "Missing: esbuild@... from lock file").
 - Work directly on `main`. Do not create or switch to other branches.
-- Commit only when asked. Do not add a Co-Authored-By trailer. Do not push.
+- Commit only when asked. Do not push.
+- Do not credit Claude or any AI tool in commits or pull requests. Do not add `Co-Authored-By`, `Claude-Session`, or "Generated with Claude Code" lines. Commits use only the user's own identity.
 - Preserve unrelated user changes. The worktree may already be dirty.
 - Do not use em dashes in UI copy, documentation, comments, or user-facing responses. Use commas, periods, colons, or parentheses instead.
 - Both packages use ESM. Backend TypeScript imports use explicit `.js` extensions, including imports of `.ts` source modules.
