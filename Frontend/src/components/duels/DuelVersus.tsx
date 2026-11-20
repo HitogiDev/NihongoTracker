@@ -7,10 +7,12 @@ export interface DuelVersusSide {
   avatar?: string;
   /** Text under the avatar, such as "You" or the username. */
   label: string;
+  /** Progress of this participant. The opponent's HP is the goal minus this value. */
   current: number;
   /**
-   * Starting value for the progress animation. The bar renders at this value
-   * and keeps the final value in `data-value` for the caller to animate.
+   * Progress before the latest log. The opponent's HP bar renders at the HP
+   * that matches this value. The final HP stays in `data-hp-final` for the
+   * caller to animate.
    */
   from?: number;
 }
@@ -39,14 +41,24 @@ const AVATAR_RING = {
 const WINNER_RING =
   'rounded-full ring-4 ring-warning ring-offset-2 ring-offset-base-100 shadow-lg shadow-warning/40';
 
-// The right bar is mirrored so both bars grow toward the center.
-const BAR_CLASS = {
-  left: 'progress progress-primary w-full',
-  right: 'progress progress-secondary w-full -scale-x-100',
+// Both bars drain toward the outer edge. The right bar anchors to the right.
+const HP_FILL_CLASS = {
+  left: 'left-0 bg-primary',
+  right: 'right-0 bg-secondary',
 } as const;
+
+const HP_ANCHOR_CLASS = {
+  left: 'left-0',
+  right: 'right-0',
+} as const;
+
+const percent = (value: number, target: number) =>
+  `${Math.max(0, Math.min(100, (value / target) * 100))}%`;
 
 function Side({
   side,
+  hp,
+  hpFrom,
   position,
   target,
   showProgress,
@@ -55,6 +67,8 @@ function Side({
   size,
 }: {
   side: DuelVersusSide;
+  hp: number;
+  hpFrom: number;
   position: 'left' | 'right';
   target: number;
   showProgress: boolean;
@@ -65,8 +79,8 @@ function Side({
   let avatarRingClass: string = AVATAR_RING[position];
   if (state === 'winner') avatarRingClass = WINNER_RING;
   if (state === 'loser') avatarRingClass = `${AVATAR_RING[position]} opacity-50 grayscale`;
-  const startValue = Math.min(side.from ?? side.current, target);
-  const endValue = Math.min(side.current, target);
+  const startHp = Math.max(0, Math.min(hpFrom, target));
+  const endHp = Math.max(0, Math.min(hp, target));
   const name = linkNames ? (
     <Link
       to={`/user/${encodeURIComponent(side.username)}`}
@@ -80,7 +94,7 @@ function Side({
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2 text-center">
-      <div className="relative">
+      <div className="relative" data-duel-avatar={position}>
         {state === 'winner' && (
           <Crown className="absolute -top-5 left-1/2 h-5 w-5 -translate-x-1/2 fill-warning text-warning" />
         )}
@@ -96,19 +110,36 @@ function Side({
       <div className="w-full min-w-0 text-sm">{name}</div>
       {showProgress && (
         <div className="w-full">
-          <progress
-            className={BAR_CLASS[position]}
-            value={startValue}
-            data-value={endValue}
-            max={target}
-          />
+          <div
+            className="relative h-3.5 w-full overflow-hidden rounded-full bg-base-300"
+            data-hp-bar={position}
+            data-hp-from={startHp}
+            data-hp-final={endHp}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={target}
+            aria-valuenow={endHp}
+          >
+            <div
+              className={`absolute inset-y-0 bg-error ${HP_ANCHOR_CLASS[position]}`}
+              style={{ width: percent(startHp, target) }}
+              data-hp-ghost
+            />
+            <div
+              className={`absolute inset-y-0 ${HP_FILL_CLASS[position]}`}
+              style={{ width: percent(startHp, target) }}
+              data-hp-fill
+            />
+          </div>
           <div className="mt-0.5 text-xs tabular-nums text-base-content/70">
+            <span className="font-semibold">HP </span>
             <span
               className={`font-bold ${
-                state === 'winner' ? 'text-success' : 'text-base-content'
+                state === 'loser' ? 'text-error' : 'text-base-content'
               }`}
+              data-hp-text
             >
-              {Math.round(side.current).toLocaleString()}
+              {Math.round(startHp).toLocaleString()}
             </span>
             {' / '}
             {target.toLocaleString()}
@@ -119,7 +150,7 @@ function Side({
   );
 }
 
-/** Two participants face to face, with a VS badge and mirrored progress bars. */
+/** Two participants face to face, with a VS badge and HP bars. Each bar drains as the opponent progresses. */
 export default function DuelVersus({
   left,
   right,
@@ -138,6 +169,8 @@ export default function DuelVersus({
     <div className="mx-auto grid w-full max-w-lg grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 pt-5">
       <Side
         side={left}
+        hp={target - right.current}
+        hpFrom={target - (right.from ?? right.current)}
         position="left"
         target={target}
         showProgress={showProgress}
@@ -157,6 +190,8 @@ export default function DuelVersus({
       </div>
       <Side
         side={right}
+        hp={target - left.current}
+        hpFrom={target - (left.from ?? left.current)}
         position="right"
         target={target}
         showProgress={showProgress}

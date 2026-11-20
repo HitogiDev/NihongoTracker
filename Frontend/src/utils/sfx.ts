@@ -183,3 +183,101 @@ export function playAchievement(rarity: Rarity = 'common') {
     ]);
   }
 }
+
+/** Short rising blip for the damage counter. The pitch follows the progress from 0 to 1. */
+export function playDuelCharge(progress: number) {
+  const now = performance.now();
+  if (now - lastTick < 40) return;
+  lastTick = now;
+  play([
+    {
+      freq: 380 + progress * 900,
+      at: 0,
+      dur: 0.06,
+      type: 'square',
+      gain: 0.03,
+    },
+  ]);
+}
+
+/** Fast upward whoosh for the particles that leave the damage number. */
+export function playDuelLaunch() {
+  if (isSfxMuted()) return;
+  const ac = audioContext();
+  if (!ac) return;
+  const now = ac.currentTime;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(260, now);
+  osc.frequency.exponentialRampToValueAtTime(1400, now + 0.4);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.045, now + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(now);
+  osc.stop(now + 0.5);
+}
+
+/** Noise burst with a low thud. The strength goes from 0 to 1. */
+export function playDuelHit(strength = 0.6) {
+  if (isSfxMuted()) return;
+  const ac = audioContext();
+  if (!ac) return;
+  const now = ac.currentTime;
+  const length = Math.floor(ac.sampleRate * 0.18);
+  const buffer = ac.createBuffer(1, length, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  }
+  const noise = ac.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ac.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 1800;
+  const noiseGain = ac.createGain();
+  noiseGain.gain.value = 0.09 * strength;
+  noise.connect(filter).connect(noiseGain).connect(ac.destination);
+  noise.start(now);
+
+  const thud = ac.createOscillator();
+  const thudGain = ac.createGain();
+  thud.type = 'sine';
+  thud.frequency.setValueAtTime(150, now);
+  thud.frequency.exponentialRampToValueAtTime(45, now + 0.22);
+  thudGain.gain.setValueAtTime(0.0001, now);
+  thudGain.gain.linearRampToValueAtTime(0.2 * strength, now + 0.01);
+  thudGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+  thud.connect(thudGain).connect(ac.destination);
+  thud.start(now);
+  thud.stop(now + 0.3);
+}
+
+let lastPing = 0;
+
+/** Small tick when one particle lands on the health bar. */
+export function playDuelPing() {
+  const now = performance.now();
+  if (now - lastPing < 55) return;
+  lastPing = now;
+  play([
+    {
+      freq: 700 + Math.random() * 300,
+      at: 0,
+      dur: 0.07,
+      type: 'triangle',
+      gain: 0.05,
+    },
+  ]);
+}
+
+/** Heavy blow and descending tone when the opponent reaches 0 HP. */
+export function playDuelKO() {
+  playDuelHit(1);
+  play([
+    { freq: 392, at: 0.05, dur: 0.3, type: 'sawtooth', gain: 0.07 },
+    { freq: 261.63, at: 0.2, dur: 0.35, type: 'sawtooth', gain: 0.07 },
+    { freq: 196, at: 0.38, dur: 0.6, type: 'sawtooth', gain: 0.08 },
+  ]);
+}

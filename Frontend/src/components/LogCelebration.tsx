@@ -15,6 +15,11 @@ import {
   playXpTick,
   playLevelUp,
   playOvertake,
+  playDuelCharge,
+  playDuelLaunch,
+  playDuelHit,
+  playDuelPing,
+  playDuelKO,
   isSfxMuted,
   toggleSfx,
 } from '../utils/sfx';
@@ -50,6 +55,7 @@ export default function LogCelebration({
   const rankToRef = useRef<HTMLSpanElement>(null);
   const duelsCardRef = useRef<HTMLDivElement>(null);
   const closingRef = useRef(false);
+  const [duelsResolved, setDuelsResolved] = useState(false);
 
   const steps = useMemo<Step[]>(() => {
     const s: Step[] = ['xp'];
@@ -223,51 +229,209 @@ export default function LogCelebration({
     };
   }, [step, rank]);
 
-  // ── Step 4: duel progress ───────────────────────────────────────────────
+  // ── Step 4: duel damage ─────────────────────────────────────────────────
+  // The rival HP bar drains when the log adds progress. A damage number counts
+  // up, breaks into particles, and flies to the bar. The lost HP turns red
+  // before it leaves the bar.
   useEffect(() => {
     if (step !== 'duels' || !duels) return;
 
-    const won = duels.some((duel) => duel.outcome === 'won');
-    if (won) {
-      playLevelUp();
-      void confetti({
-        disableForReducedMotion: true,
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        zIndex: 10000,
-      });
-    } else {
-      playOvertake();
-    }
-    navigator.vibrate?.(40);
-
+    setDuelsResolved(false);
+    const card = duelsCardRef.current;
+    const particles: HTMLElement[] = [];
     const tl = gsap.timeline();
     tl.fromTo(
-      duelsCardRef.current,
+      card,
       { opacity: 0, y: 60, scale: 0.9 },
       { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.6)' }
     );
-    const bars = duelsCardRef.current?.querySelectorAll('progress') ?? [];
-    bars.forEach((bar) => {
-      const target = Number(bar.dataset.value ?? 0);
-      const state = { value: bar.value };
+
+    const blocks = Array.from(
+      card?.querySelectorAll<HTMLElement>('[data-duel-block]') ?? []
+    );
+
+    blocks.forEach((block, index) => {
+      const duel = duels[index];
+      if (!duel) return;
+      const bar = block.querySelector<HTMLElement>('[data-hp-bar="right"]');
+      const ghost = bar?.querySelector<HTMLElement>('[data-hp-ghost]');
+      const fill = bar?.querySelector<HTMLElement>('[data-hp-fill]');
+      const hpText = block.querySelector<HTMLElement>(
+        '[data-hp-bar="right"] + div [data-hp-text]'
+      );
+      const number = block.querySelector<HTMLElement>('[data-duel-number]');
+      const numberValue = block.querySelector<HTMLElement>('[data-duel-value]');
+      const rivalAvatar = block.querySelector<HTMLElement>(
+        '[data-duel-avatar="right"]'
+      );
+      const result = block.querySelector<HTMLElement>('[data-duel-result]');
+      if (!bar || !ghost || !fill || !number || !numberValue) return;
+
+      const fromHp = Number(bar.dataset.hpFrom ?? 0);
+      const finalHp = Number(bar.dataset.hpFinal ?? 0);
+      const toPct = (hp: number) => `${(hp / duel.target) * 100}%`;
+      const counter = { value: 0, hp: fromHp };
+      const gained = Math.max(0, Math.round(duel.gained));
+      const knockedOut = finalHp <= 0 && fromHp > 0;
+
+      const launch = () => {
+        const origin = number.getBoundingClientRect();
+        const barRect = bar.getBoundingClientRect();
+        const fromX = origin.left + origin.width / 2;
+        const fromY = origin.top + origin.height / 2;
+        const damageMid = (fromHp + finalHp) / 2 / duel.target;
+        // The right bar drains toward its right edge.
+        const toX = barRect.right - barRect.width * (1 - damageMid);
+        const toY = barRect.top + barRect.height / 2;
+        const count = Math.max(8, Math.min(22, 6 + Math.ceil(gained / 8)));
+
+        playDuelLaunch();
+        for (let i = 0; i < count; i += 1) {
+          const dot = document.createElement('div');
+          const size = 6 + Math.random() * 6;
+          dot.className = 'pointer-events-none fixed rounded-full bg-error';
+          Object.assign(dot.style, {
+            left: `${fromX - size / 2}px`,
+            top: `${fromY - size / 2}px`,
+            width: `${size}px`,
+            height: `${size}px`,
+            zIndex: '10001',
+            boxShadow: '0 0 10px 2px var(--color-error)',
+          });
+          document.body.appendChild(dot);
+          particles.push(dot);
+
+          const delay = i * 0.03;
+          const duration = 0.55 + Math.random() * 0.25;
+          const arc = (Math.random() - 0.5) * 140;
+          const targetX = toX + (Math.random() - 0.5) * Math.max(8, barRect.width * damageMid * 0.4);
+          const targetY = toY + (Math.random() - 0.5) * 6;
+          const flight = gsap.timeline({
+            delay,
+            onComplete: () => {
+              dot.remove();
+              playDuelPing();
+            },
+          });
+          flight
+            .fromTo(
+              dot,
+              { x: 0, y: 0, scale: 0 },
+              { scale: 1, duration: 0.12, ease: 'back.out(3)' },
+              0
+            )
+            .to(dot, { x: targetX - fromX, duration, ease: 'power2.in' }, 0)
+            .to(
+              dot,
+              { y: targetY - fromY + arc, duration: duration * 0.5, ease: 'power1.out' },
+              0
+            )
+            .to(
+              dot,
+              { y: targetY - fromY, duration: duration * 0.5, ease: 'power2.in' },
+              duration * 0.5
+            )
+            .to(dot, { scale: 0.4, opacity: 0.6, duration: 0.1 }, duration);
+        }
+      };
+
+      // 1. The damage number appears and counts up.
+      tl.fromTo(
+        number,
+        { opacity: 0, scale: 0.4, y: 10 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: 'back.out(2.4)' },
+        index === 0 ? '+=0.1' : '+=0.35'
+      );
+      tl.to(counter, {
+        value: gained,
+        duration: 0.9,
+        ease: 'power2.out',
+        onUpdate: () => {
+          numberValue.textContent = Math.round(counter.value).toLocaleString();
+          playDuelCharge(gained > 0 ? counter.value / gained : 1);
+        },
+      });
+      // 2. The HP that the log removes turns red and pulses.
+      tl.to(fill, { width: toPct(finalHp), duration: 0.25, ease: 'power2.out' });
+      tl.fromTo(
+        ghost,
+        { opacity: 1 },
+        { opacity: 0.45, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' },
+        '<'
+      );
+      // 3. The number breaks into particles that fly to the red part.
+      tl.call(launch);
+      tl.to(number, {
+        scale: 1.6,
+        opacity: 0,
+        duration: 0.3,
+        ease: 'power2.in',
+      });
+      tl.to({}, { duration: 0.75 });
+      // 4. The particles land. The red part drains and the rival reacts.
+      tl.call(() => {
+        if (knockedOut) playDuelKO();
+        else playDuelHit(0.7);
+        navigator.vibrate?.(knockedOut ? [50, 40, 80] : 40);
+      });
       tl.to(
-        state,
+        ghost,
+        { width: toPct(finalHp), opacity: 1, duration: 0.8, ease: 'power3.inOut' },
+        '<'
+      );
+      tl.to(
+        counter,
         {
-          value: target,
-          duration: 0.9,
-          ease: 'power2.out',
+          hp: finalHp,
+          duration: 0.8,
+          ease: 'power3.inOut',
           onUpdate: () => {
-            bar.value = state.value;
+            if (hpText) hpText.textContent = Math.round(counter.hp).toLocaleString();
           },
         },
-        '-=0.3'
+        '<'
       );
+      if (rivalAvatar) {
+        tl.fromTo(
+          rivalAvatar,
+          { x: 0 },
+          { x: 6, duration: 0.06, repeat: 7, yoyo: true, ease: 'sine.inOut' },
+          '<'
+        ).set(rivalAvatar, { x: 0 });
+      }
+      tl.fromTo(
+        bar,
+        { boxShadow: '0 0 0 0 var(--color-error)' },
+        { boxShadow: '0 0 14px 3px var(--color-error)', duration: 0.2, yoyo: true, repeat: 1 },
+        '<'
+      );
+      if (result) {
+        tl.fromTo(
+          result,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          '+=0.1'
+        );
+      }
+    });
+
+    tl.call(() => {
+      setDuelsResolved(true);
+      if (duels.some((duel) => duel.outcome === 'won')) {
+        playLevelUp();
+        void confetti({
+          disableForReducedMotion: true,
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          zIndex: 10000,
+        });
+      }
     });
 
     return () => {
       tl.kill();
+      particles.forEach((dot) => dot.remove());
     };
   }, [step, duels]);
 
@@ -475,7 +639,8 @@ export default function LogCelebration({
               return (
                 <div
                   key={duel._id}
-                  className={`flex flex-col gap-3 ${
+                  data-duel-block
+                  className={`relative flex flex-col gap-3 ${
                     index > 0 ? 'border-t border-base-content/10 pt-4' : ''
                   }`}
                 >
@@ -495,20 +660,27 @@ export default function LogCelebration({
                     }}
                     target={duel.target}
                     showProgress
-                    winner={winner}
+                    winner={duelsResolved ? winner : null}
                     linkNames={false}
                     size={duels.length === 1 ? 'lg' : 'md'}
                   />
 
-                  <div className="self-center rounded-full bg-success/15 px-3 py-1 text-xs font-bold text-success">
-                    {t('celebration.duels.gained', {
-                      amount: Math.round(duel.gained).toLocaleString(),
-                      metric,
-                    })}
+                  <div
+                    data-duel-number
+                    className="pointer-events-none absolute left-1/2 top-9 z-10 flex -translate-x-1/2 flex-col items-center leading-none text-error"
+                    style={{ opacity: 0 }}
+                  >
+                    <span className="text-4xl font-black tabular-nums">
+                      -<span data-duel-value>0</span>
+                    </span>
+                    <span className="mt-1 text-xs font-bold uppercase tracking-wide">
+                      {metric}
+                    </span>
                   </div>
 
                   {duel.outcome && (
                     <div
+                      data-duel-result
                       className={`text-sm font-bold text-center ${
                         duel.outcome === 'won'
                           ? 'text-success'
@@ -516,6 +688,7 @@ export default function LogCelebration({
                             ? 'text-error'
                             : 'text-info'
                       }`}
+                      style={{ opacity: 0 }}
                     >
                       {duel.outcome === 'won' && t('celebration.duels.won')}
                       {duel.outcome === 'lost' &&
