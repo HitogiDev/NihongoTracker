@@ -138,7 +138,7 @@
       "clearCustomCss": "Clear Custom CSS",
       "copyAllLines": "Copy All Lines",
       "customCss": "Custom CSS",
-      "customCssHint": "Add CSS rules to customize the TextHooker layout. Saved locally in your browser.",
+      "customCssHint": "Saved in your browser.",
       "displayHeading": "Display",
       "fontFamily": "Font Family",
       "fontSize": "Font Size (px)",

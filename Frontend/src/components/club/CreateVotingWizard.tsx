@@ -442,9 +442,6 @@ export default function CreateVotingWizard({
                   />
                   <span>{t('editVoting.testingMode')}</span>
                 </label>
-                <div className="text-xs text-base-content/70 ml-6">
-                  {t('editVoting.testingModeHint')}
-                </div>
               </div>
 
               <Field label={t('common.description')} className="md:col-span-2">
@@ -1125,9 +1122,6 @@ export default function CreateVotingWizard({
                     {votingData.suggestionEndDate
                       ? votingData.suggestionEndDate.toLocaleDateString()
                       : t('wizard.notSet')}
-                  </div>
-                  <div className="stat-desc">
-                    {t('wizard.suggestionPeriodHint')}
                   </div>
                 </div>
               </div>

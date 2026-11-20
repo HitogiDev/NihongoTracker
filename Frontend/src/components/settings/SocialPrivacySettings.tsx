@@ -90,9 +90,11 @@ export default function SocialPrivacySettings() {
           <legend className="fieldset-legend font-medium">
             {t(`privacy.fields.${field}.label`)}
           </legend>
-          <p className="mb-2 text-sm text-base-content/70">
-            {t(`privacy.fields.${field}.help`)}
-          </p>
+          {field === 'commenting' && (
+            <p className="mb-2 text-sm text-base-content/70">
+              {t('privacy.fields.commenting.help')}
+            </p>
+          )}
           <DropdownSelect
             className="select focus:select-primary w-full max-w-md"
             value={privacy[field]}

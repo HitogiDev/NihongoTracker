@@ -2100,9 +2100,7 @@ function LogScreen() {
                             })}
                       </span>
                     </div>
-                  ) : (
-                    <p>{t('create.reviewHint')}</p>
-                  )}
+                  ) : null}
                   <div className="card-actions justify-center mt-4">
                     <button
                       className="btn btn-primary btn-lg w-full"

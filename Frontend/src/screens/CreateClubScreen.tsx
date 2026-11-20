@@ -748,9 +748,6 @@ function CreateClubScreen() {
                   <Info className="text-primary w-6 h-6" />
                   {t('create.rules')}
                 </h2>
-                <p className="text-sm text-base-content/70 mb-4">
-                  {t('create.rulesHint')}
-                </p>
 
                 <div className="alert alert-warning mb-4 text-sm">
                   <TriangleAlert className="text-lg" />

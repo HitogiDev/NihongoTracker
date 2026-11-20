@@ -239,9 +239,6 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.previewTitle')}
           </h2>
-          <p className="text-sm text-base-content/70">
-            {t('customization.previewSubtitle')}
-          </p>
 
           <div
             className="relative mt-3 h-40 w-full overflow-hidden rounded-lg bg-linear-to-br from-primary/40 to-secondary/40 bg-cover bg-center"
@@ -312,9 +309,6 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.nameEffect')}
           </h2>
-          <p className="text-sm text-base-content/70">
-            {t('customization.nameEffectHint')}
-          </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {options.nameEffects.map((option) =>
               optionButton<NameEffect>(
@@ -543,9 +537,6 @@ export default function CustomizationSettings() {
       <CustomizationGroup title={t('customization.title')}>
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">{t('customization.title')}</h2>
-          <p className="text-sm text-base-content/70">
-            {t('customization.titleHint')}
-          </p>
           {titleOptions.length === 0 ? (
             <p className="mt-3 text-sm text-base-content/70">
               {t('customization.noTitles')}
@@ -577,9 +568,6 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.signatureStat')}
           </h2>
-          <p className="text-sm text-base-content/70">
-            {t('customization.signatureStatHint')}
-          </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {options.signatureStats.map((option) =>
               optionButton<SignatureStat>(
@@ -720,9 +708,6 @@ export default function CustomizationSettings() {
           <h2 className="card-title text-lg">
             {t('customization.bannerEffect')}
           </h2>
-          <p className="text-sm text-base-content/70">
-            {t('customization.bannerEffectHint')}
-          </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {options.bannerEffects.map((option) =>
               optionButton<BannerEffect>(

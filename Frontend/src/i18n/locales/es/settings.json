@@ -23,7 +23,7 @@
     "requiredForChanges": "Obligatoria para los cambios de abajo",
     "resendVerification": "Reenviar correo de verificación",
     "sending": "Enviando...",
-    "subtitle": "Actualiza tu nombre de usuario, correo y contraseña. Hace falta tu contraseña actual para confirmar los cambios sensibles.",
+    "subtitle": "Hace falta tu contraseña actual para confirmar los cambios sensibles.",
     "tab": "Cuenta y seguridad",
     "update": "Actualizar cuenta",
     "updating": "Actualizando...",
@@ -58,7 +58,6 @@
     "connect": "Conectar cuenta de AniList",
     "connected": "Conectada",
     "connection": "Conexión",
-    "connectionHint": "Gestiona el acceso a tu cuenta de AniList.",
     "errors": {
       "accountAlreadyLinked": "Esta cuenta de AniList ya está vinculada a otro usuario",
       "invalidState": "Estado de autorización inválido o caducado",
@@ -160,7 +159,7 @@
     "accentPreviewLabel": "Vista previa del acento",
     "accentPreviewText": "Texto resaltado",
     "avatarFrame": "Marco del avatar",
-    "avatarFrameHint": "Un anillo alrededor de tu avatar. Los marcos metálicos se ganan subiendo de nivel; los animados vienen con un nivel de Patreon.",
+    "avatarFrameHint": "Los marcos metálicos se ganan subiendo de nivel. Los animados vienen con un nivel de Patreon.",
     "avatarFrames": {
       "segmented": "Segmentado",
       "gradient": "Gradiente personalizable",
@@ -184,7 +183,6 @@
       "starlight": "Luz estelar"
     },
     "bannerEffect": "Efecto de la cabecera",
-    "bannerEffectHint": "Partículas que flotan sobre la cabecera de tu perfil.",
     "bannerEffects": {
       "fireflies": "Luciérnagas",
       "none": "Ninguno",
@@ -216,7 +214,6 @@
       "patreonPlus": "Nivel Enthusiast o Consumer"
     },
     "nameEffect": "Efecto del nombre",
-    "nameEffectHint": "Cómo se pinta tu nombre de usuario en tu perfil.",
     "nameEffects": {
       "aura": "Aura arcoíris",
       "glow": "Resplandor",
@@ -228,7 +225,6 @@
     "namePulseSpeed": "Velocidad del pulso",
     "noTitleOption": "Sin título",
     "noTitles": "Desbloquea logros para conseguir títulos que llevar junto a tu nombre.",
-    "previewSubtitle": "Esto es lo que verán las visitas en tu perfil.",
     "previewTitle": "Vista previa",
     "reducedMotionBody": "Tu sistema tiene activado «reducir movimiento», así que los cosméticos animados (brillo, aura del nombre, marcos animados, partículas de la cabecera) se muestran quietos en vez de moverse. El resto de la gente sí los ve animados.",
     "reducedMotionTitle": "Las animaciones están detenidas en tu dispositivo",
@@ -237,7 +233,6 @@
     "saved": "Personalización actualizada",
     "saving": "Guardando...",
     "signatureStat": "Estadística destacada",
-    "signatureStatHint": "Un número bajo tu nombre. Se puede mostrar el total de XP, el nivel, las horas totales o los caracteres leídos.",
     "signatureStats": {
       "chars": "Caracteres leídos",
       "hours": "Horas totales",
@@ -247,8 +242,7 @@
       "streak": "Racha actual",
       "xp": "XP total"
     },
-    "title": "Título equipado",
-    "titleHint": "Lleva uno de tus logros desbloqueados como título."
+    "title": "Título equipado"
   },
   "danger": {
     "cannotBeUndone": "no se puede deshacer",
@@ -266,13 +260,11 @@
     "csvFormatHelp": "Ayuda con el formato CSV",
     "export": "Exportar datos",
     "exportCsv": "Exportar como CSV",
-    "exportHint": "Descarga todos tus logs en un archivo CSV que podrás volver a importar más adelante.",
     "exporting": "Exportando...",
     "import": "Importar archivo",
     "importFrom": "Importar desde archivo",
     "importing": "Importando...",
     "kechimochiHelp": "Ayuda con la importación de Kechimochi",
-    "subtitle": "Importa, sincroniza y exporta tus datos",
     "syncExternal": "Sincronizar datos externos",
     "syncLogs": "Sincronizar logs",
     "syncing": "Sincronizando...",
@@ -300,7 +292,6 @@
     "login": "Iniciar sesión"
   },
   "header": {
-    "subtitle": "Gestiona tu cuenta y tus preferencias",
     "title": "Ajustes"
   },
   "layout": {
@@ -313,7 +304,6 @@
   },
   "logs": {
     "goToMatch": "Ir a emparejar contenido",
-    "matchHint": "Vincula tus logs sin seguimiento con el tipo de contenido correcto.",
     "matchMedia": "Emparejar contenido",
     "matchSubtitle": "Empareja logs sin seguimiento con su contenido",
     "title": "Gestión de logs"
@@ -321,7 +311,6 @@
   "manualImmersion": {
     "add": "Añadir totales anteriores",
     "characters": "Caracteres anteriores",
-    "description": "Añade tus totales de inmersión de antes de empezar a usar NihongoTracker.",
     "error": "No se pudieron añadir los totales. Revisa los valores e inténtalo de nuevo.",
     "listeningHours": "Horas de escucha",
     "mode": "Modo para añadir inmersión pasada",
@@ -387,10 +376,8 @@
     "background": "Fondo",
     "badgeBackgroundColor": "Color de fondo de la insignia",
     "badgeColors": "Personalización del color de la insignia",
-    "badgeColorsSubtitle": "Personaliza los colores de tu insignia de nivel Consumidor",
     "badgeTextColor": "Color del texto de la insignia",
     "badgeVisibility": "Mostrar insignia de mecenas",
-    "badgeVisibilityHint": "Desactívalo para ocultar tu insignia de nivel en tu perfil y en los rankings.",
     "becomeConsumer": "Hazte mecenas Consumidor para desbloquear colores de insignia personalizados",
     "benefits": "Ventajas",
     "connect": "Conectar con Patreon",
@@ -420,7 +407,6 @@
     "saveBadgeColors": "Guardar colores de la insignia",
     "secondary": "Secundario",
     "secondaryText": "Texto secundario",
-    "subtitle": "Vincula tu cuenta de Patreon para desbloquear ventajas de mecenas",
     "support": "Apóyanos en Patreon",
     "text": "Texto",
     "title": "Patreon",
@@ -429,18 +415,13 @@
   },
   "preferences": {
     "blurAdult": "Difuminar contenido adulto",
-    "blurAdultHint": "Ocultar el contenido explícito por defecto",
     "hideAdultFromSearch": "Ocultar contenido adulto de los resultados de búsqueda",
-    "hideAdultFromSearchHint": "Quitar contenido adulto de los resultados de búsqueda globales",
     "hideUnmatched": "Ocultar el aviso de logs sin emparejar",
-    "hideUnmatchedHint": "No mostrar avisos sobre logs sin emparejar",
     "hideRankingFeatures": "Ocultar funciones de ranking",
     "hideRankingFeaturesHint": "Oculta para ti las posiciones, clasificaciones y avisos de adelantamiento. Los demás seguirán viéndote en los rankings.",
     "language": {
-      "help": "Idioma de toda la interfaz. Se guarda en tu cuenta y se sincroniza entre dispositivos.",
       "label": "Idioma"
     },
-    "subtitle": "Personaliza tu experiencia",
     "theme": "Tema",
     "customTheme": {
       "title": "Temas personalizados",
@@ -463,7 +444,6 @@
       "failed": "No se pudo guardar el tema personalizado"
     },
     "timezone": "Zona horaria",
-    "timezoneHint": "Todas las fechas y horas se mostrarán en la zona horaria que elijas",
     "weekStartsOn": "La semana empieza el",
     "monday": "Lunes",
     "sunday": "Domingo",
@@ -475,25 +455,21 @@
   "privacy": {
     "fields": {
       "immersionActivity": {
-        "help": "Controla quién puede ver tus sesiones de inmersión en el feed social.",
         "label": "Actividad de inmersión"
       },
       "profile": {
-        "help": "Controla quién puede abrir tu perfil y ver sus secciones públicas.",
         "label": "Perfil"
       },
       "statistics": {
-        "help": "Controla quién puede ver tus totales, gráficos, clasificaciones y estadísticas de progreso.",
         "label": "Estadísticas"
       },
       "commenting": {
-        "help": "Controla quién puede comentar en tu actividad de registros. Los comentarios existentes seguirán visibles.",
+        "help": "Los comentarios existentes seguirán visibles.",
         "label": "Comentarios en mis registros"
       }
     },
     "save": "Guardar ajustes de privacidad",
     "saved": "Ajustes de privacidad actualizados",
-    "subtitle": "Elige quién puede ver cada parte de tu actividad social.",
     "title": "Privacidad social",
     "visibility": {
       "following": "Personas que sigues",
@@ -533,20 +509,16 @@
     "save": "Guardar perfil",
     "saveAbout": "Guardar «Sobre mí»",
     "saving": "Guardando...",
-    "subtitle": "Actualiza tu avatar, tu cabecera y tu biografía",
     "tab": "Perfil"
   },
   "profileWidgets": {
     "about": {
-      "description": "Tu biografía o presentación.",
       "label": "Sobre mí"
     },
     "achievements": {
-      "description": "Tus logros más destacados.",
       "label": "Escaparate de logros"
     },
     "favorites": {
-      "description": "Escaparate de tu contenido favorito.",
       "label": "Contenido favorito"
     },
     "currentMedia": {
@@ -554,24 +526,19 @@
       "description": "Hasta tres obras que registraste hace poco y no has terminado."
     },
     "duels": {
-      "description": "Tu duelo actual, o tus estadísticas de duelos si no hay ninguno activo (solo visible para ti).",
       "label": "Duelos"
     },
     "hide": "Ocultar el widget",
     "immersionActivity": {
-      "description": "Mapa de calor de tu inmersión en el tiempo.",
       "label": "Actividad de inmersión"
     },
     "immersionGoals": {
-      "description": "Tus objetivos activos (solo visibles para ti).",
       "label": "Objetivos de inmersión"
     },
     "profileStats": {
-      "description": "Clasificaciones, totales y gráfico de clasificación en el tiempo.",
       "label": "Estadísticas del perfil"
     },
     "progressStats": {
-      "description": "Niveles global, de escucha y de lectura.",
       "label": "Estadísticas de progreso"
     },
     "show": "Mostrar el widget"
@@ -635,7 +602,6 @@
       "maxReachedTier": "Has alcanzado el máximo de {{max}} etiquetas de tu nivel",
       "selected": "{{total}} seleccionadas"
     },
-    "subtitle": "Crea y gestiona etiquetas para organizar tus logs",
     "title": "Etiquetas"
   },
   "timezone": {

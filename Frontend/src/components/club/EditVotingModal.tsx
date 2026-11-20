@@ -307,9 +307,6 @@ export default function EditVotingModal({
                 />
                 <span>{t('editVoting.testingMode')}</span>
               </label>
-              <div className="text-xs text-base-content/70 ml-6">
-                {t('editVoting.testingModeHint')}
-              </div>
             </div>
 
             <Field label={t('common.description')} className="md:col-span-2">
