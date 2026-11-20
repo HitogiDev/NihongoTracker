@@ -68,7 +68,7 @@ export default function RecommendationsScreen() {
     <PageContainer className="max-w-5xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">{t('recommendations.pageTitle')}</h1>
-        <p className="mt-1 text-base-content/60">
+        <p className="mt-1 text-base-content/70">
           {t('recommendations.pageSubtitle')}
         </p>
       </div>
@@ -156,7 +156,7 @@ export default function RecommendationsScreen() {
                         <span className={STATUS_CLASS[recommendation.status]}>
                           {t(`recommendations.status.${recommendation.status}`)}
                         </span>
-                        <span className="ml-auto text-xs text-base-content/60">
+                        <span className="ml-auto text-xs text-base-content/70">
                           {formatRelativeDateInTimezone(recommendation.createdAt)}
                         </span>
                       </div>
@@ -252,9 +252,9 @@ export default function RecommendationsScreen() {
       ) : (
         <div className="card surface">
           <div className="card-body items-center py-16 text-center">
-            <Inbox className="h-10 w-10 text-base-content/40" />
+            <Inbox className="h-10 w-10 text-base-content/70" />
             <h2 className="card-title">{t('recommendations.emptyTitle')}</h2>
-            <p className="text-base-content/60">
+            <p className="text-base-content/70">
               {direction === 'received'
                 ? t('recommendations.emptyReceived')
                 : t('recommendations.emptySent')}

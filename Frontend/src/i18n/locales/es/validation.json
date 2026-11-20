@@ -51,10 +51,14 @@
     "mismatch": "Las contraseñas no coinciden",
     "required": "La contraseña es obligatoria"
   },
+  "terms": {
+    "required": "Acepta los Términos del servicio y la Política de privacidad para continuar"
+  },
   "username": {
     "charset": "El nombre de usuario solo puede contener letras, números, guiones y guiones bajos",
     "maxLength": "El nombre de usuario debe tener menos de 20 caracteres",
     "minLength": "El nombre de usuario debe tener al menos 1 carácter",
+    "registerMinLength": "El nombre de usuario debe tener al menos 3 caracteres",
     "required": "El nombre de usuario es obligatorio"
   }
 }

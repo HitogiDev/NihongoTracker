@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -58,10 +59,10 @@ function UserListsScreen() {
 
         {isLoading ? (
           <div className="flex justify-center py-16">
-            <span className="loading loading-spinner loading-lg" />
+            <Spinner size="lg" />
           </div>
         ) : lists.length === 0 ? (
-          <p className="text-base-content/60 py-12 text-center">
+          <p className="text-base-content/70 py-12 text-center">
             {isOwnProfile ? t('lists.emptyOwn') : t('lists.emptyOther')}
           </p>
         ) : (

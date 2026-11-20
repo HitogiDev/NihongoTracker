@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { useAutoMatch } from '../hooks/useAutoMatch';
 import { useMatchingSelection } from '../hooks/useMatchingSelection';
 import { useMediaAssignment } from '../hooks/useMediaAssignment';
@@ -49,11 +51,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
 
   if (searchAnimeError && searchAnimeError instanceof AxiosError) {
-    toast.error(searchAnimeError.response?.data.message);
+    toast.error(getApiErrorMessage(searchAnimeError));
   }
 
   if (logError && logError instanceof AxiosError) {
-    toast.error(logError.response?.data.message);
+    toast.error(getApiErrorMessage(logError));
   }
 
   const groupedLogs = useGroupLogs(logs, 'anime');
@@ -116,7 +118,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -152,7 +154,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
               <span
                 className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
@@ -163,7 +165,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
               ></span>
             </div>
 
-            <div className="text-xs text-base-content/50 mt-2">
+            <div className="text-xs text-base-content/70 mt-2">
               {t('matcher.fetching')}
             </div>
           </div>
@@ -245,7 +247,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -396,7 +398,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             <div className="overflow-y-auto max-h-[60vh]">
               {isSearchingAnilist ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                   <p className="mt-2">
                     {t('matcher.searching', {
                       type: t('common:mediaTypesPlural.anime'),
@@ -530,7 +532,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner loading-md"></span>
+              <Spinner size="md" />
               {t('matcher.assigning')}
             </>
           ) : (

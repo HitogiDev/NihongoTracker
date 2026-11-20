@@ -220,7 +220,7 @@ export default function NativeHookBridge({ url, contentId, onLine, onSourceChang
         <div className="space-y-2 max-h-80 overflow-y-auto">
           {status?.hooks.map((hook) => <label key={hook.selection_key} className="surface-muted flex items-start gap-3 p-3 cursor-pointer">
             <input type="radio" name="native-hook" className="radio radio-primary radio-sm mt-1" checked={selection === hook.selection_key} onChange={() => { selectionDirtyRef.current = true; setSelection(hook.selection_key); }} />
-            <span className="min-w-0 flex-1"><span className="block font-medium">{hook.name || hook.hook_code}</span><span className="block break-words text-sm text-base-content/70">{hook.sample}</span><code className="block truncate text-xs text-base-content/50">{hook.hook_code}</code></span>
+            <span className="min-w-0 flex-1"><span className="block font-medium">{hook.name || hook.hook_code}</span><span className="block break-words text-sm text-base-content/70">{hook.sample}</span><code className="block truncate text-xs text-base-content/70">{hook.hook_code}</code></span>
           </label>)}
         </div>
         {error && <p className="text-error text-sm mt-3">{t('hooker.native.saveFailed')}</p>}

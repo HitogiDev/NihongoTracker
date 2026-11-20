@@ -85,7 +85,7 @@ function EntryRow({
   const content = (
     <>
       {isRanked && (
-        <span className="text-lg font-bold text-base-content/40 w-8 text-center shrink-0">
+        <span className="text-lg font-bold text-base-content/70 w-8 text-center shrink-0">
           {index + 1}
         </span>
       )}
@@ -97,7 +97,7 @@ function EntryRow({
       />
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{title}</p>
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-base-content/70">
           {mediaTypeLabelKey
             ? t(mediaTypeLabelKey, { ns: 'common' })
             : entry.mediaType}
@@ -336,7 +336,7 @@ function MediaListDetailScreen() {
             >
               {list.user?.username}
             </Link>
-            <span className="text-sm text-base-content/60">
+            <span className="text-sm text-base-content/70">
               · {t('lists.entries', { count: list.entryCount })}
             </span>
           </div>
@@ -425,7 +425,7 @@ function MediaListDetailScreen() {
         </header>
 
         {entries.length === 0 ? (
-          <p className="text-base-content/60">{t('lists.detail.empty')}</p>
+          <p className="text-base-content/70">{t('lists.detail.empty')}</p>
         ) : (
           <DndContext
             sensors={sensors}

@@ -65,7 +65,7 @@ export default function VerifyEmailScreen() {
               <h2 className="card-title mt-4">
                 {t('verifyEmail.verifying.title')}
               </h2>
-              <p className="text-base-content/60">
+              <p className="text-base-content/70">
                 {t('verifyEmail.verifying.description')}
               </p>
             </>
@@ -94,7 +94,7 @@ export default function VerifyEmailScreen() {
                 {t('verifyEmail.success.title')}
               </h2>
               <p className="text-base-content/80">{message}</p>
-              <p className="text-sm text-base-content/60 mt-2">
+              <p className="text-sm text-base-content/70 mt-2">
                 {user
                   ? t('verifyEmail.success.redirectingToSettings')
                   : t('verifyEmail.success.redirectingToLogin')}

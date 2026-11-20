@@ -200,7 +200,7 @@ export default function ImmersionPlanner() {
             </h2>
             <span className="badge badge-secondary badge-sm">Enthusiast+</span>
           </div>
-          <p className="text-sm leading-relaxed text-base-content/60 mt-1.5">
+          <p className="text-sm leading-relaxed text-base-content/70 mt-1.5">
             {t('forecast.subtitle')}
           </p>
         </div>
@@ -238,7 +238,7 @@ export default function ImmersionPlanner() {
                 <h3 className="font-bold text-lg leading-snug mt-2 truncate">
                   {displayMediaTitle(previewMedia)}
                 </h3>
-                <p className="text-xs text-base-content/60 mt-1 flex items-center gap-1">
+                <p className="text-xs text-base-content/70 mt-1 flex items-center gap-1">
                   <CalendarClock className="w-3.5 h-3.5" />
                   {t('forecast.previewDeadline', {
                     date: previewDate.toLocaleDateString(),
@@ -259,21 +259,21 @@ export default function ImmersionPlanner() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
-                <p className="text-base-content/60">{t('forecast.remaining')}</p>
+                <p className="text-base-content/70">{t('forecast.remaining')}</p>
                 <p className="font-bold tabular-nums">
                   {previewRemaining.toLocaleString()}{' '}
                   {t(`forecast.units.${preview.metric}`)}
                 </p>
               </div>
               <div>
-                <p className="text-base-content/60">{t('forecast.daily')}</p>
+                <p className="text-base-content/70">{t('forecast.daily')}</p>
                 <p className="font-bold tabular-nums">
                   {previewDaily.toLocaleString()}{' '}
                   {t(`forecast.units.${preview.metric}`)}
                 </p>
               </div>
               <div>
-                <p className="text-base-content/60">{t('forecast.timeLeft')}</p>
+                <p className="text-base-content/70">{t('forecast.timeLeft')}</p>
                 <p className="font-bold tabular-nums">
                   {formatDuration(previewMinutes)}
                 </p>
@@ -283,7 +283,7 @@ export default function ImmersionPlanner() {
             <div className="surface-muted p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <p className="font-semibold">{t('forecast.previewTitle')}</p>
-                <p className="text-sm text-base-content/60 mt-1 max-w-2xl">
+                <p className="text-sm text-base-content/70 mt-1 max-w-2xl">
                   {t('forecast.previewBody')}
                 </p>
               </div>
@@ -314,7 +314,7 @@ export default function ImmersionPlanner() {
       {data?.canManage && !data.forecasts.length && (
         <div className="surface-muted p-6 text-center">
           <p className="font-medium">{t('forecast.emptyTitle')}</p>
-          <p className="text-sm text-base-content/60 mt-1">
+          <p className="text-sm text-base-content/70 mt-1">
             {t('forecast.emptyBody')}
           </p>
         </div>
@@ -340,7 +340,7 @@ export default function ImmersionPlanner() {
                       <span className={STATUS_CLASS[progress.status]}>
                         {t(`forecast.status.${progress.status}`)}
                       </span>
-                      <span className="text-xs text-base-content/60 flex items-center gap-1">
+                      <span className="text-xs text-base-content/70 flex items-center gap-1">
                         <CalendarClock className="w-3 h-3" />
                         {new Date(
                           `${forecast.targetDate.slice(0, 10)}T00:00:00`
@@ -379,19 +379,19 @@ export default function ImmersionPlanner() {
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                   <div>
-                    <p className="text-base-content/60">{t('forecast.remaining')}</p>
+                    <p className="text-base-content/70">{t('forecast.remaining')}</p>
                     <p className="font-bold tabular-nums">
                       {Math.ceil(progress.remaining).toLocaleString()} {t(`forecast.units.${forecast.metric}`)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-base-content/60">{t('forecast.daily')}</p>
+                    <p className="text-base-content/70">{t('forecast.daily')}</p>
                     <p className="font-bold tabular-nums">
                       {progress.requiredPerDay.toLocaleString()} {t(`forecast.units.${forecast.metric}`)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-base-content/60">{t('forecast.timeLeft')}</p>
+                    <p className="text-base-content/70">{t('forecast.timeLeft')}</p>
                     <p className="font-bold tabular-nums">
                       {progress.estimatedMinutes === null
                         ? t('forecast.insufficientData')

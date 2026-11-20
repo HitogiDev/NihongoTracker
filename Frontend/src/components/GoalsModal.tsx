@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import DropdownSelect from './ui/DropdownSelect';
 import { useState } from 'react';
 import Field from './ui/Field';
@@ -635,7 +636,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           : isCreatingLongGoal
                       ) ? (
                         <>
-                          <span className="loading loading-spinner loading-sm"></span>
+                          <Spinner size="sm" />
                           {t('goals:modal.creating')}
                         </>
                       ) : (
@@ -820,7 +821,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                     : 'modal.daily'
                                 )}
                               </h4>
-                              <p className="text-xs text-base-content/60">
+                              <p className="text-xs text-base-content/70">
                                 {goal.mediaType
                                   ? t(
                                       `common:mediaTypes.${goalMediaTypeKey(goal.mediaType)}`
@@ -902,7 +903,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
               >
                 {isDeletingGoal ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                     {t('goals:modal.deleting')}
                   </>
                 ) : (

@@ -183,20 +183,16 @@ function FeaturesScreen() {
               components={{ hl: <span className="text-primary" /> }}
             />
           </h1>
-          <p className="text-xl text-base-content/60 mb-10 leading-relaxed">
+          <p className="text-xl text-base-content/70 mb-10 leading-relaxed">
             {t('features.hero.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/register">
-              <button className="btn btn-primary btn-lg gap-2 px-8">
-                {t('features.hero.ctaPrimary')}
-                <ArrowRight className="w-5 h-5" />
-              </button>
+            <Link to="/register" className="btn btn-primary btn-lg gap-2 px-8">
+              {t('features.hero.ctaPrimary')}
+              <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link to="/ranking">
-              <button className="btn btn-ghost btn-lg px-8">
-                {t('features.hero.ctaSecondary')}
-              </button>
+            <Link to="/ranking" className="btn btn-ghost btn-lg px-8">
+              {t('features.hero.ctaSecondary')}
             </Link>
           </div>
         </div>
@@ -206,25 +202,25 @@ function FeaturesScreen() {
         <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
             <div className="text-3xl font-bold text-primary">40+</div>
-            <div className="text-sm text-base-content/50 mt-1">
+            <div className="text-sm text-base-content/70 mt-1">
               {t('features.stats.features')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-secondary">11</div>
-            <div className="text-sm text-base-content/50 mt-1">
+            <div className="text-sm text-base-content/70 mt-1">
               {t('features.stats.mediaTypes')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-accent">&infin;</div>
-            <div className="text-sm text-base-content/50 mt-1">
+            <div className="text-sm text-base-content/70 mt-1">
               {t('features.stats.progressTracking')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-success">100%</div>
-            <div className="text-sm text-base-content/50 mt-1">
+            <div className="text-sm text-base-content/70 mt-1">
               {t('features.stats.freeCore')}
             </div>
           </div>
@@ -250,7 +246,7 @@ function FeaturesScreen() {
                     <h3 className="text-lg font-bold text-base-content">
                       {tf(`features.categories.${category.id}.title`)}
                     </h3>
-                    <p className="text-sm text-base-content/55">
+                    <p className="text-sm text-base-content/70">
                       {tf(`features.categories.${category.id}.description`)}
                     </p>
                   </div>
@@ -260,9 +256,9 @@ function FeaturesScreen() {
                     {t('features.count', { count: category.features.length })}
                   </span>
                   {expandedCategory === category.id ? (
-                    <ChevronUp className="w-5 h-5 text-base-content/50" />
+                    <ChevronUp className="w-5 h-5 text-base-content/70" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-base-content/50" />
+                    <ChevronDown className="w-5 h-5 text-base-content/70" />
                   )}
                 </div>
               </button>
@@ -295,7 +291,7 @@ function FeaturesScreen() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-base-content/55 mt-0.5 leading-relaxed">
+                          <p className="text-xs text-base-content/70 mt-0.5 leading-relaxed">
                             {tf(
                               `features.categories.${category.id}.items.${feature.id}.description`
                             )}
@@ -329,13 +325,13 @@ function FeaturesScreen() {
                 >
                   <Icon className="w-8 h-8" />
                 </div>
-                <p className="text-xs font-semibold text-base-content/35 uppercase tracking-widest mb-1">
+                <p className="text-xs font-semibold text-base-content/70 uppercase tracking-widest mb-1">
                   {t('features.howItWorks.step', { number: index + 1 })}
                 </p>
                 <h3 className="font-bold text-base-content mb-2">
                   {tf(`features.howItWorks.steps.${id}.title`)}
                 </h3>
-                <p className="text-sm text-base-content/55 leading-relaxed">
+                <p className="text-sm text-base-content/70 leading-relaxed">
                   {tf(`features.howItWorks.steps.${id}.description`)}
                 </p>
               </div>
@@ -349,22 +345,18 @@ function FeaturesScreen() {
           <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
             {t('features.cta.title')}
           </h2>
-          <p className="text-lg text-base-content/55 mb-10">
+          <p className="text-lg text-base-content/70 mb-10">
             {t('features.cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/register">
-              <button className="btn btn-primary btn-lg px-8">
-                {t('features.cta.primary')}
-              </button>
+            <Link to="/register" className="btn btn-primary btn-lg px-8">
+              {t('features.cta.primary')}
             </Link>
-            <Link to="/ranking">
-              <button className="btn btn-ghost btn-lg px-8">
-                {t('features.cta.secondary')}
-              </button>
+            <Link to="/ranking" className="btn btn-ghost btn-lg px-8">
+              {t('features.cta.secondary')}
             </Link>
           </div>
-          <p className="mt-8 text-sm text-base-content/50">
+          <p className="mt-8 text-sm text-base-content/70">
             {t('features.cta.madeWith')}
           </p>
         </div>

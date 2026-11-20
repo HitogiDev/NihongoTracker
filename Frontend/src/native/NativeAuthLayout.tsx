@@ -20,7 +20,7 @@ export default function NativeAuthLayout({
       </div>
       {children}
       <nav
-        className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-sm text-base-content/65"
+        className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-sm text-base-content/70"
         aria-label={t("native.legal")}
       >
         <Link className="link link-hover" to="/terms">

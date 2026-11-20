@@ -7,6 +7,17 @@ import { useNotificationCount } from "../hooks/useNotificationCount";
 import { nativeRoute } from "./navigation";
 import SearchModal from "../components/SearchModal";
 import Button from "../components/ui/Button";
+import { useNativeTitleStore } from "./nativeTitle";
+
+/** Form screens keep the header free for the back action and the title. */
+const NO_SEARCH_SCREENS = new Set(["auth", "log", "settings", "session"]);
+
+function profileUsername(pathname: string) {
+  const parts = pathname.split("/").filter(Boolean);
+  return parts[0] === "user" && parts[1] && !parts[2]
+    ? decodeURIComponent(parts[1])
+    : undefined;
+}
 
 export default function NativeHeader() {
   const { t } = useTranslation("nav");
@@ -15,6 +26,15 @@ export default function NativeHeader() {
   const count = useNotificationCount();
   const route = nativeRoute(pathname, search, user?.username);
   const [searchOpen, setSearchOpen] = useState(false);
+  const dataTitle = useNativeTitleStore((state) => state.titles[pathname]);
+  // The own profile tab keeps its tab name. Other profiles show the username.
+  const foreignProfile = route.tab === "profile" ? undefined : profileUsername(pathname);
+  const title =
+    route.screen === "auth" && pathname === "/login"
+      ? "NihongoTracker"
+      : (dataTitle ?? foreignProfile ?? t(route.title));
+  const showSearch =
+    Boolean(user) && (route.primary || !NO_SEARCH_SCREENS.has(route.screen));
   return (
     <>
       <header className="native-header bg-base-100 text-base-content">
@@ -34,22 +54,25 @@ export default function NativeHeader() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold">
-            {route.screen === "auth" && pathname === "/login"
-              ? "NihongoTracker"
-              : t(route.title)}
+          <h1
+            className="min-w-0 flex-1 truncate text-lg font-semibold"
+            data-generic-title={dataTitle || foreignProfile ? undefined : ""}
+          >
+            {title}
           </h1>
+          {showSearch && (
+            <Button
+              appearance="ghost"
+              size="sm"
+              shape="square"
+              aria-label={t("a11y.search")}
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+          )}
           {user && route.primary && (
             <>
-              <Button
-                appearance="ghost"
-                size="sm"
-                shape="square"
-                aria-label={t("a11y.search")}
-                onClick={() => setSearchOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
               <Link
                 to="/notifications"
                 className="btn btn-ghost btn-sm btn-square relative"

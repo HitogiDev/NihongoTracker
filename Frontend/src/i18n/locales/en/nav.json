@@ -55,7 +55,12 @@
     "yourClubs": "Your clubs",
     "exploreClubs": "Explore clubs",
     "members": "Members",
-    "media": "Media"
+    "media": "Media",
+    "pushTitle": "Get notified",
+    "pushBody": "Hear about duels, mentions, club activity, and your goal digests, even when the app is closed.",
+    "pushEnable": "Turn on",
+    "pushLater": "Not now",
+    "tools": "Tools"
   },
   "onboarding": {
     "skip": "Skip",
@@ -208,6 +213,7 @@
     "clubSection": "{{section}} • Club",
     "createClub": "Create Club",
     "createLog": "Create Log",
+    "sessionTimer": "Session timer",
     "android": "Android app",
     "desktop": "Desktop app",
     "duels": "Duels",

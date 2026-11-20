@@ -171,7 +171,7 @@ export default function AdminNotificationPanel() {
                 )}
               </Field>
             ) : (
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('notifications.allHint')}
               </p>
             )}
@@ -193,7 +193,7 @@ export default function AdminNotificationPanel() {
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-base-content/60">
+              <p className="mt-2 text-xs text-base-content/70">
                 {language === 'en'
                   ? t('notifications.englishHint')
                   : t('notifications.translationHint')}
@@ -263,13 +263,13 @@ export default function AdminNotificationPanel() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium leading-snug line-clamp-2 break-words">
                     {title.trim() || englishTitle || (
-                      <span className="text-base-content/40">
+                      <span className="text-base-content/70">
                         {t('notifications.previewEmpty')}
                       </span>
                     )}
                   </p>
                   {(body.trim() || content.en.body.trim()) && (
-                    <p className="mt-0.5 text-xs text-base-content/60 line-clamp-1 break-words">
+                    <p className="mt-0.5 text-xs text-base-content/70 line-clamp-1 break-words">
                       {body.trim() || content.en.body.trim()}
                     </p>
                   )}

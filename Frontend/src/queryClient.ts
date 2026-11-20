@@ -1,6 +1,6 @@
 import { QueryClient, QueryCache } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { isPrivateProfileError } from './utils/apiError';
+import { getApiErrorMessage, isPrivateProfileError } from './utils/apiError';
 import { isNativeApp } from './utils/nativeRuntime';
 
 declare module '@tanstack/react-query' {
@@ -25,7 +25,8 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (query.meta?.silentError || isPrivateProfileError(error)) return;
-      toast.error(error.message ? error.message : 'An error occurred');
+      // `installToastDefaults` shows one toast when several queries fail for the same reason.
+      toast.error(getApiErrorMessage(error));
     },
   }),
 });

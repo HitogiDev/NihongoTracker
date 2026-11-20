@@ -36,7 +36,7 @@ export default function ConnectionsScreen({
                 : t("social.followingTitle", { username })}
             </h2>
             {!isLoading && !isError && (
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t("social.peopleCount", { count: data?.total ?? 0 })}
               </p>
             )}
@@ -113,7 +113,7 @@ export default function ConnectionsScreen({
             )}
           </>
         ) : (
-          <p className="py-10 text-center text-base-content/60">
+          <p className="py-10 text-center text-base-content/70">
             {direction === "followers"
               ? t("social.noFollowers")
               : t("social.noFollowing")}

@@ -30,7 +30,7 @@ export default function RecentActivity({ clubId, enabled = true }: RecentActivit
           {t('activity.title')}
         </h2>
         {!enabled ? (
-          <p className="py-6 text-center text-sm text-base-content/60">
+          <p className="py-6 text-center text-sm text-base-content/70">
             {t('activity.membersOnly')}
           </p>
         ) : feed.isLoading ? (
@@ -38,7 +38,7 @@ export default function RecentActivity({ clubId, enabled = true }: RecentActivit
             <Spinner />
           </div>
         ) : activities.length === 0 ? (
-          <div className="py-6 text-center text-base-content/60">
+          <div className="py-6 text-center text-base-content/70">
             <History className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p className="text-sm">{t('activity.empty')}</p>
             <p className="text-xs">{t('activity.emptyHint')}</p>

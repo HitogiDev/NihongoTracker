@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useState, useEffect } from 'react';
 import Field from '../components/ui/Field';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -249,7 +250,7 @@ function SharedLogScreen() {
                   {t('shared.sharedProgress')}
                 </div>
               </div>
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('shared.joinBody')}
               </p>
             </div>
@@ -271,7 +272,7 @@ function SharedLogScreen() {
               </button>
             </div>
 
-            <p className="text-xs text-base-content/50 mt-6">
+            <p className="text-xs text-base-content/70 mt-6">
               {t('shared.joinPitch')}
             </p>
           </div>
@@ -286,16 +287,16 @@ function SharedLogScreen() {
         <div className="card w-full max-w-md surface">
           <div className="card-body text-center p-8">
             <div className="flex justify-center mb-6">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
             <h2 className="text-xl font-semibold mb-2">
               {t('shared.loadingTitle')}
             </h2>
-            <p className="text-base-content/60">
+            <p className="text-base-content/70">
               {t('shared.loadingSubtitle')}
             </p>
             <div className="flex justify-center gap-1 mt-4">
-              <span className="loading loading-spinner loading-sm"></span>
+              <Spinner size="sm" />
             </div>
           </div>
         </div>
@@ -370,7 +371,7 @@ function SharedLogScreen() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
+            <div className="sticky top-[calc(var(--site-header-offset)+1rem)] follow-site-header">
               {coverImage && (
                 <div className="card surface mb-6">
                   <figure className="aspect-[3/4] overflow-hidden rounded-xl">
@@ -402,7 +403,7 @@ function SharedLogScreen() {
 
                   <div className="space-y-3">
                     <div>
-                      <span className="text-sm font-medium text-base-content/60">
+                      <span className="text-sm font-medium text-base-content/70">
                         {t('shared.titleLabel')}
                       </span>
                       <p className="font-semibold">{logTitle}</p>
@@ -412,7 +413,7 @@ function SharedLogScreen() {
                       typeof sharedLog.media === 'object' &&
                       sharedLog.media.title?.contentTitleEnglish && (
                         <div>
-                          <span className="text-sm font-medium text-base-content/60">
+                          <span className="text-sm font-medium text-base-content/70">
                             {t('shared.englishTitle')}
                           </span>
                           <p className="text-sm">
@@ -490,7 +491,7 @@ function SharedLogScreen() {
                     <h2 className="text-2xl font-bold">
                       {t('shared.addToProgress')}
                     </h2>
-                    <p className="text-base-content/60">
+                    <p className="text-base-content/70">
                       {t('shared.copyHint')}
                     </p>
                   </div>
@@ -669,7 +670,7 @@ function SharedLogScreen() {
                   >
                     {isCreating ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                         {t('shared.adding')}
                       </>
                     ) : (

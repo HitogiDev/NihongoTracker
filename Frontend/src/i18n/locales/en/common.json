@@ -4,8 +4,15 @@
   "avatarAlt": "{{username}}'s Avatar",
   "cancel": "Cancel",
   "close": "Close",
+  "confirm": "Confirm",
+  "confirmTitle": "Are you sure?",
+  "delete": "Delete",
   "errors": {
-    "generic": "An error occurred"
+    "generic": "An error occurred",
+    "loadFailed": "This content could not be loaded.",
+    "network": "No connection. Check your internet and try again.",
+    "retry": "Try again",
+    "server": "The server could not complete the request. Please try again."
   },
   "language": {
     "saveError": "Could not save your language preference"

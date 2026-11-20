@@ -1,3 +1,4 @@
+import ModalBackdrop from './ui/ModalBackdrop';
 import OfflineImage from './OfflineImage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -116,7 +117,7 @@ function FavoriteCover({
           className={`w-full h-full object-cover ${blur ? 'blur-md' : ''}`}
         />
       ) : (
-        <div className="flex items-center justify-center w-full h-full text-xs text-base-content/40 p-2 text-center">
+        <div className="flex items-center justify-center w-full h-full text-xs text-base-content/70 p-2 text-center">
           {mediaTitle(media)}
         </div>
       )}
@@ -233,7 +234,7 @@ function FavoritePopover({
         </p>
         {media?.title.contentTitleEnglish &&
           media.title.contentTitleEnglish !== mediaTitle(media) && (
-            <p className="text-xs text-base-content/60 mt-0.5">
+            <p className="text-xs text-base-content/70 mt-0.5">
               {media.title.contentTitleEnglish}
             </p>
           )}
@@ -245,7 +246,7 @@ function FavoritePopover({
           </span>
         )}
         {media?.genres && media.genres.length > 0 && (
-          <p className="text-xs text-base-content/50 mt-1.5">
+          <p className="text-xs text-base-content/70 mt-1.5">
             {media.genres.slice(0, 3).join(' · ')}
           </p>
         )}
@@ -314,7 +315,7 @@ function SortableFavorite({
               className={`w-full h-full object-cover ${blur ? 'blur-md' : ''}`}
             />
           ) : (
-            <div className="flex items-center justify-center w-full h-full text-xs text-base-content/40 p-2 text-center">
+            <div className="flex items-center justify-center w-full h-full text-xs text-base-content/70 p-2 text-center">
               {mediaTitle(media)}
             </div>
           )}
@@ -373,7 +374,7 @@ function NoteModal({
           <NotebookPen className="w-5 h-5" />
           {t('favoritesWidget.noteTitle')}
         </h3>
-        <p className="text-sm text-base-content/60 mt-1 truncate">
+        <p className="text-sm text-base-content/70 mt-1 truncate">
           {mediaTitle(fav.media)}
         </p>
         <textarea
@@ -385,7 +386,7 @@ function NoteModal({
           autoFocus
           onChange={(e) => setValue(e.target.value)}
         />
-        <div className="text-right text-xs text-base-content/40 mt-1">
+        <div className="text-right text-xs text-base-content/70 mt-1">
           {value.length}/500
         </div>
         <div className="modal-action">
@@ -403,7 +404,7 @@ function NoteModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose} />
+      <ModalBackdrop onClose={onClose} />
     </div>
   );
 }
@@ -581,7 +582,7 @@ function FavoriteMedia({
                   {draft.length < MAX_FAVORITES && (
                     <button
                       type="button"
-                      className="w-24 shrink-0 aspect-[3/4] rounded-lg border-2 border-dashed border-base-300 flex flex-col items-center justify-center gap-1 text-base-content/50 hover:border-primary hover:text-primary transition-colors"
+                      className="w-24 shrink-0 aspect-[3/4] rounded-lg border-2 border-dashed border-base-300 flex flex-col items-center justify-center gap-1 text-base-content/70 hover:border-primary hover:text-primary transition-colors"
                       onClick={() => setPickerOpen(true)}
                     >
                       <Plus className="w-6 h-6" />
@@ -593,7 +594,7 @@ function FavoriteMedia({
                 </div>
               </SortableContext>
             </DndContext>
-            <p className="text-xs text-base-content/50 mt-2">
+            <p className="text-xs text-base-content/70 mt-2">
               {t('favoritesWidget.hint', {
                 current: draft.length,
                 max: MAX_FAVORITES,
@@ -610,7 +611,7 @@ function FavoriteMedia({
           <div className="flex flex-col gap-4">
             {groups.map((group) => (
               <div key={group.type}>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/50 mb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/70 mb-2">
                   {t(TYPE_LABELS[group.type])}
                 </h3>
                 <div className="flex flex-wrap gap-3">

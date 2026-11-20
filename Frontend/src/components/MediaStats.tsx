@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getUserMediaStatsFn, IMediaStats } from '../api/trackerApi';
@@ -26,7 +27,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
     return (
       <div className="mt-4 p-3 bg-base-300 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
-          <span className="loading loading-spinner loading-sm"></span>
+          <Spinner size="sm" />
           <span className="text-sm font-medium">{t('progress.loading')}</span>
         </div>
       </div>
@@ -139,7 +140,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
               key={metric}
               className="bg-base-100/50 rounded p-2 text-center"
             >
-              <div className="text-xs text-base-content/60 flex items-center justify-center gap-1">
+              <div className="text-xs text-base-content/70 flex items-center justify-center gap-1">
                 Total {getMetricLabel(metric)}
               </div>
               <div className="font-semibold text-sm">
@@ -155,7 +156,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
           <div className="grid grid-cols-2 gap-2 text-xs">
             {stats.thisWeek.logs > 0 && (
               <div className="text-center">
-                <div className="text-base-content/60">
+                <div className="text-base-content/70">
                   {t('progress.thisWeek')}
                 </div>
                 <div className="font-medium">
@@ -166,7 +167,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
             )}
             {stats.thisMonth.logs > 0 && (
               <div className="text-center">
-                <div className="text-base-content/60">
+                <div className="text-base-content/70">
                   {t('progress.thisMonth')}
                 </div>
                 <div className="font-medium">
@@ -181,7 +182,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
 
       {stats.total.firstLogDate && stats.total.lastLogDate && (
         <div className="border-t border-success/20 pt-2 mt-2">
-          <div className="text-xs text-base-content/60 text-center">
+          <div className="text-xs text-base-content/70 text-center">
             {stats.total.firstLogDate === stats.total.lastLogDate
               ? `Logged on ${formatDate(stats.total.firstLogDate)}`
               : `${formatDate(stats.total.firstLogDate)} - ${formatDate(stats.total.lastLogDate)}`}

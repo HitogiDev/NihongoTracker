@@ -1,3 +1,5 @@
+import Spinner from '../ui/Spinner';
+import ModalBackdrop from '../ui/ModalBackdrop';
 import { useState } from 'react';
 import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -244,7 +246,7 @@ export default function SuggestMediaModal({
                   >
                     {suggestMediaMutation.isPending ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                         {t('suggest.submitting')}
                       </>
                     ) : (
@@ -272,7 +274,7 @@ export default function SuggestMediaModal({
 
               <Field label={t('suggest.searchLabel')} className="relative">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/70" />
                   <input
                     type="text"
                     className="input w-full pl-10"
@@ -291,7 +293,7 @@ export default function SuggestMediaModal({
                 <div className="space-y-4">
                   {isSearching ? (
                     <div className="flex items-center justify-center py-8">
-                      <span className="loading loading-spinner loading-lg"></span>
+                      <Spinner size="lg" />
                       <span className="ml-2">{t('suggest.searching')}</span>
                     </div>
                   ) : searchResults && searchResults.length > 0 ? (
@@ -316,7 +318,7 @@ export default function SuggestMediaModal({
                                 />
                               ) : (
                                 <div className="w-16 h-20 bg-base-300 rounded flex items-center justify-center">
-                                  <Image className="w-6 h-6 text-base-content/40" />
+                                  <Image className="w-6 h-6 text-base-content/70" />
                                 </div>
                               )}
                               <div className="flex-1">
@@ -348,7 +350,7 @@ export default function SuggestMediaModal({
                   ) : (
                     <div className="text-center py-8">
                       <Search className="w-12 h-12 mx-auto text-base-content/20 mb-2" />
-                      <p className="text-base-content/60">
+                      <p className="text-base-content/70">
                         {t('suggest.noResults')}
                       </p>
                     </div>
@@ -359,7 +361,7 @@ export default function SuggestMediaModal({
           )}
         </div>
       </div>
-      <div className="modal-backdrop" onClick={handleClose}></div>
+      <ModalBackdrop onClose={handleClose} />
     </div>
   );
 }

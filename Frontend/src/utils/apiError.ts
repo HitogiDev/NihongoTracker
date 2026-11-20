@@ -63,6 +63,14 @@ export function getApiErrorMessage(
     return body.message;
   }
 
+  // Axios writes its own English text, such as "Network Error".
+  // Show a translated message in its place.
+  if (error instanceof AxiosError) {
+    if (!error.response) return translate('common:errors.network');
+    if (error.response.status >= 500) return translate('common:errors.server');
+    return translate(`errors:${fallbackKey}`);
+  }
+
   if (error instanceof Error && error.message) {
     return error.message;
   }

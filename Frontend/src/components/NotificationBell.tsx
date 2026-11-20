@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -307,7 +308,7 @@ function NotificationBell() {
                   className={`text-sm leading-snug line-clamp-2 ${
                     isUnread
                       ? 'text-base-content font-medium'
-                      : 'text-base-content/65'
+                      : 'text-base-content/70'
                   }`}
                 >
                   {getNotificationLabel(item)}
@@ -321,7 +322,7 @@ function NotificationBell() {
                 </span>
               </div>
               {getNotificationBody(item) && (
-                <p className="mt-0.5 text-xs text-base-content/60 line-clamp-1">
+                <p className="mt-0.5 text-xs text-base-content/70 line-clamp-1">
                   {getNotificationBody(item)}
                 </p>
               )}
@@ -337,7 +338,7 @@ function NotificationBell() {
                   {formatBadgeCount(item.count)}
                 </span>
               )}
-              <ChevronRight className="w-4 h-4 text-base-content/30" />
+              <ChevronRight className="w-4 h-4 text-base-content/70" />
             </div>
           </div>
         </Link>
@@ -385,7 +386,7 @@ function NotificationBell() {
         >
           {!isLoggedIn ? (
             <div className="px-4 py-6 text-center">
-              <p className="mb-3 text-sm text-base-content/60">
+              <p className="mb-3 text-sm text-base-content/70">
                 {t('bell.signInPrompt')}
               </p>
               <Link to="/login" className="btn btn-primary btn-sm">
@@ -393,30 +394,30 @@ function NotificationBell() {
               </Link>
             </div>
           ) : dropdownQuery.isLoading ? (
-            <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-base-content/60">
-              <span className="loading loading-spinner loading-xs"></span>
+            <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-base-content/70">
+              <Spinner size="xs" />
               {t('bell.loading')}
             </div>
           ) : dropdownQuery.isError ? (
             <div className="px-4 py-6 text-center">
               <AlertCircle className="mx-auto mb-2 h-8 w-8 text-error" />
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('list.error.title')}
               </p>
             </div>
           ) : dropdownItems.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-base-200">
-                <Inbox className="h-7 w-7 text-base-content/40" />
+                <Inbox className="h-7 w-7 text-base-content/70" />
               </div>
-              <p className="text-sm text-base-content/60">{t('bell.empty')}</p>
+              <p className="text-sm text-base-content/70">{t('bell.empty')}</p>
             </div>
           ) : (
             <div className="space-y-2 px-2 py-2">
               {dropdownItems.map((item) => renderNotificationItem(item))}
               <div ref={listSentinelRef} className="h-6" />
               {dropdownQuery.isFetchingNextPage && (
-                <div className="px-4 py-2 text-center text-xs text-base-content/50">
+                <div className="px-4 py-2 text-center text-xs text-base-content/70">
                   {t('list.loadingMore')}
                 </div>
               )}

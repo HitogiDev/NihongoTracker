@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 const DASHBOARD_CARD_TITLE_CLASS =
   'card-title text-xl font-semibold leading-snug text-base-content';
-const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/65';
+const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/70';
 
 interface ClubRankingProps {
   username: string;
@@ -184,7 +184,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                       </div>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-base-content/60">
+                      <p className="text-xs uppercase tracking-wide text-base-content/70">
                         {t('ranking.selectedClub')}
                       </p>
                       <Link
@@ -213,14 +213,14 @@ function ClubRanking({ username }: ClubRankingProps) {
                       {getRankIcon(userRanking.rank)}
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-base-content/60">
+                      <p className="text-xs uppercase tracking-wide text-base-content/70">
                         {t('ranking.yourPosition')}
                       </p>
                       <div className="flex items-end gap-2">
                         <p className="text-3xl leading-none font-bold tabular-nums text-base-content">
                           #{userRanking.rank}
                         </p>
-                        <p className="text-sm text-base-content/60 pb-0.5">
+                        <p className="text-sm text-base-content/70 pb-0.5">
                           of {clubRankings?.pagination.total || 0}
                         </p>
                       </div>
@@ -228,7 +228,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                   </div>
 
                   <div className="sm:text-right">
-                    <p className="text-[11px] uppercase tracking-wide text-base-content/60">
+                    <p className="text-xs uppercase tracking-wide text-base-content/70">
                       {t('common.totalXp')}
                     </p>
                     <p className="text-2xl sm:text-3xl leading-none font-bold tabular-nums text-primary mt-1">

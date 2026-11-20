@@ -254,7 +254,7 @@ export default function ThemeSwitcher() {
             <h3 className="font-semibold">
               {t('preferences.customTheme.title')}
             </h3>
-            <span className="text-sm text-base-content/60">
+            <span className="text-sm text-base-content/70">
               {savedThemes.length}/10
             </span>
           </div>

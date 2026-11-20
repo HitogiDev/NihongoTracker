@@ -127,7 +127,7 @@ function ImmersionCalculator() {
       <div className="card-body gap-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-box bg-primary/10 text-primary"><Calculator className="h-5 w-5" /></div>
-          <div><h2 className="card-title">{t('calculator.heading')}</h2><p className="text-sm text-base-content/60">{t('calculator.configure')}</p></div>
+          <div><h2 className="card-title">{t('calculator.heading')}</h2><p className="text-sm text-base-content/70">{t('calculator.configure')}</p></div>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
@@ -153,7 +153,7 @@ function ImmersionCalculator() {
             {selectedMedia && <button type="button" className="btn btn-ghost btn-xs btn-circle" aria-label={t('calculator.clearMedia')} onClick={() => { setSelectedMedia(null); setMediaQuery(''); }}><X className="h-3 w-3" /></button>}
           </label>
           {!selectedMedia && debouncedMediaQuery.trim().length >= 2 && <div className="surface-raised absolute z-20 mt-2 max-h-64 w-full overflow-y-auto p-2">
-            {mediaSearch.isLoading ? <div className="flex justify-center p-4"><Spinner size="sm" /></div> : mediaSearch.data?.length ? <ul className="menu w-full">{mediaSearch.data.map((media) => <li key={`${media.type}:${media.contentId}`}><button type="button" onClick={() => chooseMedia(media)}><span className="truncate">{titleOf(media)}</span><span className="text-xs opacity-60">{media.type}</span></button></li>)}</ul> : <p className="p-3 text-sm text-base-content/60">{t('calculator.noMedia')}</p>}
+            {mediaSearch.isLoading ? <div className="flex justify-center p-4"><Spinner size="sm" /></div> : mediaSearch.data?.length ? <ul className="menu w-full">{mediaSearch.data.map((media) => <li key={`${media.type}:${media.contentId}`}><button type="button" onClick={() => chooseMedia(media)}><span className="truncate">{titleOf(media)}</span><span className="text-xs opacity-60">{media.type}</span></button></li>)}</ul> : <p className="p-3 text-sm text-base-content/70">{t('calculator.noMedia')}</p>}
           </div>}
         </div>}</Field>
 
@@ -170,11 +170,11 @@ function ImmersionCalculator() {
           {units.map((item) => <Field key={item} label={t(`calculator.units.${item}`)} hint={item === 'time' ? t('calculator.timeHint') : item === 'chars' ? t('calculator.charsHint') : undefined}>{(id) => <input id={id} type="number" min="0" className="input focus:input-primary w-full" value={values[item]} onChange={(event) => updateValue(item, event.target.value)} />}</Field>)}
         </div>}
 
-        {mode === 'inverse' && <p className="text-sm text-base-content/60">{t('calculator.fixedContext')}</p>}
+        {mode === 'inverse' && <p className="text-sm text-base-content/70">{t('calculator.fixedContext')}</p>}
         {calculation.isFetching && enabled && <div className="flex justify-center py-5"><Spinner label={t('calculator.calculating')} /></div>}
         {calculation.isError && enabled && <div role="alert" className="alert alert-error">{t('calculator.calculationError')}</div>}
         {result && !calculation.isFetching && <div className="surface-raised p-5">
-          {result.inverse && <div className="mb-5 text-center"><p className="text-sm text-base-content/60">{t('calculator.requiredAmount')}</p><p className="text-3xl font-bold text-primary">{result.inverse.quantity.toLocaleString()} {t(`calculator.units.${result.inverse.unit}`)}</p></div>}
+          {result.inverse && <div className="mb-5 text-center"><p className="text-sm text-base-content/70">{t('calculator.requiredAmount')}</p><p className="text-3xl font-bold text-primary">{result.inverse.quantity.toLocaleString()} {t(`calculator.units.${result.inverse.unit}`)}</p></div>}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="stat surface-muted"><div className="stat-title">{t('calculator.creditedTime')}</div><div className="stat-value text-2xl">{result.breakdown.timeCreditedMin}</div><div className="stat-desc">{t('calculator.units.time')}</div></div>
             <div className="stat surface-muted"><div className="stat-title">{t('calculator.baseXp')}</div><div className="stat-value text-2xl">{result.breakdown.baseXp}</div></div>

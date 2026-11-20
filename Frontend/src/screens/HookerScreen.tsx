@@ -3060,7 +3060,7 @@ function TextHooker() {
                   <div className="mt-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2">
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-base-content/80">
                       {isPendingSessionSyncing && (
-                        <span className="loading loading-spinner loading-xs text-info" />
+                        <Spinner size="xs" className="text-info" />
                       )}
                       <span>
                         {isPendingSessionSyncing
@@ -3179,7 +3179,7 @@ function TextHooker() {
                                 {t('hooker.intelligence.viewAnalysis')}
                               </button>
                             ) : (
-                              <p className="text-xs text-base-content/60">
+                              <p className="text-xs text-base-content/70">
                                 {t('hooker.intelligence.historicalUnavailable')}
                               </p>
                             )
@@ -3339,7 +3339,7 @@ function TextHooker() {
                 </div>
 
                 <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide opacity-70 mb-2">
                     {t('hooker.settings.topBarMetrics')}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3428,7 +3428,7 @@ function TextHooker() {
                     ))}
                   </DropdownSelect>
                   <label className="label">
-                    <span className="text-[10px] opacity-60">
+                    <span className="text-xs opacity-60">
                       {t('hooker.settings.themeScopeNote')}
                     </span>
                   </label>
@@ -3535,13 +3535,13 @@ function TextHooker() {
                           <h5 className="font-semibold">
                             {t('hooker.intelligence.liveTitle')}
                           </h5>
-                          <span className="text-xs text-base-content/60">
+                          <span className="text-xs text-base-content/70">
                             {currentSessionLines} {t('hooker.stats.linesRead')}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           <div>
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-xs text-base-content/70">
                               {t('hooker.intelligence.focus')}
                             </div>
                             <div className="text-lg font-bold">
@@ -3549,7 +3549,7 @@ function TextHooker() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-xs text-base-content/70">
                               {t('hooker.intelligence.distractedTime')}
                             </div>
                             <div className="text-lg font-bold">
@@ -3557,7 +3557,7 @@ function TextHooker() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-xs text-base-content/70">
                               {t('hooker.intelligence.distractions')}
                             </div>
                             <div className="text-lg font-bold">
@@ -3565,7 +3565,7 @@ function TextHooker() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-xs text-base-content/70">
                               {t('hooker.intelligence.afkExcluded')}
                             </div>
                             <div className="text-lg font-bold">
@@ -3573,7 +3573,7 @@ function TextHooker() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-xs text-base-content/60">
+                        <div className="text-xs text-base-content/70">
                           {liveSessionIntelligence.baselineIntervalSeconds !== null
                             ? t('hooker.intelligence.liveBaseline', {
                                 seconds: Math.round(
@@ -3686,7 +3686,7 @@ function TextHooker() {
 
                 {activeSettingsTab === 'behavior' && (
                   <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide opacity-70 mb-2">
                     {t('hooker.settings.runtimeBehavior')}
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">

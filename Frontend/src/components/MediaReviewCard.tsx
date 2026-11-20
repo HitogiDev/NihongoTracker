@@ -90,7 +90,7 @@ function MediaReviewCard({
               >
                 <h4 className="font-semibold">{review.user.username}</h4>
               </Link>
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-base-content/70">
                 {new Date(review.createdAt!).toLocaleDateString()}
                 {review.editedAt && (
                   <span

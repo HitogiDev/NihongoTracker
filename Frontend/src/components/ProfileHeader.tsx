@@ -63,7 +63,7 @@ function PrivateProfileNotice({ username }: { username: string }) {
           <p className="max-w-md text-base-content/80">
             {t('privateProfile.description', { username })}
           </p>
-          <p className="max-w-md text-sm text-base-content/60">
+          <p className="max-w-md text-sm text-base-content/70">
             {t('privateProfile.hint')}
           </p>
           <Link to="/" className="btn btn-primary mt-2">
@@ -198,7 +198,7 @@ export default function ProfileHeader() {
                 : ''
             }`}
           >
-            <div>
+            <div className="native-profile-avatar">
               {isLoadingUser ? (
                 <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
               ) : (
@@ -213,8 +213,8 @@ export default function ProfileHeader() {
                 />
               )}
             </div>
-            <div className="py-2 sm:py-22px px-25px w-full sm:w-auto text-center sm:text-left">
-              <div className="flex flex-col items-center gap-2 flex-wrap sm:flex-row sm:items-center sm:gap-3">
+            <div className="native-profile-info py-2 sm:py-22px px-25px w-full sm:w-auto text-center sm:text-left">
+              <div className="native-profile-name-row flex flex-col items-center gap-2 flex-wrap sm:flex-row sm:items-center sm:gap-3">
                 <h1
                   className={`text-xl font-bold inline-block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] ${nameEffect.className}`}
                   style={nameEffect.style}
@@ -281,7 +281,7 @@ export default function ProfileHeader() {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 sm:ml-auto sm:mb-2">
+            <div className="native-profile-actions flex items-center gap-2 sm:ml-auto sm:mb-2">
               {currentUser && isOwnProfile && (
                 <Link
                   to="/duels"

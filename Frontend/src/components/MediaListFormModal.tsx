@@ -1,3 +1,5 @@
+import Spinner from './ui/Spinner';
+import ModalBackdrop from './ui/ModalBackdrop';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IMediaList } from '../types';
@@ -132,14 +134,14 @@ function MediaListFormModal({
               disabled={!trimmedTitle || isSubmitting}
             >
               {isSubmitting && (
-                <span className="loading loading-spinner loading-xs" />
+                <Spinner size="xs" />
               )}
               {list ? t('lists.form.save') : t('lists.form.create')}
             </button>
           </div>
         </form>
       </div>
-      <div className="modal-backdrop" onClick={onClose} />
+      <ModalBackdrop onClose={onClose} />
     </div>
   );
 }

@@ -71,7 +71,7 @@ function CurrentMediaRow({
         <p className="font-medium truncate" title={title}>
           {title}
         </p>
-        <p className="text-xs text-base-content/60 truncate">
+        <p className="text-xs text-base-content/70 truncate">
           {t(TYPE_LABELS[item.type])} ·{' '}
           {t('currentMediaWidget.lastLogged', {
             date: formatRelativeDate(item.lastLogDate),

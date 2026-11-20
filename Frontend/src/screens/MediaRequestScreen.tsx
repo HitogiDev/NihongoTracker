@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState } from 'react';
 import Field from '../components/ui/Field';
@@ -245,7 +246,7 @@ export default function MediaRequestScreen() {
               <div className="space-y-1">
                 <p className="text-sm font-medium">
                   {t('mediaRequest.descriptions')}{' '}
-                  <span className="text-base-content/50 font-normal">
+                  <span className="text-base-content/70 font-normal">
                     {t('mediaRequest.descriptionsHint')}
                   </span>
                 </p>
@@ -255,7 +256,7 @@ export default function MediaRequestScreen() {
                       label={
                         <>
                           {t(labelKey)}{' '}
-                          <span className="text-base-content/50">
+                          <span className="text-base-content/70">
                             {t('mediaRequest.optional')}
                           </span>
                         </>
@@ -311,7 +312,7 @@ export default function MediaRequestScreen() {
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending ? (
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                   ) : (
                     t('mediaRequest.submit')
                   )}
@@ -326,10 +327,10 @@ export default function MediaRequestScreen() {
             <h2 className="card-title mb-4">{t('mediaRequest.myRequests')}</h2>
             {mineLoading ? (
               <div className="py-8 text-center">
-                <span className="loading loading-spinner loading-md"></span>
+                <Spinner size="md" />
               </div>
             ) : !mine?.requests.length ? (
-              <p className="text-base-content/60 py-4">
+              <p className="text-base-content/70 py-4">
                 {t('mediaRequest.empty')}
               </p>
             ) : (
@@ -350,7 +351,7 @@ export default function MediaRequestScreen() {
                         <StatusBadge status={request.status} />
                       </div>
                       {request.reviewNote ? (
-                        <p className="text-xs text-base-content/60 italic mt-1">
+                        <p className="text-xs text-base-content/70 italic mt-1">
                           "{request.reviewNote}"
                         </p>
                       ) : null}

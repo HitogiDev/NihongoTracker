@@ -1183,7 +1183,7 @@ function ProfileScreen() {
                         />
                       </div>
                     </div>
-                    <span className="hidden sm:flex items-center text-base-content/50 justify-center">
+                    <span className="hidden sm:flex items-center text-base-content/70 justify-center">
                       to
                     </span>
 
@@ -1251,7 +1251,7 @@ function ProfileScreen() {
                   sortBy !== 'date' ||
                   sortDirection !== 'desc') && (
                   <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs text-base-content/60">
+                    <span className="text-xs text-base-content/70">
                       {t('filters.active')}
                     </span>
 
@@ -1369,7 +1369,7 @@ function ProfileScreen() {
                     )}
 
                     <button
-                      className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
+                      className="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content"
                       onClick={() => {
                         setSearchTerm('');
                         setFilterType('all');
@@ -1394,7 +1394,7 @@ function ProfileScreen() {
               // Show ONLY achievements
               filteredAchievements.length === 0 ? (
                 <div className="card w-full surface p-4">
-                  <p className="text-center text-base-content/60">
+                  <p className="text-center text-base-content/70">
                     {(achievementActivity ?? []).length === 0
                       ? t('achievements.none')
                       : t('achievements.noMatches')}
@@ -1496,7 +1496,7 @@ function ProfileScreen() {
               <>
                 {unifiedFeed.length === 0 ? (
                   <div className="card w-full surface p-4">
-                    <p className="text-center text-base-content/60">
+                    <p className="text-center text-base-content/70">
                       {t('feed.noActivity')}
                     </p>
                   </div>
@@ -1649,11 +1649,11 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
                       <span className="text-2xl">🏆</span>
                     )}
                   </div>
-                  <span className="line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight text-base-content/90">
+                  <span className="line-clamp-2 w-full text-center text-xs font-semibold leading-tight text-base-content/90">
                     {a.name ?? '???'}
                   </span>
                   <span
-                    className="text-[10px] font-medium capitalize leading-none"
+                    className="text-xs font-medium capitalize leading-none"
                     style={{ color }}
                   >
                     {a.rarity}

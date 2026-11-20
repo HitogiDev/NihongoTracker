@@ -118,7 +118,7 @@ export default function TagFilter({
                 {t('tagFilter.include')}
               </span>
               {includedTags.length > 0 && (
-                <span className="text-xs text-base-content/50">
+                <span className="text-xs text-base-content/70">
                   {t('tagFilter.selected', { count: includedTags.length })}
                 </span>
               )}
@@ -179,7 +179,7 @@ export default function TagFilter({
                 {t('tagFilter.exclude')}
               </span>
               {excludedTags.length > 0 && (
-                <span className="text-xs text-base-content/50">
+                <span className="text-xs text-base-content/70">
                   {t('tagFilter.selected', { count: excludedTags.length })}
                 </span>
               )}

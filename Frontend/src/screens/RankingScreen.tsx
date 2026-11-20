@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
   Trophy,
@@ -837,12 +838,12 @@ function RankingScreen() {
     const podium = people.length >= 3;
     return <section className="native-page space-y-4">
       <div className="native-toolbar flex items-center justify-between gap-3">
-        <div className="min-w-0"><p className="font-semibold truncate">{mode === 'global' ? getFilterLabel() : getMediumTypeLabel(mediumType)}</p><p className="text-sm text-base-content/65">{getTimeFilterLabel()}</p></div>
+        <div className="min-w-0"><p className="font-semibold truncate">{mode === 'global' ? getFilterLabel() : getMediumTypeLabel(mediumType)}</p><p className="text-sm text-base-content/70">{getTimeFilterLabel()}</p></div>
         <Button appearance="outline" onClick={() => setFiltersOpen(true)}><MoreHorizontal className="h-5 w-5" />{nt('native.filters')}</Button>
       </div>
       {loading && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-20" />)}</div>}
       {failed && <div className="alert flex flex-col items-start" role="alert"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void (mode === 'global' ? refetchRanking() : refetchMedium())}>{nt('native.retry')}</Button></div>}
-      {!loading && !failed && !people.length && <p className="surface p-6 text-center text-base-content/65">{t('audience.empty')}</p>}
+      {!loading && !failed && !people.length && <p className="surface p-6 text-center text-base-content/70">{t('audience.empty')}</p>}
       {podium && <div className="grid grid-cols-3 items-end gap-2 pt-6">{[1, 0, 2].map((index) => {
         const person = people[index];
         const rank = index + 1;
@@ -853,13 +854,13 @@ function RankingScreen() {
           <span className={getRankColor(rank)}><Trophy className="h-4 w-4 inline" /> {rank}</span>
           <span className="shrink-0"><UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-12 w-12 rounded-full" /></span>
           <span className="w-full truncate text-center text-sm font-semibold">{person.username}</span>
-          <span className="w-full break-words text-center text-xs text-base-content/65">{value(person)}</span>
+          <span className="w-full break-words text-center text-xs text-base-content/70">{value(person)}</span>
         </Link>;
       })}</div>}
       <div className="surface divide-y divide-base-300">{people.slice(podium ? 3 : 0).map((person, i) => {
         const effect = getNameEffectRender(person.customization);
         return <Link key={person.username} to={`/user/${encodeURIComponent(person.username)}`} className="flex min-h-20 items-center gap-3 px-3 py-4">
-          <span className="w-6 shrink-0 text-center text-sm text-base-content/60">{i + (podium ? 4 : 1)}</span>
+          <span className="w-6 shrink-0 text-center text-sm text-base-content/70">{i + (podium ? 4 : 1)}</span>
           {/* A fixed slot leaves room for decorative frames and keeps the names aligned. */}<span className="flex w-14 shrink-0 justify-center"><UserAvatar username={person.username} avatar={person.avatar} frame={person.customization?.avatarFrame} customization={person.customization} containerClassName="h-10 w-10 rounded-full" /></span>
           <span className={`min-w-0 flex-1 truncate font-medium ${effect.className}`} style={effect.style}>{person.username}</span>
           <span className="shrink-0 text-sm tabular-nums">{value(person)}</span>
@@ -1058,7 +1059,7 @@ function RankingScreen() {
                           />
                         </div>
                       </div>
-                      <span className="text-center text-base-content/50">
+                      <span className="text-center text-base-content/70">
                         {t('time.to')}
                       </span>
 
@@ -1368,7 +1369,7 @@ function RankingScreen() {
         {(mode === 'global' ? isLoading : isLoadingMedium) ? (
           <div className="flex justify-center items-center py-16">
             <div className="text-center">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
               <p className="mt-4 text-base-content/70">{t('loading')}</p>
             </div>
           </div>
@@ -1974,7 +1975,7 @@ function RankingScreen() {
                               <div className="font-bold text-sm sm:text-lg">
                                 {numberWithCommas(displayValue as number)}
                               </div>
-                              <div className="text-xs text-base-content/60">
+                              <div className="text-xs text-base-content/70">
                                 {mode === 'global'
                                   ? xpFilter === 'currentStreak'
                                     ? t('units.days')
@@ -2020,7 +2021,7 @@ function RankingScreen() {
                         : isFetchingNextPageMedium
                     ) ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                         {t('loadingMore')}
                       </>
                     ) : (

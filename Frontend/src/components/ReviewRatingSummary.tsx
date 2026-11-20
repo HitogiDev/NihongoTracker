@@ -119,7 +119,7 @@ function ReviewRatingSummary({
               })}
             </div>
 
-            <div className="mt-1 flex justify-between text-[10px] text-base-content/50 tabular-nums">
+            <div className="mt-1 flex justify-between text-xs text-base-content/70 tabular-nums">
               <span>0.5</span>
               <span>5.0</span>
             </div>
@@ -153,7 +153,7 @@ function ReviewRatingSummary({
             </div>
             <Link
               to={reviewsTabPath}
-              className="link link-hover mt-1 inline-block text-[11px] text-base-content/60 tabular-nums"
+              className="link link-hover mt-1 inline-block text-xs text-base-content/70 tabular-nums"
             >
               {t('reviews.ratingCount', { count: totalRatings })}
             </Link>

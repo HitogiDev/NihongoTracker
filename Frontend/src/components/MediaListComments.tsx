@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -91,7 +92,7 @@ function MediaListComments({
           </div>
         </form>
       ) : (
-        <p className="text-sm text-base-content/60 mb-6">
+        <p className="text-sm text-base-content/70 mb-6">
           <Trans
             i18nKey="comments.loginPrompt"
             ns="media"
@@ -102,10 +103,10 @@ function MediaListComments({
 
       {isLoading ? (
         <div className="flex justify-center py-6">
-          <span className="loading loading-spinner loading-md" />
+          <Spinner size="md" />
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-base-content/60">{t('comments.empty')}</p>
+        <p className="text-sm text-base-content/70">{t('comments.empty')}</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {comments.map((comment) => {
@@ -130,7 +131,7 @@ function MediaListComments({
                       {comment.user.username}
                     </Link>
                     {comment.createdAt && (
-                      <span className="text-xs text-base-content/50">
+                      <span className="text-xs text-base-content/70">
                         {new Date(comment.createdAt).toLocaleDateString()}
                       </span>
                     )}

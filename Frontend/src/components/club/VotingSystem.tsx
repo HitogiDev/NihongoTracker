@@ -1,3 +1,4 @@
+import Spinner from '../ui/Spinner';
 import DropdownSelect from '../ui/DropdownSelect';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -289,7 +290,7 @@ export default function VotingSystem({
   if (isLoading && votings.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
-        <span className="loading loading-spinner loading-md"></span>
+        <Spinner size="md" />
         <span className="ml-2">{t('voting.loading')}</span>
       </div>
     );
@@ -350,7 +351,7 @@ export default function VotingSystem({
               <h3 className="text-xl font-medium mb-2">
                 {t('voting.noneActive')}
               </h3>
-              <p className="text-base-content/60">
+              <p className="text-base-content/70">
                 {t('voting.noneActiveBody')}
               </p>
             </div>
@@ -367,7 +368,7 @@ export default function VotingSystem({
                 </button>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-base-content/60">
+                  <span className="text-sm text-base-content/70">
                     {currentVotingIndex + 1} of {openVotings.length}
                   </span>
                   <div className="flex gap-1">
@@ -408,7 +409,7 @@ export default function VotingSystem({
                 {t('voting.closed')}
               </h3>
 
-              <p className="text-sm text-base-content/60 mb-4">
+              <p className="text-sm text-base-content/70 mb-4">
                 {t('voting.endedNote')}
               </p>
 
@@ -445,7 +446,7 @@ export default function VotingSystem({
                   {t('voting.recentResults')}
                 </h3>
                 <label className="flex w-full flex-col gap-1 md:w-auto">
-                  <span className="text-xs uppercase tracking-wide text-base-content/60">
+                  <span className="text-xs uppercase tracking-wide text-base-content/70">
                     {t('voting.timespan')}
                   </span>
                   <DropdownSelect
@@ -465,7 +466,7 @@ export default function VotingSystem({
               </div>
 
               {filteredCompletedVotings.length === 0 ? (
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   {t('voting.noCompleted')}
                 </p>
               ) : (
@@ -517,7 +518,7 @@ export default function VotingSystem({
 
               {managementVotings.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-base-content/60">
+                  <p className="text-base-content/70">
                     {t('voting.noneInSetup')}
                   </p>
                 </div>
@@ -744,7 +745,7 @@ export default function VotingSystem({
 
                     <div className="mt-4">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-base-content/60">
+                        <span className="text-sm text-base-content/70">
                           {t('voting.votes')}
                         </span>
                         <span className="text-sm font-medium">
@@ -826,7 +827,7 @@ export default function VotingSystem({
                   date: formatDate(voting.consumptionStartDate),
                 })}
               </p>
-              <p className="text-xs text-base-content/50 mt-1">
+              <p className="text-xs text-base-content/70 mt-1">
                 {t('voting.finalizeNote')}
               </p>
             </div>
@@ -871,7 +872,7 @@ export default function VotingSystem({
                           {candidate.title}
                         </span>
                       </div>
-                      <span className="text-xs text-base-content/60">
+                      <span className="text-xs text-base-content/70">
                         {votes} vote{votes === 1 ? '' : 's'} (
                         {percentage.toFixed(1)}%)
                       </span>
@@ -940,7 +941,7 @@ export default function VotingSystem({
                 {' – '}
                 {formatDate(voting.consumptionEndDate)}
               </p>
-              <p className="text-xs text-base-content/50 mt-1">
+              <p className="text-xs text-base-content/70 mt-1">
                 {totalVotes} total vote{totalVotes === 1 ? '' : 's'} cast.
               </p>
             </div>
@@ -974,20 +975,20 @@ export default function VotingSystem({
                     {winner.description}
                   </p>
                 )}
-                <p className="text-sm text-base-content/60 mt-2">
+                <p className="text-sm text-base-content/70 mt-2">
                   {winnerVotes} vote{winnerVotes === 1 ? '' : 's'} in favour.
                 </p>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-base-content/60">
+            <p className="mt-4 text-sm text-base-content/70">
               {t('voting.noWinner')}
             </p>
           )}
 
           {sortedCandidates.length > 0 && (
             <div className="mt-6">
-              <h6 className="text-xs uppercase font-semibold text-base-content/50 mb-2">
+              <h6 className="text-xs uppercase font-semibold text-base-content/70 mb-2">
                 {t('voting.finalStandings')}
               </h6>
               <div className="space-y-3">
@@ -1020,7 +1021,7 @@ export default function VotingSystem({
                             {candidate.title}
                           </span>
                         </div>
-                        <span className="text-xs text-base-content/60">
+                        <span className="text-xs text-base-content/70">
                           {votes} vote{votes === 1 ? '' : 's'} (
                           {percentage.toFixed(1)}%)
                         </span>
@@ -1072,7 +1073,7 @@ export default function VotingSystem({
                   {voting.description}
                 </p>
               )}
-              <div className="text-xs text-base-content/60">
+              <div className="text-xs text-base-content/70">
                 {voting.candidates.length} candidates • Created{' '}
                 {voting.createdAt ? formatDate(voting.createdAt) : 'Unknown'}
               </div>
@@ -1148,7 +1149,7 @@ export default function VotingSystem({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-base-content/60">
+              <div className="flex items-center gap-4 text-xs text-base-content/70">
                 <span>{voting.candidates.length} suggestions so far</span>
                 <span>•</span>
                 <span>
@@ -1182,7 +1183,7 @@ export default function VotingSystem({
                 </button>
               </div>
               className="btn btn-ghost btn-sm btn-circle"
-              <span className="text-xs text-center text-base-content/60">
+              <span className="text-xs text-center text-base-content/70">
                 {voting.candidates.length} suggestion
                 <span className="flex items-center justify-center w-full h-full">
                   <Share2 className="w-5 h-5" />

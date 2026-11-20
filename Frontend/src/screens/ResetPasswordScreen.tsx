@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useEffect, useState } from 'react';
 import Field from '../components/ui/Field';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -169,7 +170,7 @@ function ResetPasswordScreen() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/60 hover:text-base-content"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/70 hover:text-base-content"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isPending}
                 >
@@ -208,7 +209,7 @@ function ResetPasswordScreen() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/60 hover:text-base-content"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/70 hover:text-base-content"
                   onClick={() =>
                     setShowPasswordConfirmation(!showPasswordConfirmation)
                   }
@@ -237,7 +238,7 @@ function ResetPasswordScreen() {
                 disabled={!isFormValid || isPending}
               >
                 {isPending ? (
-                  <span className="loading loading-spinner loading-sm" />
+                  <Spinner size="sm" />
                 ) : (
                   t('resetPassword.submit')
                 )}

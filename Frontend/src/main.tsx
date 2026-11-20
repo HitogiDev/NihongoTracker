@@ -1,3 +1,4 @@
+import Spinner from './components/ui/Spinner';
 import './index.css';
 import './native/native.css';
 import '@fontsource-variable/inter';
@@ -19,6 +20,7 @@ import i18n, { initI18n, resolveInitialLanguage } from './i18n';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { setupChunkLoadRecoveryListeners } from './utils/chunkRecovery';
+import { installToastDefaults } from './utils/toastDefaults';
 import {
   applyAppTheme,
   canManageCustomThemes,
@@ -73,6 +75,7 @@ if (typeof document !== 'undefined') {
 
 if (typeof window !== 'undefined') {
   setupChunkLoadRecoveryListeners();
+  installToastDefaults();
 }
 
 const App = lazy(() => import('./App.tsx'));
@@ -85,6 +88,7 @@ const NativeRecordsScreen = lazy(() => import('./native/NativeRecordsScreen'));
 const ListScreen = lazy(() => import('./screens/ListScreen.tsx'));
 const LoginScreen = lazy(() => import('./screens/LoginScreen.tsx'));
 const LogScreen = lazy(() => import('./screens/LogScreen.tsx'));
+const SessionTimerScreen = lazy(() => import('./screens/SessionTimerScreen.tsx'));
 const MatchMedia = lazy(() => import('./screens/MatchMedia.tsx'));
 const MediaDetails = lazy(() => import('./screens/MediaDetails.tsx'));
 const MediaHeader = lazy(() => import('./components/MediaHeader.tsx'));
@@ -238,6 +242,7 @@ const router = createBrowserRouter(
         <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>
           {isMobileApp() && <Route path="records" element={<NativeRecordsScreen />} />}
+          {isMobileApp() && <Route path="session" element={<SessionTimerScreen />} />}
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
@@ -296,7 +301,7 @@ async function bootstrap() {
             <Suspense
               fallback={
                 <div className="min-h-screen bg-base-200 flex items-center justify-center">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <Spinner size="lg" className="text-primary" />
                 </div>
               }
             >

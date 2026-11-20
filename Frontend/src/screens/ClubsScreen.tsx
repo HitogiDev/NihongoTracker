@@ -131,11 +131,11 @@ function ClubsScreen() {
   ];
 
   if (isMobileApp()) return <section className="native-page space-y-4">
-    <div className="flex items-center gap-2"><label className="input min-w-0 flex-1 focus-within:input-primary"><Search className="h-4 w-4 shrink-0 text-base-content/60" /><input type="search" className="grow" placeholder={t('browse.searchPlaceholder')} aria-label={t('browse.searchPlaceholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} /></label><Button appearance="outline" shape="square" aria-label={nt('native.filters')} onClick={() => setFiltersOpen(true)}><Funnel className="h-5 w-5" /></Button></div>
+    <div className="flex items-center gap-2"><label className="input min-w-0 flex-1 focus-within:input-primary"><Search className="h-4 w-4 shrink-0 text-base-content/70" /><input type="search" className="grow" placeholder={t('browse.searchPlaceholder')} aria-label={t('browse.searchPlaceholder')} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} /></label><Button appearance="outline" shape="square" aria-label={nt('native.filters')} onClick={() => setFiltersOpen(true)}><Funnel className="h-5 w-5" /></Button></div>
     <div className="flex gap-2"><div className="join flex flex-1"><Button className="join-item flex-1" variant={membership === 'all' ? 'primary' : 'default'} appearance={membership === 'all' ? 'solid' : 'outline'} onClick={() => { setMembership('all'); setPage(1); }}>{nt('native.exploreClubs')}</Button><Button className="join-item flex-1" variant={membership !== 'all' ? 'primary' : 'default'} appearance={membership !== 'all' ? 'solid' : 'outline'} onClick={() => { setMembership('member'); setPage(1); }}>{nt('native.yourClubs')}</Button></div><Link to="/clubs/create" className="btn btn-outline btn-square" aria-label={t('browse.create')}><Plus className="h-5 w-5" /></Link></div>
     {isLoading && <div className="skeleton h-28" />}
     {error && <div className="alert flex flex-col items-start" role="alert"><p>{navigator.onLine ? nt('native.unavailable') : nt('native.offline')}</p><Button onClick={() => void refetch()}>{nt('native.retry')}</Button></div>}
-    {!isLoading && !error && !clubsData?.clubs.length && <p className="surface p-6 text-center text-base-content/65">{t('browse.empty')}</p>}
+    {!isLoading && !error && !clubsData?.clubs.length && <p className="surface p-6 text-center text-base-content/70">{t('browse.empty')}</p>}
     <div className="space-y-3">{clubsData?.clubs.map((club) => <ClubCard key={club._id} club={club} />)}</div>
     {(clubsData?.total ?? 0) > 12 && <div className="join flex justify-center"><Button className="join-item" disabled={page === 1} onClick={() => setPage(page - 1)}>{t('browse.previous')}</Button><span className="join-item btn" aria-live="polite">{page}</span><Button className="join-item" disabled={page * 12 >= (clubsData?.total ?? 0)} onClick={() => setPage(page + 1)}>{t('browse.next')}</Button></div>}
     <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title={nt('native.filters')} actions={<><Button appearance="ghost" onClick={resetFilters}>{nt('native.reset')}</Button><Button variant="primary" onClick={() => setFiltersOpen(false)}>{nt('native.apply')}</Button></>}>
@@ -184,7 +184,7 @@ function ClubsScreen() {
 
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8 max-w-4xl mx-auto">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/70 text-xl" />
             <input
               type="text"
               placeholder={t('browse.searchPlaceholder')}
@@ -401,7 +401,7 @@ function ClubsScreen() {
               </>
             ) : (
               <div className="text-center py-16">
-                <Users className="text-6xl text-base-content/30 mx-auto mb-4" />
+                <Users className="text-6xl text-base-content/70 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-base-content mb-2">
                   {t('browse.empty')}
                 </h3>
@@ -435,7 +435,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
 
   if (isMobileApp()) return <Link to={`/clubs/${club._id}`} className="surface flex min-h-28 items-center gap-3 p-3">
     {club.avatar || club.banner ? <OfflineImage src={club.avatar || club.banner} alt="" className="h-20 w-20 shrink-0 rounded-box object-cover" /> : <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-box bg-primary/10"><Users className="h-7 w-7 text-primary" /></div>}
-    <div className="min-w-0 flex-1 space-y-1"><h2 className="truncate font-semibold">{club.name}</h2><p className="line-clamp-2 text-sm text-base-content/65">{club.description}</p><p className="text-xs text-base-content/60">{t('browse.memberCount', { current: club.memberCount, limit: club.memberLimit })}</p>
+    <div className="min-w-0 flex-1 space-y-1"><h2 className="truncate font-semibold">{club.name}</h2><p className="line-clamp-2 text-sm text-base-content/70">{club.description}</p><p className="text-xs text-base-content/70">{t('browse.memberCount', { current: club.memberCount, limit: club.memberLimit })}</p>
       {club.isUserMember && <span className={club.userStatus === 'pending' ? 'badge badge-warning badge-sm' : 'badge badge-primary badge-sm'}>{club.userStatus === 'pending' ? t('browse.pending') : t('roles.member')}</span>}
     </div>
   </Link>;

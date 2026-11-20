@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Clock3, Globe2, Trophy, Users, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -173,7 +174,7 @@ function ImmersionRanking({
               <Trophy className="h-5 w-5 text-primary" />
               {t('ranking.title')}
             </h2>
-            <p className="mt-1 text-sm text-base-content/60">
+            <p className="mt-1 text-sm text-base-content/70">
               {t('ranking.subtitle')}
             </p>
           </div>
@@ -220,12 +221,12 @@ function ImmersionRanking({
         </div>
 
         {!hasSelectedTypes ? (
-          <div className="py-12 text-center text-sm text-base-content/60">
+          <div className="py-12 text-center text-sm text-base-content/70">
             {t('ranking.noTypes')}
           </div>
         ) : isLoading ? (
-          <div className="flex items-center justify-center gap-3 py-12 text-sm text-base-content/60">
-            <span className="loading loading-spinner loading-sm" />
+          <div className="flex items-center justify-center gap-3 py-12 text-sm text-base-content/70">
+            <Spinner size="sm" />
             {t('ranking.loading')}
           </div>
         ) : isError ? (
@@ -233,7 +234,7 @@ function ImmersionRanking({
             {t('ranking.loadFailed')}
           </div>
         ) : !hasItems ? (
-          <div className="py-12 text-center text-sm text-base-content/60">
+          <div className="py-12 text-center text-sm text-base-content/70">
             {t('ranking.empty')}
           </div>
         ) : (
@@ -281,7 +282,7 @@ function ImmersionRanking({
 
                     return (
                       <tr key={`${item.type}:${item.mediaId}`}>
-                        <th className="w-16 text-base-content/60">#{rank}</th>
+                        <th className="w-16 text-base-content/70">#{rank}</th>
                         <td className="min-w-64">
                           <Link
                             to={`/${item.type}/${item.mediaId}`}
@@ -301,11 +302,11 @@ function ImmersionRanking({
                                 {title}
                               </span>
                               {titleEnglish && titleEnglish !== title && (
-                                <span className="block truncate text-xs text-base-content/50">
+                                <span className="block truncate text-xs text-base-content/70">
                                   {titleEnglish}
                                 </span>
                               )}
-                              <span className="mt-1 flex items-center gap-1 text-xs text-base-content/60">
+                              <span className="mt-1 flex items-center gap-1 text-xs text-base-content/70">
                                 <span
                                   className="h-2 w-2 rounded-full"
                                   style={{
@@ -358,7 +359,7 @@ function ImmersionRanking({
                   disabled={isFetchingMore}
                 >
                   {isFetchingMore && (
-                    <span className="loading loading-spinner loading-sm" />
+                    <Spinner size="sm" />
                   )}
                   {isFetchingMore
                     ? t('ranking.loadingMore')

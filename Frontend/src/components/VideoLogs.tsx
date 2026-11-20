@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from '../utils/apiError';
+import Spinner from './ui/Spinner';
 import { ILog, IMediaDocument } from '../types';
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -191,7 +193,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('matcher.assignError'));
       }
@@ -525,7 +527,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <Spinner size="lg" className="text-primary" />
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
@@ -630,7 +632,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
             {autoMatchingProgress.isRunning ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                   <span>{t('video.autoMatchInProgress')}</span>
                 </div>
                 <progress
@@ -706,7 +708,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                     disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
                   >
                     {isMatchingPaste ? (
-                      <span className="loading loading-spinner loading-sm"></span>
+                      <Spinner size="sm" />
                     ) : (
                       t('video.matchLink')
                     )}

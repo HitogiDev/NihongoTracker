@@ -4,6 +4,7 @@ import queryClient from '../queryClient';
 import { clearPersistedQueries } from '../offline/queryCacheStore';
 import { useAchievementRevealStore } from './achievementReveal';
 import { useLogCelebrationStore } from './logCelebration';
+import { stopSessionTimer } from './sessionTimer';
 import { ILoginResponse } from '../types';
 import {
   applyAppTheme,
@@ -126,6 +127,7 @@ export const useUserDataStore = create(
         }
       },
       logout: () => {
+        void stopSessionTimer();
         clearAccountState();
         set({ user: null });
         resetThemesForLoggedOutUser();

@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, { useEffect, useState, useRef } from 'react';
 import Field from '../components/ui/Field';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import { validateLogin } from '../utils/validation';
 import { gsap } from 'gsap';
+import '../utils/gsapReducedMotion';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
@@ -177,7 +179,7 @@ function LoginScreen() {
       </Field>
       <Link className="link link-primary flex min-h-12 items-center self-end" to="/forgot-password">{t('login.form.forgotPassword')}</Link>
       {error && <p role="alert" className="text-sm text-error">{getApiErrorMessage(error)}</p>}
-      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('login.form.submitting')} disabled={!isFormValid}>
+      <Button type="submit" variant="primary" size="lg" block loading={isPending} loadingText={t('login.form.submitting')}>
         <LogIn className="h-5 w-5" />{t('login.form.submit')}
       </Button>
       <Link to="/register" className="btn btn-outline w-full">{t('register.form.submit')}</Link>
@@ -256,7 +258,7 @@ function LoginScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('login.features.progress.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('login.features.progress.description')}
                   </p>
                 </div>
@@ -283,7 +285,7 @@ function LoginScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('login.features.levelUp.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('login.features.levelUp.description')}
                   </p>
                 </div>
@@ -310,7 +312,7 @@ function LoginScreen() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('login.features.clubs.title')}
                   </h3>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-base-content/70">
                     {t('login.features.clubs.description')}
                   </p>
                 </div>
@@ -322,7 +324,7 @@ function LoginScreen() {
                 <div className="text-3xl font-bold text-primary">
                   {stats?.totalUsers ? formatCompact(stats.totalUsers) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.totalUsers')}
                 </div>
               </div>
@@ -330,7 +332,7 @@ function LoginScreen() {
                 <div className="text-3xl font-bold text-secondary">
                   {stats?.totalXp ? formatCompact(stats.totalXp) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.xpEarned')}
                 </div>
               </div>
@@ -338,7 +340,7 @@ function LoginScreen() {
                 <div className="text-3xl font-bold text-accent">
                   {stats?.totalLogs ? formatCompact(stats.totalLogs) : '...'}
                 </div>
-                <div className="text-xs text-base-content/60 mt-1">
+                <div className="text-xs text-base-content/70 mt-1">
                   {t('hero.stats.logsTracked')}
                 </div>
               </div>
@@ -357,7 +359,7 @@ function LoginScreen() {
                 >
                   {t('login.form.title')}
                 </h2>
-                <p className="text-center text-base-content/60 mb-6 text-sm">
+                <p className="text-center text-base-content/70 mb-6 text-sm">
                   {t('login.form.subtitle')}
                 </p>
 
@@ -383,8 +385,15 @@ function LoginScreen() {
                       </>
                     }
                   >
+                    {(id) => (<>
                     <input
+                      id={id}
+                      name="username"
                       type="text"
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      aria-invalid={errors.usernameOrEmail ? true : undefined}
                       placeholder={t('login.form.login.placeholder')}
                       className={`input w-full ${
                         errors.usernameOrEmail
@@ -408,6 +417,7 @@ function LoginScreen() {
                         </span>
                       </label>
                     )}
+                    </>)}
                   </Field>
                 </div>
 
@@ -433,8 +443,13 @@ function LoginScreen() {
                       </>
                     }
                   >
+                    {(id) => (<>
                     <input
+                      id={id}
+                      name="password"
                       type="password"
+                      autoComplete="current-password"
+                      aria-invalid={errors.password ? true : undefined}
                       placeholder={t('login.form.password.placeholder')}
                       className={`input w-full ${
                         errors.password
@@ -465,22 +480,19 @@ function LoginScreen() {
                         {t('login.form.forgotPassword')}
                       </Link>
                     </label>
+                    </>)}
                   </Field>
                 </div>
 
                 <div ref={addToRefs} className="mt-4 items-center">
                   <button
-                    className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
-                      !isFormValid || isPending
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:scale-[1.02]'
-                    }`}
+                    className="btn btn-primary btn-lg w-full"
                     type="submit"
-                    disabled={!isFormValid || isPending}
+                    disabled={isPending}
                   >
                     {isPending ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <Spinner size="sm" />
                         {t('login.form.submitting')}
                       </>
                     ) : (

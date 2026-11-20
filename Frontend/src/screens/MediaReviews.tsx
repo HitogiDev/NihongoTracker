@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -315,7 +316,7 @@ function MediaReviews() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 items-start">
-        <aside className="card surface lg:sticky lg:top-24">
+        <aside className="card surface lg:sticky lg:top-[calc(var(--site-header-offset)+1rem)] follow-site-header">
           <div className="card-body p-4 gap-4">
             <h3 className="font-semibold text-base flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4" />
@@ -324,7 +325,7 @@ function MediaReviews() {
 
             {reviewsLoading ? (
               <div className="flex justify-center py-4">
-                <span className="loading loading-spinner loading-md"></span>
+                <Spinner size="md" />
               </div>
             ) : mediaReviews.length > 0 ? (
               <>
@@ -338,7 +339,7 @@ function MediaReviews() {
                 <div className="divider my-0"></div>
 
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-base-content/60">
+                  <p className="text-xs uppercase tracking-wide text-base-content/70">
                     {t('reviews.visibility')}
                   </p>
                   <div className="join w-full">
@@ -376,7 +377,7 @@ function MediaReviews() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-base-content/60">
+                  <p className="text-xs uppercase tracking-wide text-base-content/70">
                     {t('reviews.sort')}
                   </p>
                   <div className="dropdown w-full">
@@ -410,7 +411,7 @@ function MediaReviews() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-wide text-base-content/60">
+                    <p className="text-xs uppercase tracking-wide text-base-content/70">
                       {t('reviews.scoreRange')}
                     </p>
                     {(minScoreInput || maxScoreInput) && (
@@ -440,7 +441,7 @@ function MediaReviews() {
                       onChange={(e) => setMinScoreInput(e.target.value)}
                     />
 
-                    <span className="text-xs font-medium text-base-content/60">
+                    <span className="text-xs font-medium text-base-content/70">
                       to
                     </span>
 
@@ -459,7 +460,7 @@ function MediaReviews() {
                   </div>
 
                   {ratingPresenceFilter === 'unrated' && (
-                    <p className="text-xs text-base-content/60">
+                    <p className="text-xs text-base-content/70">
                       {t('reviews.scoreRangeDisabled')}
                     </p>
                   )}
@@ -472,7 +473,7 @@ function MediaReviews() {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-base-content/60">
+              <p className="text-sm text-base-content/70">
                 {t('reviews.noRatingData')}
               </p>
             )}
@@ -506,7 +507,7 @@ function MediaReviews() {
 
             {reviewsLoading ? (
               <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-lg"></span>
+                <Spinner size="lg" />
               </div>
             ) : mediaReviews.length > 0 ? (
               sortedFilteredReviews.length > 0 ? (
@@ -525,7 +526,7 @@ function MediaReviews() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-base-content/60">
+                <div className="text-center py-8 text-base-content/70">
                   <h3 className="text-lg font-semibold mb-1">
                     {t('reviews.noMatchesTitle')}
                   </h3>
@@ -544,7 +545,7 @@ function MediaReviews() {
                 </div>
               )
             ) : (
-              <div className="text-center py-8 text-base-content/60">
+              <div className="text-center py-8 text-base-content/70">
                 <MessageSquareText className="mx-auto text-4xl mb-3 opacity-50" />
                 <h3 className="text-lg font-semibold mb-1">
                   {t('reviews.emptyTitle')}
@@ -594,7 +595,7 @@ function MediaReviews() {
                 }}
               >
                 {isDeletingReview ? (
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                 ) : (
                   'Delete'
                 )}

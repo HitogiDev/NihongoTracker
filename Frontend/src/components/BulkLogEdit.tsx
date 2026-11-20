@@ -287,7 +287,7 @@ export function BulkLogToolbar({
   return (
     <>
       {isMobileApp() && selectedIds.size === 0 && (
-        <p className="text-sm text-base-content/60">{t('bulk.holdToSelect')}</p>
+        <p className="text-sm text-base-content/70">{t('bulk.holdToSelect')}</p>
       )}
       {selectedIds.size > 0 && (
         <div className="surface-muted space-y-4 p-4">

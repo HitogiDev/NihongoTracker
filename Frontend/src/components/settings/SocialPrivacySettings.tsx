@@ -90,7 +90,7 @@ export default function SocialPrivacySettings() {
           <legend className="fieldset-legend font-medium">
             {t(`privacy.fields.${field}.label`)}
           </legend>
-          <p className="mb-2 text-sm text-base-content/60">
+          <p className="mb-2 text-sm text-base-content/70">
             {t(`privacy.fields.${field}.help`)}
           </p>
           <DropdownSelect

@@ -541,7 +541,7 @@ export default function GanttChart({
     <div className="relative select-none">
       {hasResults && (
         <div className="flex items-center justify-end gap-1 mb-2 pr-1">
-          <span className="text-[10px] text-base-content/50 mr-1 select-none">
+          <span className="text-xs text-base-content/70 mr-1 select-none">
             {t('gantt.hint')}
           </span>
           <button
@@ -553,7 +553,7 @@ export default function GanttChart({
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[11px] tabular-nums font-medium text-base-content/60 min-w-[3ch] text-center select-none">
+          <span className="text-xs tabular-nums font-medium text-base-content/70 min-w-[3ch] text-center select-none">
             {Math.round(zoom * 100)}%
           </span>
           <button
@@ -698,7 +698,7 @@ export default function GanttChart({
                 lives outside the scrolling body and mirrors its scrollLeft. */}
             <div
               ref={headerScrollRef}
-              className="sticky top-0 z-20 bg-base-100 overflow-hidden"
+              className="sticky top-(--site-header-offset) follow-site-header z-20 bg-base-100 overflow-hidden"
             >
               <div className="flex" style={{ width: totalW }}>
                 {columns.map((col) => (
@@ -715,7 +715,7 @@ export default function GanttChart({
                         {col.topLabel}
                       </div>
                     )}
-                    <div className="text-[10px] text-base-content/50 text-center pt-4 pb-1 font-medium">
+                    <div className="text-xs text-base-content/70 text-center pt-4 pb-1 font-medium">
                       {col.label}
                     </div>
                   </div>
@@ -886,7 +886,7 @@ export default function GanttChart({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-base-content/50 gap-3">
+        <div className="flex flex-col items-center justify-center py-12 text-base-content/70 gap-3">
           <svg className="w-14 h-14 opacity-30" fill="none" viewBox="0 0 64 64">
             <rect
               x="8"
@@ -1002,20 +1002,20 @@ function GanttTooltip({
               {item.title}
             </p>
             {item.titleEnglish && item.titleEnglish !== item.title && (
-              <p className="text-[10px] text-base-content/50 leading-tight mt-0.5 line-clamp-1">
+              <p className="text-xs text-base-content/70 leading-tight mt-0.5 line-clamp-1">
                 {item.titleEnglish}
               </p>
             )}
             <div className="flex items-center gap-1 mt-1">
               <span
-                className="text-[9px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded"
+                className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded"
                 style={{ background: hexToRgba(color, 0.2), color }}
               >
                 {item.type}
               </span>
               {item.isCompleted && (
                 <span
-                  className="text-[9px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                  className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5"
                   style={{ background: hexToRgba(color, 0.15), color }}
                 >
                   <CheckCircle className="w-2.5 h-2.5" />
@@ -1028,7 +1028,7 @@ function GanttTooltip({
 
         <div className="h-px bg-base-300 my-2" />
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <div className="flex items-center gap-1 text-base-content/70">
             <Clock className="w-3 h-3 flex-shrink-0" />
             <span>{formatMinutes(item.totalTime)}</span>
@@ -1042,14 +1042,14 @@ function GanttTooltip({
             <span>{t('gantt.logCount', { count: item.logCount })}</span>
           </div>
           <div className="flex items-center gap-1 text-base-content/70">
-            <span className="text-[9px] opacity-70">
+            <span className="text-[10px] opacity-70">
               {t('gantt.daysLabel')}
             </span>
             <span>{item.activeDates.length}</span>
           </div>
         </div>
 
-        <div className="mt-2 text-[10px] text-base-content/50 space-y-0.5">
+        <div className="mt-2 text-xs text-base-content/70 space-y-0.5">
           <div>
             <span className="font-medium">{t('gantt.started')}</span>{' '}
             {formatDate(item.firstLogDate)}
@@ -1067,7 +1067,7 @@ function GanttTooltip({
         </div>
 
         <button
-          className="pointer-events-auto mt-2 flex items-center gap-1 text-[10px] font-medium hover:underline"
+          className="pointer-events-auto mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
           style={{ color }}
           onClick={() => onNavigate(item.mediaId, item.type)}
         >

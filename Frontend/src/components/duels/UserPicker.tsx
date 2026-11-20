@@ -64,7 +64,7 @@ export default function UserPicker({ value, onChange, id }: UserPickerProps) {
     );
   } else if (results.length === 0) {
     listContent = (
-      <li className="px-3 py-2 text-sm text-base-content/60">
+      <li className="px-3 py-2 text-sm text-base-content/70">
         {t('modal.noResults')}
       </li>
     );

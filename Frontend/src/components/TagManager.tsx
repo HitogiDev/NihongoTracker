@@ -1,3 +1,4 @@
+import Spinner from './ui/Spinner';
 import { useState } from 'react';
 import Field from './ui/Field';
 import { Trans, useTranslation } from 'react-i18next';
@@ -143,7 +144,7 @@ export default function TagManager() {
   if (isLoading) {
     return (
       <div className="flex justify-center p-4">
-        <span className="loading loading-spinner loading-lg"></span>
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -211,7 +212,7 @@ export default function TagManager() {
 
         <div className="space-y-2">
           {tags.length === 0 ? (
-            <div className="text-center py-8 text-base-content/60">
+            <div className="text-center py-8 text-base-content/70">
               <p>{t('tags.manager.empty')}</p>
             </div>
           ) : (
@@ -354,7 +355,7 @@ export default function TagManager() {
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   t('tags.manager.create')
                 )}
@@ -439,7 +440,7 @@ export default function TagManager() {
                 disabled={updateMutation.isPending}
               >
                 {updateMutation.isPending ? (
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <Spinner size="sm" />
                 ) : (
                   'Save'
                 )}
@@ -478,7 +479,7 @@ export default function TagManager() {
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                     {t('tags.manager.deleting')}
                   </>
                 ) : (

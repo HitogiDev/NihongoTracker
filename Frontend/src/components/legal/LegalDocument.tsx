@@ -191,7 +191,7 @@ export default function LegalDocument({ doc }: { doc: LegalDocumentId }) {
 
         <div className="divider my-8"></div>
 
-        <div className="text-center text-base-content/60">
+        <div className="text-center text-base-content/70">
           <p className="font-semibold">NihongoTracker</p>
           <p className="text-sm">{t('common.tagline')}</p>
           {data.seeAlso && (

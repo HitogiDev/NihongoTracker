@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import OfflineImage from '../components/OfflineImage';
 import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import DatePickerInput from '../components/ui/DatePickerInput';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNativeTitle } from '../native/nativeTitle';
 import { toast } from 'react-toastify';
 import {
   Users,
@@ -178,6 +180,7 @@ function ClubDetailScreen() {
     queryFn: () => getClubFn(clubId!),
     enabled: !!clubId,
   });
+  useNativeTitle(club?.name);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -840,7 +843,7 @@ function ClubDetailScreen() {
       <div className="min-h-screen bg-base-200">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <span className="loading loading-spinner loading-lg"></span>
+            <Spinner size="lg" />
           </div>
         </div>
       </div>
@@ -1190,7 +1193,7 @@ function ClubDetailScreen() {
 
               {isPastLoading ? (
                 <div className="flex justify-center py-8">
-                  <span className="loading loading-spinner loading-md"></span>
+                  <Spinner size="md" />
                 </div>
               ) : pastMedia?.media && pastMedia.media.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4">
@@ -1209,7 +1212,7 @@ function ClubDetailScreen() {
                       >
                         <div>
                           <div className="font-medium">{m.title}</div>
-                          <div className="text-xs text-base-content/60">
+                          <div className="text-xs text-base-content/70">
                             {new Date(m.startDate).toLocaleDateString()} ·{' '}
                             {new Date(m.endDate).toLocaleDateString()}
                           </div>
@@ -1230,7 +1233,7 @@ function ClubDetailScreen() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8 text-base-content/60">
+                <div className="text-center py-8 text-base-content/70">
                   <p>{t('detail.noPastMedia')}</p>
                 </div>
               )}
@@ -1290,7 +1293,7 @@ function ClubDetailScreen() {
 
                 {isMediaLoading ? (
                   <div className="flex justify-center py-8">
-                    <span className="loading loading-spinner loading-md"></span>
+                    <Spinner size="md" />
                   </div>
                 ) : clubMedia?.media && clubMedia.media.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1323,7 +1326,7 @@ function ClubDetailScreen() {
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-6xl text-base-content/30">
+                            <div className="w-full h-full flex items-center justify-center text-6xl text-base-content/70">
                               {getMediaTypeIcon(media.mediaType)}
                             </div>
                           )}
@@ -1366,7 +1369,7 @@ function ClubDetailScreen() {
                             </p>
                           )}
 
-                          <div className="flex flex-col gap-2 text-xs text-base-content/60 mb-4">
+                          <div className="flex flex-col gap-2 text-xs text-base-content/70 mb-4">
                             {media.community && (
                               <div className="flex items-center gap-1">
                                 <Users className="h-3 w-3" />
@@ -1450,7 +1453,7 @@ function ClubDetailScreen() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-base-content/60">
+                  <div className="text-center py-8 text-base-content/70">
                     <Book className="mx-auto text-4xl mb-2 opacity-50" />
                     <p>{t('detail.noMedia')}</p>
                     {canManageClub && (
@@ -1508,7 +1511,7 @@ function ClubDetailScreen() {
                                   {member.user.username}
                                 </Link>
                               </div>
-                              <div className="text-xs text-base-content/60">
+                              <div className="text-xs text-base-content/70">
                                 Requested{' '}
                                 {new Date(member.joinedAt).toLocaleDateString()}
                               </div>
@@ -1814,7 +1817,7 @@ function ClubDetailScreen() {
                     }}
                   />
                   {isSearching && (
-                    <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
+                    <Spinner size="sm" className="absolute right-3 top-1/2 transform -translate-y-1/2" />
                   )}
 
                   {showResults && searchResults && searchResults.length > 0 && (
@@ -1841,7 +1844,7 @@ function ClubDetailScreen() {
                                     result.title.contentTitleRomaji ||
                                     result.title.contentTitleNative}
                                 </div>
-                                <div className="text-sm text-base-content/60">
+                                <div className="text-sm text-base-content/70">
                                   {result.type}
                                 </div>
                               </div>
@@ -2115,7 +2118,7 @@ function ClubDetailScreen() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-center text-base-content/50">
+                      <div className="text-center text-base-content/70">
                         <div className="text-3xl mb-2">🖼️</div>
                         <div className="text-sm">{t('edit.noBanner')}</div>
                       </div>
@@ -2213,7 +2216,7 @@ function ClubDetailScreen() {
                   )}
                 />
                 <div className="mt-1 space-y-1">
-                  <p className="text-xs text-base-content/60">
+                  <p className="text-xs text-base-content/70">
                     {t('detail.currentTierMax', {
                       max: maxAllowedMemberLimit,
                     })}
@@ -2290,7 +2293,7 @@ function ClubDetailScreen() {
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h3 className="font-bold text-lg">{t('goals.title')}</h3>
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-base-content/70">
                   {t('goals.editorHint')}
                 </p>
               </div>
@@ -2563,7 +2566,7 @@ function ClubDetailScreen() {
                           </Field>
                         </>
                       ) : (
-                        <div className="md:col-span-2 text-xs text-base-content/60 rounded-lg bg-base-200/50 p-3">
+                        <div className="md:col-span-2 text-xs text-base-content/70 rounded-lg bg-base-200/50 p-3">
                           {goal.period === 'weekly'
                             ? t('goals.resetsWeekly')
                             : goal.period === 'monthly'

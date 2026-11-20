@@ -26,13 +26,17 @@ const categories = [
   { id: "patreon", key: "native.subscription", icon: Heart },
   { id: "advanced", key: "native.advanced", icon: CloudDownload },
 ] as const;
+const tools = [
+  { path: "/duels", key: "titles.duels" },
+  { path: "/recommendations", key: "titles.recommendations" },
+  { path: "/lists", key: "titles.lists" },
+  { path: "/calculator", key: "titles.calculator" },
+  { path: "/texthooker", key: "native.texthooker" },
+] as const;
 const help = [
   { path: "/support", key: "titles.support" },
   { path: "/guidelines", key: "titles.guidelines" },
   { path: "/changelog", key: "titles.changelog" },
-  { path: "/calculator", key: "titles.calculator" },
-  { path: "/lists", key: "titles.lists" },
-  { path: "/texthooker", key: "native.texthooker" },
 ] as const;
 const legal = [
   { path: "/terms", key: "titles.terms" },
@@ -64,18 +68,19 @@ export default function NativeSettingsIndex() {
             to={`/settings?tab=${id}`}
             className="flex min-h-16 items-center gap-3 px-4 py-3"
           >
-            <Icon className="h-5 w-5 text-base-content/65" />
+            <Icon className="h-5 w-5 text-base-content/70" />
             <span className="flex-1">{t(key)}</span>
-            <ChevronRight className="h-4 w-4 text-base-content/50" />
+            <ChevronRight className="h-4 w-4 text-base-content/70" />
           </Link>
         ))}
       </nav>
       {[
+        { title: "native.tools", items: tools },
         { title: "native.help", items: help },
         { title: "native.legal", items: legal },
       ].map(({ title, items }) => (
         <section key={title} className="space-y-2">
-          <h2 className="text-sm font-semibold text-base-content/65">
+          <h2 className="text-sm font-semibold text-base-content/70">
             {t(title as "native.help")}
           </h2>
           <nav className="surface divide-y divide-base-300">
@@ -86,7 +91,7 @@ export default function NativeSettingsIndex() {
                 className="flex min-h-12 items-center justify-between gap-3 px-4 py-3"
               >
                 <span>{t(key)}</span>
-                <ChevronRight className="h-4 w-4 text-base-content/50" />
+                <ChevronRight className="h-4 w-4 text-base-content/70" />
               </Link>
             ))}
           </nav>

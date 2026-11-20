@@ -117,7 +117,7 @@ function dateInputValue(date: Date) {
 function ObjectiveMeta({ objective }: { objective: IClubObjective }) {
   const { t } = useTranslation('clubs');
   return (
-    <div className="flex flex-wrap gap-3 text-xs text-base-content/60">
+    <div className="flex flex-wrap gap-3 text-xs text-base-content/70">
       <span className="flex items-center gap-1">
         <Flag className="h-3 w-3" />
         {objective.goal.toLocaleString()} {t(`challenges.metrics.${objective.metric}`)}
@@ -143,7 +143,7 @@ function ObjectiveProgress({ objective, label }: { objective: IClubObjective; la
         <span className="font-semibold">
           {objective.progress.toLocaleString()} / {objective.goal.toLocaleString()} {metricLabel}
         </span>
-        <span className="text-base-content/60">{objective.percentage}%</span>
+        <span className="text-base-content/70">{objective.percentage}%</span>
       </div>
       <progress className="progress progress-primary w-full" value={objective.percentage} max="100" />
     </div>
@@ -267,7 +267,7 @@ function ParticipantsModal({
           </Field>
         </div>
 
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-base-content/70">
           {t('objectives.participantCount', {
             count: participantRows.length,
           })}
@@ -343,7 +343,7 @@ function ParticipantsModal({
             </table>
           </div>
         ) : (
-          <p className="py-10 text-center text-sm text-base-content/60">
+          <p className="py-10 text-center text-sm text-base-content/70">
             {sourceRows.length
               ? t('objectives.noParticipantMatches')
               : t('objectives.noParticipants')}
@@ -525,7 +525,7 @@ export function ClubIndividualObjectives({ clubId }: { clubId: string }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-base-content/70">
             {t('objectives.noIndividual')}
           </p>
         )}
@@ -588,7 +588,7 @@ export default function ClubObjectives({
     <section className="card surface">
       <div className="card-body gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><h2 className="card-title text-lg"><Trophy className="h-5 w-5" />{t('objectives.title')}</h2><p className="text-sm text-base-content/60">{t('objectives.subtitle')}</p></div>
+          <div><h2 className="card-title text-lg"><Trophy className="h-5 w-5" />{t('objectives.title')}</h2><p className="text-sm text-base-content/70">{t('objectives.subtitle')}</p></div>
           {canManage && <div className="flex flex-wrap gap-2">
             {onManageCollective && <button className="btn btn-ghost btn-sm" onClick={onManageCollective}>{t('goals.manage')}</button>}
             <button className="btn btn-sm" onClick={() => setCreating((value) => !value)}><Plus className="h-4 w-4" />{t('objectives.create')}</button>
@@ -635,7 +635,7 @@ export default function ClubObjectives({
         {objectives.isLoading ? <div className="flex justify-center py-8"><Spinner /></div> : (
           <div className="min-w-0 space-y-3">
             <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{t('objectives.collective')}</h3>{collectiveObjectives.length > 1 && <div className="join"><button className="join-item btn btn-ghost btn-sm btn-square" aria-label={t('objectives.previous')} disabled={collectiveIndex === 0} onClick={() => setCollectiveIndex((index) => Math.max(index - 1, 0))}><ChevronLeft className="h-4 w-4" /></button><span className="join-item btn btn-ghost btn-sm pointer-events-none">{collectiveIndex + 1} / {collectiveObjectives.length}</span><button className="join-item btn btn-ghost btn-sm btn-square" aria-label={t('objectives.next')} disabled={collectiveIndex === collectiveObjectives.length - 1} onClick={() => setCollectiveIndex((index) => Math.min(index + 1, collectiveObjectives.length - 1))}><ChevronRight className="h-4 w-4" /></button></div>}</div>
-            {currentCollective ? <CollectiveObjectiveCard objective={currentCollective} clubId={clubId} canPin={canPin} onRefresh={refresh} /> : <div className="surface-muted flex min-h-[26rem] items-center justify-center rounded-box p-6 text-center text-sm text-base-content/60">{t('objectives.noCollective')}</div>}
+            {currentCollective ? <CollectiveObjectiveCard objective={currentCollective} clubId={clubId} canPin={canPin} onRefresh={refresh} /> : <div className="surface-muted flex min-h-[26rem] items-center justify-center rounded-box p-6 text-center text-sm text-base-content/70">{t('objectives.noCollective')}</div>}
           </div>
         )}
       </div>

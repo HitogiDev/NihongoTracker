@@ -1,3 +1,4 @@
+import ModalBackdrop from '../ui/ModalBackdrop';
 import DropdownSelect from '../ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import Field from '../ui/Field';
@@ -242,7 +243,7 @@ export default function EditVotingModal({
             </button>
           </div>
         </div>
-        <div className="modal-backdrop" onClick={onClose}></div>
+        <ModalBackdrop onClose={onClose} />
       </div>
     );
   }
@@ -306,7 +307,7 @@ export default function EditVotingModal({
                 />
                 <span>{t('editVoting.testingMode')}</span>
               </label>
-              <div className="text-xs text-base-content/60 ml-6">
+              <div className="text-xs text-base-content/70 ml-6">
                 {t('editVoting.testingModeHint')}
               </div>
             </div>
@@ -426,7 +427,7 @@ export default function EditVotingModal({
                           className={
                             votingData.suggestionStartDate
                               ? 'text-base-content'
-                              : 'text-base-content/50'
+                              : 'text-base-content/70'
                           }
                         >
                           {formatDateForDisplay(votingData.suggestionStartDate)}
@@ -481,7 +482,7 @@ export default function EditVotingModal({
                           className={
                             votingData.suggestionEndDate
                               ? 'text-base-content'
-                              : 'text-base-content/50'
+                              : 'text-base-content/70'
                           }
                         >
                           {formatDateForDisplay(votingData.suggestionEndDate)}
@@ -538,7 +539,7 @@ export default function EditVotingModal({
                         className={
                           votingData.votingStartDate
                             ? 'text-base-content'
-                            : 'text-base-content/50'
+                            : 'text-base-content/70'
                         }
                       >
                         {formatDateForDisplay(votingData.votingStartDate)}
@@ -614,7 +615,7 @@ export default function EditVotingModal({
                         className={
                           votingData.votingEndDate
                             ? 'text-base-content'
-                            : 'text-base-content/50'
+                            : 'text-base-content/70'
                         }
                       >
                         {formatDateForDisplay(votingData.votingEndDate)}
@@ -675,7 +676,7 @@ export default function EditVotingModal({
                     className={
                       votingData.consumptionStartDate
                         ? 'text-base-content'
-                        : 'text-base-content/50'
+                        : 'text-base-content/70'
                     }
                   >
                     {formatDateForDisplay(votingData.consumptionStartDate)}
@@ -738,7 +739,7 @@ export default function EditVotingModal({
                     className={
                       votingData.consumptionEndDate
                         ? 'text-base-content'
-                        : 'text-base-content/50'
+                        : 'text-base-content/70'
                     }
                   >
                     {formatDateForDisplay(votingData.consumptionEndDate)}
@@ -808,7 +809,7 @@ export default function EditVotingModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
+      <ModalBackdrop onClose={onClose} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -173,7 +174,7 @@ function ReviewDetailScreen() {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex justify-center py-12">
-          <span className="loading loading-spinner loading-lg" />
+          <Spinner size="lg" />
         </div>
       </div>
     );
@@ -403,7 +404,7 @@ function ReviewDetailScreen() {
                 disabled={isDeletingReview}
               >
                 {isDeletingReview ? (
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="xs" />
                 ) : (
                   'Delete'
                 )}

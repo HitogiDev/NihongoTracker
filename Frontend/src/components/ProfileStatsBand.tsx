@@ -229,7 +229,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             type="button"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
-            className="flex items-center gap-1.5 whitespace-nowrap card-title text-base-content/80 hover:text-base-content transition-colors"
+            className="flex min-h-11 items-center gap-1.5 whitespace-nowrap card-title text-base-content/80 hover:text-base-content transition-colors"
           >
             <ChevronDown
               className={`w-4 h-4 transition-transform ${
@@ -240,13 +240,13 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
           </button>
           {collapsed && !hideRankingFeatures && (
             <div className="order-last flex w-full items-center gap-4 text-sm sm:order-none sm:ml-auto sm:w-auto">
-              <span className="text-base-content/60">
+              <span className="text-base-content/70">
                 {t('stats.global')}{' '}
                 <span className="font-bold text-base-content">
                   {compactGlobal}
                 </span>
               </span>
-              <span className="text-base-content/60">
+              <span className="text-base-content/70">
                 {t('stats.monthly')}{' '}
                 <span className="font-bold text-base-content">
                   {compactMonthly}
@@ -271,7 +271,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                <>
              <div className="flex flex-wrap items-end gap-x-10 gap-y-2">
               <div>
-                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                <div className="text-xs uppercase tracking-wide text-base-content/70">
                   {t('stats.globalRanking')}
                 </div>
                 <div className="text-3xl font-bold leading-tight">
@@ -279,7 +279,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                <div className="text-xs uppercase tracking-wide text-base-content/70">
                   {t('stats.monthlyRanking')}
                 </div>
                 <div className="text-3xl font-bold leading-tight">
@@ -292,7 +292,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             {isOverview && (
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs uppercase tracking-wide text-base-content/60">
+                  <span className="text-xs uppercase tracking-wide text-base-content/70">
                     {t('stats.rankingOverTime')}
                   </span>
                   <div className="join">
@@ -383,7 +383,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                     )}
                   </div>
                 ) : (
-                  <div className="h-14 flex items-center text-xs text-base-content/50">
+                  <div className="h-14 flex items-center text-xs text-base-content/70">
                     {t('stats.noRankingHistory')}
                   </div>
                 )}
@@ -394,7 +394,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
 
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <div>
-                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                <div className="text-xs uppercase tracking-wide text-base-content/70">
                   {t('stats.achievements')}
                 </div>
                 <div className="text-lg font-semibold leading-tight">
@@ -402,7 +402,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                <div className="text-xs uppercase tracking-wide text-base-content/70">
                   {t('stats.totalXp')}
                 </div>
                 <div className="text-lg font-semibold leading-tight">
@@ -410,7 +410,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                <div className="text-xs uppercase tracking-wide text-base-content/70">
                   {t('stats.totalTime')}
                 </div>
                 {/* `d` here is 24 hours of immersion, not a calendar day, so

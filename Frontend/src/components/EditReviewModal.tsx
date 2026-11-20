@@ -251,7 +251,7 @@ export default function EditReviewModal({
                 ))}
               </div>
               {editForm.rating && (
-                <span className="text-sm text-base-content/60">
+                <span className="text-sm text-base-content/70">
                   {editForm.rating}/5
                 </span>
               )}
@@ -423,7 +423,7 @@ export default function EditReviewModal({
                     html={renderMarkdownWithSpoilers(editForm.content)}
                   />
                 ) : (
-                  <div className="text-base-content/60">
+                  <div className="text-base-content/70">
                     {t('write.previewEmpty')}
                   </div>
                 )}

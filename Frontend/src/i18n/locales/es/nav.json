@@ -55,7 +55,12 @@
     "yourClubs": "Tus clubs",
     "exploreClubs": "Descubrir clubs",
     "members": "Miembros",
-    "media": "Medios"
+    "media": "Medios",
+    "pushTitle": "Recibe avisos",
+    "pushBody": "Entérate de duelos, menciones, actividad de tus clubs y resúmenes de metas, aunque la app esté cerrada.",
+    "pushEnable": "Activar",
+    "pushLater": "Ahora no",
+    "tools": "Herramientas"
   },
   "onboarding": {
     "skip": "Omitir",
@@ -208,6 +213,7 @@
     "clubSection": "{{section}} • Club",
     "createClub": "Crear club",
     "createLog": "Crear log",
+    "sessionTimer": "Temporizador de sesión",
     "android": "App de Android",
     "desktop": "App de escritorio",
     "duels": "Duelos",

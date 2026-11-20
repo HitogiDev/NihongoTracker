@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import Field from '../components/ui/Field';
+import UnsavedChangesGuard from '../components/UnsavedChangesGuard';
+import { useNativeUnsavedChanges } from '../native/NativeDirtyContext';
 import {
   Link,
-  useBeforeUnload,
-  useBlocker,
   useNavigate,
   useOutletContext,
 } from 'react-router-dom';
@@ -100,43 +100,7 @@ function MediaWriteReview() {
     reviewForm.content.trim().length > 0 ||
     reviewForm.rating !== undefined;
 
-  useBeforeUnload(
-    useCallback(
-      (event) => {
-        if (bypassUnsavedPromptRef.current) return;
-        if (!hasStartedWriting) return;
-        event.preventDefault();
-        event.returnValue = '';
-      },
-      [hasStartedWriting]
-    )
-  );
-
-  const blocker = useBlocker(
-    useCallback(
-      () => hasStartedWriting && !bypassUnsavedPromptRef.current,
-      [hasStartedWriting]
-    )
-  );
-
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-
-    if (bypassUnsavedPromptRef.current) {
-      blocker.proceed();
-      return;
-    }
-
-    const shouldLeave = window.confirm(
-      'You have an unfinished review. Leave this page?'
-    );
-
-    if (shouldLeave) {
-      blocker.proceed();
-    } else {
-      blocker.reset();
-    }
-  }, [blocker]);
+  const clearNativeDirty = useNativeUnsavedChanges(hasStartedWriting);
 
   const addReviewMutation = useMutation({
     mutationFn: (data: typeof reviewForm) => {
@@ -159,6 +123,7 @@ function MediaWriteReview() {
       });
       toast.success(t('toast.reviewAdded'));
       bypassUnsavedPromptRef.current = true;
+      clearNativeDirty();
       // Clear form first so the leave-page blocker does not trigger on navigate
       setReviewForm({ summary: '', content: '', rating: undefined });
       navigate(reviewsPath);
@@ -299,6 +264,10 @@ function MediaWriteReview() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <UnsavedChangesGuard
+        dirty={hasStartedWriting}
+        bypassRef={bypassUnsavedPromptRef}
+      />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Pencil className="w-5 h-5" />
@@ -401,7 +370,7 @@ function MediaWriteReview() {
                     ))}
                   </div>
                   {reviewForm.rating && (
-                    <span className="text-sm text-base-content/60">
+                    <span className="text-sm text-base-content/70">
                       {reviewForm.rating}/5
                     </span>
                   )}
@@ -596,7 +565,7 @@ function MediaWriteReview() {
                   html={renderMarkdownWithSpoilers(reviewForm.content)}
                 />
               ) : (
-                <div className="text-base-content/60">
+                <div className="text-base-content/70">
                   {t('write.previewHint')}
                 </div>
               )}

@@ -1,3 +1,4 @@
+import Spinner from '../components/ui/Spinner';
 import React, {
   useState,
   useRef,
@@ -13,6 +14,7 @@ import DropdownSelect from '../components/ui/DropdownSelect';
 import NativeSettingsIndex from '../native/NativeSettingsIndex';
 import { isMobileApp } from '../utils/nativeRuntime';
 import { useNativeUnsavedChanges } from '../native/NativeDirtyContext';
+import UnsavedChangesGuard from '../components/UnsavedChangesGuard';
 import { buttonClass } from '../components/ui/buttons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -430,7 +432,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         />
         <div className="flex justify-between items-center">
           <label className="label py-1"></label>
-          <span className="text-base-content/60">
+          <span className="text-base-content/70">
             {length}/{maxLength}
           </span>
         </div>
@@ -443,7 +445,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
               disabled={isSaving}
             >
               {isSaving ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                <Spinner size="sm" />
               ) : (
                 t('profile.saveAbout')
               )}
@@ -482,14 +484,14 @@ function SettingsScreen() {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
   const detectedTimezone = getUserTimezone();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
-    isMobileApp() && TAB_CONFIG.some(({ id }) => id === searchParams.get('tab'))
+    TAB_CONFIG.some(({ id }) => id === searchParams.get('tab'))
       ? searchParams.get('tab') as SettingsTab
-      : searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile',
+      : 'profile',
   );
   const [nativeDirty, setNativeDirty] = useState(false);
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
@@ -694,7 +696,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -725,7 +727,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -760,13 +762,9 @@ function SettingsScreen() {
         });
       },
       onError: (error) => {
-        if (error instanceof AxiosError) {
-          toast.error(
-            `Failed to save preference: ${error.response?.data.message}`,
-          );
-        } else {
-          toast.error(t('toast.preferenceSaveFailed'));
-        }
+        toast.error(
+          `${t('toast.preferenceSaveFailed')}: ${getApiErrorMessage(error)}`,
+        );
       },
     });
 
@@ -1058,7 +1056,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -1090,7 +1088,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -1131,7 +1129,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
@@ -1209,7 +1207,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('toast.patreonUnlinkFailed'));
       }
@@ -1381,7 +1379,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
+        toast.error(getApiErrorMessage(error));
       } else {
         toast.error(t('toast.badgeTextFailed'));
       }
@@ -1402,7 +1400,7 @@ function SettingsScreen() {
       },
       onError: (error) => {
         if (error instanceof AxiosError) {
-          toast.error(error.response?.data.message);
+          toast.error(getApiErrorMessage(error));
         } else {
           toast.error(t('toast.badgeColorsFailed'));
         }
@@ -2400,6 +2398,16 @@ function SettingsScreen() {
   if (isMobileApp() && !TAB_CONFIG.some(({ id }) => id === searchParams.get('tab'))) return <NativeSettingsIndex />;
   return (
     <div className="min-h-screen bg-base-200 pt-20">
+      <UnsavedChangesGuard
+        dirty={
+          activeTab !== 'customization' &&
+          (nativeDirty ||
+            avatarHasPendingCrop ||
+            bannerHasPendingCrop ||
+            avatarMarkedForRemoval ||
+            bannerMarkedForRemoval)
+        }
+      />
       <dialog
         id="clear_data_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -2448,7 +2456,7 @@ function SettingsScreen() {
               disabled={!isUsernameMatch || isClearDataPending}
             >
               {isClearDataPending ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                <Spinner size="sm" />
               ) : (
                 <>
                   <Trash2 className="h-4 w-4" />
@@ -2512,7 +2520,7 @@ function SettingsScreen() {
 
         <div className="flex flex-col lg:flex-row gap-6">
           <aside className="native-web-only lg:w-64 flex-shrink-0">
-            <div className="card surface sticky top-6">
+            <div className="card surface sticky top-[calc(var(--site-header-offset)+1.5rem)] follow-site-header">
               <div className="card-body p-2">
                 <nav className="flex flex-row lg:flex-col gap-1">
                   {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => (
@@ -2526,7 +2534,20 @@ function SettingsScreen() {
      ? 'bg-primary text-primary-content shadow-sm'
      : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
  }`}
-                      onClick={() => setActiveTab(id)}
+                      aria-label={t(labelKey)}
+                      aria-current={activeTab === id ? 'page' : undefined}
+                      onClick={() => {
+                        setActiveTab(id);
+                        // Keep the tab in the URL so a reload or a shared link opens it.
+                        setSearchParams(
+                          (previous) => {
+                            const next = new URLSearchParams(previous);
+                            next.set('tab', id);
+                            return next;
+                          },
+                          { replace: true },
+                        );
+                      }}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
                       <span className="hidden sm:block">{t(labelKey)}</span>
@@ -2537,7 +2558,7 @@ function SettingsScreen() {
             </div>
           </aside>
 
-          <main className="flex-1 min-w-0 space-y-6" onInputCapture={() => { if (isMobileApp() && (activeTab === 'profile' || activeTab === 'account')) setNativeDirty(true); }} onChangeCapture={() => { if (isMobileApp() && (activeTab === 'profile' || activeTab === 'account')) setNativeDirty(true); }}>
+          <main className="flex-1 min-w-0 space-y-6" onInputCapture={() => { if (activeTab === 'profile' || activeTab === 'account') setNativeDirty(true); }} onChangeCapture={() => { if (activeTab === 'profile' || activeTab === 'account') setNativeDirty(true); }}>
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div className="card surface">
@@ -2587,7 +2608,7 @@ function SettingsScreen() {
                             aboutViewMode === 'split') && (
                             <div className="p-4 min-h-48 bg-base-50">
                               {aboutViewMode === 'split' && (
-                                <div className="text-xs text-base-content/40 font-medium uppercase tracking-wide mb-3 flex items-center gap-1">
+                                <div className="text-xs text-base-content/70 font-medium uppercase tracking-wide mb-3 flex items-center gap-1">
                                   <Eye className="w-3 h-3" />
                                   {t('profile.preview')}
                                 </div>
@@ -2598,7 +2619,7 @@ function SettingsScreen() {
                                   html={renderedAboutPreview}
                                 />
                               ) : (
-                                <p className="text-base-content/30 text-sm italic">
+                                <p className="text-base-content/70 text-sm italic">
                                   {aboutViewMode === 'preview'
                                     ? t('profile.previewEmpty')
                                     : t('profile.previewPlaceholder')}
@@ -2649,7 +2670,7 @@ function SettingsScreen() {
                                 ))}
                             </div>
                             <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="text-base-content/60 leading-relaxed">
+                              <span className="text-base-content/70 leading-relaxed">
                                 {t('profile.allowedFormats', {
                                   gif: hasPatreonMediaAccess ? ', GIF' : '',
                                   maxSize: avatarMaxSizeMb,
@@ -2750,7 +2771,7 @@ function SettingsScreen() {
                                 ))}
                             </div>
                             <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="text-base-content/60 leading-relaxed">
+                              <span className="text-base-content/70 leading-relaxed">
                                 {t('profile.allowedFormats', {
                                   gif: hasPatreonMediaAccess ? ', GIF' : '',
                                   maxSize: bannerMaxSizeMb,
@@ -2807,7 +2828,7 @@ function SettingsScreen() {
                         >
                           {isPending ? (
                             <>
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                               {t('profile.saving')}
                             </>
                           ) : (
@@ -2867,7 +2888,7 @@ function SettingsScreen() {
                             <Lock className="h-4 w-4 text-secondary" />
                             {t('account.currentPassword')}
                           </label>
-                          <span className="text-right text-sm text-base-content/60">
+                          <span className="text-right text-sm text-base-content/70">
                             {t('account.requiredForChanges')}
                           </span>
                         </div>
@@ -2885,7 +2906,7 @@ function SettingsScreen() {
                         />
                       </div>
 
-                      <div className="divider text-xs text-base-content/40">
+                      <div className="divider text-xs text-base-content/70">
                         {t('account.detailsHeading')}
                       </div>
 
@@ -2900,7 +2921,7 @@ function SettingsScreen() {
                           onChange={(e) => setUsername(e.target.value)}
                         />
                         <label className="label">
-                          <span className="text-base-content/60">
+                          <span className="text-base-content/70">
                             {t('account.currentUsername', {
                               username: user?.username || t('account.notSet'),
                             })}
@@ -2957,7 +2978,7 @@ function SettingsScreen() {
                             >
                               {isResendingEmail ? (
                                 <>
-                                  <span className="loading loading-spinner loading-sm"></span>
+                                  <Spinner size="sm" />
                                   {t('account.sending')}
                                 </>
                               ) : resendCooldown > 0 ? (
@@ -2977,14 +2998,14 @@ function SettingsScreen() {
 
                         {!user?.email && (
                           <label className="label">
-                            <span className="text-base-content/60">
+                            <span className="text-base-content/70">
                               {t('account.recoveryHint')}
                             </span>
                           </label>
                         )}
                       </Field>
 
-                      <div className="divider text-xs text-base-content/40">
+                      <div className="divider text-xs text-base-content/70">
                         {t('account.changePasswordHeading')}
                       </div>
 
@@ -3006,7 +3027,7 @@ function SettingsScreen() {
                           }}
                         />
                         <label className="label">
-                          <span className="text-base-content/60">
+                          <span className="text-base-content/70">
                             {t('account.keepPasswordHint')}
                           </span>
                         </label>
@@ -3051,7 +3072,7 @@ function SettingsScreen() {
                         >
                           {isPending ? (
                             <>
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                               {t('account.updating')}
                             </>
                           ) : (
@@ -3142,7 +3163,7 @@ function SettingsScreen() {
                         <legend className="fieldset-legend font-medium gap-2">
                           {t('preferences.weekStartsOn')}
                           {isPreferencesPending && (
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                           )}
                         </legend>
                         <DropdownSelect
@@ -3162,7 +3183,7 @@ function SettingsScreen() {
                         <legend className="fieldset-legend font-medium gap-2">
                           {t('preferences.dayStartHour')}
                           {isPreferencesPending && (
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                           )}
                         </legend>
                         <DropdownSelect
@@ -3181,7 +3202,7 @@ function SettingsScreen() {
                             </option>
                           ))}
                         </DropdownSelect>
-                        <p className="label text-base-content/60 text-wrap">
+                        <p className="label text-base-content/70 text-wrap">
                           {t('preferences.dayStartHourHint')}
                         </p>
                       </fieldset>
@@ -3190,7 +3211,7 @@ function SettingsScreen() {
                         <legend className="fieldset-legend font-medium gap-2">
                           {t('preferences.timezone')}
                           {isPreferencesPending && (
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                           )}
                         </legend>
                         <TimezonePicker
@@ -3198,7 +3219,7 @@ function SettingsScreen() {
                           onChange={setTimezone}
                           disabled={isPending || isPreferencesPending}
                         />
-                        <p className="label text-base-content/60 text-wrap">
+                        <p className="label text-base-content/70 text-wrap">
                           {t('preferences.timezoneHint')}
                         </p>
                       </fieldset>
@@ -3209,13 +3230,13 @@ function SettingsScreen() {
                             <span className="font-medium">
                               {t('preferences.blurAdult')}
                             </span>
-                            <span className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/70">
                               {t('preferences.blurAdultHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             )}
                             <input
                               type="checkbox"
@@ -3234,13 +3255,13 @@ function SettingsScreen() {
                             <span className="font-medium">
                               {t('preferences.hideAdultFromSearch')}
                             </span>
-                            <span className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/70">
                               {t('preferences.hideAdultFromSearchHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             )}
                             <input
                               type="checkbox"
@@ -3261,13 +3282,13 @@ function SettingsScreen() {
                             <span className="font-medium">
                               {t('preferences.hideUnmatched')}
                             </span>
-                            <span className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/70">
                               {t('preferences.hideUnmatchedHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             )}
                             <input
                               type="checkbox"
@@ -3288,13 +3309,13 @@ function SettingsScreen() {
                             <span className="font-medium">
                               {t('preferences.hideRankingFeatures')}
                             </span>
-                            <span className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/70">
                               {t('preferences.hideRankingFeaturesHint')}
                             </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             )}
                             <input
                               type="checkbox"
@@ -3387,7 +3408,7 @@ function SettingsScreen() {
                                     {patreonStatus.patreonEmail}
                                   </div>
                                 )}
-                                <div className="text-xs text-base-content/60 mt-1">
+                                <div className="text-xs text-base-content/70 mt-1">
                                   ID: {patreonStatus.patreonId}
                                 </div>
                               </div>
@@ -3417,7 +3438,7 @@ function SettingsScreen() {
                             disabled={isRecheckingPatreon}
                           >
                             {isRecheckingPatreon ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : (
                               <>
                                 <RefreshCw className="h-4 w-4" />
@@ -3433,7 +3454,7 @@ function SettingsScreen() {
                             disabled={isUnlinkingPatreon}
                           >
                             {isUnlinkingPatreon ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : (
                               <>
                                 <Unlink2 className="h-4 w-4" />
@@ -3452,7 +3473,7 @@ function SettingsScreen() {
                               disabled={isInitiatingOAuth}
                             >
                               {isInitiatingOAuth ? (
-                                <span className="loading loading-spinner loading-sm"></span>
+                                <Spinner size="sm" />
                               ) : (
                                 <>
                                   <HeartHandshake className="size-5" />
@@ -3470,7 +3491,7 @@ function SettingsScreen() {
                               {t('patreon.benefits')}
                             </a>
                           </div>
-                          <div className="text-xs text-center text-base-content/60">
+                          <div className="text-xs text-center text-base-content/70">
                             <Lock className="h-4 w-4" />
                             {t('patreon.oauthNote')}
                           </div>
@@ -3553,7 +3574,7 @@ function SettingsScreen() {
                             disabled={isUpdatingBadge}
                           >
                             {isUpdatingBadge ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : (
                               <>
                                 <Check className="h-4 w-4" />
@@ -3563,7 +3584,7 @@ function SettingsScreen() {
                           </button>
                         </div>
                         <label className="label">
-                          <span className="text-base-content/60">
+                          <span className="text-base-content/70">
                             {customBadgeText.length}/20 · Leave empty to use
                             default tier name
                           </span>
@@ -3717,7 +3738,7 @@ function SettingsScreen() {
                       >
                         {isUpdatingColors ? (
                           <>
-                            <span className="loading loading-spinner loading-sm"></span>
+                            <Spinner size="sm" />
                             {t('profile.saving')}
                           </>
                         ) : (
@@ -3783,7 +3804,7 @@ function SettingsScreen() {
                               <div className="truncate font-semibold">
                                 {anilistStatus.anilistUsername}
                               </div>
-                              <div className="text-sm text-base-content/60">
+                              <div className="text-sm text-base-content/70">
                                 {t('anilist.syncedLogs', {
                                   count: anilistStatus.syncedLogCount ?? 0,
                                 })}
@@ -3861,7 +3882,7 @@ function SettingsScreen() {
                               >
                                 {t('anilist.excludedMedia')}
                               </h3>
-                              <p className="text-sm text-base-content/65">
+                              <p className="text-sm text-base-content/70">
                                 {t('anilist.excludedMediaHint')}
                               </p>
                             </div>
@@ -3878,7 +3899,7 @@ function SettingsScreen() {
                           </div>
 
                           {excludedMedia.length === 0 ? (
-                            <div className="surface-muted flex items-center gap-3 p-4 text-sm text-base-content/60">
+                            <div className="surface-muted flex items-center gap-3 p-4 text-sm text-base-content/70">
                               <List className="size-5 shrink-0" />
                               <span>{t('anilist.excludedMediaEmpty')}</span>
                             </div>
@@ -3936,7 +3957,7 @@ function SettingsScreen() {
                             >
                               {t('anilist.manualSync')}
                             </h3>
-                            <div className="mt-1 flex items-center gap-2 text-sm text-base-content/65">
+                            <div className="mt-1 flex items-center gap-2 text-sm text-base-content/70">
                               <Clock3 className="size-4 shrink-0" />
                               <span>
                                 {anilistStatus.lastSyncedAt
@@ -4001,7 +4022,7 @@ function SettingsScreen() {
                           <h3 className="font-semibold">
                             {t('anilist.connection')}
                           </h3>
-                          <p className="text-sm text-base-content/65">
+                          <p className="text-sm text-base-content/70">
                             {t('anilist.connectionHint')}
                           </p>
                         </div>
@@ -4036,7 +4057,7 @@ function SettingsScreen() {
                         <Link2 className="size-5" />
                         {t('anilist.connect')}
                       </Button>
-                      <div className="flex items-center justify-center gap-2 text-center text-xs text-base-content/60">
+                      <div className="flex items-center justify-center gap-2 text-center text-xs text-base-content/70">
                         <Lock className="size-4" />
                         {t('anilist.oauthNote')}
                       </div>
@@ -4077,7 +4098,7 @@ function SettingsScreen() {
                           <span className="block font-semibold leading-snug">
                             {t('anilist.includeExistingMedia')}
                           </span>
-                          <span className="mt-1 block text-sm leading-relaxed text-base-content/65">
+                          <span className="mt-1 block text-sm leading-relaxed text-base-content/70">
                             {t('anilist.includeExistingMediaHint')}
                           </span>
                         </span>
@@ -4314,7 +4335,7 @@ function SettingsScreen() {
                           >
                             {isImportPending ? (
                               <>
-                                <span className="loading loading-spinner loading-sm"></span>
+                                <Spinner size="sm" />
                                 {t('data.importing')}
                               </>
                             ) : (
@@ -4345,7 +4366,7 @@ function SettingsScreen() {
                         >
                           {isExportPending ? (
                             <>
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                               {t('data.exporting')}
                             </>
                           ) : (
@@ -4400,7 +4421,7 @@ function SettingsScreen() {
                             }
                           >
                             {isGeneratingKey ? (
-                              <span className="loading loading-spinner loading-sm"></span>
+                              <Spinner size="sm" />
                             ) : (
                               <Plus className="h-4 w-4" />
                             )}
@@ -4459,10 +4480,10 @@ function SettingsScreen() {
 
                         {isLoadingApiKeys ? (
                           <div className="flex justify-center py-4">
-                            <span className="loading loading-spinner loading-md"></span>
+                            <Spinner size="md" />
                           </div>
                         ) : apiKeys.length === 0 ? (
-                          <p className="text-base-content/50 text-sm text-center py-4">
+                          <p className="text-base-content/70 text-sm text-center py-4">
                             {t('apiKeys.empty')}
                           </p>
                         ) : (
@@ -4476,10 +4497,10 @@ function SettingsScreen() {
                                   <p className="font-medium text-sm truncate">
                                     {key.name}
                                   </p>
-                                  <p className="text-xs text-base-content/50 font-mono">
+                                  <p className="text-xs text-base-content/70 font-mono">
                                     {key.keyPrefix}••••••••
                                   </p>
-                                  <p className="text-xs text-base-content/40 mt-0.5">
+                                  <p className="text-xs text-base-content/70 mt-0.5">
                                     Created{' '}
                                     {new Date(
                                       key.createdAt,
@@ -4554,7 +4575,7 @@ function SettingsScreen() {
                                   <button
                                     type="button"
                                     aria-label={t('advanced.clearDiscordId')}
-                                    className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-error"
+                                    className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/70 hover:text-error"
                                     onClick={() => setDiscordId('')}
                                   >
                                     <XCircle className="h-4 w-4" />
@@ -4562,12 +4583,12 @@ function SettingsScreen() {
                                 )}
                               </div>
                               <label className="label flex-col items-start gap-1">
-                                <span className="text-base-content/60 break-all">
+                                <span className="text-base-content/70 break-all">
                                   {user?.discordId
                                     ? `Current: ${user.discordId}`
                                     : null}
                                 </span>
-                                <span className="text-base-content/60">
+                                <span className="text-base-content/70">
                                   {t('advanced.unlinkHint')}
                                 </span>
                               </label>
@@ -4575,7 +4596,7 @@ function SettingsScreen() {
                             <Field
                               label={
                                 <>
-                                  <Lock className="h-4 w-4 text-base-content/60" />
+                                  <Lock className="h-4 w-4 text-base-content/70" />
                                   {t('account.currentPassword')}
                                 </>
                               }
@@ -4600,7 +4621,7 @@ function SettingsScreen() {
                                 }
                               >
                                 {isPending ? (
-                                  <span className="loading loading-spinner loading-sm"></span>
+                                  <Spinner size="sm" />
                                 ) : (
                                   <>
                                     <Check className="h-4 w-4" />
@@ -4625,7 +4646,7 @@ function SettingsScreen() {
                               >
                                 {isSyncPending ? (
                                   <>
-                                    <span className="loading loading-spinner loading-sm"></span>
+                                    <Spinner size="sm" />
                                     {t('data.syncing')}
                                   </>
                                 ) : (
@@ -5196,7 +5217,7 @@ function SortableWidgetRow({
     >
       <button
         type="button"
-        className="cursor-grab touch-none text-base-content/40 hover:text-base-content/70 active:cursor-grabbing"
+        className="cursor-grab touch-none text-base-content/70 hover:text-base-content/70 active:cursor-grabbing"
         aria-label={t('layout.dragToReorder')}
         {...attributes}
         {...listeners}
@@ -5212,7 +5233,7 @@ function SortableWidgetRow({
             </span>
           )}
         </div>
-        <p className="truncate text-xs text-base-content/60">{description}</p>
+        <p className="truncate text-xs text-base-content/70">{description}</p>
       </div>
       <button
         type="button"
@@ -5226,7 +5247,7 @@ function SortableWidgetRow({
         {visible ? (
           <Eye className="h-4 w-4" />
         ) : (
-          <EyeOff className="h-4 w-4 text-base-content/40" />
+          <EyeOff className="h-4 w-4 text-base-content/70" />
         )}
       </button>
     </div>
@@ -5356,7 +5377,7 @@ function ProfileLayoutEditor() {
           </SortableContext>
         </DndContext>
 
-        <p className="mt-3 text-xs text-base-content/50">
+        <p className="mt-3 text-xs text-base-content/70">
           {t('layout.autosaveNote')}
         </p>
       </div>
@@ -5432,7 +5453,7 @@ function AnilistExclusionPickerModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
-          <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
+          <Search className="w-5 h-5 text-base-content/70 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -5442,7 +5463,7 @@ function AnilistExclusionPickerModal({
             onChange={(e) => setQuery(e.target.value)}
           />
           {isSearching && (
-            <span className="loading loading-spinner loading-sm text-primary" />
+            <Spinner size="sm" className="text-primary" />
           )}
           <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
@@ -5451,14 +5472,14 @@ function AnilistExclusionPickerModal({
 
         <div className="max-h-[28rem] overflow-y-auto overscroll-contain">
           {!hasQuery && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{t('anilist.exclusionSearchHint')}</p>
             </div>
           )}
 
           {hasQuery && !isSearching && visibleResults.length === 0 && (
-            <div className="px-4 py-16 text-center text-base-content/40">
+            <div className="px-4 py-16 text-center text-base-content/70">
               <p className="text-sm">
                 {t('anilist.excludedNoResults')} &ldquo;{debouncedQuery}&rdquo;
               </p>
@@ -5505,12 +5526,12 @@ function AnilistExclusionPickerModal({
                     </p>
                     {media.title.contentTitleEnglish &&
                       media.title.contentTitleNative && (
-                        <p className="text-xs text-base-content/50 truncate mt-0.5">
+                        <p className="text-xs text-base-content/70 truncate mt-0.5">
                           {media.title.contentTitleEnglish}
                         </p>
                       )}
                   </div>
-                  <Plus className="w-4 h-4 text-base-content/50 flex-shrink-0" />
+                  <Plus className="w-4 h-4 text-base-content/70 flex-shrink-0" />
                 </button>
               ))}
             </div>
