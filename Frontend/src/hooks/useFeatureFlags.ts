@@ -9,5 +9,5 @@ export function useFeatureFlags() {
     meta: { silentError: true },
   });
   // Treat flags as off until the server answers.
-  return data ?? { wrapped: false };
+  return data ?? { wrapped: false, posts: false };
 }

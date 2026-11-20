@@ -10,6 +10,11 @@ const FLAGS = [
     label: 'features.wrapped.label',
     description: 'features.wrapped.description',
   },
+  {
+    key: 'posts',
+    label: 'features.posts.label',
+    description: 'features.posts.description',
+  },
 ] as const;
 
 export default function FeatureFlagsCard() {

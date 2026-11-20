@@ -565,7 +565,8 @@ export const ACTIVITY_TYPES = [
   'club_milestone',
   'club_challenge_started',
   'cooperative_goal_progress',
-  'cooperative_goal_completed'
+  'cooperative_goal_completed',
+  'post'
 ] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
@@ -608,6 +609,75 @@ export interface IActivity extends Document {
   reactionCounts: Partial<Record<ActivityReactionType, number>>;
   commentCount: number;
   occurredAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const POST_IMAGE_SOURCES = ['external', 'hosted'] as const;
+export type PostImageSource = (typeof POST_IMAGE_SOURCES)[number];
+
+export interface IPostImage {
+  _id: Types.ObjectId;
+  url: string;
+  source: PostImageSource;
+  width?: number;
+  height?: number;
+  uploadedAt?: Date;
+}
+
+export const POST_BORDER_STYLES = [
+  'none',
+  'solid',
+  'dashed',
+  'dotted',
+  'double',
+  'gradient',
+  'glow',
+] as const;
+export type PostBorderStyle = (typeof POST_BORDER_STYLES)[number];
+
+export const POST_BACKGROUND_TYPES = ['none', 'color', 'pattern', 'image'] as const;
+export type PostBackgroundType = (typeof POST_BACKGROUND_TYPES)[number];
+
+export const POST_BACKGROUND_PATTERNS = [
+  'dots',
+  'grid',
+  'stripes',
+  'checks',
+  'zigzag',
+  'seigaiha',
+] as const;
+export type PostBackgroundPattern = (typeof POST_BACKGROUND_PATTERNS)[number];
+
+export interface IPostDecoration {
+  border: {
+    style: PostBorderStyle;
+    color1: string;
+    color2: string;
+  };
+  background: {
+    type: PostBackgroundType;
+    color: string;
+    pattern: PostBackgroundPattern;
+    patternColor: string;
+    /** 0 to 100. It applies to the whole background layer. */
+    opacity: number;
+    image?: {
+      url: string;
+      source: PostImageSource;
+      uploadedAt?: Date;
+    } | null;
+  };
+}
+
+export interface IPost extends Document {
+  author: Types.ObjectId;
+  content: string;
+  images: IPostImage[];
+  visibility: SocialVisibility;
+  sensitive: boolean;
+  decoration?: IPostDecoration | null;
+  editedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

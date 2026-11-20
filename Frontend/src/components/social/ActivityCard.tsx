@@ -9,6 +9,8 @@ import {
   Headphones,
   Heart,
   MessageCircle,
+  Pencil,
+  Trash2,
   Tv,
   Video,
   Star,
@@ -23,7 +25,25 @@ import {
   removeActivityReactionFn,
   setActivityReactionFn,
 } from "../../api/activitiesApi";
-import { ActivityReactionType, ISocialActivity } from "../../types";
+import { deletePostFn } from "../../api/postsApi";
+import {
+  ActivityReactionType,
+  IPostActivityMetadata,
+  IPostDecoration,
+  IPostImage,
+  ISocialActivity,
+} from "../../types";
+import { renderMarkdownWithSpoilers } from "../../utils/markdown";
+import MarkdownContent from "../ui/MarkdownContent";
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
+import PostComposer from "./PostComposer";
+import PostImages from "./PostImages";
+import {
+  backgroundLayerStyle,
+  borderFrameStyle,
+  hasPostDecoration,
+} from "../../utils/postDecoration";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { formatRelativeDateInTimezone } from "../../utils/timezone";
 import { getMediaTypeClasses } from "../../constants/mediaColors";
@@ -127,6 +147,26 @@ function metadataString(activity: ISocialActivity, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
+function postMetadata(activity: ISocialActivity): IPostActivityMetadata | null {
+  if (activity.type !== "post" || !activity.metadata) return null;
+  const metadata = activity.metadata;
+  const images = Array.isArray(metadata.images)
+    ? (metadata.images as IPostImage[])
+    : [];
+  return {
+    postId: typeof metadata.postId === "string" ? metadata.postId : activity.targetId,
+    content: typeof metadata.content === "string" ? metadata.content : "",
+    sensitive: metadata.sensitive === true,
+    editedAt: typeof metadata.editedAt === "string" ? metadata.editedAt : null,
+    decoration: hasPostDecoration(
+      metadata.decoration as IPostDecoration | null | undefined,
+    )
+      ? (metadata.decoration as IPostDecoration)
+      : null,
+    images,
+  };
+}
+
 function metadataNumber(activity: ISocialActivity, key: string): number {
   const value = activity.metadata?.[key];
   return typeof value === "number" ? value : 0;
@@ -178,6 +218,28 @@ export default function ActivityCard({
   const queryClient = useQueryClient();
   const { user: currentUser } = useUserDataStore();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const post = postMetadata(activity);
+  const frameStyle = post?.decoration
+    ? borderFrameStyle(post.decoration.border)
+    : null;
+  const backgroundStyle = post?.decoration
+    ? backgroundLayerStyle(post.decoration.background)
+    : null;
+  const isOwnActivity = currentUser?._id === activity.actor._id;
+  const canModerate = Boolean(
+    currentUser?.roles?.includes("admin") || currentUser?.roles?.includes("mod"),
+  );
+  const deletePostMutation = useMutation({
+    mutationFn: () => deletePostFn(post?.postId ?? activity.targetId),
+    onSuccess: async () => {
+      setConfirmingDelete(false);
+      toast.success(t("posts.deleted"));
+      await queryClient.invalidateQueries({ queryKey: ["socialActivities"] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const handleDescriptionExpandedChange = useCallback(
     (expanded: boolean) => setDescriptionExpanded(expanded),
@@ -314,6 +376,8 @@ export default function ActivityCard({
           action: t("activity.goalCompleted"),
           subject: goalTitle,
         };
+      case "post":
+        return { Icon: MessageCircle, action: "", subject: "" };
       default:
         return { Icon: BookOpen, action: t("activity.generic"), subject: "" };
     }
@@ -324,7 +388,7 @@ export default function ActivityCard({
     (mediaType === "vn"
       ? Boolean(activity.metadata?.isAdultImage)
       : Boolean(activity.metadata?.isAdult));
-  const hasMediaCover = Boolean(mediaImage && linkedMediaPath);
+  const hasMediaCover = Boolean(mediaImage && linkedMediaPath && !post);
   const expandedWithMedia = descriptionExpanded && hasMediaCover;
   const commentsId = `activity-${activity._id}-comments`;
   const showCommentsButton = activity.commentCount > 0 || activity.canComment !== false;
@@ -349,17 +413,28 @@ export default function ActivityCard({
 
   return (
     <div className="space-y-3">
+      <div
+        className={frameStyle ? "rounded-box" : "contents"}
+        style={frameStyle ?? undefined}
+      >
       <article
         id={`activity-${activity._id}`}
-        className={`card card-sm ${ACTIVITY_SURFACE_CLASSES[surface]} shadow-sm overflow-visible transition-shadow duration-300 hover:shadow-lg ${highlighted ? "ring-2 ring-primary" : ""}`}
+        className={`card card-sm ${ACTIVITY_SURFACE_CLASSES[surface]} relative shadow-sm overflow-visible transition-shadow duration-300 hover:shadow-lg ${highlighted ? "ring-2 ring-primary" : ""}`}
       >
+        {backgroundStyle && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-box"
+            style={backgroundStyle}
+          />
+        )}
         <div
           className={
             expandedWithMedia
-              ? "flow-root"
+              ? "relative flow-root"
               : hasMediaCover
-                ? "grid min-h-36 grid-cols-[5.75rem_minmax(0,1fr)] sm:grid-cols-[6.5rem_minmax(0,1fr)]"
-                : ""
+                ? "relative grid min-h-36 grid-cols-[5.75rem_minmax(0,1fr)] sm:grid-cols-[6.5rem_minmax(0,1fr)]"
+                : "relative"
           }
         >
           {!expandedWithMedia &&
@@ -417,6 +492,23 @@ export default function ActivityCard({
               </div>
             </header>
 
+            {post ? (
+              <>
+                {post.content && (
+                  <MarkdownContent
+                    className="prose prose-sm mt-2 max-w-none break-words text-base-content/90"
+                    html={renderMarkdownWithSpoilers(post.content, {
+                      allowImages: false,
+                    })}
+                  />
+                )}
+                <PostImages
+                  images={post.images}
+                  username={activity.actor.username}
+                  sensitive={post.sensitive}
+                />
+              </>
+            ) : (
             <div className="mt-2 flex min-w-0 items-start gap-2 text-sm leading-relaxed">
               {!hasMediaCover && (
                 <Icon
@@ -446,8 +538,9 @@ export default function ActivityCard({
                 )}
               </p>
             </div>
+            )}
 
-            {description && description !== activityCopy.subject && (
+            {!post && description && description !== activityCopy.subject && (
               <ExpandableActivityText
                 text={description}
                 readMoreLabel={t("activity.readMore")}
@@ -476,9 +569,40 @@ export default function ActivityCard({
                     {metricParts.join(" · ")}
                   </span>
                 )}
+                {post?.editedAt && (
+                  <span className="text-xs text-base-content/50">
+                    {t("posts.edited")}
+                  </span>
+                )}
               </div>
 
               <div className="card-actions ml-auto items-center gap-0">
+                {post && isOwnActivity && (
+                  <Button
+                    appearance="ghost"
+                    size="sm"
+                    shape="square"
+                    className="text-base-content/60"
+                    aria-label={t("posts.edit")}
+                    title={t("posts.edit")}
+                    onClick={() => setEditingPost(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {post && (isOwnActivity || canModerate) && (
+                  <Button
+                    appearance="ghost"
+                    size="sm"
+                    shape="square"
+                    className="text-base-content/60"
+                    aria-label={t("posts.delete")}
+                    title={t("posts.delete")}
+                    onClick={() => setConfirmingDelete(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 {showCommentsButton && (
                   <button
                     type="button"
@@ -525,11 +649,55 @@ export default function ActivityCard({
           </div>
         </div>
       </article>
+      </div>
 
       {commentsOpen && (
         <div id={commentsId} className="pl-3 sm:pl-6">
           <ActivityComments activityId={activity._id} />
         </div>
+      )}
+
+      {post && editingPost && (
+        <Modal
+          open
+          size="lg"
+          title={t("posts.editTitle")}
+          onClose={() => setEditingPost(false)}
+        >
+          <PostComposer
+            post={{ ...post, visibility: activity.visibility }}
+            onDone={() => setEditingPost(false)}
+            onCancel={() => setEditingPost(false)}
+          />
+        </Modal>
+      )}
+
+      {post && (
+        <Modal
+          open={confirmingDelete}
+          size="sm"
+          title={t("posts.deleteTitle")}
+          onClose={() => setConfirmingDelete(false)}
+          actions={
+            <>
+              <Button
+                appearance="ghost"
+                onClick={() => setConfirmingDelete(false)}
+              >
+                {t("posts.cancel")}
+              </Button>
+              <Button
+                variant="error"
+                loading={deletePostMutation.isPending}
+                onClick={() => deletePostMutation.mutate()}
+              >
+                {t("posts.deleteConfirm")}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-base-content/70">{t("posts.deleteBody")}</p>
+        </Modal>
       )}
     </div>
   );

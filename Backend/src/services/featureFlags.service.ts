@@ -6,7 +6,7 @@ import FeatureFlagModel, {
 export type FeatureFlags = Record<FeatureFlag, boolean>;
 
 /** A flag without a stored document is off. */
-const DEFAULT_FLAGS: FeatureFlags = { wrapped: false };
+const DEFAULT_FLAGS: FeatureFlags = { wrapped: false, posts: false };
 const CACHE_TTL_MS = 30_000;
 
 let cache: { expiresAt: number; flags: FeatureFlags } | null = null;

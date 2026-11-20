@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../models/featureFlag.model.js', () => ({
-  FEATURE_FLAGS: ['wrapped'],
+  FEATURE_FLAGS: ['wrapped', 'posts'],
   default: { find: mocks.find, updateOne: mocks.updateOne },
 }));
 
@@ -28,7 +28,7 @@ describe('feature flags', () => {
     const { getFeatureFlags } = await import(
       '../services/featureFlags.service.js'
     );
-    expect(await getFeatureFlags()).toEqual({ wrapped: false });
+    expect(await getFeatureFlags()).toEqual({ wrapped: false, posts: false });
   });
 
   it('reads stored values and ignores unknown keys', async () => {
@@ -39,7 +39,7 @@ describe('feature flags', () => {
     const { getFeatureFlags } = await import(
       '../services/featureFlags.service.js'
     );
-    expect(await getFeatureFlags()).toEqual({ wrapped: true });
+    expect(await getFeatureFlags()).toEqual({ wrapped: true, posts: false });
   });
 
   it('clears the cache after an update', async () => {
@@ -49,7 +49,7 @@ describe('feature flags', () => {
     );
     expect(await isFeatureEnabled('wrapped')).toBe(false);
     mockStored([{ key: 'wrapped', enabled: true }]);
-    expect(await setFeatureFlag('wrapped', true)).toEqual({ wrapped: true });
+    expect(await setFeatureFlag('wrapped', true)).toEqual({ wrapped: true, posts: false });
     expect(mocks.updateOne).toHaveBeenCalledWith(
       { key: 'wrapped' },
       { $set: { enabled: true } },

@@ -846,6 +846,9 @@ export async function deleteSocialDataForUser(
     }),
     Activity.deleteMany({ actor: userId }),
   ]);
+  // Load on demand, because the upload service connects to Firebase Storage on import.
+  const { deletePostsForUser } = await import('./posts.service.js');
+  await deletePostsForUser(userId);
 }
 
 export async function syncImmersionActivityVisibility(
