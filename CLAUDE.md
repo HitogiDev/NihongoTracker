@@ -20,6 +20,7 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 - Use npm 11. The lock files come from npm 11, and npm 10 rejects them during `npm ci` (for example, "Missing: esbuild@... from lock file").
 - Work directly on `main`. Do not create or switch to other branches.
 - Commit only when asked. Do not add a Co-Authored-By trailer. Do not push.
+- Author and commit every commit as `HitogiDev <31047609+HitogiDev@users.noreply.github.com>`. Check `git config user.name` and `user.email` before you commit, and set them in the repository when they differ. Do not add `Claude-Session` or other agent trailers to commits, and do not add "Generated with" lines to pull requests.
 - Preserve unrelated user changes. The worktree may already be dirty.
 - Do not use em dashes in UI copy, documentation, comments, or user-facing responses. Use commas, periods, colons, or parentheses instead.
 - Both packages use ESM. Backend TypeScript imports use explicit `.js` extensions, including imports of `.ts` source modules.
