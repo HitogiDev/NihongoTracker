@@ -20,6 +20,10 @@ import {
   mapLanguageCode,
   buildVndbImageUrl,
   parseVnAliases,
+  buildVnScreenshots,
+  pickVnBannerScreenshot,
+  IVnScreenshot,
+  IVndbScreenshotInfo,
 } from './vndbFilterPolicy.js';
 import { addDocuments, deleteDocuments } from './meilisearch/meiliSearch.js';
 
@@ -59,7 +63,9 @@ interface INormalizedVnMedia {
     contentTitleEnglish: string | null;
   };
   contentImage: string | null;
-  coverImage: null;
+  /** Banner: the first safe screenshot, hotlinked from the VNDB CDN */
+  coverImage: string | null;
+  screenshots: IVnScreenshot[];
   description: Array<{ description: string; language: 'eng' | 'jpn' | 'spa' }>;
   synonyms: string[];
   genres: string[];
@@ -270,31 +276,92 @@ async function finalizeRunFailure(
 // Phase helpers
 // ---------------------------------------------------------------------------
 
+function parseImageRating(raw: string | null, fallback: number): number {
+  if (raw === null) return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function parseImageDimension(raw: string | null): number | null {
+  if (raw === null) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 /**
- * Stream the `images` table to build a per-image adult-image flag.
- * VNDB stores c_sexual_avg as 0–200 (average vote × 100).
- * Unvoted images default to 200 (VNDB's conservative default = assume explicit).
- * We treat an image as adult if c_sexual_avg >= 100 (suggestive or explicit on average).
+ * Stream the `images` table once for cover and screenshot metadata.
+ * VNDB stores c_sexual_avg and c_violence_avg as 0 to 200 (average vote x 100).
+ * Unvoted images use a sexual rating of 200, the conservative VNDB default.
+ * A cover is adult when c_sexual_avg >= 100 (suggestive or explicit on average).
+ * Only screenshots in `wantedScreenshotIds` are kept, to limit memory use.
  */
-async function buildImageRatingMap(
-  dbDir: string
-): Promise<Map<string, boolean>> {
-  const map = new Map<string, boolean>();
+async function buildImageMaps(
+  dbDir: string,
+  wantedScreenshotIds: Set<string>
+): Promise<{
+  coverRatingMap: Map<string, boolean>;
+  screenshotInfoMap: Map<string, IVndbScreenshotInfo>;
+}> {
+  const coverRatingMap = new Map<string, boolean>();
+  const screenshotInfoMap = new Map<string, IVndbScreenshotInfo>();
   const headers = await readHeaderFile(path.join(dbDir, 'images.header'));
 
   for await (const row of streamTsvRows(path.join(dbDir, 'images'), headers)) {
-    const {id} = row;
+    const { id } = row;
     if (!id) continue;
 
-    // Only interested in cover images (prefix 'cv'): skip character/screenshot images
-    if (!id.startsWith('cv')) continue;
-
-    const raw = row.c_sexual_avg;
-    const avg = raw !== null ? Number(raw) : 200; // default 200 if null
-    map.set(id, avg >= 100);
+    if (id.startsWith('cv')) {
+      coverRatingMap.set(id, parseImageRating(row.c_sexual_avg, 200) >= 100);
+    } else if (wantedScreenshotIds.has(id)) {
+      screenshotInfoMap.set(id, {
+        width: parseImageDimension(row.width),
+        height: parseImageDimension(row.height),
+        sexualAvg: parseImageRating(row.c_sexual_avg, 200),
+        violenceAvg: parseImageRating(row.c_violence_avg, 0),
+      });
+    }
   }
 
-  console.log(`✅ VNDB: built image rating map for ${map.size} cover image(s)`);
+  console.log(
+    `✅ VNDB: read ratings for ${coverRatingMap.size} cover(s) and ${screenshotInfoMap.size} screenshot(s)`
+  );
+  return { coverRatingMap, screenshotInfoMap };
+}
+
+/**
+ * Stream `vn_screenshots` to map each Japanese VN to its screenshot image IDs.
+ * The table holds only references. The image files stay on the VNDB CDN.
+ * A dump without the table gives an empty map, so the sync continues.
+ */
+async function buildScreenshotIdMap(
+  dbDir: string,
+  japaneseVnIds: Set<string>
+): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  const headerPath = path.join(dbDir, 'vn_screenshots.header');
+
+  let headers: string[];
+  try {
+    headers = await readHeaderFile(headerPath);
+  } catch {
+    console.warn('⚠️  VNDB: vn_screenshots table not found in dump, skipping screenshots');
+    return map;
+  }
+
+  for await (const row of streamTsvRows(
+    path.join(dbDir, 'vn_screenshots'),
+    headers
+  )) {
+    const vnId = row.id;
+    const imageId = row.scr;
+    if (!vnId || !imageId || !japaneseVnIds.has(vnId)) continue;
+
+    const list = map.get(vnId);
+    if (list) list.push(imageId);
+    else map.set(vnId, [imageId]);
+  }
+
+  console.log(`✅ VNDB: found screenshots for ${map.size} VN(s)`);
   return map;
 }
 
@@ -480,6 +547,8 @@ function normalizeVnRow(
   adultVnIds: Set<string>,
   japaneseVnIds: Set<string>,
   imageRatingMap: Map<string, boolean>,
+  screenshotIdMap: Map<string, string[]>,
+  screenshotInfoMap: Map<string, IVndbScreenshotInfo>,
   titleMap: Map<string, Map<string, { title: string | null; latin: string | null }>>,
   vnReleaseYears: Map<string, number>
 ): INormalizedVnMedia | null {
@@ -501,6 +570,11 @@ function normalizeVnRow(
   // isAdultImage: look up the cover image's community sexual rating.
   // If the image is not in the map (unvoted / no cover), default to false.
   const isAdultImage = imageId ? (imageRatingMap.get(imageId) ?? false) : false;
+
+  const screenshots = buildVnScreenshots(
+    screenshotIdMap.get(id) ?? [],
+    screenshotInfoMap
+  );
 
   const rawDescription = row.description;
   const mappedLang = mapLanguageCode(olang);
@@ -528,7 +602,8 @@ function normalizeVnRow(
       contentTitleEnglish: english,
     },
     contentImage,
-    coverImage: null,
+    coverImage: pickVnBannerScreenshot(screenshots),
+    screenshots,
     description: descriptionEntries,
     synonyms,
     genres: [],
@@ -741,15 +816,22 @@ async function runSyncProcess(
     const titleMap = await buildTitleMap(dbDir, counters);
 
     // ------------------------------------------------------------------
-    // 6. Build image rating map
+    // 6. Collect screenshot references and image ratings
     // ------------------------------------------------------------------
     await touchLockAndProgress(
       'images',
-      'Scanning cover image sexual ratings',
+      'Scanning screenshots and image ratings',
       counters
     );
 
-    const imageRatingMap = await buildImageRatingMap(dbDir);
+    const screenshotIdMap = await buildScreenshotIdMap(dbDir, japaneseVnIds);
+    const wantedScreenshotIds = new Set<string>();
+    for (const ids of screenshotIdMap.values()) {
+      for (const imageId of ids) wantedScreenshotIds.add(imageId);
+    }
+
+    const { coverRatingMap: imageRatingMap, screenshotInfoMap } =
+      await buildImageMaps(dbDir, wantedScreenshotIds);
 
     // ------------------------------------------------------------------
     // 7. Stream vn table → normalize → batch upsert
@@ -773,6 +855,8 @@ async function runSyncProcess(
         adultVnIds,
         japaneseVnIds,
         imageRatingMap,
+        screenshotIdMap,
+        screenshotInfoMap,
         titleMap,
         vnReleaseYears
       );

@@ -117,6 +117,22 @@ const VnSchema = new Schema({
   characters: { type: Number, default: null },
   // Year of the VN's earliest known release, from the VNDB dump
   releaseYear: { type: Number, default: null },
+  // References to VNDB screenshots. The files stay on the VNDB CDN.
+  screenshots: {
+    type: [
+      new Schema(
+        {
+          url: { type: String, required: true },
+          thumbnailUrl: { type: String, required: true },
+          width: { type: Number, default: null },
+          height: { type: Number, default: null },
+          isAdult: { type: Boolean, default: true },
+        },
+        { _id: false }
+      ),
+    ],
+    default: [],
+  },
 });
 
 const Vn = MediaBase.discriminator('vn', VnSchema);

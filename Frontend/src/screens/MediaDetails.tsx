@@ -54,6 +54,7 @@ import ReviewRatingSummary from '../components/ReviewRatingSummary';
 import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
 import { useTranslation } from 'react-i18next';
 import LinkifiedText from '../components/ui/LinkifiedText';
+import VnScreenshotGallery from '../components/VnScreenshotGallery';
 import { isMobileApp } from '../utils/nativeRuntime';
 
 const difficultyLevels = [
@@ -1679,6 +1680,13 @@ function MediaDetails() {
               reviews={displayedReviews}
               reviewsTabPath={reviewsTabPath}
             />
+
+            {mediaDocument?.type === 'vn' && (
+              <VnScreenshotGallery
+                screenshots={mediaDocument.screenshots ?? []}
+                blurAdult={currentUser?.settings?.blurAdultContent ?? true}
+              />
+            )}
 
             {isClubLinkedView && clubData && (
               <div className="card surface my-4">
