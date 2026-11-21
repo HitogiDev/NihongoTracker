@@ -555,5 +555,13 @@
     "title": "Editar reseña",
     "update": "Actualizar reseña",
     "updating": "Actualizando..."
+  },
+  "screenshots": {
+    "title": "Capturas",
+    "open": "Abrir captura {{index}}",
+    "counter": "Captura {{index}} de {{total}}",
+    "previous": "Captura anterior",
+    "next": "Captura siguiente",
+    "source": "Capturas de VNDB."
   }
 }

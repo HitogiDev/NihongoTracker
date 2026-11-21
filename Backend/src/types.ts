@@ -736,6 +736,15 @@ export interface IMediaDescription {
   language: 'eng' | 'jpn' | 'spa';
 }
 
+export interface IMediaScreenshot {
+  url: string;
+  thumbnailUrl: string;
+  width: number | null;
+  height: number | null;
+  /** true when the community rates the image suggestive or explicit, or brutal */
+  isAdult: boolean;
+}
+
 export interface IMediaDocument {
   _id?: Types.ObjectId;
   contentId: string;
@@ -760,6 +769,8 @@ export interface IMediaDocument {
   airingEndDate?: Date | null;
   /** VN only: year of the earliest known release, from the VNDB dump */
   releaseYear?: number | null;
+  /** VN only: screenshot references on the VNDB CDN, from the VNDB dump */
+  screenshots?: IMediaScreenshot[];
   genres?: string[];
   chapters?: number;
   characters?: number;
