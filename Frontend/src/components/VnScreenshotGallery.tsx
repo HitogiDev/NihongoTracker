@@ -46,7 +46,7 @@ export default function VnScreenshotGallery({
               <button
                 key={shot.url}
                 type="button"
-                className="relative aspect-video overflow-hidden rounded-box bg-base-300"
+                className="relative aspect-4/3 overflow-hidden rounded-box bg-base-300"
                 onClick={() => setOpenIndex(index)}
                 aria-label={t('screenshots.open', { index: index + 1 })}
               >
