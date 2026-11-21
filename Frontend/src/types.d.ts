@@ -1191,6 +1191,14 @@ interface IMediaDescription {
   language: 'eng' | 'jpn' | 'spa';
 }
 
+export interface IMediaScreenshot {
+  url: string;
+  thumbnailUrl: string;
+  width: number | null;
+  height: number | null;
+  isAdult: boolean;
+}
+
 export interface IMediaDocument {
   _id?: string;
   contentId: string;
@@ -1226,6 +1234,8 @@ export interface IMediaDocument {
   synonyms?: string[] | null;
   isAdult: boolean;
   isAdultImage?: boolean;
+  /** VN only: screenshots on the VNDB CDN. */
+  screenshots?: IMediaScreenshot[];
   jitenDifficulty?: number | null;
   jitenDeckId?: number | null;
   lastLogDate?: string;

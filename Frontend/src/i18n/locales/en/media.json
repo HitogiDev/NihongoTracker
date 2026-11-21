@@ -540,5 +540,13 @@
     "overview": "Overview",
     "reviews": "Reviews",
     "social": "Social"
+  },
+  "screenshots": {
+    "title": "Screenshots",
+    "open": "Open screenshot {{index}}",
+    "counter": "Screenshot {{index}} of {{total}}",
+    "previous": "Previous screenshot",
+    "next": "Next screenshot",
+    "source": "Screenshots from VNDB."
   }
 }
